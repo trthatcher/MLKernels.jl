@@ -4,7 +4,7 @@
 
 abstract MercerKernel
 
-function kernel{T<:MercerKernel}(Kernel::T)
+function kernel(Kernel::MercerKernel)
 	return Kernel.k::Function
 end
 
@@ -20,6 +20,7 @@ type LinearKernel <: MercerKernel
 	k::Function
 	c::Real
 	function LinearKernel(c::Real=0)
+		c >= 0 || error("c = $c must be greater than zero.")
 		k(x,y) = linearkernel(x,y,c)
 		new(k,c)
 	end
@@ -38,6 +39,7 @@ type PolynomialKernel <: MercerKernel
 	c::Real
 	d::Real
 	function PolynomialKernel(α::Real=1,c::Real=1,d::Real=2)
+		
 		k(x,y) = polynomialkernel(x,y,α,c,d)
 		new(k,α,c,d)
 	end
@@ -79,8 +81,6 @@ end
 function show(io::IO,obj::ExponentialKernel)
 	print("Exponential Kernel: k(x,y) = exp(-‖x-y‖/(2σ²))   with σ = $(obj.σ)")
 end
-ale opinions here. His lying to you is fucked. He should never had lied. It's also fucked that he feels so ashamed about it that he feels the need to lie to you. He is obviously fearful, with good reason, of your reaction. Do you consider masturbating cheating? If it extends to that I think you both should get into counseling, preferably with someone who is sex positive, both separately and together. It's not healthy to deny someone a little self release now and again. And it really isn't healthy to have your self worth so adamantly tied into this black and white notion of cheating where the only sexual gratification your partner can get has to be directly linked to you every time and in every way.
-I'm saying this, honestly, with completely warm intentions towards you. I'm not blasting you or anything like that. I get the impression that you are more bothered by the porn than the lying and that's worrisome. I think instead of focusing on the fact that he watched porn, you should instead focus on why he feels the need to hide it from you and the lying and what that sa
 
 function sigmoidkernel{T<:FloatingPoint}(x::Array{T},y::Array{T},α::Real,c::Real)
 	return tanh(convert(T,α)*BLAS.dot(length(x), x, 1, y, 1) + convert(T,c))
@@ -204,56 +204,7 @@ function show(io::IO,obj::LogKernel)
 end
 
 
-#===================================================================================================
-  Kernel Matrix Functions
-===================================================================================================#
-
-# center_kernelmatrix!: Centralize a kernel matrix K
-#	K := K - 1ₙ*K/n - K*1ₙ/n + 1ₙ*K*1ₙ/n^2
-#	 • K is an n×n kernel matrix
-#	 • 1ₙ is an n×n matrix of ones
-function center_kernelmatrix!{T<:FloatingPoint}(K::Matrix{T})
-	n = size(K,1)
-	n == size(K,2) || error("Kernel matrix must be square")
-	κ = sum(K,1)
-	μₖ = sum(κ)/(convert(T,n)^2)
-	BLAS.scal!(n,one(T)/convert(T,n),κ,1)
-	return MATRIX.el_add!(MATRIX.col_add!(MATRIX.row_add!(K,-κ),-κ),μₖ)
-end
-center_kernelmatrix{T<:FloatingPoint}(K::Matrix{T}) = center_kernelmatrix!(copy(K))
 
 
-# kernelmatrix:
-#	Returns the kernel (Gramian) matrix K of X for mapping ϕ
-#	 • X contains one observation per row
-#	 • symmetrize = false will leave the bottom half of K without assigned values
-function kernelmatrix{T₁<:FloatingPoint,T₂<:MercerKernel}(X::Matrix{T₁}, κᵩ::T₂=LinearKernel(); symmetrize::Bool=true)
-	k = kernel(κᵩ)
-	n = size(X,1)
-	K = Array(T₁,n,n) # Kᵩ = XᵩXᵗᵩ
-	for i = 1:n 
-		for j = i:n
-			K[i,j] = k(X[i,:],X[j,:])
-		end 
-	end
-	return symmetrize ? MATRIX.syml!(K) : K
-end
 
-
-# kernelmatrix:
-#	Returns the upper right corner kernel (Gramian) matrix K of [Xᵗ,Zᵗ]ᵗ
-#	 • X is n×p and Z is m×p; contain one observation per row
-#	 • Resulting matrix Kᵩ is n×m
-function kernelmatrix{T₁<:FloatingPoint,T₂<:MercerKernel}(X::Matrix{T₁}, Z::Matrix{T₁}, κᵩ::T₂=LinearKernel())
-	k = kernel(κᵩ)
-	n,m = size(X,1), size(Z,1)
-	size(X,2) == size(Z,2) || error("X ∈ ℝn×p and Z should be ∈ ℝm×p, but X ∈ ℝn×$(size(X,2)) and Z ∈ ℝm×$(size(Z,2)).")
-	K = Array(T₁,n,m) # K = XᵩZᵗᵩ
-	for j = 1:m 
-		for i = 1:n
-			K[i,j] = k(X[i,:],Z[j,:])
-		end
-	end
-	return K
-end
 
