@@ -4,7 +4,7 @@
 
 abstract MercerKernel
 
-function kernel(Kernel::MercerKernel)
+function kernel_function(Kernel::MercerKernel)
 	return Kernel.k::Function
 end
 
