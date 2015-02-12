@@ -4,9 +4,43 @@
 
 abstract MercerKernel
 
-function kernel_function(Kernel::MercerKernel)
+abstract StandardMercerKernel <: MercerKernel
+
+function kernel_function(Kernel::StandardMercerKernel)
 	return Kernel.k::Function
 end
+
+type ScaledMercerKernel <: MercerKernel
+    a::Real
+    kernel::StandardMercerKernel
+    function ScaledMercerKernel(kernel::StandardMercerKernel, a::Real = 1)
+        a > 0 || error("a = $a must be greater than zero.")
+        new(a, kernel)
+    end
+end
+
+*(a::Real, kernel::StandardMercerKernel) = ScaledMercerKernel(kernel, a)
+*(kernel::StandardMercerKernel, a::Real) = a * kernel
+*(a::Real, kernel::ScaledMercerKernel) = ScaledMercerKernel(deepcopy(kernel.kernel), a * kernel.a)
+*(kernel::ScaledMercerKernel, a::Real) = (a * kernel.a) * deepcopy(kernel.kernel)
+
+
+type ProductMercerKernel <: MercerKernel
+    a::Real
+    lkernel::StandardMercerKernel
+    rkernel::StandardMercerKernel
+    function ProductMercerKernel(lkernel::StandardMercerKernel, rkernel::StandardMercerKernel, a::Real = 1)
+        a > 0 || error("a = $a must be greater than zero.")
+        new(a, lkernel, rkernel)
+    end
+end
+
+*(lkernel::StandardMercerKernel, rkernel::StandardMercerKernel) = ProductMercerKernel(lkernel, rkernel)
+*(lkernel::ScaledMercerKernel, rkernel::StandardMercerKernel) = ProductMercerKernel(deepcopy(lkernel.kernel), rkernel, lkernel.a)
+*(lkernel::StandardMercerKernel, rkernel::ScaledMercerKernel) = ProductMercerKernel(lkernel, deepcopy(rkernel.kernel), rkernel.a)
+*(lkernel::ScaledMercerKernel, rkernel::ScaledMercerKernel) = ProductMercerKernel(deepcopy(lkernel.kernel), deepcopy(rkernel.kernel), lkernel.a * rkernel.a)
+
+
 
 #===================================================================================================
   Instances of Mercer Kernel Types
@@ -16,7 +50,7 @@ function linearkernel{T<:FloatingPoint}(x::Array{T},y::Array{T},c::Real)
 	return BLAS.dot(length(x), x, 1, y, 1) + convert(T,c)
 end
 
-type LinearKernel <: MercerKernel
+type LinearKernel <: StandardMercerKernel
 	k::Function
 	c::Real
 	function LinearKernel(c::Real=0)

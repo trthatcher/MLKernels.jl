@@ -2,14 +2,13 @@
   Kernel Functions Module
 ===================================================================================================#
 
-module KERNEL
-
-using MATRIX
+module Kernels
 
 import Base: show
 
 export
 	# Mercer Kernels
+	MercerKernel,
 	LinearKernel,
 	PolynomialKernel,
 	GaussianKernel,
@@ -20,11 +19,13 @@ export
 	InverseMultiQuadraticKernel,
 	PowerKernel,
 	LogKernel,
-	SplineKernel,
+	SplineKernel
 	# Kernel Matrix Functions
-	center_kernelmatrix!,
-	center_kernelmatrix,
-	kernelmatrix
+	#center_kernelmatrix!,
+	#center_kernelmatrix,
+	#kernelmatrix
 
+include("MercerKernels.jl")
+#include("Gramian.jl")
 
-end # KERNEL
+end # Kernels
