@@ -7,6 +7,9 @@ module Kernels
 import Base: show
 
 export
+    # Functions
+    kernel,
+    arguments,
 	# Mercer Kernels
 	MercerKernel,
 	LinearKernel,
@@ -20,6 +23,7 @@ export
 	PowerKernel,
 	LogKernel,
 	SplineKernel
+	
 	# Kernel Matrix Functions
 	#center_kernelmatrix!,
 	#center_kernelmatrix,

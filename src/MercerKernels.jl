@@ -6,9 +6,8 @@ abstract MercerKernel
 
 abstract StandardMercerKernel <: MercerKernel
 
-function kernel_function(Kernel::StandardMercerKernel)
-	return Kernel.k::Function
-end
+
+#== Scaled Kernel ====================#
 
 type ScaledMercerKernel <: MercerKernel
     a::Real
@@ -19,11 +18,24 @@ type ScaledMercerKernel <: MercerKernel
     end
 end
 
+function kernel(obj::ScaledMercerKernel)
+    k{T<:FloatingPoint}(x::Array{T}, y::Array{T}) = convert(T, obj.a) * kernel(obj.kernel)(x, y)
+    return k
+end
+
+function show(io::IO,obj::ScaledMercerKernel)
+	println("Scaled Kernel: k(x,y) = ak₁(x,y) with a = $(obj.a)")
+    print(string("    k₁(x,y) = ", formula_string(obj.kernel), " and ", argument_string(obj.kernel)))
+end
+
+
 *(a::Real, kernel::StandardMercerKernel) = ScaledMercerKernel(kernel, a)
 *(kernel::StandardMercerKernel, a::Real) = a * kernel
 *(a::Real, kernel::ScaledMercerKernel) = ScaledMercerKernel(deepcopy(kernel.kernel), a * kernel.a)
 *(kernel::ScaledMercerKernel, a::Real) = (a * kernel.a) * deepcopy(kernel.kernel)
 
+
+#== Product Kernel ====================#
 
 type ProductMercerKernel <: MercerKernel
     a::Real
@@ -35,75 +47,149 @@ type ProductMercerKernel <: MercerKernel
     end
 end
 
+function kernel(obj::ProductMercerKernel)
+    k{T<:FloatingPoint}(x::Array{T}, y::Array{T}) = convert(T, obj.a) * kernel(obj.lkernel)(x, y) * kernel(obj.rkernel)(x, y)
+    return k
+end
+
+
+function show(io::IO, obj::ProductMercerKernel)
+	println("Product Kernel: k(x,y) = ak₁(x,y)k₂(x,y) with a = $(obj.a)")
+    println(string("    k₁(x,y) = ", formula_string(obj.lkernel), " and ", argument_string(obj.lkernel)))
+    print(string("    k₂(x,y) = ", formula_string(obj.rkernel), " and ", argument_string(obj.rkernel)))
+end
+
+
 *(lkernel::StandardMercerKernel, rkernel::StandardMercerKernel) = ProductMercerKernel(lkernel, rkernel)
 *(lkernel::ScaledMercerKernel, rkernel::StandardMercerKernel) = ProductMercerKernel(deepcopy(lkernel.kernel), rkernel, lkernel.a)
 *(lkernel::StandardMercerKernel, rkernel::ScaledMercerKernel) = ProductMercerKernel(lkernel, deepcopy(rkernel.kernel), rkernel.a)
 *(lkernel::ScaledMercerKernel, rkernel::ScaledMercerKernel) = ProductMercerKernel(deepcopy(lkernel.kernel), deepcopy(rkernel.kernel), lkernel.a * rkernel.a)
 
 
-
 #===================================================================================================
   Instances of Mercer Kernel Types
 ===================================================================================================#
 
-function linearkernel{T<:FloatingPoint}(x::Array{T},y::Array{T},c::Real)
+#== Linear Kernel ====================#
+
+function linearkernel{T<:FloatingPoint}(x::Array{T}, y::Array{T})
+	return BLAS.dot(length(x), x, 1, y, 1)
+end
+
+function linearkernel{T<:FloatingPoint}(x::Array{T}, y::Array{T}, c::Real)
 	return BLAS.dot(length(x), x, 1, y, 1) + convert(T,c)
 end
 
 type LinearKernel <: StandardMercerKernel
-	k::Function
 	c::Real
 	function LinearKernel(c::Real=0)
 		c >= 0 || error("c = $c must be greater than zero.")
-		k(x,y) = linearkernel(x,y,c)
-		new(k,c)
+		new(c)
 	end
 end
-function show(io::IO,obj::LinearKernel)
-	print("Linear Kernel: k(x,y) = xᵗy + c   with c = $(obj.c)")
+
+arguments(obj::LinearKernel) = obj.c
+function kernel(obj::LinearKernel)
+    if obj.c == 0
+        k(x,y) = linearkernel(x, y)
+    else
+        k(x,y) = linearkernel(x, y, obj.c)
+    end
+    return k
+end
+
+formula_string(obj::LinearKernel) = "xᵗy + c"
+argument_string(obj::LinearKernel) = "c = $(obj.c)"
+
+function show(io::IO, obj::LinearKernel)
+	print(string("Linear Kernel: k(x,y) = ", formula_string(obj), " with ", argument_string(obj)))
 end
 
 
-function polynomialkernel{T<:FloatingPoint}(x::Array{T},y::Array{T},α::Real,c::Real,d::Real)
+#== Polynomial Kernel ===============#
+
+function generalizedpolynomialkernel{T<:FloatingPoint}(x::Array{T}, y::Array{T}, α::Real, c::Real, d::Real)
 	return (convert(T,α)*BLAS.dot(length(x), x, 1, y, 1) + convert(T,c))^convert(T,d)
 end
-type PolynomialKernel <: MercerKernel
-	k::Function
+
+function polynomialkernel{T<:FloatingPoint}(x::Array{T}, y::Array{T}, c::Real, d::Real)
+	return (BLAS.dot(length(x), x, 1, y, 1) + convert(T, c))^convert(T, d)
+end
+
+function homogenouspolynomialkernel{T<:FloatingPoint}(x::Array{T}, y::Array{T}, d::Real)
+	return (BLAS.dot(length(x), x, 1, y, 1))^convert(T, d)
+end
+
+type PolynomialKernel <: StandardMercerKernel
 	α::Real
 	c::Real
 	d::Real
 	function PolynomialKernel(α::Real=1,c::Real=1,d::Real=2)
-		
-		k(x,y) = polynomialkernel(x,y,α,c,d)
-		new(k,α,c,d)
+		α > 0 || error("α = $(α) must be greater than zero.")
+        c >= 0 || error("c = $(c) must be a non-negative number.")
+        d >= 0 || error("d = $(d) must be a non-negative number.") 
+		new(α, c, d)
 	end
 end
-function show(io::IO,obj::PolynomialKernel)
-	print("Polynomial Kernel: k(x,y) = (αxᵗy + c)ᵈ   with α = $(obj.α), c = $(obj.c) and d = $(obj.d)")
+
+arguments(obj::PolynomialKernel) = (obj.α, obj.c, obj.d)
+function kernel(obj::PolynomialKernel)
+    if obj.α == 1
+        if obj.c == 0
+            k(x,y) = homogeneouspolynomialkernel(x, y, obj.d)
+        else
+            k(x,y) = polynomialkernel(x, y, obj.c, obj.d)
+        end
+    else
+        k(x,y) = generalizedpolynomialkernel(x, y, obj.α, obj.c, obj.d)
+    end
+    return k
 end
 
+formula_string(obj::PolynomialKernel) = "(αxᵗy + c)ᵈ"
+argument_string(obj::PolynomialKernel) = "α = $(obj.α), c = $(obj.c) and d = $(obj.d)"
+
+function show(io::IO, obj::PolynomialKernel)
+	print(string("Polynomial Kernel: k(x,y) = ", formula_string(obj), " with ", argument_string(obj)))
+end
+
+
+#== Gaussian Kernel ===============#
 
 function gaussiankernel{T<:FloatingPoint}(x::Array{T},y::Array{T},σ::Real)
 	δ = x .- y
 	return exp(- BLAS.dot(length(x), δ, 1, δ, 1) / (2*convert(T,σ)^2))
 end
-type GaussianKernel <: MercerKernel
-	k::Function
+
+type GaussianKernel <: StandardMercerKernel
 	σ::Real
 	function GaussianKernel(σ::Real=1)
-		k(x,y) = gaussiankernel(x,y,σ)
-		new(k,σ)
+        σ >= 0 || error("σ = $(σ) must be greater than 0.")
+		new(σ)
 	end
 end
+
+arguments(obj::GaussianKernel) = obj.σ
+function kernel(obj::GaussianKernel)
+    k(x, y) = gaussiankernel(x, y, obj.σ)
+    return k
+end
+    .
+formula_string(obj::GaussianKernel) = "exp(-‖x-y‖²/(2σ²))"
+argument_string(obj::GaussianKernel) = "σ = $(obj.σ)"
+
 function show(io::IO,obj::GaussianKernel)
-	print("Gaussian Kernel: k(x,y) = exp(-‖x-y‖²/(2σ²))   with σ = $(obj.σ)")
+	print(string("Gaussian Kernel: k(x,y) = ", formula_string(obj), " with ", argument_string(obj)))
 end
 
+
+#== Exponential Kernel ===============#
 
 function exponentialkernel{T<:FloatingPoint}(x::Array{T},y::Array{T},σ::Real)
 	δ = x .- y
 	return exp(- nrm2(length(x), δ, 1) / (2*convert(T,σ)^2) )
 end
+
 type ExponentialKernel <: MercerKernel
 	k::Function
 	σ::Real
@@ -236,9 +322,3 @@ end
 function show(io::IO,obj::LogKernel)
 	print("Spline Kernel: see reference for k(x,y)")
 end
-
-
-
-
-
-
