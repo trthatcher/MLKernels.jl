@@ -32,7 +32,6 @@ function show(io::IO,obj::ScaledMercerKernel)
     print(string("    k₁(x,y) = ", formula_string(obj.kernel), " and ", argument_string(obj.kernel)))
 end
 
-
 *(a::Real, kernel::StandardMercerKernel) = ScaledMercerKernel(kernel, a)
 *(kernel::StandardMercerKernel, a::Real) = a * kernel
 *(a::Real, kernel::ScaledMercerKernel) = ScaledMercerKernel(deepcopy(kernel.kernel), a * kernel.a)
@@ -63,24 +62,23 @@ function kernel(obj::ProductMercerKernel)
     return k
 end
 
-
 function show(io::IO, obj::ProductMercerKernel)
 	println("Product Kernel: k(x,y) = ak₁(x,y)k₂(x,y) with a = $(obj.lkernel.a * obj.rkernel.a)")
     println(string("    k₁(x,y) = ", formula_string(obj.lkernel.kernel), " and ", argument_string(obj.lkernel.kernel)))
     print(string("    k₂(x,y) = ", formula_string(obj.rkernel.kernel), " and ", argument_string(obj.rkernel.kernel)))
 end
 
-
 *(lkernel::StandardMercerKernel, rkernel::StandardMercerKernel) = ProductMercerKernel(ScaledMercerKernel(lkernel), ScaledMercerKernel(rkernel))
 *(lkernel::ScaledMercerKernel, rkernel::StandardMercerKernel) = ProductMercerKernel(deepcopy(lkernel), ScaledMercerKernel(rkernel))
-*(lkernel::StandardMercerKernel, rkernel::ScaledMercerKernel) = ProductMercerKernel(ScaledMercerKernel(lkernel), deepcopy(rkernel.a))
-*(lkernel::ScaledMercerKernel, rkernel::ScaledMercerKernel) = ProductMercerKernel(deepcopy(lkernel.kernel), deepcopy(rkernel.kernel))
+*(lkernel::StandardMercerKernel, rkernel::ScaledMercerKernel) = ProductMercerKernel(ScaledMercerKernel(lkernel), deepcopy(rkernel))
+*(lkernel::ScaledMercerKernel, rkernel::ScaledMercerKernel) = ProductMercerKernel(deepcopy(lkernel), deepcopy(rkernel))
+
 
 #== Sum Kernel ====================#
 
 type SumMercerKernel <: MercerKernel
-    lkernel::StandardMercerKernel
-    rkernel::StandardMercerKernel
+    lkernel::ScaledMercerKernel
+    rkernel::ScaledMercerKernel
 end
 
 function kernel(obj::SumMercerKernel)
@@ -100,20 +98,16 @@ function kernel(obj::SumMercerKernel)
     return k
 end
 
-function show(io::IO, obj::ProductMercerKernel)
-	println("Product Kernel: k(x,y) = a₁k₁(x,y) + a₂k₂(x,y) with a₁ = $(obj.lkernel.a), a₂ = $(obj.rkernel.a)")
+function show(io::IO, obj::SumMercerKernel)
+	println("Sum Kernel: k(x,y) = a₁k₁(x,y) + a₂k₂(x,y) with a₁ = $(obj.lkernel.a), a₂ = $(obj.rkernel.a)")
     println(string("    k₁(x,y) = ", formula_string(obj.lkernel.kernel), " and ", argument_string(obj.lkernel.kernel)))
     print(string("    k₂(x,y) = ", formula_string(obj.rkernel.kernel), " and ", argument_string(obj.rkernel.kernel)))
 end
 
-
-
-+(lkernel::StandardMercerKernel, rkernel::StandardMercerKernel) = SumMercerKernel(lkernel, rkernel)
-+(lkernel::ScaledMercerKernel, rkernel::StandardMercerKernel) = SumMercerKernel(deepcopy(lkernel.kernel), rkernel, lkernel.a)
-+(lkernel::StandardMercerKernel, rkernel::ScaledMercerKernel) = SumMercerKernel(lkernel, deepcopy(rkernel.kernel), rkernel.a)
-+(lkernel::ScaledMercerKernel, rkernel::ScaledMercerKernel) = SumMercerKernel(deepcopy(lkernel.kernel), deepcopy(rkernel.kernel), lkernel.a, rkernel.a)
-
-
++(lkernel::StandardMercerKernel, rkernel::StandardMercerKernel) = SumMercerKernel(ScaledMercerKernel(lkernel), ScaledMercerKernel(rkernel))
++(lkernel::ScaledMercerKernel, rkernel::StandardMercerKernel) = SumMercerKernel(deepcopy(lkernel), ScaledMercerKernel(rkernel))
++(lkernel::StandardMercerKernel, rkernel::ScaledMercerKernel) = SumMercerKernel(ScaledMercerKernel(lkernel), deepcopy(rkernel))
++(lkernel::ScaledMercerKernel, rkernel::ScaledMercerKernel) = SumMercerKernel(deepcopy(lkernel), deepcopy(rkernel))
 
 
 #===================================================================================================
