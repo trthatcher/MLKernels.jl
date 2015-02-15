@@ -7,8 +7,14 @@ module Kernels
 import Base: show
 
 export
+    # Types
+    MercerKernel,
+    ScaledMercerKernel,
+    CompositeMercerKernel,
+    ProductMercerKernel,
     # Functions
     kernel,
+    kernelfunction,
     arguments,
 	# Mercer Kernels
 	MercerKernel,

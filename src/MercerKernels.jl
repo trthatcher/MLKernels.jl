@@ -5,113 +5,136 @@
 abstract MercerKernel
 
 abstract StandardMercerKernel <: MercerKernel
-
-
-#== Scaled Kernel ====================#
-
-type ScaledMercerKernel <: MercerKernel
-    a::Real
-    kernel::StandardMercerKernel
-    function ScaledMercerKernel(kernel::StandardMercerKernel, a::Real = 1)
-        a > 0 || error("a = $a must be greater than zero.")
-        new(a, kernel)
-    end
-end
-
-function kernelfunction(obj::ScaledMercerKernel)
-    if obj.a == 1
-        k = kernel(obj.kernel)
-    else
-        k{T<:FloatingPoint}(x::Array{T}, y::Array{T}) = convert(T, obj.a) * kernel(obj.kernel)(x, y)
-    end
-    return k
-end
-
-function show(io::IO,obj::ScaledMercerKernel)
-	println("Scaled Kernel: k(x,y) = ak₁(x,y) with a = $(obj.a)")
-    print(string("    k₁(x,y) = ", formula_string(obj.kernel), " and ", argument_string(obj.kernel)))
-end
-
-*(a::Real, kernel::StandardMercerKernel) = ScaledMercerKernel(kernel, a)
-*(kernel::StandardMercerKernel, a::Real) = a * kernel
-*(a::Real, kernel::ScaledMercerKernel) = ScaledMercerKernel(deepcopy(kernel.kernel), a * kernel.a)
-*(kernel::ScaledMercerKernel, a::Real) = ScaledMercerKernel(deepcopy(kernel.kernel), a * kernel.a)
+abstract CompositeMercerKernel <: MercerKernel
 
 
 #== Product Kernel ====================#
 
-type ProductMercerKernel <: MercerKernel
-    lkernel::ScaledMercerKernel
-    rkernel::ScaledMercerKernel
+function productkernel{T<:FloatingPoint}(x::Array{T}, y::Array{T}, kernels::Array{StandardMercerKernel}, a::Real = 1)
+    value = convert(T, a)
+    for kernel in kernels
+        value *= kernelfunction(kernel)(x, y)
+    end
+    return value
 end
 
-function kernel(obj::ProductMercerKernel)
-    if obj.lkernel.a == 1
-        if obj.rkernel.a == 1
-            k{T<:FloatingPoint}(x::Array{T}, y::Array{T}) = kernel(obj.lkernel)(x, y) * kernel(obj.rkernel)(x, y)
+type ProductMercerKernel <: CompositeMercerKernel
+    a::Real
+    kernels::Array{StandardMercerKernel}
+    function ProductMercerKernel(a::Real, kernels::Array{StandardMercerKernel})
+        a > 0 || error("a = $(a) must be greater than zero.")
+        new(a, kernels)
+    end
+end
+ProductMercerKernel(a::Real, kernels::StandardMercerKernel...) = ProductMercerKernel(a, StandardMercerKernel[deepcopy(kernels)...])
+ProductMercerKernel(kernels::StandardMercerKernel...) = ProductMercerKernel(1, kernels...)
+
+function kernelfunction(obj::ProductMercerKernel)
+    if length(obj.kernels) == 1
+        if obj.a == 0
+            k{T<:FloatingPoint}(x::Array{T}, y::Array{T}) = kernelfunction(obj.kernels[1])(x, y)
         else
-            k{T<:FloatingPoint}(x::Array{T}, y::Array{T}) = convert(T, obj.rkernel.a) * kernel(obj.lkernel)(x, y) * kernel(obj.rkernel)(x, y)
+            k{T<:FloatingPoint}(x::Array{T}, y::Array{T}) = convert(T, obj.a) * kernelfunction(obj.kernels[1])(x, y)
+        end
+    elseif length(obj.kernels) == 2
+        if obj.a == 0
+            k{T<:FloatingPoint}(x::Array{T}, y::Array{T}) = kernelfunction(obj.kernels[1])(x, y) * kernelfunction(obj.kernels[2])(x, y)
+        else
+            k{T<:FloatingPoint}(x::Array{T}, y::Array{T}) = convert(T, obj.a) * (kernelfunction(obj.kernels[1])(x, y) * kernelfunction(obj.kernels[2])(x, y))
         end
     else
-        if obj.rkernel.a == 1
-            k{T<:FloatingPoint}(x::Array{T}, y::Array{T}) = convert(T, obj.lkernel.a) * kernel(obj.lkernel)(x, y) * kernel(obj.rkernel)(x, y)
-        else
-            k{T<:FloatingPoint}(x::Array{T}, y::Array{T}) = convert(T, obj.rkernel.a) * convert(T, obj.rkernel.a) * kernel(obj.lkernel)(x, y) * kernel(obj.rkernel)(x, y)
-        end
+        k{T<:FloatingPoint}(x::Array{T}, y::Array{T}) = productkernel(x, y, deepcopy(obj.kernels), obj.a)
     end
     return k
 end
 
-function show(io::IO, obj::ProductMercerKernel)
-	println("Product Kernel: k(x,y) = ak₁(x,y)k₂(x,y) with a = $(obj.lkernel.a * obj.rkernel.a)")
-    println(string("    k₁(x,y) = ", formula_string(obj.lkernel.kernel), " and ", argument_string(obj.lkernel.kernel)))
-    print(string("    k₂(x,y) = ", formula_string(obj.rkernel.kernel), " and ", argument_string(obj.rkernel.kernel)))
+function description_string(obj::ProductMercerKernel)
+    n = length(obj.kernels)
+    if obj.a == 1
+        description = description_string(obj.kernels[1])
+    else
+        description = "$(obj.a) * " * description_string(obj.kernels[1])
+    end
+    if n > 1
+        for i = 2:min(3, n)
+            description *= " * " * description_string(obj.kernels[i])
+        end
+        if n > 3
+            description *= " * ..."
+        end
+    end
+    return description
 end
 
-*(lkernel::StandardMercerKernel, rkernel::StandardMercerKernel) = ProductMercerKernel(ScaledMercerKernel(lkernel), ScaledMercerKernel(rkernel))
-*(lkernel::ScaledMercerKernel, rkernel::StandardMercerKernel) = ProductMercerKernel(deepcopy(lkernel), ScaledMercerKernel(rkernel))
-*(lkernel::StandardMercerKernel, rkernel::ScaledMercerKernel) = ProductMercerKernel(ScaledMercerKernel(lkernel), deepcopy(rkernel))
-*(lkernel::ScaledMercerKernel, rkernel::ScaledMercerKernel) = ProductMercerKernel(deepcopy(lkernel), deepcopy(rkernel))
 
+function show(io::IO, obj::ProductMercerKernel)
+    println(io, "Product Mercer Kernel:")
+    print(io, " " * description_string(obj))
+end
+
+*(a::Real, kernel::StandardMercerKernel) = ProductMercerKernel(a, kernel)
+*(kernel::StandardMercerKernel, a::Real) = a * kernel
+*(a::Real, kernel::ProductMercerKernel) = ProductMercerKernel(a * kernel.a, deepcopy(kernel.kernels))
+*(kernel::ProductMercerKernel, a::Real) = a * kernel
+
+*(lkernel::StandardMercerKernel, rkernel::StandardMercerKernel) = ProductMercerKernel(lkernel, rkernel)
+*(lkernel::StandardMercerKernel, rkernel::ProductMercerKernel) = ProductMercerKernel(rkernel.a, lkernel, rkernel.kernels...)
+*(lkernel::ProductMercerKernel, rkernel::StandardMercerKernel) = ProductMercerKernel(lkernel.a, lkernel.kernels..., rkernel)
+*(lkernel::ProductMercerKernel, rkernel::ProductMercerKernel) = ProductMercerKernel(lkernel.a * rkernel.a, lkernel.kernels..., rkernel.kernels...)
 
 #== Sum Kernel ====================#
 
-type SumMercerKernel <: MercerKernel
-    lkernel::ScaledMercerKernel
-    rkernel::ScaledMercerKernel
+function sumkernel{T<:FloatingPoint}(x::Array{T}, y::Array{T}, kernels::Array{ProductMercerKernel})
+    value = convert(T, 0)
+    for kernel in kernels
+        value += kernelfunction(kernel)(x, y)
+    end
+    return value
 end
 
-function kernel(obj::SumMercerKernel)
-    if obj.lkernel.a == 1
-        if obj.rkernel.a == 1
-            k{T<:FloatingPoint}(x::Array{T}, y::Array{T}) = kernel(obj.lkernel)(x, y) + kernel(obj.rkernel)(x, y)
-        else
-            k{T<:FloatingPoint}(x::Array{T}, y::Array{T}) = kernel(obj.lkernel)(x, y) + convert(T, obj.rkernel.a) * kernel(obj.rkernel)(x, y)
-        end
+type SumMercerKernel <: CompositeMercerKernel
+    kernels::Array{ProductMercerKernel}
+end
+
+function kernelfunction(obj::SumMercerKernel)
+    if length(obj.kernels) == 1
+        k = kernelfunction(obj.kernels[1])
+    elseif length(obj.kernels) == 2
+        k{T<:FloatingPoint}(x::Array{T}, y::Array{T}) = kernelfunction(obj.kernels[1])(x, y) + kernelfunction(obj.kernels[2])(x, y)
     else
-        if obj.rkernel.a == 1
-            k{T<:FloatingPoint}(x::Array{T}, y::Array{T}) = convert(T, obj.lkernel.a) * kernel(obj.lkernel)(x, y) + kernel(obj.rkernel)(x, y)
-        else
-            k{T<:FloatingPoint}(x::Array{T}, y::Array{T}) = convert(T, obj.lkernel.a) * kernel(obj.lkernel)(x, y) + convert(T, obj.rkernel.a) * kernel(obj.rkernel)(x, y)
-        end
+        k{T<:FloatingPoint}(x::Array{T}, y::Array{T}) = sumkernel(x, y, deepcopy(obj.kernels))
     end
     return k
 end
 
 function show(io::IO, obj::SumMercerKernel)
-	println("Sum Kernel: k(x,y) = a₁k₁(x,y) + a₂k₂(x,y) with a₁ = $(obj.lkernel.a), a₂ = $(obj.rkernel.a)")
-    println(string("    k₁(x,y) = ", formula_string(obj.lkernel.kernel), " and ", argument_string(obj.lkernel.kernel)))
-    print(string("    k₂(x,y) = ", formula_string(obj.rkernel.kernel), " and ", argument_string(obj.rkernel.kernel)))
+	println(io, "Sum Kernel:")
+    n = length(obj.kernels)
+    println(io, " " * description_string(obj.kernels[1]))
+    if n >= 2
+        for i = 2:(n-1)
+            println(io, " + " * description_string(obj.kernels[i]))
+        end
+        print(io, " + " * description_string(obj.kernels[n]))
+    end
 end
 
-+(lkernel::StandardMercerKernel, rkernel::StandardMercerKernel) = SumMercerKernel(ScaledMercerKernel(lkernel), ScaledMercerKernel(rkernel))
-+(lkernel::ScaledMercerKernel, rkernel::StandardMercerKernel) = SumMercerKernel(deepcopy(lkernel), ScaledMercerKernel(rkernel))
-+(lkernel::StandardMercerKernel, rkernel::ScaledMercerKernel) = SumMercerKernel(ScaledMercerKernel(lkernel), deepcopy(rkernel))
-+(lkernel::ScaledMercerKernel, rkernel::ScaledMercerKernel) = SumMercerKernel(deepcopy(lkernel), deepcopy(rkernel))
++(lkernel::StandardMercerKernel, rkernel::StandardMercerKernel) = SumMercerKernel([ProductMercerKernel(lkernel), ProductMercerKernel(rkernel)])
++(lkernel::ProductMercerKernel, rkernel::StandardMercerKernel) = SumMercerKernel([deepcopy(lkernel), ProductMercerKernel(rkernel)])
++(lkernel::StandardMercerKernel, rkernel::ProductMercerKernel) = SumMercerKernel([ProductMercerKernel(lkernel), deepcopy(rkernel)])
++(lkernel::ProductMercerKernel, rkernel::ProductMercerKernel) = SumMercerKernel([deepcopy(lkernel), deepcopy(rkernel)])
+
++(lkernel::SumMercerKernel, rkernel::StandardMercerKernel) = SumMercerKernel([deepcopy(lkernel.kernels)..., ProductMercerKernel(rkernel)])
++(lkernel::SumMercerKernel, rkernel::ProductMercerKernel) = SumMercerKernel([deepcopy(lkernel.kernels)..., deepcopy(rkernel)])
++(lkernel::SumMercerKernel, rkernel::SumMercerKernel) = SumMercerKernel([deepcopy(lkernel.kernels)..., deepcopy(rkernel.kernels)...])
+
++(lkernel::StandardMercerKernel, rkernel::SumMercerKernel) = SumMercerKernel([ProductMercerKernel(lkernel), deepcopy(rkernel.kernels)...])
++(lkernel::ProductMercerKernel, rkernel::SumMercerKernel) = SumMercerKernel([deepcopy(lkernel), deepcopy(rkernel.kernels)...])
+
 
 
 #===================================================================================================
-  Instances of Mercer Kernel Types
+  Standard Mercer Kernels
 ===================================================================================================#
 
 #== Linear Kernel ====================#
@@ -133,7 +156,7 @@ type LinearKernel <: StandardMercerKernel
 end
 
 arguments(obj::LinearKernel) = obj.c
-function kernel(obj::LinearKernel)
+function kernelfunction(obj::LinearKernel)
     if obj.c == 0
         k(x,y) = linearkernel(x, y)
     else
@@ -144,9 +167,12 @@ end
 
 formula_string(obj::LinearKernel) = "xᵗy + c"
 argument_string(obj::LinearKernel) = "c = $(obj.c)"
+compact_formula_string(obj::LinearKernel) = "xᵗy + $(obj.c)"
+description_string(obj::LinearKernel) = "LinearKernel(c=$(obj.c))"
+
 
 function show(io::IO, obj::LinearKernel)
-	print(string("Linear Kernel: k(x,y) = ", formula_string(obj), " with ", argument_string(obj)))
+	print(io, description_string(obj))
 end
 
 
@@ -177,7 +203,7 @@ type PolynomialKernel <: StandardMercerKernel
 end
 
 arguments(obj::PolynomialKernel) = (obj.α, obj.c, obj.d)
-function kernel(obj::PolynomialKernel)
+function kernelfunction(obj::PolynomialKernel)
     if obj.α == 1
         if obj.c == 0
             k(x,y) = homogeneouspolynomialkernel(x, y, obj.d)
@@ -192,9 +218,12 @@ end
 
 formula_string(obj::PolynomialKernel) = "(αxᵗy + c)ᵈ"
 argument_string(obj::PolynomialKernel) = "α = $(obj.α), c = $(obj.c) and d = $(obj.d)"
+compact_formula_string(obj::PolynomialKernel) = "($(obj.α)*xᵗy + $(obj.c))^($(obj.d))"
+description_string(obj::PolynomialKernel) = "PolynomialKernel(α=$(obj.α),c=$(obj.c),d=$(obj.d))"
+
 
 function show(io::IO, obj::PolynomialKernel)
-	print(string("Polynomial Kernel: k(x,y) = ", formula_string(obj), " with ", argument_string(obj)))
+	print(io, description_string(obj))
 end
 
 
@@ -214,7 +243,7 @@ type GaussianKernel <: StandardMercerKernel
 end
 
 arguments(obj::GaussianKernel) = obj.σ
-function kernel(obj::GaussianKernel)
+function kernelfunction(obj::GaussianKernel)
     k(x, y) = gaussiankernel(x, y, obj.σ)
     return k
 end
