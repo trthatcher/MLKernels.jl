@@ -50,26 +50,44 @@ end
 
 function description_string(obj::ProductMercerKernel)
     n = length(obj.kernels)
-    if obj.a == 1
-        description = description_string(obj.kernels[1])
-    else
-        description = "$(obj.a) * " * description_string(obj.kernels[1])
-    end
-    if n > 1
-        for i = 2:min(3, n)
-            description *= " * " * description_string(obj.kernels[i])
+    if n == 1
+        if obj.a == 1
+            description = description_string(obj.kernels[1])
+        else
+            description = description_string(obj.kernels[1]) * " * $(obj.a)"
         end
-        if n > 3
-            description *= " * ..."
+    else
+        description = "Product(" * description_string(obj.kernels[1])
+        if n > 1
+            if n >= 3
+                description *= ", ..."
+            end
+            description *= ", " * description_string(obj.kernels[n])
+        end
+        if obj.a == 1
+            description *= ")"
+        else
+            description *= ") * $(obj.a)"
         end
     end
     return description
 end
 
-
 function show(io::IO, obj::ProductMercerKernel)
-    println(io, "Product Mercer Kernel:")
-    print(io, " " * description_string(obj))
+    println(io, "$(length(obj.kernels))-element Mercer Kernel Product:")
+    n = length(obj.kernels)
+    if obj.a == 1
+        println(io, " " * description_string(obj.kernels[1]))
+    else
+        println(io," $(obj.a)") 
+        println(" * " * description_string(obj.kernels[1]))
+    end
+    if n >= 2
+        for i = 2:(n-1)
+            println(io, " * " * description_string(obj.kernels[i]))
+        end
+        print(io, " * " * description_string(obj.kernels[n]))
+    end
 end
 
 *(a::Real, kernel::StandardMercerKernel) = ProductMercerKernel(a, kernel)
@@ -108,7 +126,7 @@ function kernelfunction(obj::SumMercerKernel)
 end
 
 function show(io::IO, obj::SumMercerKernel)
-	println(io, "Sum Kernel:")
+	println(io, "$(length(obj.kernels))-element Mercer Kernel Summation:")
     n = length(obj.kernels)
     println(io, " " * description_string(obj.kernels[1]))
     if n >= 2
@@ -130,7 +148,6 @@ end
 
 +(lkernel::StandardMercerKernel, rkernel::SumMercerKernel) = SumMercerKernel([ProductMercerKernel(lkernel), deepcopy(rkernel.kernels)...])
 +(lkernel::ProductMercerKernel, rkernel::SumMercerKernel) = SumMercerKernel([deepcopy(lkernel), deepcopy(rkernel.kernels)...])
-
 
 
 #===================================================================================================
@@ -169,7 +186,6 @@ formula_string(obj::LinearKernel) = "xᵗy + c"
 argument_string(obj::LinearKernel) = "c = $(obj.c)"
 compact_formula_string(obj::LinearKernel) = "xᵗy + $(obj.c)"
 description_string(obj::LinearKernel) = "LinearKernel(c=$(obj.c))"
-
 
 function show(io::IO, obj::LinearKernel)
 	print(io, description_string(obj))
