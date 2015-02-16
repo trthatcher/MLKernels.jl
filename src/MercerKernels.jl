@@ -154,6 +154,10 @@ end
   Standard Mercer Kernels
 ===================================================================================================#
 
+function show(io::IO, obj::StandardMercerKernel)
+	print(io, description_string(obj))
+end
+
 #== Linear Kernel ====================#
 
 function linearkernel{T<:FloatingPoint}(x::Array{T}, y::Array{T})
@@ -182,13 +186,24 @@ function kernelfunction(obj::LinearKernel)
     return k
 end
 
-formula_string(obj::LinearKernel) = "xᵗy + c"
+formula_string(obj::LinearKernel) = "k(x,y) = xᵗy + c"
 argument_string(obj::LinearKernel) = "c = $(obj.c)"
-compact_formula_string(obj::LinearKernel) = "xᵗy + $(obj.c)"
 description_string(obj::LinearKernel) = "LinearKernel(c=$(obj.c))"
 
-function show(io::IO, obj::LinearKernel)
-	print(io, description_string(obj))
+function description(obj::LinearKernel)
+    print(
+        """ 
+         Linear Kernel:
+         ===================================================================
+         The linear kernel differs from the ordinary inner product by the
+         addition of an optional constant c ≥ 0:
+
+             k(x,y) = xᵗy + c    x ∈ ℝⁿ, y ∈ ℝⁿ, c ≥ 0
+
+         Techniques using the linear kernel often do not differ from their
+         non-kernelized versions.
+        """
+    )
 end
 
 
@@ -234,131 +249,272 @@ end
 
 formula_string(obj::PolynomialKernel) = "(αxᵗy + c)ᵈ"
 argument_string(obj::PolynomialKernel) = "α = $(obj.α), c = $(obj.c) and d = $(obj.d)"
-compact_formula_string(obj::PolynomialKernel) = "($(obj.α)*xᵗy + $(obj.c))^($(obj.d))"
 description_string(obj::PolynomialKernel) = "PolynomialKernel(α=$(obj.α),c=$(obj.c),d=$(obj.d))"
 
+function description(obj::PolynomialKernel)
+    print(
+        """ 
+         Polynomial Kernel:
+         ===================================================================
+         The polynomial kernel is a non-stationary kernel which represents
+         the original features as in a feature space over polynomials up to 
+         degree d of the original variables:
 
-function show(io::IO, obj::PolynomialKernel)
-	print(io, description_string(obj))
+             k(x,y) = (αxᵗy + c)ᵈ    x ∈ ℝⁿ, y ∈ ℝⁿ, α > 0, c ≥ 0, d > 0
+
+         This kernel is sensitive to numerical instability in the case that
+         d is increasingly large and αxᵗy + c approaches zero.
+        """
+    )
 end
 
 
 #== Gaussian Kernel ===============#
 
-function gaussiankernel{T<:FloatingPoint}(x::Array{T},y::Array{T},σ::Real)
+function gaussiankernel{T<:FloatingPoint}(x::Array{T}, y::Array{T}, η::Real)
 	δ = x .- y
-	return exp(- BLAS.dot(length(x), δ, 1, δ, 1) / (2*convert(T,σ)^2))
+	return exp(- convert(T, η) * BLAS.dot(length(x), δ, 1, δ, 1))
 end
 
 type GaussianKernel <: StandardMercerKernel
-	σ::Real
-	function GaussianKernel(σ::Real=1)
-        σ >= 0 || error("σ = $(σ) must be greater than 0.")
-		new(σ)
+	η::Real
+	function GaussianKernel(η::Real=1)
+        η > 0 || error("σ = $(η) must be greater than 0.")
+		new(η)
 	end
 end
 
-arguments(obj::GaussianKernel) = obj.σ
+arguments(obj::GaussianKernel) = obj.η
 function kernelfunction(obj::GaussianKernel)
-    k(x, y) = gaussiankernel(x, y, obj.σ)
+    k{T<:FloatingPoint}(x::Array{T}, y::Array{T}) = gaussiankernel(x, y, obj.η)
     return k
 end
 
-formula_string(obj::GaussianKernel) = "exp(-‖x-y‖²/(2σ²))"
-argument_string(obj::GaussianKernel) = "σ = $(obj.σ)"
+formula_string(obj::GaussianKernel) = "exp(-η‖x-y‖²)"
+argument_string(obj::GaussianKernel) = "η = $(obj.η)"
+description_string(obj::GaussianKernel) = "GaussianKernel(η=$(obj.η))"
 
-function show(io::IO,obj::GaussianKernel)
-	print(string("Gaussian Kernel: k(x,y) = ", formula_string(obj), " with ", argument_string(obj)))
+function description(obj::GaussianKernel)
+    print(
+        """ 
+         Gaussian Kernel:
+         ===================================================================
+         The Gaussian kernel is a radial basis function based on the
+         Gaussian distribution's probability density function. The feature
+         has an infinite number of dimensions.
+
+             k(x,y) = exp(-η‖x-y‖²)    x ∈ ℝⁿ, y ∈ ℝⁿ, η > 0
+
+         Since the value of the function decreases as x and y differ, it can
+         be interpretted as a similarity measure.
+        """
+    )
 end
 
 
-#== Exponential Kernel ===============#
+#== Laplacian Kernel ===============#
 
-function exponentialkernel{T<:FloatingPoint}(x::Array{T},y::Array{T},σ::Real)
-	δ = x .- y
-	return exp(- nrm2(length(x), δ, 1) / (2*convert(T,σ)^2) )
+function laplaciankernel{T<:FloatingPoint}(x::Array{T}, y::Array{T}, η::Real)
+    n = length(x)
+	ϵ = BLAS.axpy!(n, convert(T, -1), y, 1, copy(x), 1)
+	return exp(- convert(T, η) * BLAS.nrm2(n, ϵ, 1))
 end
 
-type ExponentialKernel <: MercerKernel
-	k::Function
-	σ::Real
-	function ExponentialKernel(σ::Real=1)
-		k(x,y) = exponentialkernel(x,y,σ)
-		new(k,σ)
+type LaplacianKernel <: StandardMercerKernel
+	η::Real
+	function LaplacianKernel(η::Real=1)
+        η > 0 || error("η = $(η) must be greater than zero.")
+		new(η)
 	end
 end
-function show(io::IO,obj::ExponentialKernel)
-	print("Exponential Kernel: k(x,y) = exp(-‖x-y‖/(2σ²))   with σ = $(obj.σ)")
+
+arguments(obj::LaplacianKernel) = obj.η
+function kernelfunction(obj::LaplacianKernel)
+    k{T<:FloatingPoint}(x::Array{T}, y::Array{T}) = laplaciankernel(x, y, obj.η)
+    return k
 end
 
-function sigmoidkernel{T<:FloatingPoint}(x::Array{T},y::Array{T},α::Real,c::Real)
-	return tanh(convert(T,α)*BLAS.dot(length(x), x, 1, y, 1) + convert(T,c))
+formula_string(obj::LaplacianKernel) = "exp(-η‖x-y‖)"
+argument_string(obj::LaplacianKernel) = "η = $(obj.η)"
+description_string(obj::LaplacianKernel) = "LaplacianKernel(η=$(obj.η))"
+
+function description(obj::LaplacianKernel)
+    print(
+        """ 
+         Laplacian Kernel:
+         ===================================================================
+         The Laplacian (exponential) kernel is a radial basis function that
+         differs from the Gaussian kernel in that it is a less sensitive
+         similarity measure. Similarly, it is less sensitive to changes in
+         the parameter η:
+
+             k(x,y) = exp(-η‖x-y‖)    x ∈ ℝⁿ, y ∈ ℝⁿ, η > 0
+        """
+    )
 end
-type SigmoidKernel <: MercerKernel
-	k::Function
+
+
+#== Sigmoid Kernel ===============#
+
+function sigmoidkernel{T<:FloatingPoint}(x::Array{T}, y::Array{T}, α::Real, c::Real)
+	return tanh(convert(T,α) * BLAS.dot(length(x), x, 1, y, 1) + convert(T,c))
+end
+
+type SigmoidKernel <: StandardMercerKernel
 	α::Real
 	c::Real
-	function SigmoidKernel(α::Real=1,c::Real=0)
-		k(x,y) = sigmoidkernel(x,y,α,c)
-		new(k,α,c)
+	function SigmoidKernel(α::Real=1, c::Real=0)
+        α > 0 || error("α = $(α) must be greater than zero.")
+        c >= 0 || error("c = $(c) must be non-negative.")
+		new(α, c)
 	end
 end
-function show(io::IO,obj::SigmoidKernel)
-	print("Sigmoid Kernel: k(x,y) = tanh(α‖x-y‖² + c)   with α = $(obj.α) and c = $(obj.c)")
+
+arguments(obj::SigmoidKernel) = (obj.α, obj.c)
+function kernelfunction(obj::SigmoidKernel)
+    k{T<:FloatingPoint}(x::Array{T}, y::Array{T}) = sigmoidkernel(x, y, obj.α, obj.c)
+    return k
+end
+
+formula_string(obj::SigmoidKernel) = "tanh(α‖x-y‖² + c)"
+argument_string(obj::SigmoidKernel) = "α = $(obj.α) and c = $(obj.c)"
+description_string(obj::SigmoidKernel) = "SigmoidKernel(α=$(obj.α),c=$(obj.c))"
+
+function description(obj::SigmoidKernel)
+    print(
+        """ 
+         Sigmoid Kernel:
+         ===================================================================
+         The sigmoid kernel is only positive semidefinite. It is used in the
+         field of neural networks where it is often used as the activation
+         function for artificial neurons.
+
+             k(x,y) = tanh(α‖x-y‖² + c)    x ∈ ℝⁿ, y ∈ ℝⁿ, α > 0, c ≥ 0
+        """
+    )
 end
 
 
+#== Rational Quadratic Kernel ===============#
 
-function rationalquadratickernel{T<:FloatingPoint}(x::Array{T},y::Array{T},c::Real)
-	δ = x .- y
-	dxy = BLAS.dot(length(x), δ, 1, δ, 1)
-	return 1 - dxy/(dxy + convert(T,c))
+function rationalquadratickernel{T<:FloatingPoint}(x::Array{T}, y::Array{T}, c::Real)
+    n = length(x)
+	ϵ = BLAS.axpy!(n, convert(T, -1), y, 1, copy(x), 1)
+	d² = BLAS.dot(n, ϵ, 1, ϵ, 1)
+	return convert(T, 1) - d²/(d² + convert(T, c))
 end
-type RationalQuadraticKernel <: MercerKernel
-	k::Function
+
+type RationalQuadraticKernel <: StandardMercerKernel
 	c::Real
 	function RationalQuadraticKernel(c::Real=1)
-		k(x,y) = rationalquadratickernel(x,y,c)
-		new(k,c)
+        c > 0 || error("c = $(c) must be greater than zero.")
+        new(c)
 	end
 end
-function show(io::IO,obj::RationalQuadraticKernel)
-	print("Rational Quadratic Kernel: k(x,y) = 1 - ‖x-y‖²/(‖x-y‖² + c)   with c = $(obj.c)")
+
+arguments(obj::RationalQuadraticKernel) = obj.c
+function kernelfunction(obj::RationalQuadraticKernel)
+    k{T<:FloatingPoint}(x::Array{T}, y::Array{T}) = rationalquadratickernel(x, y, obj.c)
+    return k
+end
+
+formula_string(obj::RationalQuadraticKernel) = "1 - ‖x-y‖²/(‖x-y‖² + c)"
+argument_string(obj::RationalQuadraticKernel) = "c = $(obj.c)"
+description_string(obj::RationalQuadraticKernel) = "RationalQuadraticKernel(c=$(obj.c))"
+
+function description(obj::RationalQuadraticKernel)
+    print(
+        """ 
+         Rational Quadratic Kernel:
+         ===================================================================
+         The rational quadratic kernel is a stationary kernel that is
+         similar in shape to the Gaussian kernel:
+
+             k(x,y) = 1 - ‖x-y‖²/(‖x-y‖² + c)    x ∈ ℝⁿ, y ∈ ℝⁿ, c ≥ 0
+        """
+    )
 end
 
 
-function multiquadratickernel{T<:FloatingPoint}(x::Array{T},y::Array{T},c::Real)
-	δ = x .- y
-	return sqrt(BLAS.dot(length(x), δ, 1, δ, 1) + convert(T,c)^2)
+#== Multi-Quadratic Kernel ===============#
+
+function multiquadratickernel{T<:FloatingPoint}(x::Array{T}, y::Array{T}, c::Real)
+    n = length(x)
+	ϵ = BLAS.axpy!(n, convert(T, -1), y, 1, copy(x), 1)
+	return sqrt(BLAS.dot(length(x), ϵ, 1, ϵ, 1) + convert(T,c))
 end
-type MultiQuadraticKernel <: MercerKernel
-	k::Function
+
+type MultiQuadraticKernel <: StandardMercerKernel
 	c::Real
 	function MultiQuadraticKernel(c::Real=1)
-		k(x,y) = multiquadratickernel(x,y,c)
-		new(k,c)
+        c > 0 || error("c = $(c) must be greater than zero.")
+		new(c)
 	end
 end
-function show(io::IO,obj::MultiQuadraticKernel)
-	print("Multi-Quadratic Kernel: k(x,y) = √(‖x-y‖² + c)   with c = $(obj.c)")
+
+arguments(obj::MultiQuadraticKernel) = obj.c
+function kernelfunction(obj::MultiQuadraticKernel)
+    k{T<:FloatingPoint}(x::Array{T}, y::Array{T}) = multiquadratickernel(x, y, obj.c)
+    return k
+end
+
+formula_string(obj::MultiQuadraticKernel) = "√(‖x-y‖² + c)"
+argument_string(obj::MultiQuadraticKernel) = "c = $(obj.c)"
+description_string(obj::MultiQuadraticKernel) = "MultiQuadraticKernel(c=$(obj.c))"
+
+function description(obj::MultiQuadraticKernel)
+    print(
+        """ 
+         Multi-Quadratic Kernel:
+         ===================================================================
+         The multi-quadratic kernel is a positive semidefinite kernel:
+
+             k(x,y) = √(‖x-y‖² + c)    x ∈ ℝⁿ, y ∈ ℝⁿ, c ≥ 0
+        """
+    )
 end
 
 
-function inversemultiquadratickernel{T<:FloatingPoint}(x::Array{T},y::Array{T},c::Real)
-	δ = x .- y
-	return 1 / sqrt(BLAS.dot(length(x), δ, 1, δ, 1) + convert(T,c)^2)
+#== Inverse Multi-Quadratic Kernel ===============#
+
+function inversemultiquadratickernel{T<:FloatingPoint}(x::Array{T}, y::Array{T}, c::Real)
+    n = length(x)
+	ϵ = BLAS.axpy!(n, convert(T, -1), y, 1, copy(x), 1)
+	return 1 / (sqrt(BLAS.dot(n, ϵ, 1, ϵ, 1) + convert(T, c)))
 end
-type InverseMultiQuadraticKernel <: MercerKernel
-	k::Function
+
+type InverseMultiQuadraticKernel <: StandardMercerKernel
 	c::Real
 	function InverseMultiQuadraticKernel(c::Real=1)
-		k(x,y) = inversemultiquadratickernel(x,y,c)
-		new(k,c)
+        c > 0 || error("c = $(c) must be greater than zero.")
+		new(c)
 	end
 end
-function show(io::IO,obj::InverseMultiQuadraticKernel)
-	print("Inverse Multi-Quadratic Kernel: k(x,y) = 1/√(‖x-y‖² + c)   with c = $(obj.c)")
+
+arguments(obj::InverseMultiQuadraticKernel) = obj.c
+function kernelfunction(obj::InverseMultiQuadraticKernel)
+    k{T<:FloatingPoint}(x::Array{T}, y::Array{T}) = inversemultiquadratickernel(x, y, obj.c)
+    return k
 end
+
+formula_string(obj::InverseMultiQuadraticKernel) = "1/√(‖x-y‖² + c)"
+argument_string(obj::InverseMultiQuadraticKernel) = "c = $(obj.c)"
+description_string(obj::InverseMultiQuadraticKernel) = "InverseMultiQuadraticKernel(c=$(obj.c))"
+
+function description(obj::InverseMultiQuadraticKernel)
+    print(
+        """ 
+         Inverse Multi-Quadratic Kernel:
+         ===================================================================
+         The inverse multi-quadratic kernel is a radial basis function. The
+         resulting feature has an infinite number of dimensions:
+
+             k(x,y) = 1/√(‖x-y‖² + c)    x ∈ ℝⁿ, y ∈ ℝⁿ, c ≥ 0
+        """
+    )
+end
+
+###########################################3
 
 
 function powerkernel{T<:FloatingPoint}(x::Array{T},y::Array{T},d::Real)

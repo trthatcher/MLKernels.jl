@@ -13,15 +13,15 @@ export
     CompositeMercerKernel,
     ProductMercerKernel,
     # Functions
-    kernel,
     kernelfunction,
     arguments,
+    description,
 	# Mercer Kernels
 	MercerKernel,
 	LinearKernel,
 	PolynomialKernel,
 	GaussianKernel,
-	ExponentialKernel,
+	LaplacianKernel,
 	SigmoidKernel,
 	RationalQuadraticKernel,
 	MultiQuadraticKernel,
