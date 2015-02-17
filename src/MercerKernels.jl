@@ -126,7 +126,7 @@ function kernelfunction(obj::SumMercerKernel)
 end
 
 function show(io::IO, obj::SumMercerKernel)
-	println(io, "$(length(obj.kernels))-element Mercer Kernel Summation:")
+    println(io, "$(length(obj.kernels))-element Mercer Kernel Summation:")
     n = length(obj.kernels)
     println(io, " " * description_string(obj.kernels[1]))
     if n >= 2
@@ -155,25 +155,25 @@ end
 ===================================================================================================#
 
 function show(io::IO, obj::StandardMercerKernel)
-	print(io, description_string(obj))
+    print(io, description_string(obj))
 end
 
 #== Linear Kernel ====================#
 
 function linearkernel{T<:FloatingPoint}(x::Array{T}, y::Array{T})
-	return BLAS.dot(length(x), x, 1, y, 1)
+    return BLAS.dot(length(x), x, 1, y, 1)
 end
 
 function linearkernel{T<:FloatingPoint}(x::Array{T}, y::Array{T}, c::Real)
-	return BLAS.dot(length(x), x, 1, y, 1) + convert(T,c)
+    return BLAS.dot(length(x), x, 1, y, 1) + convert(T,c)
 end
 
 type LinearKernel <: StandardMercerKernel
-	c::Real
-	function LinearKernel(c::Real=0)
-		c >= 0 || error("c = $c must be greater than zero.")
-		new(c)
-	end
+    c::Real
+    function LinearKernel(c::Real=0)
+        c >= 0 || error("c = $c must be greater than zero.")
+        new(c)
+    end
 end
 
 arguments(obj::LinearKernel) = obj.c
@@ -210,27 +210,27 @@ end
 #== Polynomial Kernel ===============#
 
 function generalizedpolynomialkernel{T<:FloatingPoint}(x::Array{T}, y::Array{T}, α::Real, c::Real, d::Real)
-	return (convert(T,α)*BLAS.dot(length(x), x, 1, y, 1) + convert(T,c))^convert(T,d)
+    return (convert(T,α)*BLAS.dot(length(x), x, 1, y, 1) + convert(T,c))^convert(T,d)
 end
 
 function polynomialkernel{T<:FloatingPoint}(x::Array{T}, y::Array{T}, c::Real, d::Real)
-	return (BLAS.dot(length(x), x, 1, y, 1) + convert(T, c))^convert(T, d)
+    return (BLAS.dot(length(x), x, 1, y, 1) + convert(T, c))^convert(T, d)
 end
 
 function homogenouspolynomialkernel{T<:FloatingPoint}(x::Array{T}, y::Array{T}, d::Real)
-	return (BLAS.dot(length(x), x, 1, y, 1))^convert(T, d)
+    return (BLAS.dot(length(x), x, 1, y, 1))^convert(T, d)
 end
 
 type PolynomialKernel <: StandardMercerKernel
-	α::Real
-	c::Real
-	d::Real
-	function PolynomialKernel(α::Real=1,c::Real=1,d::Real=2)
-		α > 0 || error("α = $(α) must be greater than zero.")
+    α::Real
+    c::Real
+    d::Real
+    function PolynomialKernel(α::Real=1,c::Real=1,d::Real=2)
+        α > 0 || error("α = $(α) must be greater than zero.")
         c >= 0 || error("c = $(c) must be a non-negative number.")
         d >= 0 || error("d = $(d) must be a non-negative number.") 
-		new(α, c, d)
-	end
+        new(α, c, d)
+    end
 end
 
 arguments(obj::PolynomialKernel) = (obj.α, obj.c, obj.d)
@@ -272,16 +272,16 @@ end
 #== Gaussian Kernel ===============#
 
 function gaussiankernel{T<:FloatingPoint}(x::Array{T}, y::Array{T}, η::Real)
-	δ = x .- y
-	return exp(- convert(T, η) * BLAS.dot(length(x), δ, 1, δ, 1))
+    δ = x .- y
+    return exp(- convert(T, η) * BLAS.dot(length(x), δ, 1, δ, 1))
 end
 
 type GaussianKernel <: StandardMercerKernel
-	η::Real
-	function GaussianKernel(η::Real=1)
+    η::Real
+    function GaussianKernel(η::Real=1)
         η > 0 || error("σ = $(η) must be greater than 0.")
-		new(η)
-	end
+        new(η)
+    end
 end
 
 arguments(obj::GaussianKernel) = obj.η
@@ -316,16 +316,16 @@ end
 
 function laplaciankernel{T<:FloatingPoint}(x::Array{T}, y::Array{T}, η::Real)
     n = length(x)
-	ϵ = BLAS.axpy!(n, convert(T, -1), y, 1, copy(x), 1)
-	return exp(- convert(T, η) * BLAS.nrm2(n, ϵ, 1))
+    ϵ = BLAS.axpy!(n, convert(T, -1), y, 1, copy(x), 1)
+    return exp(- convert(T, η) * BLAS.nrm2(n, ϵ, 1))
 end
 
 type LaplacianKernel <: StandardMercerKernel
-	η::Real
-	function LaplacianKernel(η::Real=1)
+    η::Real
+    function LaplacianKernel(η::Real=1)
         η > 0 || error("η = $(η) must be greater than zero.")
-		new(η)
-	end
+        new(η)
+    end
 end
 
 arguments(obj::LaplacianKernel) = obj.η
@@ -357,17 +357,17 @@ end
 #== Sigmoid Kernel ===============#
 
 function sigmoidkernel{T<:FloatingPoint}(x::Array{T}, y::Array{T}, α::Real, c::Real)
-	return tanh(convert(T,α) * BLAS.dot(length(x), x, 1, y, 1) + convert(T,c))
+    return tanh(convert(T,α) * BLAS.dot(length(x), x, 1, y, 1) + convert(T,c))
 end
 
 type SigmoidKernel <: StandardMercerKernel
-	α::Real
-	c::Real
-	function SigmoidKernel(α::Real=1, c::Real=0)
+    α::Real
+    c::Real
+    function SigmoidKernel(α::Real=1, c::Real=0)
         α > 0 || error("α = $(α) must be greater than zero.")
         c >= 0 || error("c = $(c) must be non-negative.")
-		new(α, c)
-	end
+        new(α, c)
+    end
 end
 
 arguments(obj::SigmoidKernel) = (obj.α, obj.c)
@@ -399,17 +399,17 @@ end
 
 function rationalquadratickernel{T<:FloatingPoint}(x::Array{T}, y::Array{T}, c::Real)
     n = length(x)
-	ϵ = BLAS.axpy!(n, convert(T, -1), y, 1, copy(x), 1)
-	d² = BLAS.dot(n, ϵ, 1, ϵ, 1)
-	return convert(T, 1) - d²/(d² + convert(T, c))
+    ϵ = BLAS.axpy!(n, convert(T, -1), y, 1, copy(x), 1)
+    d² = BLAS.dot(n, ϵ, 1, ϵ, 1)
+    return convert(T, 1) - d²/(d² + convert(T, c))
 end
 
 type RationalQuadraticKernel <: StandardMercerKernel
-	c::Real
-	function RationalQuadraticKernel(c::Real=1)
+    c::Real
+    function RationalQuadraticKernel(c::Real=1)
         c > 0 || error("c = $(c) must be greater than zero.")
         new(c)
-	end
+    end
 end
 
 arguments(obj::RationalQuadraticKernel) = obj.c
@@ -440,16 +440,16 @@ end
 
 function multiquadratickernel{T<:FloatingPoint}(x::Array{T}, y::Array{T}, c::Real)
     n = length(x)
-	ϵ = BLAS.axpy!(n, convert(T, -1), y, 1, copy(x), 1)
-	return sqrt(BLAS.dot(length(x), ϵ, 1, ϵ, 1) + convert(T,c))
+    ϵ = BLAS.axpy!(n, convert(T, -1), y, 1, copy(x), 1)
+    return sqrt(BLAS.dot(length(x), ϵ, 1, ϵ, 1) + convert(T,c))
 end
 
 type MultiQuadraticKernel <: StandardMercerKernel
-	c::Real
-	function MultiQuadraticKernel(c::Real=1)
+    c::Real
+    function MultiQuadraticKernel(c::Real=1)
         c > 0 || error("c = $(c) must be greater than zero.")
-		new(c)
-	end
+        new(c)
+    end
 end
 
 arguments(obj::MultiQuadraticKernel) = obj.c
@@ -479,16 +479,16 @@ end
 
 function inversemultiquadratickernel{T<:FloatingPoint}(x::Array{T}, y::Array{T}, c::Real)
     n = length(x)
-	ϵ = BLAS.axpy!(n, convert(T, -1), y, 1, copy(x), 1)
-	return 1 / (sqrt(BLAS.dot(n, ϵ, 1, ϵ, 1) + convert(T, c)))
+    ϵ = BLAS.axpy!(n, convert(T, -1), y, 1, copy(x), 1)
+    return 1 / (sqrt(BLAS.dot(n, ϵ, 1, ϵ, 1) + convert(T, c)))
 end
 
 type InverseMultiQuadraticKernel <: StandardMercerKernel
-	c::Real
-	function InverseMultiQuadraticKernel(c::Real=1)
+    c::Real
+    function InverseMultiQuadraticKernel(c::Real=1)
         c > 0 || error("c = $(c) must be greater than zero.")
-		new(c)
-	end
+        new(c)
+    end
 end
 
 arguments(obj::InverseMultiQuadraticKernel) = obj.c
@@ -514,56 +514,84 @@ function description(obj::InverseMultiQuadraticKernel)
     )
 end
 
-###########################################3
+
+#== Power Kernel ===============#
+
+function powerkernel{T<:FloatingPoint}(x::Array{T}, y::Array{T}, d::Real)
+    n = length(x)
+    ϵ = BLAS.axpy!(n, convert(T, -1), y, 1, copy(x), 1)
+    return -BLAS.dot(length(x), ϵ, 1, ϵ, 1)^convert(T,d)
+end
+
+type PowerKernel <: StandardMercerKernel
+    d::Real
+    function PowerKernel(d::Real = 1)
+        d > 0 || error("d = $(d) must be greater than zero.")
+        new(d)
+    end
+end
+
+arguments(obj::PowerKernel) = obj.d
+function kernelfunction(obj::PowerKernel)
+    k{T<:FloatingPoint}(x::Array{T}, y::Array{T}) = powerkernel(x, y, obj.d)
+    return k
+end
+
+formula_string(obj::PowerKernel) = "-‖x-y‖ᵈ"
+argument_string(obj::PowerKernel) = "d = $(obj.d)"
+description_string(obj::PowerKernel) = "PowerKernel(d=$(obj.d))"
+
+function description(obj::PowerKernel)
+    print(
+        """ 
+         Power Kernel:
+         ===================================================================
+         The power kernel (also known as the unrectified triangular kernel)
+         is a positive semidefinite kernel. An important feature of the
+         power kernel is that it is scale invariant. The function is given
+         by:
+
+             k(x,y) = -‖x-y‖ᵈ    x ∈ ℝⁿ, y ∈ ℝⁿ, d > 0
+        """
+    )
+end
 
 
-function powerkernel{T<:FloatingPoint}(x::Array{T},y::Array{T},d::Real)
-	δ = x .- y
-	return -BLAS.dot(length(x), δ, 1, δ, 1)^convert(T,d)
-end
-type PowerKernel <: MercerKernel
-	k::Function
-	d::Real
-	function PowerKernel(d::Real=1)
-		k(x,y) = powerkernel(x,y,d)
-		new(k,d)
-	end
-end
-function show(io::IO,obj::PowerKernel)
-	print("Power Kernel: k(x,y) = -‖x-y‖ᵈ   with d = $(obj.d)")
-end
+
+
+
 
 
 function logkernel{T<:FloatingPoint}(x::Array{T},y::Array{T},d::Real)
-	δ = x .- y
-	return - log(BLAS.dot(length(x), δ, 1, δ, 1)^convert(T,d) + 1)
+    δ = x .- y
+    return - log(BLAS.dot(length(x), δ, 1, δ, 1)^convert(T,d) + 1)
 end
 type LogKernel <: MercerKernel
-	k::Function
-	d::Real
-	function LogKernel(d::Real=1)
-		k(x,y) = logkernel(x,y,d)
-		new(k,d)
-	end
+    k::Function
+    d::Real
+    function LogKernel(d::Real=1)
+        k(x,y) = logkernel(x,y,d)
+        new(k,d)
+    end
 end
 function show(io::IO,obj::LogKernel)
-	print("Power Kernel: k(x,y) = -log(‖x-y‖ᵈ + 1)   with d = $(obj.d)")
+    print("Power Kernel: k(x,y) = -log(‖x-y‖ᵈ + 1)   with d = $(obj.d)")
 end
 
 
 function splinekernel{T<:FloatingPoint}(x::Array{T},y::Array{T})
-	xy = x .* y
-	min_xy = min(x,y)
-	v = 1 .+ xy .* (1 .+ min_xy) .- (x + y)/2 .* min_xy.^2 + min_xy .^ 3
-	return prod(v)
+    xy = x .* y
+    min_xy = min(x,y)
+    v = 1 .+ xy .* (1 .+ min_xy) .- (x + y)/2 .* min_xy.^2 + min_xy .^ 3
+    return prod(v)
 end
 type SplineKernel <: MercerKernel
-	k::Function
-	function SplineKernel()
-		k(x,y) = splinekernel(x,y)
-		new(k)
-	end
+    k::Function
+    function SplineKernel()
+        k(x,y) = splinekernel(x,y)
+        new(k)
+    end
 end
 function show(io::IO,obj::LogKernel)
-	print("Spline Kernel: see reference for k(x,y)")
+    print("Spline Kernel: see reference for k(x,y)")
 end
