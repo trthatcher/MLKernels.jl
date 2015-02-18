@@ -21,7 +21,7 @@ syml(S::Matrix) = syml!(copy(S))
 # kernelmatrix:
 #   Returns the kernel (Gramian) matrix K of X for mapping ϕ
 function gramian{T<:FloatingPoint}(X::Matrix{T}, kernel::MercerKernel = LinearKernel(), symmetrize::Bool = true)
-    k = kernel_function(kernel)
+    k = kernelfunction(kernel)
     n = size(X, 1)
     K = Array(T, n, n)
     for i = 1:n 
@@ -36,7 +36,7 @@ end
 # kernelmatrix:
 #   Returns the upper right corner kernel (Gramian) matrix K of [Xᵗ,Zᵗ]ᵗ
 function gramian{T<:FloatingPoint}(X::Matrix{T}, Z::Matrix{T}, kernel::MercerKernel = LinearKernel())
-    k = kernel_function(kernel)
+    k = kernelfunction(kernel)
     n = size(X, 1)
     m = size(Z, 1)
     size(X, 2) == size(Z, 2) || error("X ∈ ℝn×p and Z should be ∈ ℝm×p, but X ∈ ℝn×$(size(X, 2)) and Z ∈ ℝm×$(size(Z, 2)).")
@@ -55,12 +55,28 @@ end
 function center_gramian!{T<:FloatingPoint}(K::Matrix{T})
 	n = size(K, 1)
 	n == size(K, 2) || error("Kernel matrix must be square")
-	row_mean = sum(K,1)
+	row_mean = sum(K, 1)
 	element_mean = sum(κ)/(convert(T,n)^2)
-	BLAS.scal!(n,one(T)/convert(T,n),κ,1)
+	BLAS.scal!(n,one(T)/convert(T,n), κ, 1)
 	return ((K .- row_mean) .- row_mean') .+ element_mean
-    #return MATRIX.el_add!(MATRIX.col_add!(MATRIX.row_add!(K,-κ),-κ),μₖ)
 end
 center_gramian{T<:FloatingPoint}(K::Matrix{T}) = center_gramian!(copy(K))
 
+#===================================================================================================
+  Kernel Matrix Functions
+===================================================================================================#
+
+function init_approx{T<:FloatingPoint}(X::Matrix{T}, Sample::Array{Int}, kernel::MercerKernel = LinearKernel())
+    k = kernelfunction(kernel)
+    c = length(Sample)
+    n = size(X, 1)
+    Cᵗ = Array(T, n, c)
+    for i = 1:n
+        for j = 1:c
+            Cᵗ[i,j] = k(X[i,:], X[Sample[j],:])
+        end
+    end
+    W = pinv(Cᵗ[Sample,:])
+    return Cᵗ * W * Cᵗ'
+end
 
