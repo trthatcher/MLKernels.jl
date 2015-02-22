@@ -10,13 +10,14 @@ export
     # Types
     MercerKernel,
     ScaledMercerKernel,
-    CompositeMercerKernel,
-    ProductMercerKernel,
+    #CompositeMercerKernel,
+    #ProductMercerKernel,
     # Functions
     kernelfunction,
     arguments,
     description,
 	# Mercer Kernels
+    PointwiseProductKernel,
 	MercerKernel,
 	LinearKernel,
 	PolynomialKernel,

@@ -10,6 +10,8 @@ abstract CompositeMercerKernel <: MercerKernel
 
 #== Product Kernel ====================#
 
+#=
+
 function productkernel{T<:FloatingPoint}(x::Array{T}, y::Array{T}, kernels::Array{StandardMercerKernel}, a::Real = 1)
     value = convert(T, a)
     for kernel in kernels
@@ -149,6 +151,81 @@ end
 +(lkernel::StandardMercerKernel, rkernel::SumMercerKernel) = SumMercerKernel([ProductMercerKernel(lkernel), deepcopy(rkernel.kernels)...])
 +(lkernel::ProductMercerKernel, rkernel::SumMercerKernel) = SumMercerKernel([deepcopy(lkernel), deepcopy(rkernel.kernels)...])
 
+=#
+
+#===================================================================================================
+  Composite Mercer Kernels
+===================================================================================================#
+
+#== Scaled Mercer Kernel ====================#
+
+type ScaledMercerKernel <: CompositeMercerKernel
+    a::Real
+    kernel::StandardMercerKernel
+    function ScaledMercerKernel(a::Real, kernel::StandardMercerKernel)
+        a > 0 || error("a = $(a) must be greater than zero.")
+        new(a, kernel)
+    end
+end
+
+function show(io::IO, obj::ScaledMercerKernel)
+    println(io, "Scaled Mercer Kernel:")
+    print(io, " $(obj.a) * " * description_string(obj.kernel))
+end
+
+function kernelfunction(obj::ScaledMercerKernel)
+    if obj.a == 1
+        k{T<:FloatingPoint}(x::Array{T}, y::Array{T}) = kernelfunction(obj.kernel)(x, y)
+    else
+        k{T<:FloatingPoint}(x::Array{T}, y::Array{T}) = convert(T, obj.a) * kernelfunction(obj.kernel)(x, y)
+    end
+    return k
+end
+
+*(a::Real, kernel::StandardMercerKernel) = ScaledMercerKernel(a, deepcopy(kernel))
+*(kernel::StandardMercerKernel, a::Real) = *(a, kernel)
+
+*(a::Real, kernel::ScaledMercerKernel) = ScaledMercerKernel(a * kernel.a, deepcopy(kernel.kernel))
+*(kernel::ScaledMercerKernel, a::Real) = *(a * kernel.a, kernel.kernel)
+
+#== Product Mercer Kernel ====================#
+
+type ProductMercerKernel <: CompositeMercerKernel
+    a::Real
+    lkernel::StandardMercerKernel
+    rkernel::StandardMercerKernel
+    function ScaledMercerKernel(a::Real, lkernel::StandardMercerKernel, rkernel::StandardMercerKernel)
+        a > 0 || error("a = $(a) must be greater than zero.")
+        new(a, kernel)
+    end
+end
+
+function show(io::IO, obj::ProductMercerKernel)
+    println(io, "Product Mercer Kernel:")
+    print(io, " $(obj.a) * " * description_string(obj.lkernel) * " * " description_string(obj.rkernel))
+end
+
+function kernelfunction(obj::ScaledMercerKernel)
+    if obj.a == 1
+        k{T<:FloatingPoint}(x::Array{T}, y::Array{T}) = kernelfunction(obj.lkernel)(x, y) * kernelfunction(obj.rkernel)(x, y)
+    else
+        k{T<:FloatingPoint}(x::Array{T}, y::Array{T}) = convert(T, obj.a) * kernelfunction(obj.kernel)(x, y) * kernelfunction(obj.rkernel)(x, y)
+    end
+    return k
+end
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #===================================================================================================
   Standard Mercer Kernels
@@ -157,6 +234,76 @@ end
 function show(io::IO, obj::StandardMercerKernel)
     print(io, description_string(obj))
 end
+
+#== Pointwise Product Kernel ====================#
+
+function pointwiseproductkernel{T<:FloatingPoint}(x::Array{T}, y::Array{T}, f::Function)
+    return f(x) * f(y)
+end
+
+type PointwiseProductKernel <: StandardMercerKernel
+    f::Function
+    function PointwiseProductKernel(f::Function)
+        method_exists(f, (Array{Float32},)) && method_exists(f, (Array{Float64},)) || error("f = $(f) must map f: ℝⁿ → ℝ (define methods for both Array{Float32} and Array{Float64}).")
+        new(f)
+    end
+end
+
+arguments(obj::PointwiseProductKernel) = obj.f
+function kernelfunction(obj::PointwiseProductKernel)
+    k{T<:FloatingPoint}(x::Array{T}, y::Array{T}) = pointwiseproductkernel(x, y, copy(obj.f))
+    return k
+end
+
+formula_string(obj::PointwiseProductKernel) = "k(x,y) = f(x)f(y)"
+argument_string(obj::PointwiseProductKernel) = "f = $(obj.f)"
+description_string(obj::PointwiseProductKernel) = "PointwiseProductKernel(f=$(obj.f))"
+
+function description(obj::PointwiseProductKernel)
+    print(
+        """ 
+         Pointwise Product Kernel:
+         ===================================================================
+         The pointwise product kernel is the product of a real-valued multi-
+         variate function applied to each of the vector arguments:
+
+             k(x,y) = f(x)f(y)    x ∈ ℝⁿ, y ∈ ℝⁿ, f: ℝⁿ → ℝ
+        """
+    )
+end
+
+
+#== Generic Kernel ====================#
+
+type GenericKernel <: StandardMercerKernel
+    k::Function
+    function GenericKernel(k::Function)
+        method_exists(f, (Array{Float32}, Array{Float32})) && method_exists(f, (Array{Float64}, Array{Float64})) || error("k = $(f) must map k: ℝⁿ×ℝⁿ → ℝ (define methods for both Array{Float32} and Array{Float64}).")
+        new(k)
+    end
+end
+
+arguments(obj::GenericKernel) = obj.k
+function kernelfunction(obj::GenericKernel)
+    return copy(obj.k)
+end
+
+formula_string(obj::GenericKernel) = "k(x,y)"
+argument_string(obj::GenericKernel) = "k = $(obj.k)"
+description_string(obj::GenericKernel) = "GenericKernel(k=$(obj.k))"
+
+function description(obj::GenericKernel)
+    print(
+        """ 
+         Generic Kernel:
+         ===================================================================
+         Customized definition:
+
+             k: ℝⁿ×ℝⁿ → ℝ
+        """
+    )
+end
+
 
 #== Linear Kernel ====================#
 
