@@ -4,227 +4,169 @@
 
 abstract MercerKernel
 
-abstract StandardMercerKernel <: MercerKernel
+abstract SimpleMercerKernel <: MercerKernel
 abstract CompositeMercerKernel <: MercerKernel
 
 
-#== Product Kernel ====================#
+abstract StandardMercerKernel <: SimpleMercerKernel
+abstract TransformedMercerKernel <: SimpleMercerKernel
 
-#=
+ScalableMercerKernel = Union(StandardMercerKernel, TransformedMercerKernel)
 
-function productkernel{T<:FloatingPoint}(x::Array{T}, y::Array{T}, kernels::Array{StandardMercerKernel}, a::Real = 1)
-    value = convert(T, a)
-    for kernel in kernels
-        value *= kernelfunction(kernel)(x, y)
-    end
-    return value
+call{T<:FloatingPoint}(kernel::MercerKernel, x::Array{T}, y::Array{T}) = kernelfunction(kernel)(x, y)
+
+
+#===================================================================================================
+  Transformed and Scaled Mercer Kernels
+===================================================================================================#
+
+#== Exponential Mercer Kernel ====================#
+
+type ExponentialMercerKernel <: TransformedMercerKernel
+    κ::StandardMercerKernel
+    ExponentialMercerKernel(κ::StandardMercerKernel) = new(κ)
 end
 
-type ProductMercerKernel <: CompositeMercerKernel
+kernelfunction(ψ::ExponentialMercerKernel) = exp(kernelfunction(ψ.κ)(x, y))
+
+description_string(ψ::ExponentialMercerKernel) = "exp(" * description_string(ψ.κ) * ")"
+
+function show(io::IO, ψ::ExponentialMercerKernel)
+    println(io, "Exponential Mercer Kernel:")
+    print(io, " " * description_string(ψ))
+end
+
+exp(κ::StandardMercerKernel) = ExponentialMercerKernel(deepcopy(κ))
+
+
+#== Exponentiated Mercer Kernel ====================#
+
+type ExponentiatedMercerKernel <: TransformedMercerKernel
+    κ::StandardMercerKernel
+    a::Integer
+    function ExponentiatedMercerKernel(κ::StandardMercerKernel, a::Real)
+        a > 0 || error("a = $(a) must be a non-negative number.")
+        new(κ, a)
+    end
+end
+
+kernelfunction(ψ::ExponentiatedMercerKernel) = (kernelfunction(ψ.κ)(x, y)) ^ ψ.a
+
+description_string(ψ::ExponentiatedMercerKernel) = description_string(ψ.κ) * " ^ $(ψ.a)"
+
+function show(io::IO, ψ::ExponentiatedMercerKernel)
+    println(io, "Exponentiated Mercer Kernel:")
+    print(io, " " * description_string(ψ))
+end
+
+^(κ::StandardMercerKernel, a::Integer) = ExponentiatedMercerKernel(deepcopy(κ), a)
+
+
+#== Scaled Mercer Kernel ====================#
+
+type ScaledMercerKernel <: SimpleMercerKernel
     a::Real
-    kernels::Array{StandardMercerKernel}
-    function ProductMercerKernel(a::Real, kernels::Array{StandardMercerKernel})
+    κ::ScalableMercerKernel
+    function ScaledMercerKernel(a::Real, κ::ScalableMercerKernel)
         a > 0 || error("a = $(a) must be greater than zero.")
-        new(a, kernels)
+        new(a, κ)
     end
 end
-ProductMercerKernel(a::Real, kernels::StandardMercerKernel...) = ProductMercerKernel(a, StandardMercerKernel[deepcopy(kernels)...])
-ProductMercerKernel(kernels::StandardMercerKernel...) = ProductMercerKernel(1, kernels...)
 
-function kernelfunction(obj::ProductMercerKernel)
-    if length(obj.kernels) == 1
-        if obj.a == 0
-            k{T<:FloatingPoint}(x::Array{T}, y::Array{T}) = kernelfunction(obj.kernels[1])(x, y)
-        else
-            k{T<:FloatingPoint}(x::Array{T}, y::Array{T}) = convert(T, obj.a) * kernelfunction(obj.kernels[1])(x, y)
-        end
-    elseif length(obj.kernels) == 2
-        if obj.a == 0
-            k{T<:FloatingPoint}(x::Array{T}, y::Array{T}) = kernelfunction(obj.kernels[1])(x, y) * kernelfunction(obj.kernels[2])(x, y)
-        else
-            k{T<:FloatingPoint}(x::Array{T}, y::Array{T}) = convert(T, obj.a) * (kernelfunction(obj.kernels[1])(x, y) * kernelfunction(obj.kernels[2])(x, y))
-        end
+function kernelfunction(ψ::ScaledMercerKernel)
+    if ψ.a == 1
+        k{T<:FloatingPoint}(x::Array{T}, y::Array{T}) = kernelfunction(ψ.κ)(x, y)
     else
-        k{T<:FloatingPoint}(x::Array{T}, y::Array{T}) = productkernel(x, y, deepcopy(obj.kernels), obj.a)
+        k{T<:FloatingPoint}(x::Array{T}, y::Array{T}) = kernelfunction(ψ.κ)(x, y) * convert(T, ψ.a)
     end
     return k
 end
 
-function description_string(obj::ProductMercerKernel)
-    n = length(obj.kernels)
-    if n == 1
-        if obj.a == 1
-            description = description_string(obj.kernels[1])
-        else
-            description = description_string(obj.kernels[1]) * " * $(obj.a)"
-        end
-    else
-        description = "Product(" * description_string(obj.kernels[1])
-        if n > 1
-            if n >= 3
-                description *= ", ..."
-            end
-            description *= ", " * description_string(obj.kernels[n])
-        end
-        if obj.a == 1
-            description *= ")"
-        else
-            description *= ") * $(obj.a)"
-        end
-    end
-    return description
+description_string(ψ::ScaledMercerKernel) = "$(ψ.a) * " * description_string(ψ.κ)
+
+function show(io::IO, ψ::ScaledMercerKernel)
+    println(io, "Scaled Mercer Kernel:")
+    print(io, " " * description_string(ψ))
 end
 
-function show(io::IO, obj::ProductMercerKernel)
-    println(io, "$(length(obj.kernels))-element Mercer Kernel Product:")
-    n = length(obj.kernels)
-    if obj.a == 1
-        println(io, " " * description_string(obj.kernels[1]))
-    else
-        println(io," $(obj.a)") 
-        println(" * " * description_string(obj.kernels[1]))
-    end
-    if n >= 2
-        for i = 2:(n-1)
-            println(io, " * " * description_string(obj.kernels[i]))
-        end
-        print(io, " * " * description_string(obj.kernels[n]))
-    end
-end
+*(a::Real, κ::ScalableMercerKernel) = ScaledMercerKernel(a, deepcopy(κ))
+*(κ::ScalableMercerKernel, a::Real) = *(a, κ)
 
-*(a::Real, kernel::StandardMercerKernel) = ProductMercerKernel(a, kernel)
-*(kernel::StandardMercerKernel, a::Real) = a * kernel
-*(a::Real, kernel::ProductMercerKernel) = ProductMercerKernel(a * kernel.a, deepcopy(kernel.kernels))
-*(kernel::ProductMercerKernel, a::Real) = a * kernel
+*(a::Real, ψ::ScaledMercerKernel) = ScaledMercerKernel(a * ψ.a, deepcopy(ψ.κ))
+*(ψ::ScaledMercerKernel, a::Real) = *(a, ψ)
 
-*(lkernel::StandardMercerKernel, rkernel::StandardMercerKernel) = ProductMercerKernel(lkernel, rkernel)
-*(lkernel::StandardMercerKernel, rkernel::ProductMercerKernel) = ProductMercerKernel(rkernel.a, lkernel, rkernel.kernels...)
-*(lkernel::ProductMercerKernel, rkernel::StandardMercerKernel) = ProductMercerKernel(lkernel.a, lkernel.kernels..., rkernel)
-*(lkernel::ProductMercerKernel, rkernel::ProductMercerKernel) = ProductMercerKernel(lkernel.a * rkernel.a, lkernel.kernels..., rkernel.kernels...)
-
-#== Sum Kernel ====================#
-
-function sumkernel{T<:FloatingPoint}(x::Array{T}, y::Array{T}, kernels::Array{ProductMercerKernel})
-    value = convert(T, 0)
-    for kernel in kernels
-        value += kernelfunction(kernel)(x, y)
-    end
-    return value
-end
-
-type SumMercerKernel <: CompositeMercerKernel
-    kernels::Array{ProductMercerKernel}
-end
-
-function kernelfunction(obj::SumMercerKernel)
-    if length(obj.kernels) == 1
-        k = kernelfunction(obj.kernels[1])
-    elseif length(obj.kernels) == 2
-        k{T<:FloatingPoint}(x::Array{T}, y::Array{T}) = kernelfunction(obj.kernels[1])(x, y) + kernelfunction(obj.kernels[2])(x, y)
-    else
-        k{T<:FloatingPoint}(x::Array{T}, y::Array{T}) = sumkernel(x, y, deepcopy(obj.kernels))
-    end
-    return k
-end
-
-function show(io::IO, obj::SumMercerKernel)
-    println(io, "$(length(obj.kernels))-element Mercer Kernel Summation:")
-    n = length(obj.kernels)
-    println(io, " " * description_string(obj.kernels[1]))
-    if n >= 2
-        for i = 2:(n-1)
-            println(io, " + " * description_string(obj.kernels[i]))
-        end
-        print(io, " + " * description_string(obj.kernels[n]))
-    end
-end
-
-+(lkernel::StandardMercerKernel, rkernel::StandardMercerKernel) = SumMercerKernel([ProductMercerKernel(lkernel), ProductMercerKernel(rkernel)])
-+(lkernel::ProductMercerKernel, rkernel::StandardMercerKernel) = SumMercerKernel([deepcopy(lkernel), ProductMercerKernel(rkernel)])
-+(lkernel::StandardMercerKernel, rkernel::ProductMercerKernel) = SumMercerKernel([ProductMercerKernel(lkernel), deepcopy(rkernel)])
-+(lkernel::ProductMercerKernel, rkernel::ProductMercerKernel) = SumMercerKernel([deepcopy(lkernel), deepcopy(rkernel)])
-
-+(lkernel::SumMercerKernel, rkernel::StandardMercerKernel) = SumMercerKernel([deepcopy(lkernel.kernels)..., ProductMercerKernel(rkernel)])
-+(lkernel::SumMercerKernel, rkernel::ProductMercerKernel) = SumMercerKernel([deepcopy(lkernel.kernels)..., deepcopy(rkernel)])
-+(lkernel::SumMercerKernel, rkernel::SumMercerKernel) = SumMercerKernel([deepcopy(lkernel.kernels)..., deepcopy(rkernel.kernels)...])
-
-+(lkernel::StandardMercerKernel, rkernel::SumMercerKernel) = SumMercerKernel([ProductMercerKernel(lkernel), deepcopy(rkernel.kernels)...])
-+(lkernel::ProductMercerKernel, rkernel::SumMercerKernel) = SumMercerKernel([deepcopy(lkernel), deepcopy(rkernel.kernels)...])
-
-=#
 
 #===================================================================================================
   Composite Mercer Kernels
 ===================================================================================================#
 
-#== Scaled Mercer Kernel ====================#
+#== Mercer Kernel Product ====================#
 
-type ScaledMercerKernel <: CompositeMercerKernel
+type MercerKernelProduct <: CompositeMercerKernel
     a::Real
-    kernel::StandardMercerKernel
-    function ScaledMercerKernel(a::Real, kernel::StandardMercerKernel)
+    ψ₁::ScalableMercerKernel
+    ψ₂::ScalableMercerKernel
+    function MercerKernelProduct(a::Real, ψ₁::ScalableMercerKernel, ψ₂::ScalableMercerKernel)
         a > 0 || error("a = $(a) must be greater than zero.")
-        new(a, kernel)
+        new(a, ψ₁, ψ₂)
     end
 end
 
-function show(io::IO, obj::ScaledMercerKernel)
-    println(io, "Scaled Mercer Kernel:")
-    print(io, " $(obj.a) * " * description_string(obj.kernel))
+function description_string(ψ::MercerKernelProduct) 
+    if ψ.a == 1
+        return description_string(ψ.ψ₁) * " * " * description_string(ψ.ψ₂)
+    else
+        return "$(ψ.a) * " * description_string(ψ.ψ₁) * " * " * description_string(ψ.ψ₂)
+    end
 end
 
-function kernelfunction(obj::ScaledMercerKernel)
-    if obj.a == 1
-        k{T<:FloatingPoint}(x::Array{T}, y::Array{T}) = kernelfunction(obj.kernel)(x, y)
+function show(io::IO, ψ::MercerKernelProduct)
+    println(io, "Mercer Kernel Product:")
+    print(io, " " * description_string(ψ))
+end
+
+function kernelfunction(ψ::MercerKernelProduct)
+    if ψ.a == 1
+        k{T<:FloatingPoint}(x::Array{T}, y::Array{T}) = kernelfunction(ψ.κ₁)(x, y) * kernelfunction(ψ.κ₂)(x, y)
     else
-        k{T<:FloatingPoint}(x::Array{T}, y::Array{T}) = convert(T, obj.a) * kernelfunction(obj.kernel)(x, y)
+        k{T<:FloatingPoint}(x::Array{T}, y::Array{T}) = kernelfunction(ψ.κ₁)(x, y) * kernelfunction(ψ.κ₂)(x, y) * convert(T, ψ.a)
     end
     return k
 end
 
-*(a::Real, kernel::StandardMercerKernel) = ScaledMercerKernel(a, deepcopy(kernel))
-*(kernel::StandardMercerKernel, a::Real) = *(a, kernel)
+*(κ₁::ScalableMercerKernel, κ₂::ScalableMercerKernel) = MercerKernelProduct(1, deepcopy(κ₁), deepcopy(κ₂))
+*(κ::ScalableMercerKernel, ψ::ScaledMercerKernel) = MercerKernelProduct(ψ.a, deepcopy(κ), deepcopy(ψ.κ))
+*(ψ::ScaledMercerKernel, κ::ScalableMercerKernel) = MercerKernelProduct(ψ.a, deepcopy(ψ.κ), deepcopy(κ))
+*(ψ₁::ScaledMercerKernel, ψ₂::ScaledMercerKernel) = MercerKernelProduct(ψ₁.a * ψ₂.a, deepcopy(ψ₁.κ), deepcopy(ψ₂.κ))
 
-*(a::Real, kernel::ScaledMercerKernel) = ScaledMercerKernel(a * kernel.a, deepcopy(kernel.kernel))
-*(kernel::ScaledMercerKernel, a::Real) = *(a * kernel.a, kernel.kernel)
+*(a::Real, ψ::MercerKernelProduct) = MercerKernelProduct(a * ψ.a, deepcopy(ψ.ψ₁), deepcopy(ψ.ψ₂))
+*(ψ::MercerKernelProduct, a::Real) = a * ψ
 
-#== Product Mercer Kernel ====================#
 
-type ProductMercerKernel <: CompositeMercerKernel
-    a::Real
-    lkernel::StandardMercerKernel
-    rkernel::StandardMercerKernel
-    function ScaledMercerKernel(a::Real, lkernel::StandardMercerKernel, rkernel::StandardMercerKernel)
-        a > 0 || error("a = $(a) must be greater than zero.")
-        new(a, kernel)
+#== Mercer Kernel Sum ====================#
+
+type MercerKernelSum <: CompositeMercerKernel
+    ψ₁::SimpleMercerKernel
+    ψ₂::SimpleMercerKernel
+    function MercerKernelSum(ψ₁::SimpleMercerKernel, ψ₂::SimpleMercerKernel)
+        new(ψ₁,ψ₂)
     end
 end
 
-function show(io::IO, obj::ProductMercerKernel)
-    println(io, "Product Mercer Kernel:")
-    print(io, " $(obj.a) * " * description_string(obj.lkernel) * " * " description_string(obj.rkernel))
-end
-
-function kernelfunction(obj::ScaledMercerKernel)
-    if obj.a == 1
-        k{T<:FloatingPoint}(x::Array{T}, y::Array{T}) = kernelfunction(obj.lkernel)(x, y) * kernelfunction(obj.rkernel)(x, y)
-    else
-        k{T<:FloatingPoint}(x::Array{T}, y::Array{T}) = convert(T, obj.a) * kernelfunction(obj.kernel)(x, y) * kernelfunction(obj.rkernel)(x, y)
-    end
+function kernelfunction(ψ::MercerKernelSum) 
+    k{T<:FloatingPoint}(x::Array{T}, y::Array{T}) = kernelfunction(ψ.ψ₁)(x, y) + kernelfunction(ψ.ψ₂)(x, y)
     return k
 end
 
+function show(io::IO, ψ::MercerKernelSum)
+    println(io, "Mercer Kernel Sum:")
+    print(io, " " * description_string(ψ.ψ₁) * " + " * description_string(ψ.ψ₂))
+end
 
++(ψ₁::SimpleMercerKernel, ψ₂::SimpleMercerKernel)  = MercerKernelSum(deepcopy(ψ₁), deepcopy(ψ₂))
 
-
-
-
-
-
-
-
-
-
+*(a::Real, ψ::MercerKernelSum) = (a * ψ.ψ₁) + (a * ψ.ψ₂)
+*(ψ::MercerKernelSum, a::Real) = a * ψ
 
 
 #===================================================================================================
@@ -232,7 +174,7 @@ end
 ===================================================================================================#
 
 function show(io::IO, obj::StandardMercerKernel)
-    print(io, description_string(obj))
+    print(io, " " * description_string(obj))
 end
 
 #== Pointwise Product Kernel ====================#

@@ -4,21 +4,30 @@
 
 module Kernels
 
-import Base: show
+import Base: show, call, exp
 
 export
-    # Types
-    MercerKernel,
-    ScaledMercerKernel,
-    #CompositeMercerKernel,
-    #ProductMercerKernel,
     # Functions
     kernelfunction,
     arguments,
     description,
+    # Abstract Types
+    MercerKernel,
+    SimpleMercerKernel,
+    CompositeMercerKernel,
+    TransformedMercerKernel,
+    # Other types
+    ScalableMercerKernel,
+    #Transformed Mercer Kernels
+    ScaledMercerKernel,
+    ExponentialMercerKernel,
+    ExponentiatedMercerKernel,
+    # Composite Mercer Kernels
+    MercerKernelProduct,
+    MercerKernelSum,
 	# Mercer Kernels
     PointwiseProductKernel,
-	MercerKernel,
+    GenericKernel,
 	LinearKernel,
 	PolynomialKernel,
 	GaussianKernel,
@@ -30,11 +39,6 @@ export
 	PowerKernel,
 	LogKernel,
 	SplineKernel
-	
-	# Kernel Matrix Functions
-	#center_kernelmatrix!,
-	#center_kernelmatrix,
-	#kernelmatrix
 
 include("MercerKernels.jl")
 #include("Gramian.jl")
