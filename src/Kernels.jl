@@ -11,36 +11,33 @@ export
     kernelfunction,
     arguments,
     description,
-    # Abstract Types
-    MercerKernel,
-    SimpleMercerKernel,
-    CompositeMercerKernel,
-    TransformedMercerKernel,
-    # Other types
-    ScalableMercerKernel,
-    #Transformed Mercer Kernels
-    ScaledMercerKernel,
-    ExponentialMercerKernel,
-    ExponentiatedMercerKernel,
-    # Composite Mercer Kernels
-    MercerKernelProduct,
-    MercerKernelSum,
-	# Mercer Kernels
-    PointwiseProductKernel,
-    GenericKernel,
-	LinearKernel,
-	PolynomialKernel,
-	GaussianKernel,
-	LaplacianKernel,
-	SigmoidKernel,
-	RationalQuadraticKernel,
-	MultiQuadraticKernel,
-	InverseMultiQuadraticKernel,
-	PowerKernel,
-	LogKernel,
-	SplineKernel
+    # Types
+    Kernel,
+        SimpleKernel,
+            StandardKernel,
+                PointwiseProductKernel,
+                GenericKernel,
+                StationaryKernel,
+	                GaussianKernel,
+	                LaplacianKernel,
+            	    RationalQuadraticKernel,
+            	    MultiQuadraticKernel,
+            	    InverseMultiQuadraticKernel,
+            	    PowerKernel,
+            	    LogKernel,
+                NonStationaryKernel,
+	                LinearKernel,
+	                PolynomialKernel,
+            	    SigmoidKernel,
+            TransformedKernel,
+                ExponentialKernel,
+                ExponentiatedKernel,
+            ScalableKernel,
+            ScaledKernel,
+        CompositeKernel,
+            KernelProduct,
+            KernelSum
 
 include("KernelFunctions.jl")
-#include("Gramian.jl")
 
 end # Kernels

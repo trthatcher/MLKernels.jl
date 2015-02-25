@@ -543,7 +543,7 @@ end
     (BLAS.dot(length(x), x, 1, y, 1))^convert(T, d)
 end
 
-type PolynomialKernel <: StandardKernel
+type PolynomialKernel <: NonStationaryKernel
     α::Real
     c::Real
     d::Real
@@ -594,7 +594,7 @@ end
     tanh(convert(T,α) * BLAS.dot(length(x), x, 1, y, 1) + convert(T,c))
 end
 
-type SigmoidKernel <: StandardKernel
+type SigmoidKernel <: NonStationaryKernel
     α::Real
     c::Real
     function SigmoidKernel(α::Real=1, c::Real=0)
