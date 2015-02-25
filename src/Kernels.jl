@@ -40,7 +40,7 @@ export
 	LogKernel,
 	SplineKernel
 
-include("MercerKernels.jl")
+include("KernelFunctions.jl")
 #include("Gramian.jl")
 
 end # Kernels
