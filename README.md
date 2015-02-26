@@ -33,13 +33,13 @@ julia> description(κ)
 To extract the associated kernel, one may use the 'kernel_function' method:
 
 ```julia
-julia> k = kernel_function(κ)
+julia> kᵩ = kernel_function(κ)
 k (generic function with 1 method)
 
 julia> x, y = ([1.0, 2.0], [1.0, 1.0])
 ([1.0,2.0],[1.0,1.0])
 
-julia> k(x,y)
+julia> kᵩ(x,y)
 9.0
 ```
 
