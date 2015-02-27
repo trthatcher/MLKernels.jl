@@ -16,6 +16,23 @@ call{T<:FloatingPoint}(κ::Kernel, x::Array{T}, y::Array{T}) = kernel_function(�
 
 
 #===================================================================================================
+  Auxiliary Functions
+===================================================================================================#
+
+# x⋅x = ‖x‖²
+@inline function squared_norm2{T<:FloatingPoint}(x::Array{T}, n::Integer = length(x))
+    BLAS.dot(n, x, 1, x, 1)
+end
+
+# √(x⋅x) = ‖x‖
+@inline norm2{T<:FloatingPoint}(x::Array{T}, n::Integer = length(x)) = BLAS.nrm2(n, x, 1)
+
+# x - y
+@inline function lag_vector{T<:FloatingPoint}(x::Array{T}, y::Array{T}, n::Integer = length(x))
+    BLAS.axpy!(n, convert(T,-1), y, 1, copy(x), 1)
+end
+
+#===================================================================================================
   Transformed and Scaled Mercer Kernels
 ===================================================================================================#
 
@@ -190,9 +207,13 @@ abstract StationaryKernel <: StandardKernel
 
 #== Gaussian Kernel ===============#
 
-function gaussiankernel{T<:FloatingPoint}(x::Array{T}, y::Array{T}, η::Real)
-    δ = x .- y
-    return exp(- convert(T, η) * BLAS.dot(length(x), δ, 1, δ, 1))
+@inline function centered_gaussian_kernel{T<:FloatingPoint}(ϵ::Array{T}, η::Real)
+    exp(convert(T, -η) * squared_norm2(ϵ))
+end
+
+
+@inline function gaussian_kernel{T<:FloatingPoint}(x::Array{T}, y::Array{T}, η::Real)
+    centered_gaussian_kernel(lag_vector(x, y), η)
 end
 
 type GaussianKernel <: StationaryKernel
@@ -203,10 +224,10 @@ type GaussianKernel <: StationaryKernel
     end
 end
 
-arguments(κ::GaussianKernel) = κ.η
+arguments(κ::GaussianKernel) = (κ.η,)
 
 function kernel_function(κ::GaussianKernel)
-    k{T<:FloatingPoint}(x::Array{T}, y::Array{T}) = gaussiankernel(x, y, κ.η)
+    k{T<:FloatingPoint}(x::Array{T}, y::Array{T}) = gaussian_kernel(x, y, κ.η)
 end
 
 formula_string(κ::GaussianKernel) = "exp(-η‖x-y‖²)"
@@ -233,10 +254,12 @@ end
 
 #== Laplacian Kernel ===============#
 
-function laplaciankernel{T<:FloatingPoint}(x::Array{T}, y::Array{T}, η::Real)
-    n = length(x)
-    ϵ = BLAS.axpy!(n, convert(T, -1), y, 1, copy(x), 1)
-    exp(- convert(T, η) * BLAS.nrm2(n, ϵ, 1))
+@inline function centered_laplacian_kernel{T<:FloatingPoint}(ϵ::Array{T}, η::Real)
+    exp(convert(T, -η) * norm2(ϵ))
+end
+
+@inline function laplacian_kernel{T<:FloatingPoint}(x::Array{T}, y::Array{T}, η::Real)
+    centered_laplacian_kernel(lag_vector(x, y), η)
 end
 
 type LaplacianKernel <: StationaryKernel
@@ -247,10 +270,10 @@ type LaplacianKernel <: StationaryKernel
     end
 end
 
-arguments(κ::LaplacianKernel) = κ.η
+arguments(κ::LaplacianKernel) = (κ.η,)
 
 @inline function kernel_function(κ::LaplacianKernel)
-    k{T<:FloatingPoint}(x::Array{T}, y::Array{T}) = laplaciankernel(x, y, κ.η)
+    k{T<:FloatingPoint}(x::Array{T}, y::Array{T}) = laplacian_kernel(x, y, κ.η)
 end
 
 formula_string(κ::LaplacianKernel) = "exp(-η‖x-y‖)"
@@ -275,11 +298,13 @@ end
 
 #== Rational Quadratic Kernel ===============#
 
-function rationalquadratickernel{T<:FloatingPoint}(x::Array{T}, y::Array{T}, c::Real)
-    n = length(x)
-    ϵ = BLAS.axpy!(n, convert(T, -1), y, 1, copy(x), 1)
-    d² = BLAS.dot(n, ϵ, 1, ϵ, 1)
-    return convert(T, 1) - d²/(d² + convert(T, c))
+@inline function centered_rational_quadratic_kernel{T<:FloatingPoint}(ϵ::Array{T}, c::Real)
+    d² = squared_norm2(ϵ)
+    convert(T, 1) - d²/(d² + convert(T, c))
+end
+
+@inline function rational_quadratic_kernel{T<:FloatingPoint}(x::Array{T}, y::Array{T}, c::Real)
+    centered_rational_quadratic_kernel(lag_vector(x, y), c)
 end
 
 type RationalQuadraticKernel <: StationaryKernel
@@ -290,10 +315,10 @@ type RationalQuadraticKernel <: StationaryKernel
     end
 end
 
-arguments(κ::RationalQuadraticKernel) = κ.c
+arguments(κ::RationalQuadraticKernel) = (κ.c,)
 
 @inline function kernel_function(κ::RationalQuadraticKernel)
-    k{T<:FloatingPoint}(x::Array{T}, y::Array{T}) = rationalquadratickernel(x, y, κ.c)
+    k{T<:FloatingPoint}(x::Array{T}, y::Array{T}) = rational_quadratic_kernel(x, y, κ.c)
 end
 
 formula_string(κ::RationalQuadraticKernel) = "1 - ‖x-y‖²/(‖x-y‖² + c)"
@@ -316,10 +341,12 @@ end
 
 #== Multi-Quadratic Kernel ===============#
 
-function multiquadratickernel{T<:FloatingPoint}(x::Array{T}, y::Array{T}, c::Real)
-    n = length(x)
-    ϵ = BLAS.axpy!(n, convert(T, -1), y, 1, copy(x), 1)
-    return sqrt(BLAS.dot(length(x), ϵ, 1, ϵ, 1) + convert(T,c))
+@inline function centered_multiquadratic_kernel{T<:FloatingPoint}(ϵ::Array{T}, c::Real)
+    sqrt(squared_norm2(ϵ) + convert(T,c))
+end
+
+@inline function multiquadratic_kernel{T<:FloatingPoint}(x::Array{T}, y::Array{T}, c::Real)
+    centered_multiquadratic_kernel(lag_vector(x, y), c)
 end
 
 type MultiQuadraticKernel <: StationaryKernel
@@ -330,10 +357,10 @@ type MultiQuadraticKernel <: StationaryKernel
     end
 end
 
-arguments(κ::MultiQuadraticKernel) = κ.c
+arguments(κ::MultiQuadraticKernel) = (κ.c,)
 
 @inline function kernel_function(κ::MultiQuadraticKernel)
-    k{T<:FloatingPoint}(x::Array{T}, y::Array{T}) = multiquadratickernel(x, y, κ.c)
+    k{T<:FloatingPoint}(x::Array{T}, y::Array{T}) = multiquadratic_kernel(x, y, κ.c)
 end
 
 formula_string(κ::MultiQuadraticKernel) = "√(‖x-y‖² + c)"
@@ -355,10 +382,12 @@ end
 
 #== Inverse Multi-Quadratic Kernel ===============#
 
-function inversemultiquadratickernel{T<:FloatingPoint}(x::Array{T}, y::Array{T}, c::Real)
-    n = length(x)
-    ϵ = BLAS.axpy!(n, convert(T, -1), y, 1, copy(x), 1)
-    return 1 / (sqrt(BLAS.dot(n, ϵ, 1, ϵ, 1) + convert(T, c)))
+@inline function centered_inverse_multiquadratic_kernel{T<:FloatingPoint}(ϵ::Array{T}, c::Real)
+    one(T) / sqrt(squared_norm2(ϵ) + convert(T, c))
+end
+
+@inline function inverse_multiquadratic_kernel{T<:FloatingPoint}(x::Array{T}, y::Array{T}, c::Real)
+    centered_inverse_multiquadratic_kernel(lag_vector(x, y), c)
 end
 
 type InverseMultiQuadraticKernel <: StandardKernel
@@ -372,7 +401,7 @@ end
 arguments(κ::InverseMultiQuadraticKernel) = κ.c
 
 @inline function kernel_function(κ::InverseMultiQuadraticKernel)
-    k{T<:FloatingPoint}(x::Array{T}, y::Array{T}) = inversemultiquadratickernel(x, y, κ.c)
+    k{T<:FloatingPoint}(x::Array{T}, y::Array{T}) = inverse_multiquadratic_kernel(x, y, κ.c)
 end
 
 formula_string(κ::InverseMultiQuadraticKernel) = "1/√(‖x-y‖² + c)"
@@ -395,10 +424,12 @@ end
 
 #== Power Kernel ===============#
 
-function powerkernel{T<:FloatingPoint}(x::Array{T}, y::Array{T}, d::Real)
-    n = length(x)
-    ϵ = BLAS.axpy!(n, convert(T, -1), y, 1, copy(x), 1)
-    return -BLAS.dot(n, ϵ, 1, ϵ, 1)^convert(T,d)
+@inline function centered_power_kernel{T<:FloatingPoint}(ϵ::Array{T}, d::Real)
+    -(norm2(ϵ)^convert(T,d))
+end
+
+@inline function power_kernel{T<:FloatingPoint}(x::Array{T}, y::Array{T}, d::Real)
+    centered_power_kernel(lag_vector(x, y), d)
 end
 
 type PowerKernel <: StationaryKernel
@@ -409,10 +440,10 @@ type PowerKernel <: StationaryKernel
     end
 end
 
-arguments(κ::PowerKernel) = κ.d
+arguments(κ::PowerKernel) = (κ.d,)
 
 @inline function kernel_function(κ::PowerKernel)
-    k{T<:FloatingPoint}(x::Array{T}, y::Array{T}) = powerkernel(x, y, κ.d)
+    k{T<:FloatingPoint}(x::Array{T}, y::Array{T}) = power_kernel(x, y, κ.d)
 end
 
 formula_string(κ::PowerKernel) = "-‖x-y‖ᵈ"
@@ -437,10 +468,12 @@ end
 
 #== Log Kernel ===============#
 
-function logkernel{T<:FloatingPoint}(x::Array{T},y::Array{T},d::Real)
-    n = length(x)
-    ϵ = BLAS.axpy!(n, convert(T, -1), y, 1, copy(x), 1)
-    -log(BLAS.dot(n, ϵ, 1, ϵ, 1)^convert(T,d) + convert(T, 1))
+@inline function centered_log_kernel{T<:FloatingPoint}(ϵ::Array{T}, d::Real)
+    -log(norm2(ϵ)^convert(T,d) + convert(T, 1))
+end
+
+@inline function logkernel{T<:FloatingPoint}(x::Array{T},y::Array{T}, d::Real)
+    centered_log_kernel(lag_vector(x, y), d)
 end
 
 type LogKernel <: StationaryKernel
@@ -451,10 +484,10 @@ type LogKernel <: StationaryKernel
     end
 end
 
-arguments(κ::LogKernel) = κ.d
+arguments(κ::LogKernel) = (κ.d,)
 
 @inline function kernel_function(κ::LogKernel)
-    k{T<:FloatingPoint}(x::Array{T}, y::Array{T}) = logkernel(x, y, κ.d)
+    k{T<:FloatingPoint}(x::Array{T}, y::Array{T}) = log_kernel(x, y, κ.d)
 end
 
 formula_string(κ::LogKernel) = "-‖x-y‖ᵈ"
@@ -498,7 +531,7 @@ type LinearKernel <: NonStationaryKernel
     end
 end
 
-arguments(κ::LinearKernel) = κ.c
+arguments(κ::LinearKernel) = (κ.c,)
 
 function kernel_function(κ::LinearKernel)
     if κ.c == 0
@@ -623,7 +656,7 @@ function description(κ::SigmoidKernel)
          field of neural networks where it is often used as the activation
          function for artificial neurons.
 
-             k(x,y) = tanh(α‖x-y‖² + c)    x ∈ ℝⁿ, y ∈ ℝⁿ, α > 0, c ≥ 0
+             k(x,y) = tanh(αxᵗy + c)    x ∈ ℝⁿ, y ∈ ℝⁿ, α > 0, c ≥ 0
         """
     )
 end
@@ -649,7 +682,7 @@ type PointwiseProductKernel <: StandardKernel
     end
 end
 
-arguments(κ::PointwiseProductKernel) = κ.f
+arguments(κ::PointwiseProductKernel) = (κ.f,)
 
 @inline function kernel_function(κ::PointwiseProductKernel)
     k{T<:FloatingPoint}(x::Array{T}, y::Array{T}) = pointwiseproductkernel(x, y, copy(κ.f))
@@ -686,7 +719,7 @@ type GenericKernel <: StandardKernel
     end
 end
 
-arguments(κ::GenericKernel) = κ.k
+arguments(κ::GenericKernel) = (κ.k,)
 
 kernel_function(κ::GenericKernel) = copy(κ.k)
 
