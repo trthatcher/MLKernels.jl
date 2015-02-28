@@ -14,6 +14,9 @@ ScalableKernel = Union(StandardKernel, TransformedKernel)
 
 call{T<:FloatingPoint}(κ::Kernel, x::Array{T}, y::Array{T}) = kernel_function(κ)(x, y)
 
+isposdef_kernel(κ::Kernel) = false
+isposdef(κ::Kernel) = isposdef_kernel(κ)
+
 
 #===================================================================================================
   Auxiliary Functions
@@ -44,6 +47,8 @@ type ExponentialKernel <: TransformedKernel
 end
 
 @inline kernel_function(ψ::ExponentialKernel) = exp(kernel_function(ψ.κ)(x, y))
+isposdef_kernel(ψ::ExponentialKernel) = isposdef_kernel(ψ.κ)
+
 
 description_string(ψ::ExponentialKernel) = "exp(" * description_string(ψ.κ) * ")"
 
@@ -67,6 +72,7 @@ type ExponentiatedKernel <: TransformedKernel
 end
 
 @inline kernel_function(ψ::ExponentiatedKernel) = (kernel_function(ψ.κ)(x, y)) ^ ψ.a
+isposdef_kernel(ψ::ExponentiatedKernel) = isposdef_kernel(ψ.κ)
 
 description_string(ψ::ExponentiatedKernel) = description_string(ψ.κ) * " ^ $(ψ.a)"
 
@@ -97,6 +103,7 @@ end
 end
 
 description_string(ψ::ScaledKernel) = "$(ψ.a) * " * description_string(ψ.κ)
+isposdef_kernel(ψ::ScaledKernel) = isposdef_kernel(ψ.κ)
 
 function show(io::IO, ψ::ScaledKernel)
     println(io, "Scaled Mercer Kernel:")
@@ -126,6 +133,17 @@ type KernelProduct <: CompositeKernel
     end
 end
 
+@inline function kernel_function(ψ::KernelProduct)
+if ψ.a == 1
+    k{T<:FloatingPoint}(x::Array{T}, y::Array{T}) = (
+        kernel_function(ψ.κ₁)(x, y) * kernel_function(ψ.κ₂)(x, y))
+end
+k{T<:FloatingPoint}(x::Array{T}, y::Array{T}) = (
+    kernel_function(ψ.κ₁)(x, y) * kernel_function(ψ.κ₂)(x, y) * convert(T, ψ.a))
+end
+
+isposdef_kernel(ψ::KernelProduct) = isposdef_kernel(ψ.κ₁) & isposdef_kernel(ψ.κ₂)
+
 function description_string(ψ::KernelProduct) 
     if ψ.a == 1
         return description_string(ψ.ψ₁) * " * " * description_string(ψ.ψ₂)
@@ -136,15 +154,6 @@ end
 function show(io::IO, ψ::KernelProduct)
     println(io, "Mercer Kernel Product:")
     print(io, " " * description_string(ψ))
-end
-
-@inline function kernel_function(ψ::KernelProduct)
-    if ψ.a == 1
-        k{T<:FloatingPoint}(x::Array{T}, y::Array{T}) = (
-            kernel_function(ψ.κ₁)(x, y) * kernel_function(ψ.κ₂)(x, y))
-    end
-    k{T<:FloatingPoint}(x::Array{T}, y::Array{T}) = (
-        kernel_function(ψ.κ₁)(x, y) * kernel_function(ψ.κ₂)(x, y) * convert(T, ψ.a))
 end
 
 *(κ₁::ScalableKernel, κ₂::ScalableKernel) = (
@@ -177,6 +186,8 @@ end
     k{T<:FloatingPoint}(x::Array{T}, y::Array{T}) = (
         kernel_function(ψ.ψ₁)(x, y) + kernel_function(ψ.ψ₂)(x, y))
 end
+
+isposdef_kernel(ψ::KernelSum) = isposdef_kernel(ψ.κ₁) | isposdef_kernel(ψ.κ₂)
 
 function show(io::IO, ψ::KernelSum)
     println(io, "Mercer Kernel Sum:")
@@ -211,7 +222,6 @@ abstract StationaryKernel <: StandardKernel
     exp(convert(T, -η) * squared_norm2(ϵ))
 end
 
-
 @inline function gaussian_kernel{T<:FloatingPoint}(x::Array{T}, y::Array{T}, η::Real)
     centered_gaussian_kernel(lag_vector(x, y), η)
 end
@@ -225,6 +235,7 @@ type GaussianKernel <: StationaryKernel
 end
 
 arguments(κ::GaussianKernel) = (κ.η,)
+isposdef_kernel(κ::GaussianKernel) = true
 
 function kernel_function(κ::GaussianKernel)
     k{T<:FloatingPoint}(x::Array{T}, y::Array{T}) = gaussian_kernel(x, y, κ.η)
@@ -271,6 +282,7 @@ type LaplacianKernel <: StationaryKernel
 end
 
 arguments(κ::LaplacianKernel) = (κ.η,)
+isposdef_kernel(κ::LaplacianKernel) = true
 
 @inline function kernel_function(κ::LaplacianKernel)
     k{T<:FloatingPoint}(x::Array{T}, y::Array{T}) = laplacian_kernel(x, y, κ.η)
@@ -316,6 +328,7 @@ type RationalQuadraticKernel <: StationaryKernel
 end
 
 arguments(κ::RationalQuadraticKernel) = (κ.c,)
+isposdef_kernel(κ::RationalQuadraticKernel) = true
 
 @inline function kernel_function(κ::RationalQuadraticKernel)
     k{T<:FloatingPoint}(x::Array{T}, y::Array{T}) = rational_quadratic_kernel(x, y, κ.c)
@@ -358,6 +371,8 @@ type MultiQuadraticKernel <: StationaryKernel
 end
 
 arguments(κ::MultiQuadraticKernel) = (κ.c,)
+isposdef_kernel(κ::MultiQuadraticKernel) = false
+
 
 @inline function kernel_function(κ::MultiQuadraticKernel)
     k{T<:FloatingPoint}(x::Array{T}, y::Array{T}) = multiquadratic_kernel(x, y, κ.c)
@@ -399,6 +414,8 @@ type InverseMultiQuadraticKernel <: StandardKernel
 end
 
 arguments(κ::InverseMultiQuadraticKernel) = κ.c
+isposdef_kernel(κ::InverseMultiQuadraticKernel) = false
+
 
 @inline function kernel_function(κ::InverseMultiQuadraticKernel)
     k{T<:FloatingPoint}(x::Array{T}, y::Array{T}) = inverse_multiquadratic_kernel(x, y, κ.c)
@@ -441,6 +458,8 @@ type PowerKernel <: StationaryKernel
 end
 
 arguments(κ::PowerKernel) = (κ.d,)
+isposdef_kernel(κ::PowerKernel) = false
+
 
 @inline function kernel_function(κ::PowerKernel)
     k{T<:FloatingPoint}(x::Array{T}, y::Array{T}) = power_kernel(x, y, κ.d)
@@ -485,6 +504,7 @@ type LogKernel <: StationaryKernel
 end
 
 arguments(κ::LogKernel) = (κ.d,)
+isposdef_kernel(κ::LogKernel) = false
 
 @inline function kernel_function(κ::LogKernel)
     k{T<:FloatingPoint}(x::Array{T}, y::Array{T}) = log_kernel(x, y, κ.d)
@@ -532,6 +552,7 @@ type LinearKernel <: NonStationaryKernel
 end
 
 arguments(κ::LinearKernel) = (κ.c,)
+isposdef_kernel(κ::LinearKernel) = true
 
 function kernel_function(κ::LinearKernel)
     if κ.c == 0
@@ -589,6 +610,7 @@ type PolynomialKernel <: NonStationaryKernel
 end
 
 arguments(κ::PolynomialKernel) = (κ.α, κ.c, κ.d)
+isposdef_kernel(κ::PolynomialKernel) = true
 
 function kernel_function(κ::PolynomialKernel)
     if κ.α == 1
@@ -638,6 +660,7 @@ type SigmoidKernel <: NonStationaryKernel
 end
 
 arguments(κ::SigmoidKernel) = (κ.α, κ.c)
+isposdef_kernel(κ::SigmoidKernel) = false
 
 @inline function kernel_function(κ::SigmoidKernel)
     k{T<:FloatingPoint}(x::Array{T}, y::Array{T}) = sigmoidkernel(x, y, κ.α, κ.c)
@@ -674,15 +697,17 @@ end
 
 type PointwiseProductKernel <: StandardKernel
     f::Function
-    function PointwiseProductKernel(f::Function)
+    posdef::Bool
+    function PointwiseProductKernel(f::Function, posdef::Bool = false)
         method_exists(f, (Array{Float32},)) && method_exists(f, (Array{Float64},)) || (
             error("f = $(f) must map f: ℝⁿ → ℝ (define methods for both Array{Float32} and " * ( 
                   "Array{Float64}).")))
-        new(f)
+        new(f, posdef)
     end
 end
 
-arguments(κ::PointwiseProductKernel) = (κ.f,)
+arguments(κ::PointwiseProductKernel) = (κ.f, κ.posdef)
+isposdef_kernel(κ::PointwiseProductKernel) = κ.posdef
 
 @inline function kernel_function(κ::PointwiseProductKernel)
     k{T<:FloatingPoint}(x::Array{T}, y::Array{T}) = pointwiseproductkernel(x, y, copy(κ.f))
@@ -710,16 +735,18 @@ end
 
 type GenericKernel <: StandardKernel
     k::Function
-    function GenericKernel(k::Function)
+    posdef::Bool
+    function GenericKernel(k::Function, posdef::Bool = false)
         method_exists(f, (Array{Float32}, Array{Float32})) && (
             method_exists(f, (Array{Float64}, Array{Float64})) || (
             error("k = $(f) must map k: ℝⁿ×ℝⁿ → ℝ (define methods for both" * (
                   "Array{Float32} and Array{Float64})."))))
-        new(k)
+        new(k, posdef)
     end
 end
 
 arguments(κ::GenericKernel) = (κ.k,)
+isposdef_kernel(κ::GenericKernel) = κ.posdef
 
 kernel_function(κ::GenericKernel) = copy(κ.k)
 

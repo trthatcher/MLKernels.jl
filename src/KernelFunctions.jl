@@ -4,13 +4,14 @@
 
 module KernelFunctions
 
-import Base: show, call, exp
+import Base: show, call, exp, isposdef
 
 export
     # Functions
-    kernel_function,
     arguments,
     description,
+    isposdef_kernel,
+    kernel_function,
     # Types
     Kernel,
         SimpleKernel,
