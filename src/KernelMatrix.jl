@@ -18,9 +18,45 @@ end
 syml(S::Matrix) = syml!(copy(S))
 
 
+function gramian_matrix{T<:FloatingPoint}(X::Matrix{T}, sym::Bool = true)
+    G = BLAS.syrk('U', 'N', one(T), X)
+    sym ? syml!(G) : G
+end
+
+function lagged_gramian_matrix{T<:FloatingPoint}(X::Matrix{T}, sym::Bool = true)
+    n = size(X, 1)
+    G = gramian_matrix(X, false)
+    v = diag(G)
+    Gₗ = BLAS.axpy!(n^2, convert(T, -2), G, 1, (v .+ v'), 1)
+    sym ? syml!(Gₗ) : Gₗ
+end
+
+
+
 #===================================================================================================
   Kernel Matrix Functions
 ===================================================================================================#
+
+#function apply_function{T<:FloatingPoint}(X::Matrix{T}
+
+function kernel_matrix2{T<:FloatingPoint}(X::Matrix{T}, κ::Kernel = LinearKernel(), sym::Bool = true)
+    k! = vectorized_kernel_function!(κ)
+    n = size(X,1)
+    if is_euclidean_distance(κ)
+        G = gramian_matrix(X)
+    elseif is_scalar_product(κ)
+        G = lagged_gramian_matrix(X)
+    else
+        error("Not found")
+    end
+    K = k!(G)
+    #@inbounds for j = 1:n 
+    #    for i = 1:j
+    #        K[i,j] = k(K[i,j])::T  # @inbounds?
+    #    end 
+    #end
+    sym ? syml!(K) : K
+end
 
 # Returns the kernel (Gramian) matrix K of data matrix X for mapping ϕ
 function kernel_matrix{T<:FloatingPoint}(X::Matrix{T}, κ::Kernel = LinearKernel(), sym::Bool = true)
@@ -67,7 +103,7 @@ center_kernel_matrix{T<:FloatingPoint}(K::Matrix{T}) = center_kernel_matrix!(cop
   Kernel Matrix Functions
 ===================================================================================================#
 
-function init_approx{T<:FloatingPoint}(X::Matrix{T}, Sample::Array{Int}, kernel::MercerKernel = LinearKernel())
+function init_approx{T<:FloatingPoint}(X::Matrix{T}, Sample::Array{Int}, kernel::Kernel = LinearKernel())
     k = kernelfunction(kernel)
     c = length(Sample)
     n = size(X, 1)
