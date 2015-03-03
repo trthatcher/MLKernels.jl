@@ -40,7 +40,7 @@ end
 #function apply_function{T<:FloatingPoint}(X::Matrix{T}
 
 function kernel_matrix2{T<:FloatingPoint}(X::Matrix{T}, κ::Kernel = LinearKernel(), sym::Bool = true)
-    k! = vectorized_kernel_function!(κ)
+    #k! = vectorized_kernel_function!(κ)
     n = size(X,1)
     if is_euclidean_distance(κ)
         G = gramian_matrix(X)
@@ -49,7 +49,7 @@ function kernel_matrix2{T<:FloatingPoint}(X::Matrix{T}, κ::Kernel = LinearKerne
     else
         error("Not found")
     end
-    K = k!(G)
+    K = kernel_function!(κ,G)
     #@inbounds for j = 1:n 
     #    for i = 1:j
     #        K[i,j] = k(K[i,j])::T  # @inbounds?

@@ -14,6 +14,7 @@ export
     is_euclidean_distance,
     is_scalar_product,
     kernel_function,
+    kernel_function!,
     scalar_kernel_function,
     vectorized_kernel_function,
     vectorized_kernel_function!,

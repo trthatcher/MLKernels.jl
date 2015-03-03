@@ -1,6 +1,11 @@
+#===================================================================================================
+  Standard Kernel Functions
+===================================================================================================#
+
 function show(io::IO, κ::StandardKernel)
     print(io, " " * description_string(κ))
 end
+
 
 #=================================================
   Stationary Kernels
@@ -8,24 +13,14 @@ end
 
 abstract StationaryKernel <: StandardKernel
 
-is_euclidian_distance(κ::StationaryKernel) = true
+is_euclidean_distance(κ::StationaryKernel) = true
 
-@inline function kernel_function(κ::StationaryKernel)
-    k{T<:FloatingPoint}(x::Array{T}, y::Array{T}) = (
-        scalar_kernel_function(κ)(euclidean_distance(x, y)))
+@inline function kernel_function{T<:FloatingPoint}(κ::StationaryKernel, x::Vector{T}, y::Vector{T})
+    kernel_function(κ, euclidean_distance(x, y))
 end
 
 
 #== Gaussian Kernel ===============#
-
-@inline gaussian_kernel{T<:FloatingPoint}(ϵᵗϵ::T, η::T) = exp(-η*ϵᵗϵ)
-function gaussian_kernel!{T<:FloatingPoint}(G::Array{T}, η::T)
-    @inbounds for i = 1:length(G)
-        G[i] = exp(-η*G[i])
-    end
-    G
-end
-gaussian_kernel{T<:FloatingPoint}(G::Matrix{T}, η::T) = gaussian_kernel!(copy(G), η)
 
 type GaussianKernel <: StationaryKernel
     η::Real
@@ -35,20 +30,13 @@ type GaussianKernel <: StationaryKernel
     end
 end
 
+@inline gaussian_kernel{T<:FloatingPoint}(ϵᵗϵ::T, η::T) = exp(-η*ϵᵗϵ)
+@inline function gaussian_kernel{T<:FloatingPoint}(ϵᵗϵ::T, κ::GaussianKernel)
+    gaussian_kernel(ϵᵗϵ, T(κ.η))
+end
+
 arguments(κ::GaussianKernel) = (κ.η,)
 isposdef_kernel(κ::GaussianKernel) = true
-
-function scalar_kernel_function(κ::GaussianKernel)
-    k{T<:FloatingPoint}(ϵᵗϵ::T) = gaussian_kernel(ϵᵗϵ, T(κ.η))
-end
-
-function vectorized_kernel_function!(κ::GaussianKernel)
-    k{T<:FloatingPoint}(G::Array{T}) = gaussian_kernel!(G, T(κ.η))
-end
-
-function vectorized_kernel_function(κ::GaussianKernel)
-    k{T<:FloatingPoint}(G::Array{T}) = gaussian_kernel(G, T(κ.η))
-end
 
 formula_string(κ::GaussianKernel) = "exp(-η‖x-y‖²)"
 argument_string(κ::GaussianKernel) = "η = $(κ.η)"
@@ -74,15 +62,6 @@ end
 
 #== Laplacian Kernel ===============#
 
-@inline laplacian_kernel{T<:FloatingPoint}(ϵᵗϵ::T, η::T) = exp(-η*sqrt(ϵᵗϵ))
-function laplacian_kernel!{T<:FloatingPoint}(G::Array{T}, η::T)
-    @inbounds for i = 1:length(G)
-        G[i] = exp(-η*sqrt(G[i]))
-    end
-    G
-end
-laplacian_kernel{T<:FloatingPoint}(G::Array{T}, η::T) = laplacian_kernel(copy(G), η)
-
 type LaplacianKernel <: StationaryKernel
     η::Real
     function LaplacianKernel(η::Real=1)
@@ -91,20 +70,13 @@ type LaplacianKernel <: StationaryKernel
     end
 end
 
+@inline laplacian_kernel{T<:FloatingPoint}(ϵᵗϵ::T, η::T) = exp(-η*sqrt(ϵᵗϵ))
+@inline function laplacian_kernel{T<:FloatingPoint}(ϵᵗϵ::T, κ::LaplacianKernel)
+    laplacian_kernel(ϵᵗϵ, T(κ.η))
+end
+
 arguments(κ::LaplacianKernel) = (κ.η,)
 isposdef_kernel(κ::LaplacianKernel) = true
-
-@inline function scalar_kernel_function(κ::LaplacianKernel)
-    k{T<:FloatingPoint}(ϵᵗϵ::T) = laplacian_kernel(ϵᵗϵ, T(κ.η))
-end
-
-@inline function vectorized_kernel_function!(κ::LaplacianKernel)
-    k{T<:FloatingPoint}(G::Array{T}) = laplacian_kernel!(G, T(κ.η))
-end
-
-@inline function vectorized_kernel_function(κ::LaplacianKernel)
-    k{T<:FloatingPoint}(G::Array{T}) = laplacian_kernel(G, T(κ.η))
-end
 
 formula_string(κ::LaplacianKernel) = "exp(-η‖x-y‖)"
 argument_string(κ::LaplacianKernel) = "η = $(κ.η)"
@@ -128,17 +100,6 @@ end
 
 #== Rational Quadratic Kernel ===============#
 
-@inline rational_quadratic_kernel{T<:FloatingPoint}(ϵᵗϵ::T, c::T) = one(T) - ϵᵗϵ/(ϵᵗϵ + c)
-function rational_quadratic_kernel!{T<:FloatingPoint}(G::Array{T}, c::T)
-    @inbounds for i = 1:length(G)
-        G[i] = one(T) - G[i]/(G[i] + c)
-    end
-    G
-end
-@inline function rational_quadratic_kernel{T<:FloatingPoint}(G::Array{T}, c::T)
-    rational_quadratic_kernel!(copy(G), c)
-end
-
 type RationalQuadraticKernel <: StationaryKernel
     c::Real
     function RationalQuadraticKernel(c::Real=1)
@@ -147,20 +108,13 @@ type RationalQuadraticKernel <: StationaryKernel
     end
 end
 
+@inline rational_quadratic_kernel{T<:FloatingPoint}(ϵᵗϵ::T, c::T) = one(T) - ϵᵗϵ/(ϵᵗϵ + c)
+@inline function rational_quadratic_kernel{T<:FloatingPoint}(ϵᵗϵ::T, κ::RationalQuadraticKernel)
+    rational_quadratic_kernel(ϵᵗϵ, T(κ.c))
+end
+
 arguments(κ::RationalQuadraticKernel) = (κ.c,)
 isposdef_kernel(κ::RationalQuadraticKernel) = true
-
-@inline function scalar_kernel_function(κ::RationalQuadraticKernel)
-    k{T<:FloatingPoint}(ϵᵗϵ::T) = rational_quadratic_kernel(ϵᵗϵ, κ.c)
-end
-
-@inline function vectorized_kernel_function!(κ::RationalQuadraticKernel)
-    k{T<:FloatingPoint}(G::Array{T}) = rational_quadratic_kernel!(G, T(κ.c))
-end
-
-@inline function vectorized_kernel_function(κ::RationalQuadraticKernel)
-    k{T<:FloatingPoint}(G::Array{T}) = rational_quadratic_kernel(G, T(κ.c))
-end
 
 formula_string(κ::RationalQuadraticKernel) = "1 - ‖x-y‖²/(‖x-y‖² + c)"
 argument_string(κ::RationalQuadraticKernel) = "c = $(κ.c)"
@@ -182,10 +136,6 @@ end
 
 #== Multi-Quadratic Kernel ===============#
 
-@inline function multiquadratic_kernel{T<:FloatingPoint}(ϵᵗϵ::T, c::Real)
-    sqrt(ϵᵗϵ + convert(T,c))
-end
-
 type MultiQuadraticKernel <: StationaryKernel
     c::Real
     function MultiQuadraticKernel(c::Real=1)
@@ -194,12 +144,13 @@ type MultiQuadraticKernel <: StationaryKernel
     end
 end
 
+@inline multiquadratic_kernel{T<:FloatingPoint}(ϵᵗϵ::T, c::T) = sqrt(ϵᵗϵ + c)
+@inline function multiquadratic_kernel{T<:FloatingPoint}(ϵᵗϵ::T, κ::MultiQuadraticKernel)
+    multiquadratic_kernel(ϵᵗϵ, T(κ.c))
+end
+
 arguments(κ::MultiQuadraticKernel) = (κ.c,)
 isposdef_kernel(κ::MultiQuadraticKernel) = false
-
-@inline function kernel_function(κ::MultiQuadraticKernel)
-    k{T<:FloatingPoint}(ϵᵗϵ::T) = multiquadratic_kernel(ϵᵗϵ, κ.c)
-end
 
 formula_string(κ::MultiQuadraticKernel) = "√(‖x-y‖² + c)"
 argument_string(κ::MultiQuadraticKernel) = "c = $(κ.c)"
@@ -220,10 +171,6 @@ end
 
 #== Inverse Multi-Quadratic Kernel ===============#
 
-@inline function inverse_multiquadratic_kernel{T<:FloatingPoint}(ϵᵗϵ::T, c::Real)
-    one(T) / sqrt(ϵᵗϵ + convert(T, c))
-end
-
 type InverseMultiQuadraticKernel <: StandardKernel
     c::Real
     function InverseMultiQuadraticKernel(c::Real=1)
@@ -232,12 +179,16 @@ type InverseMultiQuadraticKernel <: StandardKernel
     end
 end
 
-arguments(κ::InverseMultiQuadraticKernel) = κ.c
-isposdef_kernel(κ::InverseMultiQuadraticKernel) = false
-
-@inline function scalar_kernel_function(κ::InverseMultiQuadraticKernel)
-    k{T<:FloatingPoint}(ϵᵗϵ::T) = inverse_multiquadratic_kernel(ϵᵗϵ, κ.c)
+@inline function inverse_multiquadratic_kernel{T<:FloatingPoint}(ϵᵗϵ::T, c::T) 
+    one(T) / sqrt(ϵᵗϵ + c)
 end
+@inline function inverse_multiquadratic_kernel{T<:FloatingPoint}(ϵᵗϵ::T, 
+                                                                 κ::InverseMultiQuadraticKernel)
+    inverse_multiquadratic_kernel(ϵᵗϵ, T(κ.c))
+end
+
+arguments(κ::InverseMultiQuadraticKernel) = (κ.c,)
+isposdef_kernel(κ::InverseMultiQuadraticKernel) = false
 
 formula_string(κ::InverseMultiQuadraticKernel) = "1/√(‖x-y‖² + c)"
 argument_string(κ::InverseMultiQuadraticKernel) = "c = $(κ.c)"
@@ -259,15 +210,6 @@ end
 
 #== Power Kernel ===============#
 
-@inline power_kernel{T<:FloatingPoint}(ϵᵗϵ::T, d::T) = -(ϵᵗϵ^d)
-function power_kernel!{T<:FloatingPoint}(G::Array{T}, d::T)
-    @inbounds for i = 1:length(G)
-        G[i] = -(G[i]^d)
-    end
-    G
-end
-power_kernel{T<:FloatingPoint}(G::Array{T}, d::T) = power_kernel!(copy(G), d)
-
 type PowerKernel <: StationaryKernel
     d::Real
     function PowerKernel(d::Real = 1)
@@ -276,20 +218,11 @@ type PowerKernel <: StationaryKernel
     end
 end
 
+@inline power_kernel{T<:FloatingPoint}(ϵᵗϵ::T, d::T) = -(ϵᵗϵ^d)
+@inline power_kernel{T<:FloatingPoint}(ϵᵗϵ::T, κ::PowerKernel) = power_kernel(ϵᵗϵ, T(κ.d))
+
 arguments(κ::PowerKernel) = (κ.d,)
 isposdef_kernel(κ::PowerKernel) = false
-
-@inline function scalar_kernel_function(κ::PowerKernel)
-    k{T<:FloatingPoint}(ϵᵗϵ::T) = power_kernel(ϵᵗϵ, κ.d)
-end
-
-@inline function vectorized_kernel_function!(κ::PowerKernel)
-    k{T<:FloatingPoint}(G::Array{T}) = power_kernel!(G, T(κ.d))
-end
-
-@inline function vectorized_kernel_function(κ::PowerKernel)
-    k{T<:FloatingPoint}(G::Array{T}) = power_kernel(G, T(κ.d))
-end
 
 formula_string(κ::PowerKernel) = "-‖x-y‖ᵈ"
 argument_string(κ::PowerKernel) = "d = $(κ.d)"
@@ -313,8 +246,6 @@ end
 
 #== Log Kernel ===============#
 
-@inline log_kernel{T<:FloatingPoint}(ϵᵗϵ::T, d::Real) = -log(ϵᵗϵ^convert(T,d) + one(T))
-
 type LogKernel <: StationaryKernel
     d::Real
     function LogKernel(d::Real = 1)
@@ -323,12 +254,11 @@ type LogKernel <: StationaryKernel
     end
 end
 
+@inline log_kernel{T<:FloatingPoint}(ϵᵗϵ::T, d::T) = -log(ϵᵗϵ^d + one(T))
+@inline log_kernel{T<:FloatingPoint}(ϵᵗϵ::T, κ::LogKernel) = log_kernel(ϵᵗϵ, T(κ.d))
+
 arguments(κ::LogKernel) = (κ.d,)
 isposdef_kernel(κ::LogKernel) = false
-
-@inline function scalar_kernel_function(κ::LogKernel)
-    k{T<:FloatingPoint}(ϵᵗϵ::T) = log_kernel(ϵᵗϵ, κ.d)
-end
 
 formula_string(κ::LogKernel) = "-‖x-y‖ᵈ"
 argument_string(κ::LogKernel) = "d = $(κ.d)"
@@ -356,22 +286,13 @@ abstract NonStationaryKernel <: StandardKernel
 
 is_scalar_product(κ::NonStationaryKernel) = true
 
-@inline function kernel_function(κ::NonStationaryKernel)
-    k{T<:FloatingPoint}(x::Array{T}, y::Array{T}) = (
-        scalar_kernel_function(κ)(scalar_product(x, y)))
+@inline function kernel_function{T<:FloatingPoint}(κ::NonStationaryKernel, x::Vector{T},
+                                                   y::Vector{T})
+    kernel_function(κ, scalar_product(x, y))
 end
 
 
 #== Linear Kernel ====================#
-
-@inline linear_kernel{T<:FloatingPoint}(xᵗy::T, c::T) = xᵗy + c
-function linear_kernel!{T<:FloatingPoint}(G::Array{T}, c::T)
-    @inbounds for i = 1:length(G)
-        G[i] = G[i] + c
-    end
-    G
-end
-linear_kernel{T<:FloatingPoint}(G::Array{T}, c::T) = linear_kernel!(copy(G), c)
 
 type LinearKernel <: NonStationaryKernel
     c::Real
@@ -381,20 +302,13 @@ type LinearKernel <: NonStationaryKernel
     end
 end
 
+@inline linear_kernel{T<:FloatingPoint}(xᵗy::T, c::T) = xᵗy + c
+@inline function linear_kernel{T<:FloatingPoint}(xᵗy::T, κ::LinearKernel)
+    linear_kernel(xᵗy, T(κ.c))
+end
+
 arguments(κ::LinearKernel) = (κ.c,)
 isposdef_kernel(κ::LinearKernel) = true
-
-@inline function scalar_kernel_function(κ::LinearKernel)
-    k{T<:FloatingPoint}(xᵗy::T) = linearkernel(xᵗy, κ.c)
-end
-
-@inline function vectorized_kernel_function!(κ::LinearKernel)
-    k{T<:FloatingPoint}(G::Matrix{T}) = linear_kernel!(G, κ.c)
-end
-
-@inline function vectorized_kernel_function(κ::LinearKernel)
-    k{T<:FloatingPoint}(G::Matrix{T}) = linear_kernel(G, κ.c)
-end
 
 formula_string(κ::LinearKernel) = "k(x,y) = xᵗy + c"
 argument_string(κ::LinearKernel) = "c = $(κ.c)"
@@ -419,15 +333,6 @@ end
 
 #== Polynomial Kernel ===============#
 
-@inline polynomial_kernel{T<:FloatingPoint}(xᵗy::T, α::T, c::T, d::T) = (α*xᵗy + c)^d
-function polynomial_kernel!{T<:FloatingPoint}(G::Array{T}, α::T, c::T, d::T)
-    @inbounds for i = 1:length(G)
-        G[i] = (α*G[i] + c)^d
-    end
-    G
-end
-polynomial_kernel{T<:FloatingPoint}(G::Array{T}, α::T, c::T, d::T) = polynomial_kernel!(copy(G), α, c, d)
-
 type PolynomialKernel <: NonStationaryKernel
     α::Real
     c::Real
@@ -440,20 +345,13 @@ type PolynomialKernel <: NonStationaryKernel
     end
 end
 
+@inline polynomial_kernel{T<:FloatingPoint}(xᵗy::T, α::T, c::T, d::T) = (α*xᵗy + c)^d
+@inline function polynomial_kernel{T<:FloatingPoint}(xᵗy::T, κ::PolynomialKernel)
+    polynomial_kernel(xᵗy, T(κ.α), T(κ.c), T(κ.d))
+end
+
 arguments(κ::PolynomialKernel) = (κ.α, κ.c, κ.d)
 isposdef_kernel(κ::PolynomialKernel) = true
-
-@inline function scalar_kernel_function(κ::PolynomialKernel)
-    k{T<:FloatingPoint}(xᵗy::T) = polynomial_kernel(xᵗy, T(κ.α), T(κ.c), T(κ.d))
-end
-
-@inline function vectorized_kernel_function!(κ::PolynomialKernel)
-    k!{T<:FloatingPoint}(G::Matrix{T}) = polynomial_kernel!(G, T(κ.α), T(κ.c), T(κ.d))
-end
-
-@inline function vectorized_kernel_function!(κ::PolynomialKernel)
-    k!{T<:FloatingPoint}(G::Matrix{T}) = polynomial_kernel(G, T(κ.α), T(κ.c), T(κ.d))
-end
 
 formula_string(κ::PolynomialKernel) = "(αxᵗy + c)ᵈ"
 argument_string(κ::PolynomialKernel) = "α = $(κ.α), c = $(κ.c) and d = $(κ.d)"
@@ -476,16 +374,8 @@ function description(κ::PolynomialKernel)
     )
 end
 
-#== Sigmoid Kernel ===============#
 
-@inline sigmoid_kernel{T<:FloatingPoint}(xᵗy::T, α::T, c::T) = tanh(α*xᵗy + c)
-function sigmoid_kernel!{T<:FloatingPoint}(G::Array{T}, α::T, c::T)
-    @inbounds for i = 1:length(G)
-        G[i] = tanh(α*G[i] + c)
-    end
-    G
-end
-sigmoid_kernel{T<:FloatingPoint}(G::Array{T}, α::T, c::T) = sigmoid_kernel!(copy(G), α, c)
+#== Sigmoid Kernel ===============#
 
 type SigmoidKernel <: NonStationaryKernel
     α::Real
@@ -497,20 +387,13 @@ type SigmoidKernel <: NonStationaryKernel
     end
 end
 
+@inline sigmoid_kernel{T<:FloatingPoint}(xᵗy::T, α::T, c::T) = tanh(α*xᵗy + c)
+@inline function sigmoid_kernel{T<:FloatingPoint}(xᵗy::T, κ::SigmoidKernel)
+    sigmoid_kernel(xᵗy, T(κ.α), T(κ.c))
+end
+
 arguments(κ::SigmoidKernel) = (κ.α, κ.c)
 isposdef_kernel(κ::SigmoidKernel) = false
-
-@inline function scalar_kernel_function!(κ::SigmoidKernel)
-    k{T<:FloatingPoint}(xᵗy::T) = sigmoid_kernel(xᵗy, κ.α, κ.c)
-end
-
-@inline function vectorized_kernel_function!(κ::SigmoidKernel)
-    k{T<:FloatingPoint}(G::Array{T}) = sigmoid_kernel!(G, T(κ.α), T(κ.c))
-end
-
-@inline function vectorized_kernel_function(κ::SigmoidKernel)
-    k{T<:FloatingPoint}(G::Array{T}) = sigmoid_kernel(G, T(κ.α), T(κ.c))
-end
 
 formula_string(κ::SigmoidKernel) = "tanh(α‖x-y‖² + c)"
 argument_string(κ::SigmoidKernel) = "α = $(κ.α) and c = $(κ.c)"
@@ -531,3 +414,29 @@ function description(κ::SigmoidKernel)
 end
 
 
+#===================================================================================================
+  Definitions (until return typed generic functions are optimised
+===================================================================================================#
+
+for (kernel, kf) in ((:GaussianKernel, :gaussian_kernel),
+                     (:LaplacianKernel, :laplacian_kernel),
+                     (:RationalQuadraticKernel, :rational_quadratic_kernel),
+                     (:MultiQuadraticKernel, :multiquadratic_kernel),
+                     (:InverseMultiQuadraticKernel, :inverse_multiquadratic_kernel),
+                     (:PowerKernel, :power_kernel),
+                     (:LogKernel, :log_kernel),
+                     (:LinearKernel, :linear_kernel),
+                     (:PolynomialKernel, :polynomial_kernel),
+                     (:SigmoidKernel, :sigmoid_kernel))
+    @eval begin
+        @inline kernel_function{T<:FloatingPoint}(κ::$(kernel), xᵗy::T) = $(kf)(xᵗy, κ)
+        function kernel_function!{T<:FloatingPoint}(κ::$(kernel), G::Array{T})
+            args = map(T, arguments(κ))
+            @inbounds for i = 1:length(G)
+                G[i] = $(kf)(G[i], args...)
+            end
+            G
+        end
+        kernel_function{T<:FloatingPoint}(κ::$(kernel), G::Array{T}) = kernel_function(κ, G)
+    end
+end
