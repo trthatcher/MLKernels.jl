@@ -6,34 +6,62 @@ function show(io::IO, κ::StandardKernel)
     print(io, " " * description_string(κ))
 end
 
+is_euclidean_distance(κ::StandardKernel) = false
+is_scalar_product(κ::StandardKernel) = false
 
-#=================================================
+function kernel_function!{T<:FloatingPoint}(κ::StandardKernel{T}, G::Array{T})
+    @inbounds for i = 1:length(G)
+        G[i] = kernel_function(κ, G[i])
+    end
+    G
+end
+kernel_function{T<:FloatingPoint}(κ::StandardKernel{T}, G::Array{T}) = kernel_function(κ, G)
+
+
+#===========================================================================
+  Auxiliary Functions
+===========================================================================#
+
+# xᵗy
+function scalar_product{T<:FloatingPoint}(x::Array{T}, y::Array{T})
+    n = length(x)
+    BLAS.dot(n, x, 1, y, 1)
+end
+
+# ϵᵗϵ = (x-y)ᵗ(x-y)
+function euclidean_distance{T<:FloatingPoint}(x::Array{T}, y::Array{T})
+    n = length(x)
+    ϵ = BLAS.axpy!(n, -one(T), y, 1, copy(x), 1)
+    BLAS.dot(n, ϵ, 1, ϵ, 1)
+end
+
+
+#==========================================================================
   Stationary Kernels
-=================================================#
+==========================================================================#
 
-abstract StationaryKernel <: StandardKernel
+abstract StationaryKernel{T<:FloatingPoint} <: StandardKernel{T}
 
 is_euclidean_distance(κ::StationaryKernel) = true
 
-@inline function kernel_function{T<:FloatingPoint}(κ::StationaryKernel, x::Vector{T}, y::Vector{T})
+@inline function kernel_function{T<:FloatingPoint}(κ::StationaryKernel{T}, x::Vector{T}, 
+                                                   y::Vector{T})
     kernel_function(κ, euclidean_distance(x, y))
 end
 
 
 #== Gaussian Kernel ===============#
 
-type GaussianKernel <: StationaryKernel
-    η::Real
-    function GaussianKernel(η::Real=1)
+immutable GaussianKernel{T<:FloatingPoint} <: StationaryKernel{T}
+    η::T
+    function GaussianKernel(η::T)
         η > 0 || error("σ = $(η) must be greater than 0.")
         new(η)
     end
 end
+GaussianKernel{T<:FloatingPoint}(η::T = 1.0) = GaussianKernel{T}(η)
 
-@inline gaussian_kernel{T<:FloatingPoint}(ϵᵗϵ::T, η::T) = exp(-η*ϵᵗϵ)
-@inline function gaussian_kernel{T<:FloatingPoint}(ϵᵗϵ::T, κ::GaussianKernel)
-    gaussian_kernel(ϵᵗϵ, T(κ.η))
-end
+@inline kernel_function{T<:FloatingPoint}(κ::GaussianKernel{T}, ϵᵗϵ::T) =  exp(-κ.η*ϵᵗϵ)
 
 arguments(κ::GaussianKernel) = (κ.η,)
 isposdef_kernel(κ::GaussianKernel) = true
@@ -62,18 +90,16 @@ end
 
 #== Laplacian Kernel ===============#
 
-type LaplacianKernel <: StationaryKernel
-    η::Real
-    function LaplacianKernel(η::Real=1)
+type LaplacianKernel{T<:FloatingPoint} <: StationaryKernel{T}
+    η::T
+    function LaplacianKernel(η::T)
         η > 0 || error("η = $(η) must be greater than zero.")
         new(η)
     end
 end
+LaplacianKernel{T<:FloatingPoint}(η::T = 1.0) = LaplacianKernel{T}(η)
 
-@inline laplacian_kernel{T<:FloatingPoint}(ϵᵗϵ::T, η::T) = exp(-η*sqrt(ϵᵗϵ))
-@inline function laplacian_kernel{T<:FloatingPoint}(ϵᵗϵ::T, κ::LaplacianKernel)
-    laplacian_kernel(ϵᵗϵ, T(κ.η))
-end
+@inline kernel_function{T<:FloatingPoint}(κ::LaplacianKernel{T}, ϵᵗϵ::T) = exp(-κ.η*sqrt(ϵᵗϵ))
 
 arguments(κ::LaplacianKernel) = (κ.η,)
 isposdef_kernel(κ::LaplacianKernel) = true
@@ -100,17 +126,17 @@ end
 
 #== Rational Quadratic Kernel ===============#
 
-type RationalQuadraticKernel <: StationaryKernel
-    c::Real
-    function RationalQuadraticKernel(c::Real=1)
+type RationalQuadraticKernel{T<:FloatingPoint} <: StationaryKernel{T}
+    c::T
+    function RationalQuadraticKernel(c::T)
         c > 0 || error("c = $(c) must be greater than zero.")
         new(c)
     end
 end
+RationalQuadraticKernel{T<:FloatingPoint}(c::T = 1.0) = RationalQuadraticKernel{T}(c)
 
-@inline rational_quadratic_kernel{T<:FloatingPoint}(ϵᵗϵ::T, c::T) = one(T) - ϵᵗϵ/(ϵᵗϵ + c)
-@inline function rational_quadratic_kernel{T<:FloatingPoint}(ϵᵗϵ::T, κ::RationalQuadraticKernel)
-    rational_quadratic_kernel(ϵᵗϵ, T(κ.c))
+@inline function kernel_function{T<:FloatingPoint}(κ::RationalQuadraticKernel{T}, ϵᵗϵ::T)
+    one(T) - ϵᵗϵ/(ϵᵗϵ + κ.c)
 end
 
 arguments(κ::RationalQuadraticKernel) = (κ.c,)
@@ -136,17 +162,17 @@ end
 
 #== Multi-Quadratic Kernel ===============#
 
-type MultiQuadraticKernel <: StationaryKernel
-    c::Real
-    function MultiQuadraticKernel(c::Real=1)
+immutable MultiQuadraticKernel{T<:FloatingPoint} <: StationaryKernel{T}
+    c::T
+    function MultiQuadraticKernel(c::T)
         c > 0 || error("c = $(c) must be greater than zero.")
         new(c)
     end
 end
+MultiQuadraticKernel{T<:FloatingPoint}(c::T = 1.0) = MultiQuadraticKernel{T}(c)
 
-@inline multiquadratic_kernel{T<:FloatingPoint}(ϵᵗϵ::T, c::T) = sqrt(ϵᵗϵ + c)
-@inline function multiquadratic_kernel{T<:FloatingPoint}(ϵᵗϵ::T, κ::MultiQuadraticKernel)
-    multiquadratic_kernel(ϵᵗϵ, T(κ.c))
+@inline function kernel_function{T<:FloatingPoint}(κ::MultiQuadraticKernel{T}, ϵᵗϵ::T)
+    sqrt(ϵᵗϵ + κ.c)
 end
 
 arguments(κ::MultiQuadraticKernel) = (κ.c,)
@@ -171,20 +197,17 @@ end
 
 #== Inverse Multi-Quadratic Kernel ===============#
 
-type InverseMultiQuadraticKernel <: StandardKernel
-    c::Real
-    function InverseMultiQuadraticKernel(c::Real=1)
+immutable InverseMultiQuadraticKernel{T<:FloatingPoint} <: StandardKernel{T}
+    c::T
+    function InverseMultiQuadraticKernel(c::T)
         c > 0 || error("c = $(c) must be greater than zero.")
         new(c)
     end
 end
+InverseMultiQuadraticKernel{T<:FloatingPoint}(c::T = 1.0) = InverseMultiQuadraticKernel{T}(c)
 
-@inline function inverse_multiquadratic_kernel{T<:FloatingPoint}(ϵᵗϵ::T, c::T) 
-    one(T) / sqrt(ϵᵗϵ + c)
-end
-@inline function inverse_multiquadratic_kernel{T<:FloatingPoint}(ϵᵗϵ::T, 
-                                                                 κ::InverseMultiQuadraticKernel)
-    inverse_multiquadratic_kernel(ϵᵗϵ, T(κ.c))
+@inline function kernel_function{T<:FloatingPoint}(κ::InverseMultiQuadraticKernel{T}, ϵᵗϵ::T)
+    one(T) / sqrt(ϵᵗϵ + κ.c)
 end
 
 arguments(κ::InverseMultiQuadraticKernel) = (κ.c,)
@@ -210,16 +233,16 @@ end
 
 #== Power Kernel ===============#
 
-type PowerKernel <: StationaryKernel
-    d::Real
-    function PowerKernel(d::Real = 1)
+immutable PowerKernel{T<:FloatingPoint} <: StationaryKernel{T}
+    d::T
+    function PowerKernel(d::T)
         d > 0 || error("d = $(d) must be greater than zero.")
         new(d)
     end
 end
+PowerKernel{T<:FloatingPoint}(d::T) = PowerKernel{T}(d)
 
-@inline power_kernel{T<:FloatingPoint}(ϵᵗϵ::T, d::T) = -(ϵᵗϵ^d)
-@inline power_kernel{T<:FloatingPoint}(ϵᵗϵ::T, κ::PowerKernel) = power_kernel(ϵᵗϵ, T(κ.d))
+@inline kernel_function{T<:FloatingPoint}(κ::PowerKernel{T}, ϵᵗϵ::T) = -ϵᵗϵ^(κ.d)
 
 arguments(κ::PowerKernel) = (κ.d,)
 isposdef_kernel(κ::PowerKernel) = false
@@ -246,16 +269,16 @@ end
 
 #== Log Kernel ===============#
 
-type LogKernel <: StationaryKernel
-    d::Real
-    function LogKernel(d::Real = 1)
+immutable LogKernel{T<:FloatingPoint} <: StationaryKernel{T}
+    d::T
+    function LogKernel(d::T)
         d > 0 || error("d = $(d) must be greater than zero.")
         new(d)
     end
 end
+LogKernel{T<:FloatingPoint}(d::T) = LogKernel{T}(d)
 
-@inline log_kernel{T<:FloatingPoint}(ϵᵗϵ::T, d::T) = -log(ϵᵗϵ^d + one(T))
-@inline log_kernel{T<:FloatingPoint}(ϵᵗϵ::T, κ::LogKernel) = log_kernel(ϵᵗϵ, T(κ.d))
+@inline kernel_function{T<:FloatingPoint}(ϵᵗϵ::T, κ::LogKernel{T}) = -log(ϵᵗϵ^(κ.d) + one(T))
 
 arguments(κ::LogKernel) = (κ.d,)
 isposdef_kernel(κ::LogKernel) = false
@@ -278,15 +301,15 @@ function description(κ::LogKernel)
 end
 
 
-#=================================================
+#==========================================================================
   Non-Stationary Kernels
-=================================================#
+==========================================================================#
 
-abstract NonStationaryKernel <: StandardKernel
+abstract NonStationaryKernel{T<:FloatingPoint} <: StandardKernel{T}
 
 is_scalar_product(κ::NonStationaryKernel) = true
 
-@inline function kernel_function{T<:FloatingPoint}(κ::NonStationaryKernel, x::Vector{T},
+@inline function kernel_function{T<:FloatingPoint}(κ::NonStationaryKernel{T}, x::Vector{T},
                                                    y::Vector{T})
     kernel_function(κ, scalar_product(x, y))
 end
@@ -294,18 +317,16 @@ end
 
 #== Linear Kernel ====================#
 
-type LinearKernel <: NonStationaryKernel
-    c::Real
-    function LinearKernel(c::Real=0)
+immutable LinearKernel{T<:FloatingPoint} <: NonStationaryKernel{T}
+    c::T
+    function LinearKernel(c::T)
         c >= 0 || error("c = $c must be greater than zero.")
         new(c)
     end
 end
+LinearKernel{T<:FloatingPoint}(c::T = 1.0) = LinearKernel{T}(c)
 
-@inline linear_kernel{T<:FloatingPoint}(xᵗy::T, c::T) = xᵗy + c
-@inline function linear_kernel{T<:FloatingPoint}(xᵗy::T, κ::LinearKernel)
-    linear_kernel(xᵗy, T(κ.c))
-end
+@inline kernel_function{T<:FloatingPoint}(κ::LinearKernel, xᵗy::T) = xᵗy + κ.c
 
 arguments(κ::LinearKernel) = (κ.c,)
 isposdef_kernel(κ::LinearKernel) = true
@@ -333,21 +354,23 @@ end
 
 #== Polynomial Kernel ===============#
 
-type PolynomialKernel <: NonStationaryKernel
-    α::Real
-    c::Real
-    d::Real
-    function PolynomialKernel(α::Real=1, c::Real=1, d::Real=2)
+immutable PolynomialKernel{T<:FloatingPoint} <: NonStationaryKernel{T}
+    α::T
+    c::T
+    d::T
+    function PolynomialKernel(α::T, c::T, d::T)
         α > 0 || error("α = $(α) must be greater than zero.")
         c >= 0 || error("c = $(c) must be a non-negative number.")
         d > 0 || error("d = $(d) must be greater than zero.") 
         new(α, c, d)
     end
 end
+function PolynomialKernel{T<:FloatingPoint}(α::T = 1.0, c::T = one(T), d::T = T(2))
+    PolynomialKernel{T}(α, c, d)
+end
 
-@inline polynomial_kernel{T<:FloatingPoint}(xᵗy::T, α::T, c::T, d::T) = (α*xᵗy + c)^d
-@inline function polynomial_kernel{T<:FloatingPoint}(xᵗy::T, κ::PolynomialKernel)
-    polynomial_kernel(xᵗy, T(κ.α), T(κ.c), T(κ.d))
+@inline function kernel_function{T<:FloatingPoint}(κ::PolynomialKernel{T}, xᵗy::T)
+    (κ.α*xᵗy + κ.c)^κ.d
 end
 
 arguments(κ::PolynomialKernel) = (κ.α, κ.c, κ.d)
@@ -377,20 +400,18 @@ end
 
 #== Sigmoid Kernel ===============#
 
-type SigmoidKernel <: NonStationaryKernel
-    α::Real
-    c::Real
-    function SigmoidKernel(α::Real=1, c::Real=0)
+immutable SigmoidKernel{T<:FloatingPoint} <: NonStationaryKernel{T}
+    α::T
+    c::T
+    function SigmoidKernel(α::T, c::T)
         α > 0 || error("α = $(α) must be greater than zero.")
         c >= 0 || error("c = $(c) must be non-negative.")
         new(α, c)
     end
 end
+SigmoidKernel{T<:FloatingPoint}(α::T = 1.0, c::T = one(T)) = SigmoidKernel{T}(α, c)
 
-@inline sigmoid_kernel{T<:FloatingPoint}(xᵗy::T, α::T, c::T) = tanh(α*xᵗy + c)
-@inline function sigmoid_kernel{T<:FloatingPoint}(xᵗy::T, κ::SigmoidKernel)
-    sigmoid_kernel(xᵗy, T(κ.α), T(κ.c))
-end
+@inline kernel_function{T<:FloatingPoint}(κ::SigmoidKernel, xᵗy::T) = tanh(κ.α*xᵗy + κ.c)
 
 arguments(κ::SigmoidKernel) = (κ.α, κ.c)
 isposdef_kernel(κ::SigmoidKernel) = false
@@ -414,29 +435,90 @@ function description(κ::SigmoidKernel)
 end
 
 
-#===================================================================================================
-  Definitions (until return typed generic functions are optimised
-===================================================================================================#
+#==========================================================================
+  Pointwise Product Kernels
+==========================================================================#
 
-for (kernel, kf) in ((:GaussianKernel, :gaussian_kernel),
-                     (:LaplacianKernel, :laplacian_kernel),
-                     (:RationalQuadraticKernel, :rational_quadratic_kernel),
-                     (:MultiQuadraticKernel, :multiquadratic_kernel),
-                     (:InverseMultiQuadraticKernel, :inverse_multiquadratic_kernel),
-                     (:PowerKernel, :power_kernel),
-                     (:LogKernel, :log_kernel),
-                     (:LinearKernel, :linear_kernel),
-                     (:PolynomialKernel, :polynomial_kernel),
-                     (:SigmoidKernel, :sigmoid_kernel))
-    @eval begin
-        @inline kernel_function{T<:FloatingPoint}(κ::$(kernel), xᵗy::T) = $(kf)(xᵗy, κ)
-        function kernel_function!{T<:FloatingPoint}(κ::$(kernel), G::Array{T})
-            args = map(T, arguments(κ))
-            @inbounds for i = 1:length(G)
-                G[i] = $(kf)(G[i], args...)
-            end
-            G
-        end
-        kernel_function{T<:FloatingPoint}(κ::$(kernel), G::Array{T}) = kernel_function(κ, G)
+#=
+type PointwiseProductKernel <: StandardKernel
+    f::Function
+    posdef::Bool
+    function PointwiseProductKernel(f::Function, posdef::Bool = false)
+        method_exists(f, (Array{Float32},)) && method_exists(f, (Array{Float64},)) || (
+            error("f = $(f) must map f: ℝⁿ → ℝ (define methods for both Array{Float32} and " * ( 
+                  "Array{Float64}).")))
+        new(f, posdef)
     end
 end
+
+@inline function pointwise_product_kernel{T<:FloatingPoint}(x::Array{T}, y::Array{T}, f::Function)
+    f(x) * f(y)
+end
+@inline function pointwise_product_kernel{T<:FloatingPoint}(x::Array{T}, y::Array{T}, 
+                                                            κ::PointwiseProductKernel)
+    pointwise_product_kernel(x, y, κ.f)
+end
+
+arguments(κ::PointwiseProductKernel) = (κ.f,)
+isposdef_kernel(κ::PointwiseProductKernel) = κ.posdef
+
+@inline function kernel_function(κ::PointwiseProductKernel)
+    k{T<:FloatingPoint}(x::Array{T}, y::Array{T}) = pointwiseproductkernel(x, y, copy(κ.f))
+end
+
+formula_string(κ::PointwiseProductKernel) = "k(x,y) = f(x)f(y)"
+argument_string(κ::PointwiseProductKernel) = "f = $(κ.f)"
+description_string(κ::PointwiseProductKernel) = "PointwiseProductKernel(f=$(κ.f))"
+
+function description(κ::PointwiseProductKernel)
+    print(
+        """ 
+         Pointwise Product Kernel:
+         ===================================================================
+         The pointwise product kernel is the product of a real-valued multi-
+         variate function applied to each of the vector arguments:
+
+             k(x,y) = f(x)f(y)    x ∈ ℝⁿ, y ∈ ℝⁿ, f: ℝⁿ → ℝ
+        """
+    )
+end
+=#
+
+#=================================================
+  Generic Kernels
+=================================================#
+
+#=
+type GenericKernel <: StandardKernel
+    k::Function
+    posdef::Bool
+    function GenericKernel(k::Function, posdef::Bool = false)
+        method_exists(f, (Array{Float32}, Array{Float32})) && (
+            method_exists(f, (Array{Float64}, Array{Float64})) || (
+            error("k = $(f) must map k: ℝⁿ×ℝⁿ → ℝ (define methods for both" * (
+                  "Array{Float32} and Array{Float64})."))))
+        new(k, posdef)
+    end
+end
+
+arguments(κ::GenericKernel) = (κ.k,)
+isposdef_kernel(κ::GenericKernel) = κ.posdef
+
+kernel_function(κ::GenericKernel) = copy(κ.k)
+
+formula_string(κ::GenericKernel) = "k(x,y)"
+argument_string(κ::GenericKernel) = "k = $(κ.k)"
+description_string(κ::GenericKernel) = "GenericKernel(k=$(κ.k))"
+
+function description(κ::GenericKernel)
+    print(
+        """ 
+         Generic Kernel:
+         ===================================================================
+         Customized definition:
+
+             k: ℝⁿ×ℝⁿ → ℝ
+        """
+    )
+end
+=#

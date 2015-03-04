@@ -45,9 +45,8 @@ export
             KernelProduct,
             KernelSum
 
-
-
-
-include("Kernels.jl")
+include("kernels.jl")  # General and composite kernels
+include("standardkernels.jl")  # Specific kernels from ML literature
+#include("kernelmatrix.jl")
 
 end # KernelFunctions
