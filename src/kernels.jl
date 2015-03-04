@@ -12,13 +12,10 @@ abstract StandardKernel{T<:FloatingPoint} <: SimpleKernel
 
 ScalableKernel = Union(StandardKernel, TransformedKernel)
 
-#call{T<:FloatingPoint}(κ::Kernel, x::Array{T}, y::Array{T}) = kernel_function(κ, x, y)
+call(κ::Kernel, args...) = kernel_function(κ, args...)
 
 isposdef_kernel(κ::Kernel) = false
 isposdef(κ::Kernel) = isposdef_kernel(κ)
-
-is_euclidean_distance(κ::Kernel) = false
-is_scalar_product(κ::Kernel) = false
 
 
 #===================================================================================================
