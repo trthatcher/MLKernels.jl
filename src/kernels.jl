@@ -4,18 +4,19 @@
 
 abstract Kernel
 
-abstract SimpleKernel <: Kernel
-abstract CompositeKernel <: Kernel
+abstract SimpleKernel{T<:FloatingPoint} <: Kernel
+abstract CompositeKernel{T<:FloatingPoint} <: Kernel
 
-abstract TransformedKernel <: SimpleKernel
-abstract StandardKernel{T<:FloatingPoint} <: SimpleKernel
+abstract TransformedKernel{T<:FloatingPoint} <: SimpleKernel{T}
+abstract StandardKernel{T<:FloatingPoint} <: SimpleKernel{T}
 
-ScalableKernel = Union(StandardKernel, TransformedKernel)
+typealias ScalableKernel{T<:FloatingPoint} Union(StandardKernel{T}, TransformedKernel{T})
 
 call(κ::Kernel, args...) = kernel_function(κ, args...)
 
 isposdef_kernel(κ::Kernel) = false
-isposdef(κ::Kernel) = isposdef_kernel(κ)
+is_euclidean_distance(κ::Kernel) = false
+is_scalar_product(κ::Kernel) = false
 
 
 #===================================================================================================
@@ -24,19 +25,42 @@ isposdef(κ::Kernel) = isposdef_kernel(κ)
 
 #== Exponential Mercer Kernel ====================#
 
-type ExponentialKernel <: TransformedKernel
-    κ::StandardKernel
-    ExponentialKernel(κ::StandardKernel) = new(κ)
+immutable ExponentialKernel{T<:FloatingPoint} <: TransformedKernel{T}
+    κ::StandardKernel{T}
+    ExponentialKernel(κ::StandardKernel{T}) = new(κ)
+end
+ExponentialKernel{T<:FloatingPoint}(κ::StandardKernel{T}) = ExponentialKernel{T}(κ)
+
+@inline function scalar_kernel_function{T<:FloatingPoint}(ψ::ExponentialKernel{T}, x::T)
+    exp(scalar_kernel_function(ψ.κ, x))
 end
 
-@inline kernel_function(ψ::ExponentialKernel) = exp(kernel_function(ψ.κ)(x, y))
+function scalar_kernel_function!{T<:FloatingPoint}(ψ::ExponentialKernel{T}, G::Array{T})
+    scalar_kernel_function!(ψ.κ, G)
+    @inbounds for i = 1:length(G)
+        G[i] = exp(G[i])
+    end
+    G
+end
+
+function scalar_kernel_function{T<:FloatingPoint}(ψ::ExponentialKernel{T}, G::Array{T})
+    scalar_kernel_function!(ψ, copy(G))
+end
+
+@inline function kernel_function{T<:FloatingPoint}(ψ::ExponentialKernel{T}, x::Vector{T}, 
+                                                   y::Vector{T})
+    exp(kernel_function(ψ.κ, x, y))
+end
+
 isposdef_kernel(ψ::ExponentialKernel) = isposdef_kernel(ψ.κ)
+is_euclidean_distance(κ::ExponentialKernel) = is_euclidean_distance(ψ.κ)
+is_scalar_product(κ::ExponentialKernel) = is_scalar_product(ψ.κ)
 
-
-description_string(ψ::ExponentialKernel) = "exp(" * description_string(ψ.κ) * ")"
+function description_string{T<:FloatingPoint}(ψ::ExponentialKernel{T})
+    "ExponentialKernel{$(T)}(" * description_string(ψ.κ) * ")"
+end
 
 function show(io::IO, ψ::ExponentialKernel)
-    println(io, "Exponential Mercer Kernel:")
     print(io, " " * description_string(ψ))
 end
 
@@ -45,38 +69,61 @@ exp(κ::StandardKernel) = ExponentialKernel(deepcopy(κ))
 
 #== Exponentiated Mercer Kernel ====================#
 
-type ExponentiatedKernel <: TransformedKernel
-    κ::StandardKernel
-    a::Integer
-    function ExponentiatedKernel(κ::StandardKernel, a::Real)
+immutable ExponentiatedKernel{T<:FloatingPoint} <: TransformedKernel{T}
+    κ::StandardKernel{T}
+    a::T
+    function ExponentiatedKernel(κ::StandardKernel{T}, a::T)
         a > 0 || error("a = $(a) must be a non-negative number.")
         new(κ, a)
     end
 end
+function ExponentiatedKernel{T<:FloatingPoint}(κ::StandardKernel{T}, a::T)
+    ExponentiatedKernel{T}(κ, a)
+end
 
-@inline kernel_function(ψ::ExponentiatedKernel) = (kernel_function(ψ.κ)(x, y)) ^ ψ.a
+function scalar_kernel_function!{T<:FloatingPoint}(ψ::ExponentiatedKernel{T}, G::Array{T})
+    scalar_kernel_function!(ψ.κ, G)
+    for i = 1:length(G)
+        G[i] = G[i] ^ ψ.a
+    end
+    G
+end
+
+function scalar_kernel_function{T<:FloatingPoint}(ψ::ExponentiatedKernel{T}, G::Array{T})
+    scalar_kernel_function!(ψ, copy(G))
+end
+
+@inline function kernel_function{T<:FloatingPoint}(ψ::ExponentiatedKernel{T}, x::Vector{T}, 
+                                                   y::Vector{T})
+    kernel_function(ψ.κ, x, y) ^ ψ.a
+end
+
 isposdef_kernel(ψ::ExponentiatedKernel) = isposdef_kernel(ψ.κ)
+is_euclidean_distance(κ::ExponentiatedKernel) = is_euclidean_distance(ψ.κ)
+is_scalar_product(κ::ExponentiatedKernel) = is_scalar_product(ψ.κ)
 
-description_string(ψ::ExponentiatedKernel) = description_string(ψ.κ) * " ^ $(ψ.a)"
+function description_string{T<:FloatingPoint}(ψ::ExponentiatedKernel{T})
+    "ExponentiatedKernel{$(T)}(" * description_string(ψ.κ) * ", $(ψ.a))"
+end
 
 function show(io::IO, ψ::ExponentiatedKernel)
-    println(io, "Exponentiated Mercer Kernel:")
     print(io, " " * description_string(ψ))
 end
 
-^(κ::StandardKernel, a::Integer) = ExponentiatedKernel(deepcopy(κ), a)
+^{T<:FloatingPoint}(κ::StandardKernel{T}, a::T) = ExponentiatedKernel(deepcopy(κ), a)
 
 
 #== Scaled Mercer Kernel ====================#
 
-type ScaledKernel <: SimpleKernel
-    a::Real
-    κ::ScalableKernel
-    function ScaledKernel(a::Real, κ::ScalableKernel)
+type ScaledKernel{T<:FloatingPoint} <: SimpleKernel{T}
+    a::T
+    κ::ScalableKernel{T}
+    function ScaledKernel(a::T, κ::ScalableKernel{T})
         a > 0 || error("a = $(a) must be greater than zero.")
         new(a, κ)
     end
 end
+ScaledKernel{T<:FloatingPoint}(a::T, κ::ScalableKernel{T}) = ScaledKernel{T}(a, κ)
 
 @inline function kernel_function(ψ::ScaledKernel)
     if ψ.a == 1

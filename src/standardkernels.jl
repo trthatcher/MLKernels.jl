@@ -6,16 +6,16 @@ function show(io::IO, κ::StandardKernel)
     print(io, " " * description_string(κ))
 end
 
-is_euclidean_distance(κ::StandardKernel) = false
-is_scalar_product(κ::StandardKernel) = false
-
-function kernel_function!{T<:FloatingPoint}(κ::StandardKernel{T}, G::Array{T})
+function scalar_kernel_function!{T<:FloatingPoint}(κ::StandardKernel{T}, G::Array{T})
     @inbounds for i = 1:length(G)
-        G[i] = kernel_function(κ, G[i])
+        G[i] = scalar_kernel_function(κ, G[i])
     end
     G
 end
-kernel_function{T<:FloatingPoint}(κ::StandardKernel{T}, G::Array{T}) = kernel_function(κ, G)
+
+function scalar_kernel_function{T<:FloatingPoint}(κ::StandardKernel{T}, G::Array{T})
+    scalar_kernel_function!(κ, copy(G))
+end
 
 
 #===========================================================================
@@ -46,7 +46,7 @@ is_euclidean_distance(κ::StationaryKernel) = true
 
 @inline function kernel_function{T<:FloatingPoint}(κ::StationaryKernel{T}, x::Vector{T}, 
                                                    y::Vector{T})
-    kernel_function(κ, euclidean_distance(x, y))
+    scalar_kernel_function(κ, euclidean_distance(x, y))
 end
 
 
@@ -61,14 +61,14 @@ immutable GaussianKernel{T<:FloatingPoint} <: StationaryKernel{T}
 end
 GaussianKernel{T<:FloatingPoint}(η::T = 1.0) = GaussianKernel{T}(η)
 
-@inline kernel_function{T<:FloatingPoint}(κ::GaussianKernel{T}, ϵᵗϵ::T) =  exp(-κ.η*ϵᵗϵ)
+@inline scalar_kernel_function{T<:FloatingPoint}(κ::GaussianKernel{T}, ϵᵗϵ::T) = exp(-κ.η*ϵᵗϵ)
 
 arguments(κ::GaussianKernel) = (κ.η,)
 isposdef_kernel(κ::GaussianKernel) = true
 
 formula_string(κ::GaussianKernel) = "exp(-η‖x-y‖²)"
 argument_string(κ::GaussianKernel) = "η = $(κ.η)"
-description_string(κ::GaussianKernel) = "GaussianKernel(η=$(κ.η))"
+description_string{T<:FloatingPoint}(κ::GaussianKernel{T}) = "GaussianKernel{$(T)}(η=$(κ.η))"
 
 function description(κ::GaussianKernel)
     print(
@@ -99,14 +99,16 @@ type LaplacianKernel{T<:FloatingPoint} <: StationaryKernel{T}
 end
 LaplacianKernel{T<:FloatingPoint}(η::T = 1.0) = LaplacianKernel{T}(η)
 
-@inline kernel_function{T<:FloatingPoint}(κ::LaplacianKernel{T}, ϵᵗϵ::T) = exp(-κ.η*sqrt(ϵᵗϵ))
+@inline function scalar_kernel_function{T<:FloatingPoint}(κ::LaplacianKernel{T}, ϵᵗϵ::T)
+    exp(-κ.η*sqrt(ϵᵗϵ))
+end
 
 arguments(κ::LaplacianKernel) = (κ.η,)
 isposdef_kernel(κ::LaplacianKernel) = true
 
 formula_string(κ::LaplacianKernel) = "exp(-η‖x-y‖)"
 argument_string(κ::LaplacianKernel) = "η = $(κ.η)"
-description_string(κ::LaplacianKernel) = "LaplacianKernel(η=$(κ.η))"
+description_string{T<:FloatingPoint}(κ::LaplacianKernel{T}) = "LaplacianKernel{$(T)}(η=$(κ.η))"
 
 function description(κ::LaplacianKernel)
     print(
@@ -135,7 +137,7 @@ type RationalQuadraticKernel{T<:FloatingPoint} <: StationaryKernel{T}
 end
 RationalQuadraticKernel{T<:FloatingPoint}(c::T = 1.0) = RationalQuadraticKernel{T}(c)
 
-@inline function kernel_function{T<:FloatingPoint}(κ::RationalQuadraticKernel{T}, ϵᵗϵ::T)
+@inline function scalar_kernel_function{T<:FloatingPoint}(κ::RationalQuadraticKernel{T}, ϵᵗϵ::T)
     one(T) - ϵᵗϵ/(ϵᵗϵ + κ.c)
 end
 
@@ -144,7 +146,9 @@ isposdef_kernel(κ::RationalQuadraticKernel) = true
 
 formula_string(κ::RationalQuadraticKernel) = "1 - ‖x-y‖²/(‖x-y‖² + c)"
 argument_string(κ::RationalQuadraticKernel) = "c = $(κ.c)"
-description_string(κ::RationalQuadraticKernel) = "RationalQuadraticKernel(c=$(κ.c))"
+function description_string{T<:FloatingPoint}(κ::RationalQuadraticKernel{T})
+    "RationalQuadraticKernel{$(T)}(c=$(κ.c))"
+end
 
 function description(κ::RationalQuadraticKernel)
     print(
@@ -171,7 +175,7 @@ immutable MultiQuadraticKernel{T<:FloatingPoint} <: StationaryKernel{T}
 end
 MultiQuadraticKernel{T<:FloatingPoint}(c::T = 1.0) = MultiQuadraticKernel{T}(c)
 
-@inline function kernel_function{T<:FloatingPoint}(κ::MultiQuadraticKernel{T}, ϵᵗϵ::T)
+@inline function scalar_kernel_function{T<:FloatingPoint}(κ::MultiQuadraticKernel{T}, ϵᵗϵ::T)
     sqrt(ϵᵗϵ + κ.c)
 end
 
@@ -180,7 +184,9 @@ isposdef_kernel(κ::MultiQuadraticKernel) = false
 
 formula_string(κ::MultiQuadraticKernel) = "√(‖x-y‖² + c)"
 argument_string(κ::MultiQuadraticKernel) = "c = $(κ.c)"
-description_string(κ::MultiQuadraticKernel) = "MultiQuadraticKernel(c=$(κ.c))"
+function description_string{T<:FloatingPoint}(κ::MultiQuadraticKernel{T})
+    "MultiQuadraticKernel{$(T)}(c=$(κ.c))"
+end
 
 function description(κ::MultiQuadraticKernel)
     print(
@@ -206,7 +212,7 @@ immutable InverseMultiQuadraticKernel{T<:FloatingPoint} <: StandardKernel{T}
 end
 InverseMultiQuadraticKernel{T<:FloatingPoint}(c::T = 1.0) = InverseMultiQuadraticKernel{T}(c)
 
-@inline function kernel_function{T<:FloatingPoint}(κ::InverseMultiQuadraticKernel{T}, ϵᵗϵ::T)
+@inline function scalar_kernel_function{T<:FloatingPoint}(κ::InverseMultiQuadraticKernel{T}, ϵᵗϵ::T)
     one(T) / sqrt(ϵᵗϵ + κ.c)
 end
 
@@ -215,7 +221,9 @@ isposdef_kernel(κ::InverseMultiQuadraticKernel) = false
 
 formula_string(κ::InverseMultiQuadraticKernel) = "1/√(‖x-y‖² + c)"
 argument_string(κ::InverseMultiQuadraticKernel) = "c = $(κ.c)"
-description_string(κ::InverseMultiQuadraticKernel) = "InverseMultiQuadraticKernel(c=$(κ.c))"
+function description_string{T<:FloatingPoint}(κ::InverseMultiQuadraticKernel{T})
+    "InverseMultiQuadraticKernel{$(T)}(c=$(κ.c))"
+end
 
 function description(κ::InverseMultiQuadraticKernel)
     print(
@@ -240,22 +248,22 @@ immutable PowerKernel{T<:FloatingPoint} <: StationaryKernel{T}
         new(d)
     end
 end
-PowerKernel{T<:FloatingPoint}(d::T) = PowerKernel{T}(d)
+PowerKernel{T<:FloatingPoint}(d::T = 2.0) = PowerKernel{T}(d)
 
-@inline kernel_function{T<:FloatingPoint}(κ::PowerKernel{T}, ϵᵗϵ::T) = -ϵᵗϵ^(κ.d)
+@inline scalar_kernel_function{T<:FloatingPoint}(κ::PowerKernel{T}, ϵᵗϵ::T) = -ϵᵗϵ^(κ.d)
 
 arguments(κ::PowerKernel) = (κ.d,)
 isposdef_kernel(κ::PowerKernel) = false
 
 formula_string(κ::PowerKernel) = "-‖x-y‖ᵈ"
 argument_string(κ::PowerKernel) = "d = $(κ.d)"
-description_string(κ::PowerKernel) = "PowerKernel(d=$(κ.d))"
+description_string{T<:FloatingPoint}(κ::PowerKernel{T}) = "PowerKernel{$(T)}(d=$(κ.d))"
 
 function description(κ::PowerKernel)
     print(
         """ 
          Power Kernel:
-         ===================================================================
+         
          The power kernel (also known as the unrectified triangular kernel)
          is a positive semidefinite kernel. An important feature of the
          power kernel is that it is scale invariant. The function is given
@@ -276,22 +284,22 @@ immutable LogKernel{T<:FloatingPoint} <: StationaryKernel{T}
         new(d)
     end
 end
-LogKernel{T<:FloatingPoint}(d::T) = LogKernel{T}(d)
+LogKernel{T<:FloatingPoint}(d::T = 1.0) = LogKernel{T}(d)
 
-@inline kernel_function{T<:FloatingPoint}(ϵᵗϵ::T, κ::LogKernel{T}) = -log(ϵᵗϵ^(κ.d) + one(T))
+@inline scalar_kernel_function{T<:FloatingPoint}(κ::LogKernel{T}, ϵᵗϵ::T) = -log(ϵᵗϵ^(κ.d) + one(T))
 
 arguments(κ::LogKernel) = (κ.d,)
 isposdef_kernel(κ::LogKernel) = false
 
 formula_string(κ::LogKernel) = "-‖x-y‖ᵈ"
 argument_string(κ::LogKernel) = "d = $(κ.d)"
-description_string(κ::LogKernel) = "LogKernel(d=$(κ.d))"
+description_string{T<:FloatingPoint}(κ::LogKernel{T}) = "LogKernel{$(T)}(d=$(κ.d))"
 
 function description(κ::LogKernel)
     print(
         """ 
          Log Kernel:
-         ===================================================================
+         
          The power kernel is a positive semidefinite kernel. The function is
          given by:
 
@@ -311,7 +319,7 @@ is_scalar_product(κ::NonStationaryKernel) = true
 
 @inline function kernel_function{T<:FloatingPoint}(κ::NonStationaryKernel{T}, x::Vector{T},
                                                    y::Vector{T})
-    kernel_function(κ, scalar_product(x, y))
+    scalar_kernel_function(κ, scalar_product(x, y))
 end
 
 
@@ -326,20 +334,20 @@ immutable LinearKernel{T<:FloatingPoint} <: NonStationaryKernel{T}
 end
 LinearKernel{T<:FloatingPoint}(c::T = 1.0) = LinearKernel{T}(c)
 
-@inline kernel_function{T<:FloatingPoint}(κ::LinearKernel, xᵗy::T) = xᵗy + κ.c
+@inline scalar_kernel_function{T<:FloatingPoint}(κ::LinearKernel, xᵗy::T) = xᵗy + κ.c
 
 arguments(κ::LinearKernel) = (κ.c,)
 isposdef_kernel(κ::LinearKernel) = true
 
 formula_string(κ::LinearKernel) = "k(x,y) = xᵗy + c"
 argument_string(κ::LinearKernel) = "c = $(κ.c)"
-description_string(κ::LinearKernel) = "LinearKernel(c=$(κ.c))"
+description_string{T<:FloatingPoint}(κ::LinearKernel{T}) = "LinearKernel{$(T)}(c=$(κ.c))"
 
 function description(κ::LinearKernel)
     print(
         """ 
          Linear Kernel:
-         ===================================================================
+         
          The linear kernel differs from the ordinary inner product by the
          addition of an optional constant c ≥ 0:
 
@@ -369,7 +377,7 @@ function PolynomialKernel{T<:FloatingPoint}(α::T = 1.0, c::T = one(T), d::T = T
     PolynomialKernel{T}(α, c, d)
 end
 
-@inline function kernel_function{T<:FloatingPoint}(κ::PolynomialKernel{T}, xᵗy::T)
+@inline function scalar_kernel_function{T<:FloatingPoint}(κ::PolynomialKernel{T}, xᵗy::T)
     (κ.α*xᵗy + κ.c)^κ.d
 end
 
@@ -378,13 +386,15 @@ isposdef_kernel(κ::PolynomialKernel) = true
 
 formula_string(κ::PolynomialKernel) = "(αxᵗy + c)ᵈ"
 argument_string(κ::PolynomialKernel) = "α = $(κ.α), c = $(κ.c) and d = $(κ.d)"
-description_string(κ::PolynomialKernel) = "PolynomialKernel(α=$(κ.α),c=$(κ.c),d=$(κ.d))"
+function description_string{T<:FloatingPoint}(κ::PolynomialKernel{T}) 
+    "PolynomialKernel{$(T)}(α=$(κ.α),c=$(κ.c),d=$(κ.d))"
+end
 
 function description(κ::PolynomialKernel)
     print(
         """ 
          Polynomial Kernel:
-         ===================================================================
+         
          The polynomial kernel is a non-stationary kernel which represents
          the original features as in a feature space over polynomials up to 
          degree d of the original variables:
@@ -411,20 +421,22 @@ immutable SigmoidKernel{T<:FloatingPoint} <: NonStationaryKernel{T}
 end
 SigmoidKernel{T<:FloatingPoint}(α::T = 1.0, c::T = one(T)) = SigmoidKernel{T}(α, c)
 
-@inline kernel_function{T<:FloatingPoint}(κ::SigmoidKernel, xᵗy::T) = tanh(κ.α*xᵗy + κ.c)
+@inline scalar_kernel_function{T<:FloatingPoint}(κ::SigmoidKernel, xᵗy::T) = tanh(κ.α*xᵗy + κ.c)
 
 arguments(κ::SigmoidKernel) = (κ.α, κ.c)
 isposdef_kernel(κ::SigmoidKernel) = false
 
 formula_string(κ::SigmoidKernel) = "tanh(α‖x-y‖² + c)"
 argument_string(κ::SigmoidKernel) = "α = $(κ.α) and c = $(κ.c)"
-description_string(κ::SigmoidKernel) = "SigmoidKernel(α=$(κ.α),c=$(κ.c))"
+function description_string{T<:FloatingPoint}(κ::SigmoidKernel{T})
+    "SigmoidKernel{$(T)}(α=$(κ.α),c=$(κ.c))"
+end
 
 function description(κ::SigmoidKernel)
     print(
         """ 
          Sigmoid Kernel:
-         ===================================================================
+         
          The sigmoid kernel is only positive semidefinite. It is used in the
          field of neural networks where it is often used as the activation
          function for artificial neurons.
