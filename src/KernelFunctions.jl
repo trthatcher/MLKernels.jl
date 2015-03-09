@@ -4,7 +4,7 @@
 
 module KernelFunctions
 
-import Base: show, call, exp, isposdef
+import Base: show, call, exp, isposdef, convert
 
 export
     # Functions
@@ -20,8 +20,8 @@ export
     Kernel,
         SimpleKernel,
             StandardKernel,
-                PointwiseProductKernel,
-                StationaryKernel,
+                # PointwiseProductKernel,
+                EuclideanDistanceKernel,
 	                GaussianKernel,
 	                LaplacianKernel,
             	    RationalQuadraticKernel,
@@ -29,21 +29,17 @@ export
             	    InverseMultiQuadraticKernel,
             	    PowerKernel,
             	    LogKernel,
-                NonStationaryKernel,
+                ScalarProductKernel,
 	                LinearKernel,
 	                PolynomialKernel,
             	    SigmoidKernel,
-            TransformedKernel,
-                ExponentialKernel,
-                ExponentiatedKernel,
-            ScalableKernel,
             ScaledKernel,
         CompositeKernel,
             KernelProduct,
             KernelSum
 
-include("kernels.jl")  # General and composite kernels
-include("standardkernels.jl")  # Specific kernels from ML literature
+include("kerneltypes.jl")  # General and composite kernels
+
 #include("kernelmatrix.jl")
 
 end # KernelFunctions
