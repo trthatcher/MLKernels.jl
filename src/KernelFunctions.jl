@@ -4,7 +4,7 @@
 
 module KernelFunctions
 
-import Base: show, call, exp, isposdef, convert
+import Base: show, call, exp, eltype, isposdef, convert, promote
 
 export
     # Functions
