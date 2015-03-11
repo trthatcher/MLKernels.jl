@@ -16,6 +16,8 @@ export
     kernel_function,
     scalar_kernel_function!,
     scalar_kernel_function,
+    description_string,
+    kernel_matrix,
     # Types
     Kernel,
         SimpleKernel,
@@ -38,8 +40,7 @@ export
             KernelProduct,
             KernelSum
 
-include("kerneltypes.jl")  # General and composite kernels
-
-#include("kernelmatrix.jl")
+include("kerneltypes.jl")
+include("kernelmatrix.jl")
 
 end # KernelFunctions

@@ -75,7 +75,9 @@ is_stationary_kernel(κ::GaussianKernel) = true
 
 formula_string(κ::GaussianKernel) = "exp(-η‖x-y‖²)"
 argument_string(κ::GaussianKernel) = "η = $(κ.η)"
-description_string{T<:FloatingPoint}(κ::GaussianKernel{T}) = "GaussianKernel{$(T)}(η=$(κ.η))"
+function description_string{T<:FloatingPoint}(κ::GaussianKernel{T}, eltype::Bool = true) 
+    "GaussianKernel" * (eltype ? "{$(T)}" : "") * "(η=$(κ.η))"
+end
 
 function description(κ::GaussianKernel)
     print(
@@ -119,7 +121,9 @@ isposdef_kernel(κ::LaplacianKernel) = true
 
 formula_string(κ::LaplacianKernel) = "exp(-η‖x-y‖)"
 argument_string(κ::LaplacianKernel) = "η = $(κ.η)"
-description_string{T<:FloatingPoint}(κ::LaplacianKernel{T}) = "LaplacianKernel{$(T)}(η=$(κ.η))"
+function description_string{T<:FloatingPoint}(κ::LaplacianKernel{T}, eltype::Bool = true) 
+    "LaplacianKernel" * (eltype ? "{$(T)}" : "") * "(η=$(κ.η))"
+end
 
 function description(κ::LaplacianKernel)
     print(
@@ -161,8 +165,8 @@ isposdef_kernel(κ::RationalQuadraticKernel) = true
 
 formula_string(κ::RationalQuadraticKernel) = "1 - ‖x-y‖²/(‖x-y‖² + c)"
 argument_string(κ::RationalQuadraticKernel) = "c = $(κ.c)"
-function description_string{T<:FloatingPoint}(κ::RationalQuadraticKernel{T})
-    "RationalQuadraticKernel{$(T)}(c=$(κ.c))"
+function description_string{T<:FloatingPoint}(κ::RationalQuadraticKernel{T}, eltype::Bool = true)
+    "RationalQuadraticKernel" * (eltype ? "{$(T)}" : "") * "(c=$(κ.c))"
 end
 
 function description(κ::RationalQuadraticKernel)
@@ -203,8 +207,8 @@ isposdef_kernel(κ::MultiQuadraticKernel) = false
 
 formula_string(κ::MultiQuadraticKernel) = "√(‖x-y‖² + c)"
 argument_string(κ::MultiQuadraticKernel) = "c = $(κ.c)"
-function description_string{T<:FloatingPoint}(κ::MultiQuadraticKernel{T})
-    "MultiQuadraticKernel{$(T)}(c=$(κ.c))"
+function description_string{T<:FloatingPoint}(κ::MultiQuadraticKernel{T}, eltype::Bool = true)
+    "MultiQuadraticKernel" * (eltype ? "{$(T)}" : "") * "(c=$(κ.c))"
 end
 
 function description(κ::MultiQuadraticKernel)
@@ -245,8 +249,9 @@ isposdef_kernel(κ::InverseMultiQuadraticKernel) = false
 
 formula_string(κ::InverseMultiQuadraticKernel) = "1/√(‖x-y‖² + c)"
 argument_string(κ::InverseMultiQuadraticKernel) = "c = $(κ.c)"
-function description_string{T<:FloatingPoint}(κ::InverseMultiQuadraticKernel{T})
-    "InverseMultiQuadraticKernel{$(T)}(c=$(κ.c))"
+function description_string{T<:FloatingPoint}(κ::InverseMultiQuadraticKernel{T}, 
+                                              eltype::Bool = true)
+    "InverseMultiQuadraticKernel" * (eltype ? "{$(T)}" : "") * "(c=$(κ.c))"
 end
 
 function description(κ::InverseMultiQuadraticKernel)
@@ -287,7 +292,9 @@ isposdef_kernel(κ::PowerKernel) = false
 
 formula_string(κ::PowerKernel) = "-‖x-y‖ᵈ"
 argument_string(κ::PowerKernel) = "d = $(κ.d)"
-description_string{T<:FloatingPoint}(κ::PowerKernel{T}) = "PowerKernel{$(T)}(d=$(κ.d))"
+function description_string{T<:FloatingPoint}(κ::PowerKernel{T}, eltype::Bool = true)
+    "PowerKernel" * (eltype ? "{$(T)}" : "") * "(d=$(κ.d))"
+end
 
 function description(κ::PowerKernel)
     print(
@@ -331,7 +338,9 @@ isposdef_kernel(κ::LogKernel) = false
 
 formula_string(κ::LogKernel) = "-‖x-y‖ᵈ"
 argument_string(κ::LogKernel) = "d = $(κ.d)"
-description_string{T<:FloatingPoint}(κ::LogKernel{T}) = "LogKernel{$(T)}(d=$(κ.d))"
+function description_string{T<:FloatingPoint}(κ::LogKernel{T}, eltype::Bool = true)
+    "LogKernel" * (eltype ? "{$(T)}" : "") * "(d=$(κ.d))"
+end
 
 function description(κ::LogKernel)
     print(
@@ -394,7 +403,9 @@ isposdef_kernel(κ::LinearKernel) = true
 
 formula_string(κ::LinearKernel) = "k(x,y) = xᵗy + c"
 argument_string(κ::LinearKernel) = "c = $(κ.c)"
-description_string{T<:FloatingPoint}(κ::LinearKernel{T}) = "LinearKernel{$(T)}(c=$(κ.c))"
+function description_string{T<:FloatingPoint}(κ::LinearKernel{T}, eltype::Bool = true)
+    "LinearKernel" * (eltype ? "{$(T)}" : "") * "(c=$(κ.c))"
+end
 
 function description(κ::LinearKernel)
     print(
@@ -446,8 +457,8 @@ isposdef_kernel(κ::PolynomialKernel) = true
 
 formula_string(κ::PolynomialKernel) = "(αxᵗy + c)ᵈ"
 argument_string(κ::PolynomialKernel) = "α = $(κ.α), c = $(κ.c) and d = $(κ.d)"
-function description_string{T<:FloatingPoint}(κ::PolynomialKernel{T}) 
-    "PolynomialKernel{$(T)}(α=$(κ.α),c=$(κ.c),d=$(κ.d))"
+function description_string{T<:FloatingPoint}(κ::PolynomialKernel{T}, eltype::Bool = true) 
+    "PolynomialKernel" * (eltype ? "{$(T)}" : "") * "(α=$(κ.α),c=$(κ.c),d=$(κ.d))"
 end
 
 function description(κ::PolynomialKernel)
@@ -492,8 +503,8 @@ isposdef_kernel(κ::SigmoidKernel) = false
 
 formula_string(κ::SigmoidKernel) = "tanh(α‖x-y‖² + c)"
 argument_string(κ::SigmoidKernel) = "α = $(κ.α) and c = $(κ.c)"
-function description_string{T<:FloatingPoint}(κ::SigmoidKernel{T})
-    "SigmoidKernel{$(T)}(α=$(κ.α),c=$(κ.c))"
+function description_string{T<:FloatingPoint}(κ::SigmoidKernel{T}, eltype::Bool = true)
+    "SigmoidKernel" * (eltype ? "{$(T)}" : "") * "(α=$(κ.α),c=$(κ.c))"
 end
 
 function description(κ::SigmoidKernel)

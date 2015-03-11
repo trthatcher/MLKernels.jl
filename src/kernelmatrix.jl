@@ -32,33 +32,45 @@ function lagged_gramian_matrix{T<:FloatingPoint}(X::Matrix{T}, sym::Bool = true)
 end
 
 
-
 #===================================================================================================
   Kernel Matrix Functions
 ===================================================================================================#
 
-#function apply_function{T<:FloatingPoint}(X::Matrix{T}
-
-function kernel_matrix2{T<:FloatingPoint}(X::Matrix{T}, κ::Kernel = LinearKernel(), sym::Bool = true)
-    #k! = vectorized_kernel_function!(κ)
-    n = size(X,1)
-    if is_euclidean_distance(κ)
-        G = gramian_matrix(X)
-    elseif is_scalar_product(κ)
-        G = lagged_gramian_matrix(X)
-    else
-        error("Not found")
+for (kernel, gramian) in ((:EuclideanDistanceKernel, :gramian_matrix),
+                          (:ScalarProductKernel, :lagged_gramian_matrix))
+    @eval begin
+        function kernel_matrix{T<:FloatingPoint}(X::Matrix{T}, κ::$kernel{T})
+            G::Matrix{T} = $gramian(X)
+            K::Matrix{T} = scalar_kernel_function!(κ, G)
+        end
     end
-    K = kernel_function!(κ,G)
-    #@inbounds for j = 1:n 
-    #    for i = 1:j
-    #        K[i,j] = k(K[i,j])::T  # @inbounds?
-    #    end 
-    #end
-    sym ? syml!(K) : K
 end
 
+function kernel_matrix{T<:FloatingPoint}(X::Matrix{T}, κ::StandardKernel{T})
+    n = size(X, 1)
+    K = Array(T, n, n)
+    @inbounds for i = 1:n 
+        for j = i:n
+            K[i,j] = kernel_function(κ, vec(X[i,:]), vec(X[j,:]))
+        end 
+    end
+    syml!(K)
+end
+
+function kernel_matrix{T<:FloatingPoint}(X::Matrix{T}, κ::StandardKernel{T}, a::T)
+    a > 0 || error("a = $a must be a positive number.")
+    K::Matrix{T} = kernel_matrix(X, κ)
+    a == 1 ? K : BLAS.scal!(length(K), a, K, 1)
+end
+
+
+
+
+#function apply_function{T<:FloatingPoint}(X::Matrix{T}
+
+
 # Returns the kernel (Gramian) matrix K of data matrix X for mapping ϕ
+#=
 function kernel_matrix{T<:FloatingPoint}(X::Matrix{T}, κ::Kernel = LinearKernel(), sym::Bool = true)
     k = kernel_function(κ)
     n = size(X, 1)
@@ -70,8 +82,10 @@ function kernel_matrix{T<:FloatingPoint}(X::Matrix{T}, κ::Kernel = LinearKernel
     end
     sym ? syml!(K) : K
 end
+=#
 
 # Returns the upper right corner kernel (Gramian) matrix K of data matrix [Xᵗ,Zᵗ]ᵗ
+#=
 function kernel_matrix{T<:FloatingPoint}(X::Matrix{T}, Z::Matrix{T}, κ::Kernel = LinearKernel())
     k = kernel_function(κ)
     n = size(X, 1)
@@ -86,6 +100,7 @@ function kernel_matrix{T<:FloatingPoint}(X::Matrix{T}, Z::Matrix{T}, κ::Kernel 
     end
     return K
 end
+=#
 
 # Centralize a kernel matrix K
 function center_kernel_matrix!{T<:FloatingPoint}(K::Matrix{T})
