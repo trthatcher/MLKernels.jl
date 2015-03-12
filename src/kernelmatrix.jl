@@ -17,7 +17,6 @@ function syml!(S::Matrix)
 end
 syml(S::Matrix) = syml!(copy(S))
 
-
 function gramian_matrix{T<:FloatingPoint}(X::Matrix{T}, sym::Bool = true)
     G = BLAS.syrk('U', 'N', one(T), X)
     sym ? syml!(G) : G
@@ -31,6 +30,72 @@ function lagged_gramian_matrix{T<:FloatingPoint}(X::Matrix{T}, sym::Bool = true)
     sym ? syml!(Gₗ) : Gₗ
 end
 
+for kernel in (:EuclideanDistanceKernel, :ScalarProductKernel)
+    @eval begin
+        function kernelize_gramian!{T<:FloatingPoint}(G::Array{T}, a::T, κ::$kernel{T})
+            if a == one(T)
+                @inbounds for i = 1:length(G)
+                    G[i] = kernelize_scalar(κ, G[i])
+                end
+                return G
+            else
+                @inbounds for i = 1:length(G)
+                    G[i] = a * kernelize_scalar(κ, G[i])
+                end
+                return G
+            end
+        end
+
+        function kernelize_gramian_sum!{T<:FloatingPoint}(G::Array{T}, a₁::T, κ₁::$Kernel{T}, a₂::T,
+                                                          κ₂::$Kernel{T})
+            @inbounds for i = 1:length(G)
+                G[i] = a₁*kernelize_scalar(κ₁, G[i]) + a₂*kernelize_scalar(κ₂, G[i])
+            end
+            G
+        end
+        function kernelize_gramian_sum!{T<:FloatingPoint}(G::Array{T}, κ₁::$Kernel{T}, a₂::T,
+                                                          κ₂::$Kernel{T})
+            @inbounds for i = 1:length(G)
+                G[i] = kernelize_scalar(κ₁, G[i]) + a₂*kernelize_scalar(κ₂, G[i])
+            end
+            G
+        end
+        function kernelize_gramian_sum!{T<:FloatingPoint}(G::Array{T}, a₁::T, κ₁::$Kernel{T},
+                                                          κ₂::$Kernel{T})
+            @inbounds for i = 1:length(G)
+                G[i] = a₁*kernelize_scalar(κ₁, G[i]) + kernelize_scalar(κ₂, G[i])
+            end
+            G
+        end
+        function kernelize_gramian_sum!{T<:FloatingPoint}(G::Array{T}, κ₁::$Kernel{T},
+                                                          κ₂::$Kernel{T})
+            @inbounds for i = 1:length(G)
+                G[i] = kernelize_scalar(κ₁, G[i]) + kernelize_scalar(κ₂, G[i])
+            end
+            G
+        end
+
+        function kernelize_gramian_product!{T<:FloatingPoint}(G::Array{T}, κ₁::$Kernel{T},
+                                                              κ₂::$Kernel{T}, a::T)
+            @inbounds for i = 1:length(G)
+                G[i] = a*kernelize_scalar(κ₁, G[i])*kernelize_scalar(κ₂, G[i])
+            end
+            G
+        end
+        function kernelize_gramian_product!{T<:FloatingPoint}(G::Array{T}, κ₁::$Kernel{T},
+                                                              κ₂::$Kernel{T})
+            @inbounds for i = 1:length(G)
+                G[i] = kernelize_scalar(κ₁, G[i])*kernelize_scalar(κ₂, G[i])
+            end
+            G
+        end
+
+
+    end
+end
+
+
+
 
 #===================================================================================================
   Kernel Matrix Functions
@@ -41,7 +106,7 @@ for (kernel, gramian) in ((:EuclideanDistanceKernel, :gramian_matrix),
     @eval begin
         function kernel_matrix{T<:FloatingPoint}(X::Matrix{T}, κ::$kernel{T})
             G::Matrix{T} = $gramian(X)
-            K::Matrix{T} = scalar_kernel_function!(κ, G)
+            K::Matrix{T} = kernelize_gramian!(κ, G)
         end
     end
 end
@@ -63,7 +128,17 @@ function kernel_matrix{T<:FloatingPoint}(X::Matrix{T}, κ::StandardKernel{T}, a:
     a == 1 ? K : BLAS.scal!(length(K), a, K, 1)
 end
 
+for (kernel, gramian) in ((:EuclideanDistanceKernel, :gramian_matrix),
+                          (:ScalarProductKernel, :lagged_gramian_matrix))
+    @eval begin
+        function kernel_sum_matrix{T<:FloatingPoint}(X::Matrix{T}, κ₁::$Kernel{T}, a₂::T,
+                                                     κ₂::$Kernel{T}, a₂::T)
+            n = size(X, 1)
+            G::Matrix{T} = $gramian(X)
+            K₁::Matrix{T} = scalar_kernel_function(κ₁, G)
+            K₂::Matrix{T} = scalar_kernel_function!(κ₂, G)
 
+end
 
 
 #function apply_function{T<:FloatingPoint}(X::Matrix{T}

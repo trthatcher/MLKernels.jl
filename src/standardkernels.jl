@@ -37,18 +37,7 @@ is_euclidean_distance(κ::EuclideanDistanceKernel) = true
 
 @inline function kernel_function{T<:FloatingPoint}(κ::EuclideanDistanceKernel{T}, x::Vector{T},
                                                    y::Vector{T})
-    scalar_kernel_function(κ, euclidean_distance(x, y))
-end
-
-function scalar_kernel_function!{T<:FloatingPoint}(κ::EuclideanDistanceKernel{T}, G::Array{T})
-    @inbounds for i = 1:length(G)
-        G[i] = scalar_kernel_function(κ, G[i])
-    end
-    G
-end
-
-function scalar_kernel_function{T<:FloatingPoint}(κ::EuclideanDistanceKernel{T}, G::Array{T})
-    scalar_kernel_function!(κ, copy(G))
+    kernelize_scalar(κ, euclidean_distance(x, y))
 end
 
 
@@ -67,7 +56,7 @@ function convert{T<:FloatingPoint}(::Type{GaussianKernel{T}}, κ::GaussianKernel
     GaussianKernel(convert(T, κ.η))
 end
 
-@inline scalar_kernel_function{T<:FloatingPoint}(κ::GaussianKernel{T}, ϵᵗϵ::T) = exp(-κ.η*ϵᵗϵ)
+@inline kernelize_scalar{T<:FloatingPoint}(κ::GaussianKernel{T}, ϵᵗϵ::T) = exp(-κ.η*ϵᵗϵ)
 
 arguments(κ::GaussianKernel) = (κ.η,)
 isposdef_kernel(κ::GaussianKernel) = true
@@ -112,7 +101,7 @@ function convert{T<:FloatingPoint}(::Type{LaplacianKernel{T}}, κ::LaplacianKern
     LaplacianKernel(convert(T, κ.η))
 end
 
-@inline function scalar_kernel_function{T<:FloatingPoint}(κ::LaplacianKernel{T}, ϵᵗϵ::T)
+@inline function kernelize_scalar{T<:FloatingPoint}(κ::LaplacianKernel{T}, ϵᵗϵ::T)
     exp(-κ.η*sqrt(ϵᵗϵ))
 end
 
@@ -156,7 +145,7 @@ function convert{T<:FloatingPoint}(::Type{RationalQuadraticKernel{T}}, κ::Ratio
     RationalQuadraticKernel(convert(T, κ.c))
 end
 
-@inline function scalar_kernel_function{T<:FloatingPoint}(κ::RationalQuadraticKernel{T}, ϵᵗϵ::T)
+@inline function kernelize_scalar{T<:FloatingPoint}(κ::RationalQuadraticKernel{T}, ϵᵗϵ::T)
     one(T) - ϵᵗϵ/(ϵᵗϵ + κ.c)
 end
 
@@ -198,7 +187,7 @@ function convert{T<:FloatingPoint}(::Type{MultiQuadraticKernel{T}}, κ::MultiQua
     MultiQuadraticKernel(convert(T, κ.c))
 end
 
-@inline function scalar_kernel_function{T<:FloatingPoint}(κ::MultiQuadraticKernel{T}, ϵᵗϵ::T)
+@inline function kernelize_scalar{T<:FloatingPoint}(κ::MultiQuadraticKernel{T}, ϵᵗϵ::T)
     sqrt(ϵᵗϵ + κ.c)
 end
 
@@ -240,7 +229,7 @@ function convert{T<:FloatingPoint}(::Type{InverseMultiQuadraticKernel{T}},
     InverseMultiQuadraticKernel(convert(T, κ.c))
 end
 
-@inline function scalar_kernel_function{T<:FloatingPoint}(κ::InverseMultiQuadraticKernel{T}, ϵᵗϵ::T)
+@inline function kernelize_scalar{T<:FloatingPoint}(κ::InverseMultiQuadraticKernel{T}, ϵᵗϵ::T)
     one(T) / sqrt(ϵᵗϵ + κ.c)
 end
 
@@ -285,7 +274,7 @@ PowerKernel(d::Union(Int64,UInt64)) = PowerKernel(convert(Float64, d))
 
 convert{T<:FloatingPoint}(::Type{PowerKernel{T}}, κ::PowerKernel) = PowerKernel(convert(T, κ.d))
 
-@inline scalar_kernel_function{T<:FloatingPoint}(κ::PowerKernel{T}, ϵᵗϵ::T) = -ϵᵗϵ^(κ.d)
+@inline kernelize_scalar{T<:FloatingPoint}(κ::PowerKernel{T}, ϵᵗϵ::T) = -ϵᵗϵ^(κ.d)
 
 arguments(κ::PowerKernel) = (κ.d,)
 isposdef_kernel(κ::PowerKernel) = false
@@ -329,7 +318,7 @@ LogKernel(d::Union(Int64,UInt64)) = LogKernel(convert(Float64, d))
 
 convert{T<:FloatingPoint}(::Type{LogKernel{T}}, κ::LogKernel) = LogKernel(convert(T, κ.d))
 
-@inline function scalar_kernel_function{T<:FloatingPoint}(κ::LogKernel{T}, ϵᵗϵ::T) 
+@inline function kernelize_scalar{T<:FloatingPoint}(κ::LogKernel{T}, ϵᵗϵ::T) 
     -log(sqrt(ϵᵗϵ)^(κ.d) + one(T))
 end
 
@@ -366,18 +355,7 @@ is_scalar_product(κ::ScalarProductKernel) = true
 
 @inline function kernel_function{T<:FloatingPoint}(κ::ScalarProductKernel{T}, x::Vector{T},
                                                    y::Vector{T})
-    scalar_kernel_function(κ, scalar_product(x, y))
-end
-
-function scalar_kernel_function!{T<:FloatingPoint}(κ::ScalarProductKernel{T}, G::Array{T})
-    @inbounds for i = 1:length(G)
-        G[i] = scalar_kernel_function(κ, G[i])
-    end
-    G
-end
-
-function scalar_kernel_function{T<:FloatingPoint}(κ::ScalarProductKernel{T}, G::Array{T})
-    scalar_kernel_function!(κ, copy(G))
+    kernelize_scalar(κ, scalar_product(x, y))
 end
 
 
@@ -396,7 +374,7 @@ function convert{T<:FloatingPoint}(::Type{LinearKernel{T}}, κ::LinearKernel)
     LinearKernel(convert(T, κ.c))
 end
 
-@inline scalar_kernel_function{T<:FloatingPoint}(κ::LinearKernel, xᵗy::T) = xᵗy + κ.c
+@inline kernelize_scalar{T<:FloatingPoint}(κ::LinearKernel, xᵗy::T) = xᵗy + κ.c
 
 arguments(κ::LinearKernel) = (κ.c,)
 isposdef_kernel(κ::LinearKernel) = true
@@ -448,7 +426,7 @@ function convert{T<:FloatingPoint}(::Type{PolynomialKernel{T}}, κ::PolynomialKe
     PolynomialKernel(convert(T, κ.α), convert(T, κ.c), convert(T, κ.d))
 end
 
-@inline function scalar_kernel_function{T<:FloatingPoint}(κ::PolynomialKernel{T}, xᵗy::T)
+@inline function kernelize_scalar{T<:FloatingPoint}(κ::PolynomialKernel{T}, xᵗy::T)
     (κ.α*xᵗy + κ.c)^κ.d
 end
 
@@ -496,7 +474,7 @@ function convert{T<:FloatingPoint}(::Type{SigmoidKernel{T}}, κ::SigmoidKernel)
     SigmoidKernel(convert(T, κ.α), convert(T, κ.c))
 end
 
-@inline scalar_kernel_function{T<:FloatingPoint}(κ::SigmoidKernel, xᵗy::T) = tanh(κ.α*xᵗy + κ.c)
+@inline kernelize_scalar{T<:FloatingPoint}(κ::SigmoidKernel, xᵗy::T) = tanh(κ.α*xᵗy + κ.c)
 
 arguments(κ::SigmoidKernel) = (κ.α, κ.c)
 isposdef_kernel(κ::SigmoidKernel) = false
@@ -559,7 +537,7 @@ end
   Pointwise Product Kernel
 ==========================================================================#
 
-# Will look into pointwise product kernel when Julia matures as a language
+# Will look into pointwise product kernel in future
 
 #=
 immutable PointwiseProductKernel{T<:FloatingPoint} <: StandardKernel{T}
