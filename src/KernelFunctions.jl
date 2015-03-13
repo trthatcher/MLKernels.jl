@@ -41,6 +41,6 @@ export
             KernelSum
 
 include("kerneltypes.jl")
-include("kernelmatrix.jl")
+#include("kernelmatrix.jl")
 
 end # KernelFunctions
