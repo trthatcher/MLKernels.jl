@@ -6,11 +6,11 @@ abstract Kernel{T<:FloatingPoint}
 
 eltype{T}(κ::Kernel{T}) = T
 
-call(κ::Kernel, args...) = kernel_function(κ, args...)
+call{T<:FloatingPoint}(κ::Kernel{T}, x::Vector{T}, y::Vector{T}) = kernel_function(κ, x, y)
+call{T<:FloatingPoint}(κ::Kernel{T}, X::Matrix{T}) = kernel_matrix(κ, X)
+call{T<:FloatingPoint}(κ::Kernel{T}, X::Matrix{T}, Y::Matrix{T}) = kernel_matrix(κ, X, Y)
 
 isposdef_kernel(κ::Kernel) = false
-is_euclidean_distance(κ::Kernel) = false
-is_scalar_product(κ::Kernel) = false
 
 abstract SimpleKernel{T<:FloatingPoint} <: Kernel{T}
 abstract CompositeKernel{T<:FloatingPoint} <: Kernel{T}

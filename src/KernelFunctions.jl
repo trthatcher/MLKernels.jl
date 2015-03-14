@@ -11,14 +11,13 @@ export
     arguments,
     description,
     isposdef_kernel,
-    is_euclidean_distance,
-    is_scalar_product,
     kernel_function,
-    scalar_kernel_function!,
-    scalar_kernel_function,
-    description_string,
     kernel_matrix,
-    kernelize_scalar,
+    description_string,
+    gramian_matrix,
+    lagged_gramian_matrix,
+    center_kernel_matrix!,
+    center_kernel_matrix,
     # Types
     Kernel,
         SimpleKernel,
@@ -42,6 +41,6 @@ export
             KernelSum
 
 include("kerneltypes.jl")
-#include("kernelmatrix.jl")
+include("kernelmatrix.jl")
 
 end # KernelFunctions
