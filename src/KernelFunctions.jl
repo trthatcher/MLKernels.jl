@@ -18,6 +18,7 @@ export
     scalar_kernel_function,
     description_string,
     kernel_matrix,
+    kernelize_scalar,
     # Types
     Kernel,
         SimpleKernel,
