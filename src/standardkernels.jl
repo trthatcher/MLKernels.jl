@@ -46,7 +46,7 @@ end
 immutable GaussianKernel{T<:FloatingPoint} <: EuclideanDistanceKernel{T}
     η::T
     function GaussianKernel(η::T)
-        η > 0 || error("σ = $(η) must be greater than 0.")
+        η > 0 || throw(ArgumentError("σ = $(η) must be greater than 0."))
         new(η)
     end
 end
@@ -91,7 +91,7 @@ end
 type LaplacianKernel{T<:FloatingPoint} <: EuclideanDistanceKernel{T}
     η::T
     function LaplacianKernel(η::T)
-        η > 0 || error("η = $(η) must be greater than zero.")
+        η > 0 || throw(ArgumentError("η = $(η) must be greater than zero."))
         new(η)
     end
 end
@@ -135,7 +135,7 @@ end
 type RationalQuadraticKernel{T<:FloatingPoint} <: EuclideanDistanceKernel{T}
     c::T
     function RationalQuadraticKernel(c::T)
-        c > 0 || error("c = $(c) must be greater than zero.")
+        c > 0 || throw(ArgumentError("c = $(c) must be greater than zero."))
         new(c)
     end
 end
@@ -177,7 +177,7 @@ end
 immutable MultiQuadraticKernel{T<:FloatingPoint} <: EuclideanDistanceKernel{T}
     c::T
     function MultiQuadraticKernel(c::T)
-        c > 0 || error("c = $(c) must be greater than zero.")
+        c > 0 || throw(ArgumentError("c = $(c) must be greater than zero."))
         new(c)
     end
 end
@@ -218,7 +218,7 @@ end
 immutable InverseMultiQuadraticKernel{T<:FloatingPoint} <: EuclideanDistanceKernel{T}
     c::T
     function InverseMultiQuadraticKernel(c::T)
-        c > 0 || error("c = $(c) must be greater than zero.")
+        c > 0 || throw(ArgumentError("c = $(c) must be greater than zero."))
         new(c)
     end
 end
@@ -262,7 +262,7 @@ end
 immutable PowerKernel{T<:FloatingPoint} <: EuclideanDistanceKernel{T}
     d::T
     function PowerKernel(d::T)
-        d > 0 || error("d = $(d) must be a positive integer.")
+        d > 0 || throw(ArgumentError("d = $(d) must be a positive integer."))
         dₜ = trunc(d)
         d == dₜ || warn("d = $(d) was truncated to $(dₜ).")
         new(dₜ)
@@ -306,7 +306,7 @@ end
 immutable LogKernel{T<:FloatingPoint} <: EuclideanDistanceKernel{T}
     d::T
     function LogKernel(d::T)
-        d > 0 || error("d = $(d) must be a positive integer.")
+        d > 0 || throw(ArgumentError("d = $(d) must be a positive integer."))
         dₜ = trunc(d)
         d == dₜ || warn("d = $(d) was truncated to $(dₜ).")
         new(dₜ)
@@ -364,7 +364,7 @@ end
 immutable LinearKernel{T<:FloatingPoint} <: ScalarProductKernel{T}
     c::T
     function LinearKernel(c::T)
-        c >= 0 || error("c = $c must be greater than zero.")
+        c >= 0 || throw(ArgumentError("c = $c must be greater than zero."))
         new(c)
     end
 end
@@ -409,9 +409,9 @@ immutable PolynomialKernel{T<:FloatingPoint} <: ScalarProductKernel{T}
     c::T
     d::T
     function PolynomialKernel(α::T, c::T, d::T)
-        α > 0 || error("α = $(α) must be greater than zero.")
-        c >= 0 || error("c = $(c) must be a non-negative number.")
-        d > 0 || error("d = $(d) must be a positive integer.")
+        α > 0 || throw(ArgumentError("α = $(α) must be greater than zero."))
+        c >= 0 || throw(ArgumentError("c = $(c) must be a non-negative number."))
+        d > 0 || throw(ArgumentError("d = $(d) must be a positive integer."))
         dₜ = trunc(d)
         d == dₜ || warn("d = $(d) was truncated to $(dₜ).")
         new(α, c, dₜ)
@@ -463,8 +463,8 @@ immutable SigmoidKernel{T<:FloatingPoint} <: ScalarProductKernel{T}
     α::T
     c::T
     function SigmoidKernel(α::T, c::T)
-        α > 0 || error("α = $(α) must be greater than zero.")
-        c >= 0 || error("c = $(c) must be non-negative.")
+        α > 0 || throw(ArgumentError("α = $(α) must be greater than zero."))
+        c >= 0 || throw(ArgumentError("c = $(c) must be non-negative."))
         new(α, c)
     end
 end

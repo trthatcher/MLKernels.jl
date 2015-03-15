@@ -2,7 +2,7 @@
   Kernel Functions Module
 ===================================================================================================#
 
-module KernelFunctions
+module MLKernels
 
 import Base: show, call, exp, eltype, isposdef, convert, promote
 
@@ -43,4 +43,4 @@ export
 include("kerneltypes.jl")
 include("kernelmatrix.jl")
 
-end # KernelFunctions
+end # MLKernels
