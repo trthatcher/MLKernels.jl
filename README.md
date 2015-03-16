@@ -1,4 +1,6 @@
-# KernelFunctions.jl
+# Machine Learning Kernels
+
+[![Build Status](https://travis-ci.org/trthatcher/MLKernels.jl.svg?branch=master)](https://travis-ci.org/trthatcher/MLKernels.jl)
 
 KernelFunctions.jl is a Julia package for (Mercer) kernel functions used in kernel methods in the
 kernel methods of machine learning.
