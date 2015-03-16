@@ -3,19 +3,35 @@
 [![Build Status](https://travis-ci.org/trthatcher/MLKernels.jl.svg?branch=master)](https://travis-ci.org/trthatcher/MLKernels.jl)
 [![Coverage Status](https://coveralls.io/repos/trthatcher/MLKernels.jl/badge.svg)](https://coveralls.io/r/trthatcher/MLKernels.jl)
 
-KernelFunctions.jl is a Julia package for (Mercer) kernel functions used in kernel methods in the
-kernel methods of machine learning.
+MLKernels.jl is a Julia package for (Mercer) kernels used in the kernel methods of machine learning. The goal is to provide a common Julia datatype for machine learning kernels and an efficient set of methods to calculate or approximate kernel matrices. The performance of the package is largely dependent on the underlying BLAS installation but otherwise has no dependencies beyond base Julia.
 
-## Using Kernel Functions
+The package currently supports nine popular kernels:
+
+- Gaussian Kernel (radial basis kernel)
+- Laplacian Kernel
+- Rational Quadratic Kernel
+- Multi-Quadratic Kernel
+- Inverse Multi-Quadratic Kernel
+- Power Kernel
+- Log Kernel
+- Linear Kernel
+- Polynomial Kernel
+- Sigmoid Kernel
+
+
+## Creating Basic Kernels and Calculating Kernel Matrices
 
 A number of standard kernels have been pre-defined. For example, to create a Polynomial Kernel object:
 
 ```julia
-julia> using KernelFunctions
+julia> κ = PolynomialKernel()
+PolynomialKernel{Float64}(α=1.0,c=1.0,d=2.0)
 
-julia> κ = PolynomialKernel(1,0,2)
- PolynomialKernel(α=1,c=0,d=2)
+julia> κ = PolynomialKernel(1.0f0)
+PolynomialKernel{Float32}(α=1.0,c=1.0,d=2.0)
 ```
+
+The `Kernel` data type is parametric - either `Float32` or `Float64` depending on the input arguments. 
 
 If one wishes to see more information on the kernel, there is the function `description` which will print out a description of the kernel if it exists:
 
@@ -92,3 +108,23 @@ julia> kernel_matrix(κ, X)
 julia> kernel_function(κ, vec(X[1,:]), vec(X[1,:]))
 3.02443612827351
 ```
+
+## Convex Cone of Kernels and the Kernel Product
+
+According to the properties of Mercer kernels:
+
+- If κ is a kernel and a > 0, then aκ is also a kernel
+- If κ₁ is a kernel and κ₂ is a kernel, then κ₁ + κ₂ is a kernel
+- If κ₁ is a kernel and κ₂ is a kernel, then κ₁κ₂ is a kernel
+
+This packages allows new kernels to be defined as the either the linear combination of two standard kernels or the product of two standard kernels:
+
+```julia
+julia> 3*PolynomialKernel() + 4*SigmoidKernel()
+KernelSum{Float64}(3.0,PolynomialKernel(α=1.0,c=1.0,d=2.0),4.0,SigmoidKernel(α=1.0,c=1.0))
+
+julia> 3*PolynomialKernel()*SigmoidKernel()
+KernelProduct{Float64}(3.0,SigmoidKernel(α=1.0,c=1.0),PolynomialKernel(α=1.0,c=1.0,d=2.0))
+```
+
+These kernel combinations may be used to define a new kernel and calculate a kernel matrix or the kernel function of two vectors. However, the resulting kernel combination may not be combined any further with other kernels.
