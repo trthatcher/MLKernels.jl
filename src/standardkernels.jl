@@ -269,8 +269,7 @@ immutable PowerKernel{T<:FloatingPoint} <: EuclideanDistanceKernel{T}
     end
 end
 PowerKernel{T<:FloatingPoint}(d::T = 2.0) = PowerKernel{T}(d)
-PowerKernel(d::Union(Int32,UInt32)) = PowerKernel(convert(Float32, d))
-PowerKernel(d::Union(Int64,UInt64)) = PowerKernel(convert(Float64, d))
+PowerKernel(d::Integer) = PowerKernel(convert(Float64, d))
 
 convert{T<:FloatingPoint}(::Type{PowerKernel{T}}, κ::PowerKernel) = PowerKernel(convert(T, κ.d))
 
