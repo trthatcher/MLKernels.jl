@@ -306,14 +306,13 @@ immutable LogKernel{T<:FloatingPoint} <: EuclideanDistanceKernel{T}
     d::T
     function LogKernel(d::T)
         d > 0 || throw(ArgumentError("d = $(d) must be a positive integer."))
-        dₜ = trunc(d)
-        d == dₜ || warn("d = $(d) was truncated to $(dₜ).")
-        new(dₜ)
+        b = trunc(d)
+        d == b || warn("d = $(d) was truncated to $(b).")
+        new(b)
     end
 end
 LogKernel{T<:FloatingPoint}(d::T = 1.0) = LogKernel{T}(d)
-LogKernel(d::Union(Int32,UInt32)) = LogKernel(convert(Float32, d))
-LogKernel(d::Union(Int64,UInt64)) = LogKernel(convert(Float64, d))
+LogKernel(d::Integer) = LogKernel(convert(Float32, d))
 
 convert{T<:FloatingPoint}(::Type{LogKernel{T}}, κ::LogKernel) = LogKernel(convert(T, κ.d))
 
