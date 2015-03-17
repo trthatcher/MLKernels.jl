@@ -13,13 +13,13 @@ end
   Auxiliary Functions
 ===========================================================================#
 
-# xᵗy
+# xᵀy
 function scalar_product{T<:FloatingPoint}(x::Array{T}, y::Array{T})
     n = length(x)
     BLAS.dot(n, x, 1, y, 1)
 end
 
-# ϵᵗϵ = (x-y)ᵗ(x-y)
+# ϵᵀϵ = (x-y)ᵀ(x-y)
 function euclidean_distance{T<:FloatingPoint}(x::Array{T}, y::Array{T})
     n = length(x)
     ϵ = BLAS.axpy!(n, -one(T), y, 1, copy(x), 1)
@@ -56,7 +56,7 @@ function convert{T<:FloatingPoint}(::Type{GaussianKernel{T}}, κ::GaussianKernel
     GaussianKernel(convert(T, κ.η))
 end
 
-kernelize_scalar{T<:FloatingPoint}(κ::GaussianKernel{T}, ϵᵗϵ::T) = exp(-κ.η*ϵᵗϵ)
+kernelize_scalar{T<:FloatingPoint}(κ::GaussianKernel{T}, ϵᵀϵ::T) = exp(-κ.η*ϵᵀϵ)
 
 arguments(κ::GaussianKernel) = (κ.η,)
 isposdef_kernel(κ::GaussianKernel) = true
@@ -101,8 +101,8 @@ function convert{T<:FloatingPoint}(::Type{LaplacianKernel{T}}, κ::LaplacianKern
     LaplacianKernel(convert(T, κ.η))
 end
 
-function kernelize_scalar{T<:FloatingPoint}(κ::LaplacianKernel{T}, ϵᵗϵ::T)
-    exp(-κ.η*sqrt(ϵᵗϵ))
+function kernelize_scalar{T<:FloatingPoint}(κ::LaplacianKernel{T}, ϵᵀϵ::T)
+    exp(-κ.η*sqrt(ϵᵀϵ))
 end
 
 arguments(κ::LaplacianKernel) = (κ.η,)
@@ -145,8 +145,8 @@ function convert{T<:FloatingPoint}(::Type{RationalQuadraticKernel{T}}, κ::Ratio
     RationalQuadraticKernel(convert(T, κ.c))
 end
 
-function kernelize_scalar{T<:FloatingPoint}(κ::RationalQuadraticKernel{T}, ϵᵗϵ::T)
-    one(T) - ϵᵗϵ/(ϵᵗϵ + κ.c)
+function kernelize_scalar{T<:FloatingPoint}(κ::RationalQuadraticKernel{T}, ϵᵀϵ::T)
+    one(T) - ϵᵀϵ/(ϵᵀϵ + κ.c)
 end
 
 arguments(κ::RationalQuadraticKernel) = (κ.c,)
@@ -187,8 +187,8 @@ function convert{T<:FloatingPoint}(::Type{MultiQuadraticKernel{T}}, κ::MultiQua
     MultiQuadraticKernel(convert(T, κ.c))
 end
 
-function kernelize_scalar{T<:FloatingPoint}(κ::MultiQuadraticKernel{T}, ϵᵗϵ::T)
-    sqrt(ϵᵗϵ + κ.c)
+function kernelize_scalar{T<:FloatingPoint}(κ::MultiQuadraticKernel{T}, ϵᵀϵ::T)
+    sqrt(ϵᵀϵ + κ.c)
 end
 
 arguments(κ::MultiQuadraticKernel) = (κ.c,)
@@ -229,8 +229,8 @@ function convert{T<:FloatingPoint}(::Type{InverseMultiQuadraticKernel{T}},
     InverseMultiQuadraticKernel(convert(T, κ.c))
 end
 
-function kernelize_scalar{T<:FloatingPoint}(κ::InverseMultiQuadraticKernel{T}, ϵᵗϵ::T)
-    one(T) / sqrt(ϵᵗϵ + κ.c)
+function kernelize_scalar{T<:FloatingPoint}(κ::InverseMultiQuadraticKernel{T}, ϵᵀϵ::T)
+    one(T) / sqrt(ϵᵀϵ + κ.c)
 end
 
 arguments(κ::InverseMultiQuadraticKernel) = (κ.c,)
@@ -274,7 +274,7 @@ PowerKernel(d::Union(Int64,UInt64)) = PowerKernel(convert(Float64, d))
 
 convert{T<:FloatingPoint}(::Type{PowerKernel{T}}, κ::PowerKernel) = PowerKernel(convert(T, κ.d))
 
-kernelize_scalar{T<:FloatingPoint}(κ::PowerKernel{T}, ϵᵗϵ::T) = -ϵᵗϵ^(κ.d)
+kernelize_scalar{T<:FloatingPoint}(κ::PowerKernel{T}, ϵᵀϵ::T) = -ϵᵀϵ^(κ.d)
 
 arguments(κ::PowerKernel) = (κ.d,)
 isposdef_kernel(κ::PowerKernel) = false
@@ -318,8 +318,8 @@ LogKernel(d::Union(Int64,UInt64)) = LogKernel(convert(Float64, d))
 
 convert{T<:FloatingPoint}(::Type{LogKernel{T}}, κ::LogKernel) = LogKernel(convert(T, κ.d))
 
-function kernelize_scalar{T<:FloatingPoint}(κ::LogKernel{T}, ϵᵗϵ::T) 
-    -log(sqrt(ϵᵗϵ)^(κ.d) + one(T))
+function kernelize_scalar{T<:FloatingPoint}(κ::LogKernel{T}, ϵᵀϵ::T) 
+    -log(sqrt(ϵᵀϵ)^(κ.d) + one(T))
 end
 
 arguments(κ::LogKernel) = (κ.d,)
@@ -374,12 +374,12 @@ function convert{T<:FloatingPoint}(::Type{LinearKernel{T}}, κ::LinearKernel)
     LinearKernel(convert(T, κ.c))
 end
 
-kernelize_scalar{T<:FloatingPoint}(κ::LinearKernel, xᵗy::T) = xᵗy + κ.c
+kernelize_scalar{T<:FloatingPoint}(κ::LinearKernel, xᵀy::T) = xᵀy + κ.c
 
 arguments(κ::LinearKernel) = (κ.c,)
 isposdef_kernel(κ::LinearKernel) = true
 
-formula_string(κ::LinearKernel) = "k(x,y) = xᵗy + c"
+formula_string(κ::LinearKernel) = "k(x,y) = xᵀy + c"
 argument_string(κ::LinearKernel) = "c = $(κ.c)"
 function description_string{T<:FloatingPoint}(κ::LinearKernel{T}, eltype::Bool = true)
     "LinearKernel" * (eltype ? "{$(T)}" : "") * "(c=$(κ.c))"
@@ -393,7 +393,7 @@ function description(κ::LinearKernel)
          The linear kernel differs from the ordinary inner product by the
          addition of an optional constant c ≥ 0:
 
-             k(x,y) = xᵗy + c    x ∈ ℝⁿ, y ∈ ℝⁿ, c ≥ 0
+             k(x,y) = xᵀy + c    x ∈ ℝⁿ, y ∈ ℝⁿ, c ≥ 0
 
          Techniques using the linear kernel often do not differ from their
          non-kernelized versions.
@@ -426,14 +426,14 @@ function convert{T<:FloatingPoint}(::Type{PolynomialKernel{T}}, κ::PolynomialKe
     PolynomialKernel(convert(T, κ.α), convert(T, κ.c), convert(T, κ.d))
 end
 
-function kernelize_scalar{T<:FloatingPoint}(κ::PolynomialKernel{T}, xᵗy::T)
-    (κ.α*xᵗy + κ.c)^κ.d
+function kernelize_scalar{T<:FloatingPoint}(κ::PolynomialKernel{T}, xᵀy::T)
+    (κ.α*xᵀy + κ.c)^κ.d
 end
 
 arguments(κ::PolynomialKernel) = (κ.α, κ.c, κ.d)
 isposdef_kernel(κ::PolynomialKernel) = true
 
-formula_string(κ::PolynomialKernel) = "(αxᵗy + c)ᵈ"
+formula_string(κ::PolynomialKernel) = "(αxᵀy + c)ᵈ"
 argument_string(κ::PolynomialKernel) = "α = $(κ.α), c = $(κ.c) and d = $(κ.d)"
 function description_string{T<:FloatingPoint}(κ::PolynomialKernel{T}, eltype::Bool = true) 
     "PolynomialKernel" * (eltype ? "{$(T)}" : "") * "(α=$(κ.α),c=$(κ.c),d=$(κ.d))"
@@ -448,10 +448,10 @@ function description(κ::PolynomialKernel)
          the original features as in a feature space over polynomials up to 
          degree d of the original variables:
 
-             k(x,y) = (αxᵗy + c)ᵈ    x ∈ ℝⁿ, y ∈ ℝⁿ, α > 0, c ≥ 0, d > 0
+             k(x,y) = (αxᵀy + c)ᵈ    x ∈ ℝⁿ, y ∈ ℝⁿ, α > 0, c ≥ 0, d > 0
 
          This kernel is sensitive to numerical instability in the case that
-         d is increasingly large and αxᵗy + c approaches zero.
+         d is increasingly large and αxᵀy + c approaches zero.
         """
     )
 end
@@ -474,7 +474,7 @@ function convert{T<:FloatingPoint}(::Type{SigmoidKernel{T}}, κ::SigmoidKernel)
     SigmoidKernel(convert(T, κ.α), convert(T, κ.c))
 end
 
-kernelize_scalar{T<:FloatingPoint}(κ::SigmoidKernel, xᵗy::T) = tanh(κ.α*xᵗy + κ.c)
+kernelize_scalar{T<:FloatingPoint}(κ::SigmoidKernel, xᵀy::T) = tanh(κ.α*xᵀy + κ.c)
 
 arguments(κ::SigmoidKernel) = (κ.α, κ.c)
 isposdef_kernel(κ::SigmoidKernel) = false
@@ -494,7 +494,7 @@ function description(κ::SigmoidKernel)
          field of neural networks where it is often used as the activation
          function for artificial neurons.
 
-             k(x,y) = tanh(αxᵗy + c)    x ∈ ℝⁿ, y ∈ ℝⁿ, α > 0, c ≥ 0
+             k(x,y) = tanh(αxᵀy + c)    x ∈ ℝⁿ, y ∈ ℝⁿ, α > 0, c ≥ 0
         """
     )
 end
