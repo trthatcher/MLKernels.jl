@@ -263,9 +263,9 @@ immutable PowerKernel{T<:FloatingPoint} <: EuclideanDistanceKernel{T}
     d::T
     function PowerKernel(d::T)
         d > 0 || throw(ArgumentError("d = $(d) must be a positive integer."))
-        dₜ = trunc(d)
-        d == dₜ || warn("d = $(d) was truncated to $(dₜ).")
-        new(dₜ)
+        b = trunc(d)
+        d == b || warn("d = $(d) was truncated to $(b).")
+        new(b)
     end
 end
 PowerKernel{T<:FloatingPoint}(d::T = 2.0) = PowerKernel{T}(d)
