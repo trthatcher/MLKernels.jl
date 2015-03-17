@@ -410,9 +410,9 @@ immutable PolynomialKernel{T<:FloatingPoint} <: ScalarProductKernel{T}
         α > 0 || throw(ArgumentError("α = $(α) must be greater than zero."))
         c >= 0 || throw(ArgumentError("c = $(c) must be a non-negative number."))
         d > 0 || throw(ArgumentError("d = $(d) must be a positive integer."))
-        dₜ = trunc(d)
-        d == dₜ || warn("d = $(d) was truncated to $(dₜ).")
-        new(α, c, dₜ)
+        b = trunc(d)
+        d == b || warn("d = $(d) was truncated to $(b).")
+        new(α, c, b)
     end
 end
 function PolynomialKernel{T<:FloatingPoint}(α::T = 1.0, c::T = one(T), d::T = T(2))
