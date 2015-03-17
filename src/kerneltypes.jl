@@ -50,7 +50,7 @@ for kernel_type in (:ScaledKernel, :SimpleKernel, :Kernel)
     end
 end
 
-@inline function kernel_function{T<:FloatingPoint}(ψ::ScaledKernel{T}, x::Vector{T}, y::Vector{T})
+function kernel_function{T<:FloatingPoint}(ψ::ScaledKernel{T}, x::Vector{T}, y::Vector{T})
     ψ.a * kernel_function(ψ.κ, x, y)
 end
 
@@ -100,7 +100,7 @@ for kernel_type in (:KernelProduct, :CompositeKernel, :Kernel)
     end
 end
 
-@inline function kernel_function{T<:FloatingPoint}(ψ::KernelProduct{T}, x::Vector{T}, y::Vector{T})
+function kernel_function{T<:FloatingPoint}(ψ::KernelProduct{T}, x::Vector{T}, y::Vector{T})
     a * kernel_function(ψ.κ₁, x, y) * kernel_function(ψ.κ₂, x, y)
 end
 
@@ -152,7 +152,7 @@ function KernelSum{T,S}(a₁::Real, κ₁::StandardKernel{T}, a₂::Real, κ₂:
     KernelSum{T}(convert(U, a₁), convert(Kernel{U}, κ₁), convert(U, a₂), convert(Kernel{U}, κ₂))
 end
 
-@inline function kernel_function{T<:FloatingPoint}(ψ::KernelSum{T}, x::Vector{T}, y::Vector{T})
+function kernel_function{T<:FloatingPoint}(ψ::KernelSum{T}, x::Vector{T}, y::Vector{T})
     ψ.a₁*kernel_function(ψ.κ₁, x, y) + ψ.a₂*kernel_function(ψ.κ₂, x, y)
 end
 
