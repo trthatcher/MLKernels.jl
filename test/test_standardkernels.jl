@@ -21,7 +21,7 @@ for (kernel, default_args, edgecase_args, error_args) in (
         (PolynomialKernel, (1.0, 1.0, 2.0), (1.0, 0.0, 2.0), (0.0, -1.0, 0.0)),
         (SigmoidKernel, (1.0, 1.0), (1.0, 0.0), (-1.0, -1.0)))
     κ = (kernel)()
-    fields = fieldnames(κ)
+    fields = names(κ)
     n = length(fields)
     println("Test case $(testcase): Construct ", kernel, " with arguments ()")
     testcase += 1
