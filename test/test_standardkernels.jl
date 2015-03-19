@@ -30,7 +30,9 @@ for (kernel, default_args, edgecase_args, error_args) in (
         base_args = map(x -> convert(T, x), default_args)
         for i = 1:n
             case_args = map(x -> 2*x, base_args[1:i])
+            println(case_args)
             κ = (kernel)(case_args...)
+            println(κ)
             for j = 1:n
                 @test getfield(κ, fields[j]) == (j <= i ? case_args[j] : base_args[j])
             end
@@ -40,7 +42,7 @@ for (kernel, default_args, edgecase_args, error_args) in (
             @test (x->true)((kernel)(case_args...))
         end
         for i = 1:n
-            case_args = i == 1 ? (T(error_args[i]),) : tuple(base_args[1:(i-1)]..., T(error_args[i]))
+            case_args = i == 1 ? (convert(T, (error_args[i])),) : tuple(base_args[1:(i-1)]..., convert(T, error_args[i]))
             for j = 1:n
                 @test_throws ArgumentError (kernel)(case_args...)
             end
