@@ -416,7 +416,7 @@ immutable PolynomialKernel{T<:FloatingPoint} <: ScalarProductKernel{T}
     end
 end
 function PolynomialKernel{T<:FloatingPoint}(α::T = 1.0, c::T = one(T), d::T = convert(T, 2))
-    PolynomialKernel{T}(α, c, convert(T, 2))
+    PolynomialKernel{T}(α, c, d)
 end
 
 PolynomialKernel{T<:FloatingPoint}(α::T, c::T, d::Integer) = PolynomialKernel(α, c, convert(T, d))

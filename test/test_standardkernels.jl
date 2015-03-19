@@ -1,5 +1,3 @@
-importall MLKernels
-
 using Base.Test
 
 x32 = [1.0f0]
@@ -32,7 +30,6 @@ for (kernel, default_args, edgecase_args, error_args) in (
             case_args = map(x -> 2*x, base_args[1:i])
             println(case_args)
             κ = (kernel)(case_args...)
-            println(κ)
             for j = 1:n
                 @test getfield(κ, fields[j]) == (j <= i ? case_args[j] : base_args[j])
             end
