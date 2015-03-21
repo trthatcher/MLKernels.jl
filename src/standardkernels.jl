@@ -82,7 +82,7 @@ end
 
 #== Laplacian Kernel ===============#
 
-type LaplacianKernel{T<:FloatingPoint} <: EuclideanDistanceKernel{T}
+immutable LaplacianKernel{T<:FloatingPoint} <: EuclideanDistanceKernel{T}
     η::T
     function LaplacianKernel(η::T)
         η > 0 || throw(ArgumentError("η = $(η) must be greater than zero."))
@@ -123,7 +123,7 @@ end
 
 #== Rational Quadratic Kernel ===============#
 
-type RationalQuadraticKernel{T<:FloatingPoint} <: EuclideanDistanceKernel{T}
+immutable RationalQuadraticKernel{T<:FloatingPoint} <: EuclideanDistanceKernel{T}
     c::T
     function RationalQuadraticKernel(c::T)
         c > 0 || throw(ArgumentError("c = $(c) must be greater than zero."))
