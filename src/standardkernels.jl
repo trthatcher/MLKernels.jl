@@ -33,8 +33,6 @@ end
 
 abstract EuclideanDistanceKernel{T<:FloatingPoint} <: StandardKernel{T}
 
-is_euclidean_distance(κ::EuclideanDistanceKernel) = true
-
 function kernel_function{T<:FloatingPoint}(κ::EuclideanDistanceKernel{T}, x::Vector{T},
                                                    y::Vector{T})
     kernelize_scalar(κ, euclidean_distance(x, y))
@@ -58,12 +56,8 @@ end
 
 kernelize_scalar{T<:FloatingPoint}(κ::GaussianKernel{T}, ϵᵀϵ::T) = exp(-κ.η*ϵᵀϵ)
 
-arguments(κ::GaussianKernel) = (κ.η,)
 isposdef_kernel(κ::GaussianKernel) = true
-is_stationary_kernel(κ::GaussianKernel) = true
 
-formula_string(κ::GaussianKernel) = "exp(-η‖x-y‖²)"
-argument_string(κ::GaussianKernel) = "η = $(κ.η)"
 function description_string{T<:FloatingPoint}(κ::GaussianKernel{T}, eltype::Bool = true) 
     "GaussianKernel" * (eltype ? "{$(T)}" : "") * "(η=$(κ.η))"
 end
@@ -105,11 +99,8 @@ function kernelize_scalar{T<:FloatingPoint}(κ::LaplacianKernel{T}, ϵᵀϵ::T)
     exp(-κ.η*sqrt(ϵᵀϵ))
 end
 
-arguments(κ::LaplacianKernel) = (κ.η,)
 isposdef_kernel(κ::LaplacianKernel) = true
 
-formula_string(κ::LaplacianKernel) = "exp(-η‖x-y‖)"
-argument_string(κ::LaplacianKernel) = "η = $(κ.η)"
 function description_string{T<:FloatingPoint}(κ::LaplacianKernel{T}, eltype::Bool = true) 
     "LaplacianKernel" * (eltype ? "{$(T)}" : "") * "(η=$(κ.η))"
 end
@@ -149,11 +140,8 @@ function kernelize_scalar{T<:FloatingPoint}(κ::RationalQuadraticKernel{T}, ϵ�
     one(T) - ϵᵀϵ/(ϵᵀϵ + κ.c)
 end
 
-arguments(κ::RationalQuadraticKernel) = (κ.c,)
 isposdef_kernel(κ::RationalQuadraticKernel) = true
 
-formula_string(κ::RationalQuadraticKernel) = "1 - ‖x-y‖²/(‖x-y‖² + c)"
-argument_string(κ::RationalQuadraticKernel) = "c = $(κ.c)"
 function description_string{T<:FloatingPoint}(κ::RationalQuadraticKernel{T}, eltype::Bool = true)
     "RationalQuadraticKernel" * (eltype ? "{$(T)}" : "") * "(c=$(κ.c))"
 end
@@ -191,11 +179,8 @@ function kernelize_scalar{T<:FloatingPoint}(κ::MultiQuadraticKernel{T}, ϵᵀϵ
     sqrt(ϵᵀϵ + κ.c)
 end
 
-arguments(κ::MultiQuadraticKernel) = (κ.c,)
 isposdef_kernel(κ::MultiQuadraticKernel) = false
 
-formula_string(κ::MultiQuadraticKernel) = "√(‖x-y‖² + c)"
-argument_string(κ::MultiQuadraticKernel) = "c = $(κ.c)"
 function description_string{T<:FloatingPoint}(κ::MultiQuadraticKernel{T}, eltype::Bool = true)
     "MultiQuadraticKernel" * (eltype ? "{$(T)}" : "") * "(c=$(κ.c))"
 end
@@ -233,11 +218,8 @@ function kernelize_scalar{T<:FloatingPoint}(κ::InverseMultiQuadraticKernel{T}, 
     one(T) / sqrt(ϵᵀϵ + κ.c)
 end
 
-arguments(κ::InverseMultiQuadraticKernel) = (κ.c,)
 isposdef_kernel(κ::InverseMultiQuadraticKernel) = false
 
-formula_string(κ::InverseMultiQuadraticKernel) = "1/√(‖x-y‖² + c)"
-argument_string(κ::InverseMultiQuadraticKernel) = "c = $(κ.c)"
 function description_string{T<:FloatingPoint}(κ::InverseMultiQuadraticKernel{T}, 
                                               eltype::Bool = true)
     "InverseMultiQuadraticKernel" * (eltype ? "{$(T)}" : "") * "(c=$(κ.c))"
@@ -275,11 +257,8 @@ convert{T<:FloatingPoint}(::Type{PowerKernel{T}}, κ::PowerKernel) = PowerKernel
 
 kernelize_scalar{T<:FloatingPoint}(κ::PowerKernel{T}, ϵᵀϵ::T) = -ϵᵀϵ^(κ.d)
 
-arguments(κ::PowerKernel) = (κ.d,)
 isposdef_kernel(κ::PowerKernel) = false
 
-formula_string(κ::PowerKernel) = "-‖x-y‖ᵈ"
-argument_string(κ::PowerKernel) = "d = $(κ.d)"
 function description_string{T<:FloatingPoint}(κ::PowerKernel{T}, eltype::Bool = true)
     "PowerKernel" * (eltype ? "{$(T)}" : "") * "(d=$(κ.d))"
 end
@@ -320,11 +299,8 @@ function kernelize_scalar{T<:FloatingPoint}(κ::LogKernel{T}, ϵᵀϵ::T)
     -log(sqrt(ϵᵀϵ)^(κ.d) + one(T))
 end
 
-arguments(κ::LogKernel) = (κ.d,)
 isposdef_kernel(κ::LogKernel) = false
 
-formula_string(κ::LogKernel) = "-‖x-y‖ᵈ"
-argument_string(κ::LogKernel) = "d = $(κ.d)"
 function description_string{T<:FloatingPoint}(κ::LogKernel{T}, eltype::Bool = true)
     "LogKernel" * (eltype ? "{$(T)}" : "") * "(d=$(κ.d))"
 end
@@ -349,8 +325,6 @@ end
 
 abstract ScalarProductKernel{T<:FloatingPoint} <: StandardKernel{T}
 
-is_scalar_product(κ::ScalarProductKernel) = true
-
 function kernel_function{T<:FloatingPoint}(κ::ScalarProductKernel{T}, x::Vector{T},
                                                    y::Vector{T})
     kernelize_scalar(κ, scalar_product(x, y))
@@ -374,11 +348,8 @@ end
 
 kernelize_scalar{T<:FloatingPoint}(κ::LinearKernel, xᵀy::T) = xᵀy + κ.c
 
-arguments(κ::LinearKernel) = (κ.c,)
 isposdef_kernel(κ::LinearKernel) = true
 
-formula_string(κ::LinearKernel) = "k(x,y) = xᵀy + c"
-argument_string(κ::LinearKernel) = "c = $(κ.c)"
 function description_string{T<:FloatingPoint}(κ::LinearKernel{T}, eltype::Bool = true)
     "LinearKernel" * (eltype ? "{$(T)}" : "") * "(c=$(κ.c))"
 end
@@ -429,11 +400,8 @@ function kernelize_scalar{T<:FloatingPoint}(κ::PolynomialKernel{T}, xᵀy::T)
     (κ.α*xᵀy + κ.c)^κ.d
 end
 
-arguments(κ::PolynomialKernel) = (κ.α, κ.c, κ.d)
 isposdef_kernel(κ::PolynomialKernel) = true
 
-formula_string(κ::PolynomialKernel) = "(αxᵀy + c)ᵈ"
-argument_string(κ::PolynomialKernel) = "α = $(κ.α), c = $(κ.c) and d = $(κ.d)"
 function description_string{T<:FloatingPoint}(κ::PolynomialKernel{T}, eltype::Bool = true) 
     "PolynomialKernel" * (eltype ? "{$(T)}" : "") * "(α=$(κ.α),c=$(κ.c),d=$(κ.d))"
 end
@@ -475,11 +443,8 @@ end
 
 kernelize_scalar{T<:FloatingPoint}(κ::SigmoidKernel, xᵀy::T) = tanh(κ.α*xᵀy + κ.c)
 
-arguments(κ::SigmoidKernel) = (κ.α, κ.c)
 isposdef_kernel(κ::SigmoidKernel) = false
 
-formula_string(κ::SigmoidKernel) = "tanh(α‖x-y‖² + c)"
-argument_string(κ::SigmoidKernel) = "α = $(κ.α) and c = $(κ.c)"
 function description_string{T<:FloatingPoint}(κ::SigmoidKernel{T}, eltype::Bool = true)
     "SigmoidKernel" * (eltype ? "{$(T)}" : "") * "(α=$(κ.α),c=$(κ.c))"
 end
