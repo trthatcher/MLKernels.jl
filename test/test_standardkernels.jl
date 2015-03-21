@@ -1,11 +1,6 @@
 using Base.Test
 
-x32 = [1.0f0]
-y32 = [1.0f0]
-x64 = [1.0]
-y64 = [1.0]
-
-testcase = 1
+importall MLKernels
 
 function test_constructor(kernel::DataType, default_args, test_args)
     fields = names(kernel)
@@ -115,24 +110,55 @@ end
 
 println("Testing Functions")
 for (kernel, default_args, default_value, posdef) in (
-        (GaussianKernel, (1,), exp(-1), true),
-        (LaplacianKernel, (1,), exp(-1), true),
-        (RationalQuadraticKernel, (1,), 0.5, true),
-        (MultiQuadraticKernel, (1,), sqrt(2), false),
-        (InverseMultiQuadraticKernel, (1,), 1/sqrt(2), false))
-        #(PowerKernel, (2,), (2,)),
-        #(LogKernel, (1,), (2,)),
+        (GaussianKernel,                (1,), exp(-1),  true),
+        (LaplacianKernel,               (1,), exp(-1),  true),
+        (RationalQuadraticKernel,       (1,), 0.5,      true),
+        (MultiQuadraticKernel,          (1,), sqrt(2),  false),
+        (InverseMultiQuadraticKernel,   (1,), 1/sqrt(2),false),
+        (PowerKernel,                   (2,), -1,       false),
+        (LogKernel,                     (1,), -log(2),  false))
         #(LinearKernel, (1,), (2,)),
         #(PolynomialKernel, (1, 1, 2), (2, 2, 2)),
         #(SigmoidKernel, (1, 1), (2, 2)))
     for T in (Float32, Float64)
         x, y = [one(T)], [convert(T,2)]
+        ϵᵀϵ = MLKernels.euclidean_distance(x, y)
         κ = (kernel)(map(x -> convert(T, x), default_args)...)
+
+        println("Test: kernelize_scalar(", κ, ",", ϵᵀϵ, ") == ", convert(T, default_value))
+        v = MLKernels.kernelize_scalar(κ, ϵᵀϵ)
+        @test_approx_eq v convert(T, default_value)
+
         println("Test: ", κ, (x, y), " == ", convert(T, default_value))
         v = kernel_function(κ, x, y)
         @test_approx_eq v convert(T, default_value)
+
         println("Test: isposdef_kernel(", κ, ") == ", posdef)
         @test isposdef_kernel(κ) == posdef
+
+        println("Test: convert(",kernel{Float32}, ", ", κ, ")")
+        @test convert(kernel{Float32}, κ) == (kernel)(map(x -> convert(Float32, x), default_args)...)
+
+        println("Test: convert(",kernel{Float64}, ", ", κ, ")")
+        @test convert(kernel{Float64}, κ) == (kernel)(map(x -> convert(Float64, x), default_args)...)
+
+        println("Test: convert(",EuclideanDistanceKernel{Float32}, ", ", κ, ")")
+        @test convert(EuclideanDistanceKernel{Float32}, κ) == (kernel)(map(x -> convert(Float32, x), default_args)...)
+
+        println("Test: convert(",EuclideanDistanceKernel{Float64}, ", ", κ, ")")
+        @test convert(EuclideanDistanceKernel{Float64}, κ) == (kernel)(map(x -> convert(Float64, x), default_args)...)
+
+        println("Test: convert(",StandardKernel{Float32}, ", ", κ, ")")
+        @test convert(StandardKernel{Float32}, κ) == (kernel)(map(x -> convert(Float32, x), default_args)...)
+
+        println("Test: convert(",StandardKernel{Float64}, ", ", κ, ")")
+        @test convert(StandardKernel{Float64}, κ) == (kernel)(map(x -> convert(Float64, x), default_args)...)
+
+        println("Test: convert(",Kernel{Float32}, ", ", κ, ")")
+        @test convert(Kernel{Float32}, κ) == (kernel)(map(x -> convert(Float32, x), default_args)...)
+
+        println("Test: convert(",Kernel{Float64}, ", ", κ, ")")
+        @test convert(Kernel{Float64}, κ) == (kernel)(map(x -> convert(Float64, x), default_args)...)
     end
     @test description((kernel)()) == Nothing()
 end
