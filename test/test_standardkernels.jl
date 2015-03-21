@@ -92,7 +92,7 @@ for (kernel, special_case) in (
         (PowerKernel, (2,)),
         (LogKernel, (1,)),
         (PolynomialKernel, (1.0, 1.0, 2)))
-    test_constructor_case(kernel, test_case)
+    test_constructor_case(kernel, special_case)
 end
 
 println("Testing Standard Kernel Error Cases:")
