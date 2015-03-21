@@ -116,17 +116,26 @@ for (kernel, default_args, default_value, posdef) in (
         (MultiQuadraticKernel,          (1,), sqrt(2),  false),
         (InverseMultiQuadraticKernel,   (1,), 1/sqrt(2),false),
         (PowerKernel,                   (2,), -1,       false),
-        (LogKernel,                     (1,), -log(2),  false))
-        #(LinearKernel, (1,), (2,)),
-        #(PolynomialKernel, (1, 1, 2), (2, 2, 2)),
-        #(SigmoidKernel, (1, 1), (2, 2)))
+        (LogKernel,                     (1,), -log(2),  false),
+        (LinearKernel,                  (1,),      3,       true),
+        (PolynomialKernel,              (1, 1, 2), 9,       true),
+        (SigmoidKernel,                 (1, 1),    tanh(3), false))
     for T in (Float32, Float64)
         x, y = [one(T)], [convert(T,2)]
-        ϵᵀϵ = MLKernels.euclidean_distance(x, y)
-        κ = (kernel)(map(x -> convert(T, x), default_args)...)
+        
+        if kernel <: EuclideanDistanceKernel
+            u = MLKernels.euclidean_distance(x, y)
+        end
 
-        println("Test: kernelize_scalar(", κ, ",", ϵᵀϵ, ") == ", convert(T, default_value))
-        v = MLKernels.kernelize_scalar(κ, ϵᵀϵ)
+        if kernel <: ScalarProductKernel
+            u = MLKernels.scalar_product(x, y)
+        end
+
+        κ = (kernel)(map(x -> convert(T, x), default_args)...)
+        show(κ)
+
+        println("Test: kernelize_scalar(", κ, ",", u, ") == ", convert(T, default_value))
+        v = MLKernels.kernelize_scalar(κ, u)
         @test_approx_eq v convert(T, default_value)
 
         println("Test: ", κ, (x, y), " == ", convert(T, default_value))
@@ -142,17 +151,37 @@ for (kernel, default_args, default_value, posdef) in (
         println("Test: convert(",kernel{Float64}, ", ", κ, ")")
         @test convert(kernel{Float64}, κ) == (kernel)(map(x -> convert(Float64, x), default_args)...)
 
-        println("Test: convert(",EuclideanDistanceKernel{Float32}, ", ", κ, ")")
-        @test convert(EuclideanDistanceKernel{Float32}, κ) == (kernel)(map(x -> convert(Float32, x), default_args)...)
+        if kernel <: EuclideanDistanceKernel
 
-        println("Test: convert(",EuclideanDistanceKernel{Float64}, ", ", κ, ")")
-        @test convert(EuclideanDistanceKernel{Float64}, κ) == (kernel)(map(x -> convert(Float64, x), default_args)...)
+            println("Test: convert(",EuclideanDistanceKernel{Float32}, ", ", κ, ")")
+            @test convert(EuclideanDistanceKernel{Float32}, κ) == (kernel)(map(x -> convert(Float32, x), default_args)...)
+
+            println("Test: convert(",EuclideanDistanceKernel{Float64}, ", ", κ, ")")
+            @test convert(EuclideanDistanceKernel{Float64}, κ) == (kernel)(map(x -> convert(Float64, x), default_args)...)
+
+        end
+        
+        if kernel <: ScalarProductKernel
+
+            println("Test: convert(",ScalarProductKernel{Float32}, ", ", κ, ")")
+            @test convert(ScalarProductKernel{Float32}, κ) == (kernel)(map(x -> convert(Float32, x), default_args)...)
+
+            println("Test: convert(",ScalarProductKernel{Float64}, ", ", κ, ")")
+            @test convert(ScalarProductKernel{Float64}, κ) == (kernel)(map(x -> convert(Float64, x), default_args)...)   
+
+        end
 
         println("Test: convert(",StandardKernel{Float32}, ", ", κ, ")")
         @test convert(StandardKernel{Float32}, κ) == (kernel)(map(x -> convert(Float32, x), default_args)...)
 
         println("Test: convert(",StandardKernel{Float64}, ", ", κ, ")")
         @test convert(StandardKernel{Float64}, κ) == (kernel)(map(x -> convert(Float64, x), default_args)...)
+
+        println("Test: convert(",SimpleKernel{Float32}, ", ", κ, ")")
+        @test convert(SimpleKernel{Float32}, κ) == (kernel)(map(x -> convert(Float32, x), default_args)...)
+
+        println("Test: convert(",SimpleKernel{Float64}, ", ", κ, ")")
+        @test convert(SimpleKernel{Float64}, κ) == (kernel)(map(x -> convert(Float64, x), default_args)...)
 
         println("Test: convert(",Kernel{Float32}, ", ", κ, ")")
         @test convert(Kernel{Float32}, κ) == (kernel)(map(x -> convert(Float32, x), default_args)...)
@@ -162,4 +191,5 @@ for (kernel, default_args, default_value, posdef) in (
     end
     @test description((kernel)()) == Nothing()
 end
+
 
