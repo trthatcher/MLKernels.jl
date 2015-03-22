@@ -101,7 +101,7 @@ for kernel_type in (:KernelProduct, :CompositeKernel, :Kernel)
 end
 
 function kernel_function{T<:FloatingPoint}(ψ::KernelProduct{T}, x::Vector{T}, y::Vector{T})
-    a * kernel_function(ψ.κ₁, x, y) * kernel_function(ψ.κ₂, x, y)
+    ψ.a * kernel_function(ψ.κ₁, x, y) * kernel_function(ψ.κ₂, x, y)
 end
 
 isposdef_kernel(ψ::KernelProduct) = isposdef_kernel(ψ.κ₁) & isposdef_kernel(ψ.κ₂)
