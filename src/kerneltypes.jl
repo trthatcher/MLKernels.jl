@@ -149,7 +149,7 @@ end
 
 function KernelSum{T,S}(a₁::Real, κ₁::StandardKernel{T}, a₂::Real, κ₂::StandardKernel{S})
     U = promote_type(typeof(a₁), typeof(a₂), T, S)
-    KernelSum{T}(convert(U, a₁), convert(Kernel{U}, κ₁), convert(U, a₂), convert(Kernel{U}, κ₂))
+    KernelSum{U}(convert(U, a₁), convert(Kernel{U}, κ₁), convert(U, a₂), convert(Kernel{U}, κ₂))
 end
 
 function kernel_function{T<:FloatingPoint}(ψ::KernelSum{T}, x::Vector{T}, y::Vector{T})
