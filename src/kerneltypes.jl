@@ -120,7 +120,7 @@ function *{T,S}(κ₁::StandardKernel{T}, κ₂::StandardKernel{S})
 end
 
 *(κ::StandardKernel, ψ::ScaledKernel) = KernelProduct(ψ.a, deepcopy(κ), deepcopy(ψ.κ))
-*(ψ::ScaledKernel, κ::StandardKernel) = *(κ, ψ)
+*(ψ::ScaledKernel, κ::StandardKernel) = KernelProduct(ψ.a, deepcopy(ψ.κ), deepcopy(κ))
 
 *(ψ₁::ScaledKernel, ψ₂::ScaledKernel) = KernelProduct(ψ₁.a*ψ₂.a, deepcopy(ψ₁.κ), deepcopy(ψ₂.κ))
 
@@ -170,7 +170,7 @@ end
 +(κ₁::StandardKernel, κ₂::StandardKernel) = KernelSum(1, deepcopy(κ₁), 1, deepcopy(κ₂))
 
 +(κ::StandardKernel, ψ::ScaledKernel) = KernelSum(1, deepcopy(κ), ψ.a, deepcopy(ψ.κ))
-+(ψ::ScaledKernel, κ::StandardKernel) = +(κ, ψ)
++(ψ::ScaledKernel, κ::StandardKernel) = KernelSum(ψ.a, deepcopy(ψ.κ), 1, deepcopy(κ))
 
 +(ψ₁::ScaledKernel, ψ₂::ScaledKernel) = KernelSum(ψ₁.a, deepcopy(ψ₁.κ), ψ₂.a, deepcopy(ψ₂.κ))
 
