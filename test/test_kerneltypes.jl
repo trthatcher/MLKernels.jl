@@ -1,5 +1,7 @@
 using Base.Test
 
+importall MLKernels
+
 println("Test Kernel Scaling")
 
 for T in (Float32, Float64)
@@ -24,6 +26,16 @@ for T in (Float32, Float64)
 
     @test kernel_function(skernel, x ,y) == convert(T, 4)
     @test isposdef_kernel(skernel) == true
+    @test eltype(skernel) == T
+
+    for S in (Float32, Float64)
+        @test convert(ScaledKernel{S}, skernel).κ == LinearKernel(one(S))
+        @test convert(SimpleKernel{S}, skernel).κ == LinearKernel(one(S))
+        @test convert(Kernel{S}, skernel).κ == LinearKernel(one(S))
+    end
+
+    @test show(skernel) == Nothing()
+    @test (x -> true)(MLKernels.description_string(skernel))
 
 end
 
@@ -64,6 +76,16 @@ for T in (Float32, Float64)
 
     @test kernel_function(kernelprod, x ,y) == convert(T, 4)
     @test isposdef_kernel(kernelprod) == true
+    @test eltype(kernelprod) == T
+
+    for S in (Float32, Float64)
+        @test convert(KernelProduct{S}, kernelprod).κ₁ == LinearKernel(one(S))
+        @test convert(CompositeKernel{S}, kernelprod).κ₁ == LinearKernel(one(S))
+        @test convert(Kernel{S}, kernelprod).κ₁ == LinearKernel(one(S))
+    end
+
+    @test show(kernelprod) == Nothing()
+    @test (x -> true)(MLKernels.description_string(kernelprod))
 
 end
 
