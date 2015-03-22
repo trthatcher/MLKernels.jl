@@ -179,8 +179,6 @@ function kernelize_scalar{T<:FloatingPoint}(κ::MultiQuadraticKernel{T}, ϵᵀϵ
     sqrt(ϵᵀϵ + κ.c)
 end
 
-isposdef_kernel(κ::MultiQuadraticKernel) = false
-
 function description_string{T<:FloatingPoint}(κ::MultiQuadraticKernel{T}, eltype::Bool = true)
     "MultiQuadraticKernel" * (eltype ? "{$(T)}" : "") * "(c=$(κ.c))"
 end
@@ -218,8 +216,6 @@ function kernelize_scalar{T<:FloatingPoint}(κ::InverseMultiQuadraticKernel{T}, 
     one(T) / sqrt(ϵᵀϵ + κ.c)
 end
 
-isposdef_kernel(κ::InverseMultiQuadraticKernel) = false
-
 function description_string{T<:FloatingPoint}(κ::InverseMultiQuadraticKernel{T}, 
                                               eltype::Bool = true)
     "InverseMultiQuadraticKernel" * (eltype ? "{$(T)}" : "") * "(c=$(κ.c))"
@@ -256,8 +252,6 @@ PowerKernel(d::Integer) = PowerKernel(convert(Float64, d))
 convert{T<:FloatingPoint}(::Type{PowerKernel{T}}, κ::PowerKernel) = PowerKernel(convert(T, κ.d))
 
 kernelize_scalar{T<:FloatingPoint}(κ::PowerKernel{T}, ϵᵀϵ::T) = -ϵᵀϵ^(κ.d)
-
-isposdef_kernel(κ::PowerKernel) = false
 
 function description_string{T<:FloatingPoint}(κ::PowerKernel{T}, eltype::Bool = true)
     "PowerKernel" * (eltype ? "{$(T)}" : "") * "(d=$(κ.d))"
@@ -298,8 +292,6 @@ convert{T<:FloatingPoint}(::Type{LogKernel{T}}, κ::LogKernel) = LogKernel(conve
 function kernelize_scalar{T<:FloatingPoint}(κ::LogKernel{T}, ϵᵀϵ::T) 
     -log(sqrt(ϵᵀϵ)^(κ.d) + one(T))
 end
-
-isposdef_kernel(κ::LogKernel) = false
 
 function description_string{T<:FloatingPoint}(κ::LogKernel{T}, eltype::Bool = true)
     "LogKernel" * (eltype ? "{$(T)}" : "") * "(d=$(κ.d))"
@@ -442,8 +434,6 @@ function convert{T<:FloatingPoint}(::Type{SigmoidKernel{T}}, κ::SigmoidKernel)
 end
 
 kernelize_scalar{T<:FloatingPoint}(κ::SigmoidKernel, xᵀy::T) = tanh(κ.α*xᵀy + κ.c)
-
-isposdef_kernel(κ::SigmoidKernel) = false
 
 function description_string{T<:FloatingPoint}(κ::SigmoidKernel{T}, eltype::Bool = true)
     "SigmoidKernel" * (eltype ? "{$(T)}" : "") * "(α=$(κ.α),c=$(κ.c))"

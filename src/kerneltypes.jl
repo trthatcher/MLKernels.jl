@@ -27,7 +27,7 @@ include("standardkernels.jl")  # Specific kernels from ML literature
   Scaled Kernel
 ===========================================================================#
 
-type ScaledKernel{T<:FloatingPoint} <: SimpleKernel{T}
+immutable ScaledKernel{T<:FloatingPoint} <: SimpleKernel{T}
     a::T
     κ::StandardKernel{T}
     function ScaledKernel(a::T, κ::StandardKernel{T})
@@ -74,7 +74,7 @@ end
   Product Kernel
 ===========================================================================#
 
-type KernelProduct{T<:FloatingPoint} <: CompositeKernel{T}
+immutable KernelProduct{T<:FloatingPoint} <: CompositeKernel{T}
     a::T
     κ₁::StandardKernel{T}
     κ₂::StandardKernel{T}
@@ -132,7 +132,7 @@ end
   Kernel Sum
 ===========================================================================#
 
-type KernelSum{T<:FloatingPoint} <: CompositeKernel{T}
+immutable KernelSum{T<:FloatingPoint} <: CompositeKernel{T}
     a₁::T
     κ₁::StandardKernel{T}
     a₂::T
