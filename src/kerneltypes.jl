@@ -152,6 +152,15 @@ function KernelSum{T,S}(a₁::Real, κ₁::StandardKernel{T}, a₂::Real, κ₂:
     KernelSum{U}(convert(U, a₁), convert(Kernel{U}, κ₁), convert(U, a₂), convert(Kernel{U}, κ₂))
 end
 
+for kernel_type in (:KernelSum, :CompositeKernel, :Kernel)
+    @eval begin
+        function convert{T<:FloatingPoint}(::Type{$kernel_type{T}}, ψ::KernelSum) 
+            KernelSum(convert(T, ψ.a₁), convert(Kernel{T}, ψ.κ₁), convert(T, ψ.a₂), 
+                          convert(Kernel{T}, ψ.κ₂))
+        end
+    end
+end
+
 function kernel_function{T<:FloatingPoint}(ψ::KernelSum{T}, x::Vector{T}, y::Vector{T})
     ψ.a₁*kernel_function(ψ.κ₁, x, y) + ψ.a₂*kernel_function(ψ.κ₂, x, y)
 end
