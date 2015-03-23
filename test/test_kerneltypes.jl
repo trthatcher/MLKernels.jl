@@ -2,7 +2,7 @@ using Base.Test
 
 importall MLKernels
 
-println("Test Kernel Scaling")
+println("-- Test Kernel Scaling --")
 
 for T in (Float32, Float64)
     x, y = [one(T)], [one(T)]
@@ -13,8 +13,7 @@ for T in (Float32, Float64)
     @test skernel.a == convert(T,2)
     @test skernel.κ == kernel
 
-    @test show(skernel) == Nothing()
-    println()
+    @test println(skernel) == Nothing()
 
     for S in (Float32, Float64, Int32, Int64)
         @test ScaledKernel(convert(S,2), kernel).a == convert(T, 2)
@@ -34,10 +33,11 @@ for T in (Float32, Float64)
         @test convert(Kernel{S}, skernel).κ == LinearKernel(one(S))
     end
 
-    @test show(skernel) == Nothing()
     @test (x -> true)(MLKernels.description_string(skernel))
 
 end
+
+println("-- Test Kernel Product --")
 
 for T in (Float32, Float64)
     x, y = [one(T)], [one(T)]
@@ -50,24 +50,18 @@ for T in (Float32, Float64)
     @test kernelprod.κ₁ == kernel
     @test kernelprod.κ₂ == LinearKernel(zero(T))
 
-    @test show(kernelprod) == Nothing()
-    println()
+    @test println(kernelprod) == Nothing()
     
     @test *(kernel, LinearKernel(1.0)).a == 1.0
 
     for S in (Float32, Float64, Int32, Int64)
         
-        @test *(convert(S,2), kernel, kernel).a == convert(T, 2)
-        @test *(kernel, kernel, convert(S,2)).a == convert(T, 2)
-        @test *(kernel, convert(S,2), kernel).a == convert(T, 2)
+        @test *(kernel, kernel).a == one(T)
 
-        @test *(convert(S,2), skernel, kernel).a == convert(T, 4)
-        @test *(kernel, skernel, convert(S,2)).a == convert(T, 4)
-        @test *(kernel, convert(S,2), skernel).a == convert(T, 4)
+        @test *(skernel, kernel).a == convert(T, 2)
+        @test *(kernel, skernel).a == convert(T, 2)
 
-        @test *(convert(S,2), skernel, skernel).a == convert(T, 8)
-        @test *(skernel, skernel, convert(S,2)).a == convert(T, 8)
-        @test *(skernel, convert(S,2), skernel).a == convert(T, 8)
+        @test *(skernel, skernel).a == convert(T, 4)
 
         @test *(kernelprod, convert(S,2)).a == convert(T, 4)
         @test *(convert(S,2), kernelprod).a == convert(T, 4)
@@ -84,10 +78,60 @@ for T in (Float32, Float64)
         @test convert(Kernel{S}, kernelprod).κ₁ == LinearKernel(one(S))
     end
 
-    @test show(kernelprod) == Nothing()
     @test (x -> true)(MLKernels.description_string(kernelprod))
 
 end
 
 
+println("-- Test Kernel Sum --")
+
+for T in (Float32, Float64)
+    x, y = [one(T)], [one(T)]
+
+    kernel = LinearKernel(one(T))
+    skernel = ScaledKernel(convert(T,2), kernel)
+    kernelsum = KernelSum{T}(one(T),kernel, convert(T,2), LinearKernel(zero(T)))
+
+    @test kernelsum.a₁ == one(T)
+    @test kernelsum.κ₁ == kernel
+    @test kernelsum.a₂ == convert(T,2)
+    @test kernelsum.κ₂ == LinearKernel(zero(T))
+
+    @test show(kernelsum) == Nothing()
+    println()
+
+    @test (+(kernel, kernel)).a₁ == one(T)
+    @test (+(kernel, kernel)).a₂ == one(T)
+        
+    @test (+(skernel, kernel)).a₁ == convert(T, 2)
+    @test (+(skernel, kernel)).a₂ == one(T)
+
+    @test (+(kernel, skernel)).a₁ == one(T)
+    @test (+(kernel, skernel)).a₂ == convert(T, 2)
+
+    @test (+(skernel, skernel)).a₁ == convert(T, 2)
+    @test (+(skernel, skernel)).a₂ == convert(T, 2)
+
+    for S in (Float32, Float64, Int32, Int64)
+
+        @test (*(convert(S,2), kernelsum)).a₁ == convert(T,2)
+        @test (*(convert(S,2), kernelsum)).κ₁ == LinearKernel(one(promote_type(T,S)))
+        @test (*(convert(S,2), kernelsum)).a₂ == convert(T,4)
+        @test (*(convert(S,2), kernelsum)).κ₂ == LinearKernel(zero(promote_type(T,S)))
+
+    end
+
+    @test kernel_function(kernelsum, x ,y) == convert(T, 4)
+    #@test isposdef_kernel(kernelprod) == true
+    @test eltype(kernelsum) == T
+
+    for S in (Float32, Float64)
+        @test convert(KernelSum{S}, kernelsum).κ₁ == LinearKernel(one(S))
+        @test convert(CompositeKernel{S}, kernelsum).κ₁ == LinearKernel(one(S))
+        @test convert(Kernel{S}, kernelsum).κ₁ == LinearKernel(one(S))
+    end
+
+    #@test (x -> true)(MLKernels.description_string(kernelsum))
+
+end
 
