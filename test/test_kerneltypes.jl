@@ -2,7 +2,7 @@ using Base.Test
 
 importall MLKernels
 
-println("-- Test Kernel Scaling --")
+println("-- Testing Kernel Scaling --")
 
 for T in (Float32, Float64)
     x, y = [one(T)], [one(T)]
@@ -13,7 +13,8 @@ for T in (Float32, Float64)
     @test skernel.a == convert(T,2)
     @test skernel.κ == kernel
 
-    @test println(skernel) == Nothing()
+    show(skernel)
+    println()
 
     for S in (Float32, Float64, Int32, Int64)
         @test ScaledKernel(convert(S,2), kernel).a == convert(T, 2)
@@ -37,7 +38,8 @@ for T in (Float32, Float64)
 
 end
 
-println("-- Test Kernel Product --")
+println()
+println("-- Testing Kernel Product --")
 
 for T in (Float32, Float64)
     x, y = [one(T)], [one(T)]
@@ -50,7 +52,8 @@ for T in (Float32, Float64)
     @test kernelprod.κ₁ == kernel
     @test kernelprod.κ₂ == LinearKernel(zero(T))
 
-    @test println(kernelprod) == Nothing()
+    show(kernelprod)
+    println()
     
     @test *(kernel, LinearKernel(1.0)).a == 1.0
 
@@ -82,8 +85,8 @@ for T in (Float32, Float64)
 
 end
 
-
-println("-- Test Kernel Sum --")
+println()
+println("-- Testing Kernel Sum --")
 
 for T in (Float32, Float64)
     x, y = [one(T)], [one(T)]
@@ -97,7 +100,7 @@ for T in (Float32, Float64)
     @test kernelsum.a₂ == convert(T,2)
     @test kernelsum.κ₂ == LinearKernel(zero(T))
 
-    @test show(kernelsum) == Nothing()
+    show(kernelsum)
     println()
 
     @test (+(kernel, kernel)).a₁ == one(T)
@@ -119,10 +122,15 @@ for T in (Float32, Float64)
         @test (*(convert(S,2), kernelsum)).a₂ == convert(T,4)
         @test (*(convert(S,2), kernelsum)).κ₂ == LinearKernel(zero(promote_type(T,S)))
 
+        @test (*(kernelsum, convert(S,2))).a₁ == convert(T,2)
+        @test (*(kernelsum, convert(S,2))).κ₁ == LinearKernel(one(promote_type(T,S)))
+        @test (*(kernelsum, convert(S,2))).a₂ == convert(T,4)
+        @test (*(kernelsum, convert(S,2))).κ₂ == LinearKernel(zero(promote_type(T,S)))
+
     end
 
     @test kernel_function(kernelsum, x ,y) == convert(T, 4)
-    #@test isposdef_kernel(kernelprod) == true
+    @test isposdef_kernel(kernelsum) == true
     @test eltype(kernelsum) == T
 
     for S in (Float32, Float64)
@@ -130,8 +138,6 @@ for T in (Float32, Float64)
         @test convert(CompositeKernel{S}, kernelsum).κ₁ == LinearKernel(one(S))
         @test convert(Kernel{S}, kernelsum).κ₁ == LinearKernel(one(S))
     end
-
-    #@test (x -> true)(MLKernels.description_string(kernelsum))
 
 end
 

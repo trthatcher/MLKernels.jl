@@ -7,7 +7,6 @@ function test_constructor(kernel::DataType, default_args, test_args)
     n = length(fields)
     for i = 1:n
         case_args = test_args[1:i]
-        println("Test: ", kernel, case_args)
         κ = (kernel)(case_args...)
         for j = 1:n
             if j <= i
@@ -22,7 +21,6 @@ end
 function test_constructor_case(kernel::DataType, args)
     fields = names(kernel)
     n = length(fields)
-    println("Test: ", kernel, args)
     κ = (kernel)(args...)
     for i = 1:n
         @test getfield(κ, fields[i]) == args[i]
@@ -30,7 +28,6 @@ function test_constructor_case(kernel::DataType, args)
 end
 
 function test_default_constructor(kernel::DataType, default_args)
-    println("Test: ", kernel, "()")
     κ = (kernel)()
     fields = names(κ)
     n = length(fields)
@@ -39,6 +36,7 @@ function test_default_constructor(kernel::DataType, default_args)
     end
 end
 
+println("-- Testing Standard Kernel Constructors --")
 for (kernel, default_args, test_args) in (
         (GaussianKernel, (1,), (2,)),
         (LaplacianKernel, (1,), (2,)),
@@ -52,29 +50,14 @@ for (kernel, default_args, test_args) in (
         (SigmoidKernel, (1, 1), (2, 2)))
     test_default_constructor(kernel, default_args)
     for T in (Float32, Float64)
-        test_constructor(kernel, map(x -> convert(T, x), default_args), map(x -> convert(T, x), test_args))
+        case_defaults = map(x -> convert(T, x), default_args)
+        case_tests =  map(x -> convert(T, x), test_args)
+        test_constructor(kernel, case_defaults, case_tests)
     end
 end
 
-println("Testing Standard Kernel Constructors:")
-for (kernel, default_args, test_args) in (
-        (GaussianKernel, (1,), (2,)),
-        (LaplacianKernel, (1,), (2,)),
-        (RationalQuadraticKernel, (1,), (2,)),
-        (MultiQuadraticKernel, (1,), (2,)),
-        (InverseMultiQuadraticKernel, (1,), (2,)),
-        (PowerKernel, (2,), (2,)),
-        (LogKernel, (1,), (2,)),
-        (LinearKernel, (1,), (2,)),
-        (PolynomialKernel, (1, 1, 2), (2, 2, 2)),
-        (SigmoidKernel, (1, 1), (2, 2)))
-    test_default_constructor(kernel, default_args)
-    for T in (Float32, Float64)
-        test_constructor(kernel, map(x -> convert(T, x), default_args), map(x -> convert(T, x), test_args))
-    end
-end
-
-println("Testing Standard Kernel Edge Cases:")
+println()
+println("-- Testing Standard Kernel Edge Cases --")
 for (kernel, edge_case_list) in (
         (LinearKernel, ((0,),)),
         (PolynomialKernel, ((1, 0, 2),)),
@@ -87,7 +70,8 @@ for (kernel, edge_case_list) in (
     end
 end
 
-println("Testing Standard Kernel Special Cases:")
+println()
+println("-- Testing Standard Kernel Special Cases --")
 for (kernel, special_case) in (
         (PowerKernel, (2,)),
         (LogKernel, (1,)),
@@ -95,7 +79,8 @@ for (kernel, special_case) in (
     test_constructor_case(kernel, special_case)
 end
 
-println("Testing Standard Kernel Error Cases:")
+println()
+println("-- Testing Standard Kernel Error Cases --")
 for (kernel, error_case_list) in (
         (GaussianKernel, ((-1,),)),
         (LaplacianKernel, ((-1,),)),
@@ -110,13 +95,13 @@ for (kernel, error_case_list) in (
     for T in (Float32, Float64)
         for error_case in error_case_list
             test_case = map(x -> convert(T, x), error_case)
-            println("Test:", kernel, test_case)
             @test_throws ArgumentError (kernel)(test_case...)
         end
     end
 end
 
-println("Testing Functions")
+println()
+println("-- Testing Functions --")
 for (kernel, default_args, default_value, posdef) in (
         (GaussianKernel,                (1,), exp(-1),  true),
         (LaplacianKernel,               (1,), exp(-1),  true),
@@ -142,61 +127,34 @@ for (kernel, default_args, default_value, posdef) in (
         κ = (kernel)(map(x -> convert(T, x), default_args)...)
         show(κ)
 
-        println("Test: kernelize_scalar(", κ, ",", u, ") == ", convert(T, default_value))
         v = MLKernels.kernelize_scalar(κ, u)
         @test_approx_eq v convert(T, default_value)
 
-        println("Test: ", κ, (x, y), " == ", convert(T, default_value))
         v = kernel_function(κ, x, y)
         @test_approx_eq v convert(T, default_value)
 
-        println("Test: isposdef_kernel(", κ, ") == ", posdef)
         @test isposdef_kernel(κ) == posdef
-
-        println("Test: convert(",kernel{Float32}, ", ", κ, ")")
-        @test convert(kernel{Float32}, κ) == (kernel)(map(x -> convert(Float32, x), default_args)...)
-
-        println("Test: convert(",kernel{Float64}, ", ", κ, ")")
-        @test convert(kernel{Float64}, κ) == (kernel)(map(x -> convert(Float64, x), default_args)...)
-
-        if kernel <: EuclideanDistanceKernel
-
-            println("Test: convert(",EuclideanDistanceKernel{Float32}, ", ", κ, ")")
-            @test convert(EuclideanDistanceKernel{Float32}, κ) == (kernel)(map(x -> convert(Float32, x), default_args)...)
-
-            println("Test: convert(",EuclideanDistanceKernel{Float64}, ", ", κ, ")")
-            @test convert(EuclideanDistanceKernel{Float64}, κ) == (kernel)(map(x -> convert(Float64, x), default_args)...)
-
-        end
         
-        if kernel <: ScalarProductKernel
+        for S in (Float32, Float64)
 
-            println("Test: convert(",ScalarProductKernel{Float32}, ", ", κ, ")")
-            @test convert(ScalarProductKernel{Float32}, κ) == (kernel)(map(x -> convert(Float32, x), default_args)...)
+            @test convert(kernel{S}, κ) == (kernel)(map(x -> convert(S, x), default_args)...)
 
-            println("Test: convert(",ScalarProductKernel{Float64}, ", ", κ, ")")
-            @test convert(ScalarProductKernel{Float64}, κ) == (kernel)(map(x -> convert(Float64, x), default_args)...)   
+            if kernel <: EuclideanDistanceKernel
+                @test convert(EuclideanDistanceKernel{S}, κ) == (kernel)(map(x -> convert(S, x), default_args)...)
+            end
+        
+            if kernel <: ScalarProductKernel
+                @test convert(ScalarProductKernel{S}, κ) == (kernel)(map(x -> convert(S, x), default_args)...) 
+            end
+
+            @test convert(StandardKernel{S}, κ) == (kernel)(map(x -> convert(S, x), default_args)...)
+            @test convert(SimpleKernel{S}, κ) == (kernel)(map(x -> convert(S, x), default_args)...)
+            @test convert(Kernel{S}, κ) == (kernel)(map(x -> convert(S, x), default_args)...)
 
         end
 
-        println("Test: convert(",StandardKernel{Float32}, ", ", κ, ")")
-        @test convert(StandardKernel{Float32}, κ) == (kernel)(map(x -> convert(Float32, x), default_args)...)
-
-        println("Test: convert(",StandardKernel{Float64}, ", ", κ, ")")
-        @test convert(StandardKernel{Float64}, κ) == (kernel)(map(x -> convert(Float64, x), default_args)...)
-
-        println("Test: convert(",SimpleKernel{Float32}, ", ", κ, ")")
-        @test convert(SimpleKernel{Float32}, κ) == (kernel)(map(x -> convert(Float32, x), default_args)...)
-
-        println("Test: convert(",SimpleKernel{Float64}, ", ", κ, ")")
-        @test convert(SimpleKernel{Float64}, κ) == (kernel)(map(x -> convert(Float64, x), default_args)...)
-
-        println("Test: convert(",Kernel{Float32}, ", ", κ, ")")
-        @test convert(Kernel{Float32}, κ) == (kernel)(map(x -> convert(Float32, x), default_args)...)
-
-        println("Test: convert(",Kernel{Float64}, ", ", κ, ")")
-        @test convert(Kernel{Float64}, κ) == (kernel)(map(x -> convert(Float64, x), default_args)...)
     end
+
     @test description((kernel)()) == Nothing()
 end
 
