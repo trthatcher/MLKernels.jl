@@ -20,7 +20,20 @@ abstract CompositeKernel{T<:FloatingPoint} <: Kernel{T}
   Standard Kernels
 ===========================================================================#
 
-include("standardkernels.jl")  # Specific kernels from ML literature
+abstract StandardKernel{T<:FloatingPoint} <: SimpleKernel{T}
+
+function show(io::IO, κ::StandardKernel)
+    print(io, description_string(κ))
+end
+
+# kernels of the form k(x,y) = ϕ(xᵀy)
+include("scalarproductkernels.jl")
+
+# kernels of the form k(x,y) = ϕ((x-y)ᵀ(x-y))
+include("euclideandistancekernels.jl")
+
+# kernels of the form k(x,y) = ϕ(x)ᵀϕ(y)
+include("separablekernels.jl")
 
 
 #===========================================================================

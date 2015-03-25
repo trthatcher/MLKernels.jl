@@ -13,7 +13,7 @@ for T in (Float32, Float64)
     @test skernel.a == convert(T,2)
     @test skernel.κ == kernel
 
-    show(skernel)
+    show(STDOUT, skernel)
     println()
 
     for S in (Float32, Float64, Int32, Int64)

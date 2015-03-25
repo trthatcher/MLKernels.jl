@@ -35,6 +35,8 @@ export
 	                LinearKernel,
 	                PolynomialKernel,
             	    SigmoidKernel,
+                SeparableKernel,
+                    MercerSigmoidKernel,
             ScaledKernel,
         CompositeKernel,
             KernelProduct,

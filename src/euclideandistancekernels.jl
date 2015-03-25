@@ -1,23 +1,8 @@
 #===================================================================================================
-  Standard Kernel Functions
+  Euclidean Distance Kernels
 ===================================================================================================#
 
-abstract StandardKernel{T<:FloatingPoint} <: SimpleKernel{T}
-
-function show(io::IO, κ::StandardKernel)
-    print(io, description_string(κ))
-end
-
-
-#===========================================================================
-  Auxiliary Functions
-===========================================================================#
-
-# xᵀy
-function scalar_product{T<:FloatingPoint}(x::Array{T}, y::Array{T})
-    n = length(x)
-    BLAS.dot(n, x, 1, y, 1)
-end
+abstract EuclideanDistanceKernel{T<:FloatingPoint} <: StandardKernel{T}
 
 # ϵᵀϵ = (x-y)ᵀ(x-y)
 function euclidean_distance{T<:FloatingPoint}(x::Array{T}, y::Array{T})
@@ -26,15 +11,9 @@ function euclidean_distance{T<:FloatingPoint}(x::Array{T}, y::Array{T})
     BLAS.dot(n, ϵ, 1, ϵ, 1)
 end
 
-
-#==========================================================================
-  Euclidean Distance Kernels
-==========================================================================#
-
-abstract EuclideanDistanceKernel{T<:FloatingPoint} <: StandardKernel{T}
-
+# k(x,y) = f((x-y)ᵀ(x-y))
 function kernel_function{T<:FloatingPoint}(κ::EuclideanDistanceKernel{T}, x::Vector{T},
-                                                   y::Vector{T})
+                                           y::Vector{T})
     kernelize_scalar(κ, euclidean_distance(x, y))
 end
 
@@ -56,7 +35,7 @@ end
 
 kernelize_scalar{T<:FloatingPoint}(κ::GaussianKernel{T}, ϵᵀϵ::T) = exp(-κ.η*ϵᵀϵ)
 
-isposdef_kernel(κ::GaussianKernel) = true
+isposdef_kernel(::GaussianKernel) = true
 
 function description_string{T<:FloatingPoint}(κ::GaussianKernel{T}, eltype::Bool = true) 
     "GaussianKernel" * (eltype ? "{$(T)}" : "") * "(η=$(κ.η))"
@@ -312,165 +291,13 @@ end
 
 
 #==========================================================================
-  Scalar Product Kernels
-==========================================================================#
-
-abstract ScalarProductKernel{T<:FloatingPoint} <: StandardKernel{T}
-
-function kernel_function{T<:FloatingPoint}(κ::ScalarProductKernel{T}, x::Vector{T},
-                                                   y::Vector{T})
-    kernelize_scalar(κ, scalar_product(x, y))
-end
-
-
-#== Linear Kernel ====================#
-
-immutable LinearKernel{T<:FloatingPoint} <: ScalarProductKernel{T}
-    c::T
-    function LinearKernel(c::T)
-        c >= 0 || throw(ArgumentError("c = $c must be greater than zero."))
-        new(c)
-    end
-end
-LinearKernel{T<:FloatingPoint}(c::T = 1.0) = LinearKernel{T}(c)
-
-function convert{T<:FloatingPoint}(::Type{LinearKernel{T}}, κ::LinearKernel)
-    LinearKernel(convert(T, κ.c))
-end
-
-kernelize_scalar{T<:FloatingPoint}(κ::LinearKernel, xᵀy::T) = xᵀy + κ.c
-
-isposdef_kernel(κ::LinearKernel) = true
-
-function description_string{T<:FloatingPoint}(κ::LinearKernel{T}, eltype::Bool = true)
-    "LinearKernel" * (eltype ? "{$(T)}" : "") * "(c=$(κ.c))"
-end
-
-function description(κ::LinearKernel)
-    print(
-        """ 
-         Linear Kernel:
-         
-         The linear kernel differs from the ordinary inner product by the
-         addition of an optional constant c ≥ 0:
-
-             k(x,y) = xᵀy + c    x ∈ ℝⁿ, y ∈ ℝⁿ, c ≥ 0
-
-         Techniques using the linear kernel often do not differ from their
-         non-kernelized versions.
-        """
-    )
-end
-
-
-#== Polynomial Kernel ===============#
-
-immutable PolynomialKernel{T<:FloatingPoint} <: ScalarProductKernel{T}
-    α::T
-    c::T
-    d::T
-    function PolynomialKernel(α::T, c::T, d::T)
-        α > 0 || throw(ArgumentError("α = $(α) must be greater than zero."))
-        c >= 0 || throw(ArgumentError("c = $(c) must be a non-negative number."))
-        d > 0 || throw(ArgumentError("d = $(d) must be a positive integer."))
-        b = trunc(d)
-        d == b || warn("d = $(d) was truncated to $(b).")
-        new(α, c, b)
-    end
-end
-function PolynomialKernel{T<:FloatingPoint}(α::T = 1.0, c::T = one(T), d::T = convert(T, 2))
-    PolynomialKernel{T}(α, c, d)
-end
-
-PolynomialKernel{T<:FloatingPoint}(α::T, c::T, d::Integer) = PolynomialKernel(α, c, convert(T, d))
-
-function convert{T<:FloatingPoint}(::Type{PolynomialKernel{T}}, κ::PolynomialKernel)
-    PolynomialKernel(convert(T, κ.α), convert(T, κ.c), convert(T, κ.d))
-end
-
-function kernelize_scalar{T<:FloatingPoint}(κ::PolynomialKernel{T}, xᵀy::T)
-    (κ.α*xᵀy + κ.c)^κ.d
-end
-
-isposdef_kernel(κ::PolynomialKernel) = true
-
-function description_string{T<:FloatingPoint}(κ::PolynomialKernel{T}, eltype::Bool = true) 
-    "PolynomialKernel" * (eltype ? "{$(T)}" : "") * "(α=$(κ.α),c=$(κ.c),d=$(κ.d))"
-end
-
-function description(κ::PolynomialKernel)
-    print(
-        """ 
-         Polynomial Kernel:
-         
-         The polynomial kernel is a non-stationary kernel which represents
-         the original features as in a feature space over polynomials up to 
-         degree d of the original variables:
-
-             k(x,y) = (αxᵀy + c)ᵈ    x ∈ ℝⁿ, y ∈ ℝⁿ, α > 0, c ≥ 0, d > 0
-
-         This kernel is sensitive to numerical instability in the case that
-         d is increasingly large and αxᵀy + c approaches zero.
-        """
-    )
-end
-
-
-#== Sigmoid Kernel ===============#
-
-immutable SigmoidKernel{T<:FloatingPoint} <: ScalarProductKernel{T}
-    α::T
-    c::T
-    function SigmoidKernel(α::T, c::T)
-        α > 0 || throw(ArgumentError("α = $(α) must be greater than zero."))
-        c >= 0 || throw(ArgumentError("c = $(c) must be non-negative."))
-        new(α, c)
-    end
-end
-SigmoidKernel{T<:FloatingPoint}(α::T = 1.0, c::T = one(T)) = SigmoidKernel{T}(α, c)
-
-function convert{T<:FloatingPoint}(::Type{SigmoidKernel{T}}, κ::SigmoidKernel)
-    SigmoidKernel(convert(T, κ.α), convert(T, κ.c))
-end
-
-kernelize_scalar{T<:FloatingPoint}(κ::SigmoidKernel, xᵀy::T) = tanh(κ.α*xᵀy + κ.c)
-
-function description_string{T<:FloatingPoint}(κ::SigmoidKernel{T}, eltype::Bool = true)
-    "SigmoidKernel" * (eltype ? "{$(T)}" : "") * "(α=$(κ.α),c=$(κ.c))"
-end
-
-function description(κ::SigmoidKernel)
-    print(
-        """ 
-         Sigmoid Kernel:
-         
-         The sigmoid kernel is only positive semidefinite. It is used in the
-         field of neural networks where it is often used as the activation
-         function for artificial neurons.
-
-             k(x,y) = tanh(αxᵀy + c)    x ∈ ℝⁿ, y ∈ ℝⁿ, α > 0, c ≥ 0
-        """
-    )
-end
-
-
-#==========================================================================
   Conversions
 ==========================================================================#
 
-for (kernel, kernel_type) in ((:LinearKernel, :ScalarProductKernel),
-                              (:PolynomialKernel, :ScalarProductKernel),
-                              (:SigmoidKernel, :ScalarProductKernel),
-                              (:GaussianKernel, :EuclideanDistanceKernel),
-                              (:LaplacianKernel, :EuclideanDistanceKernel),
-                              (:RationalQuadraticKernel, :EuclideanDistanceKernel),
-                              (:MultiQuadraticKernel, :EuclideanDistanceKernel),
-                              (:InverseMultiQuadraticKernel, :EuclideanDistanceKernel),
-                              (:PowerKernel, :EuclideanDistanceKernel),
-                              (:LogKernel, :EuclideanDistanceKernel))
-
+for kernel in (:GaussianKernel, :LaplacianKernel, :RationalQuadraticKernel, :MultiQuadraticKernel, 
+               :InverseMultiQuadraticKernel, :PowerKernel, :LogKernel)
     @eval begin
-        function convert{T<:FloatingPoint}(::Type{$kernel_type{T}}, κ::$kernel)
+        function convert{T<:FloatingPoint}(::Type{EuclideanDistanceKernel{T}}, κ::$kernel)
             convert($kernel{T}, κ)
         end
         function convert{T<:FloatingPoint}(::Type{StandardKernel{T}}, κ::$kernel)
@@ -482,66 +309,5 @@ for (kernel, kernel_type) in ((:LinearKernel, :ScalarProductKernel),
         function convert{T<:FloatingPoint}(::Type{Kernel{T}}, κ::$kernel)
             convert($kernel{T}, κ)
         end
-
     end
 end
-
-
-#==========================================================================
-  Pointwise Product Kernel
-==========================================================================#
-
-# Will look into pointwise product kernel in future
-
-#=
-immutable PointwiseProductKernel{T<:FloatingPoint} <: StandardKernel{T}
-    k::Function
-    c::T
-    posdef::Bool
-    function PointwiseProductKernel(k::Function, c::T = 0.0, posdef::Bool = false)
-        method_exists(k, (Array{T},)) || error("k = $(k) must map f: ℝⁿ → ℝ (define method for" * (
-                                               "Array{Float32} and Array{Float64}."))
-        c >= 0 || error("c = $(c) must be non-negative.")
-        new(k, c, posdef)
-    end
-end
-function PointwiseProductKernel{T<:FloatingPoint}(k::Function, c::T = 0.0, posdef::Bool = false)
-    PointwiseProductKernel{T}(k, c, posdef)
-end
-
-function convert{T<:FloatingPoint}(::Type{PointwiseProductKernel{T}}, κ::PointwiseProductKernel)
-    PointwiseProductKernel(κ.k, convert(T, κ.c), κ.posdef)
-end
-
-@inline function kernel_function{T<:FloatingPoint}(K::PointwiseProductKernel{T}, x::Vector{T}, 
-                                                   y::Vector{T})
-    κ.k(x) * κ.k(y) + κ.c
-end
-
-arguments(κ::PointwiseProductKernel) = (κ.f,)
-isposdef_kernel(κ::PointwiseProductKernel) = κ.posdef
-
-formula_string(κ::PointwiseProductKernel) = "k(x,y) = f(x)f(y) + c"
-argument_string(κ::PointwiseProductKernel) = "k, c=$(κ.c)"
-description_string(κ::PointwiseProductKernel) = "PointwiseProductKernel(k, c=$(κ.c))"
-
-function description(κ::PointwiseProductKernel)
-    print(
-        """ 
-         Pointwise Product Kernel:
-         
-         The pointwise product kernel is the product of a real-valued multi-
-         variate function applied to each of the vector arguments:
-
-             k(x,y) = f(x)f(y) + c    x ∈ ℝⁿ, y ∈ ℝⁿ, c ∈ ℝ, f: ℝⁿ → ℝ
-        """
-    )
-end
-
-function convert{T<:FloatingPoint}(::Type{StandardKernel{T}}, κ::PointwiseProductKernel)
-    PointwiseProductKernel(κ.k, convert(T, κ.c), κ.posdef)
-end
-function convert{T<:FloatingPoint}(::Type{SimpleKernel{T}}, κ::PointwiseProductKernel)
-    PointwiseProductKernel(κ.k, convert(T, κ.c), κ.posdef)
-end
-=#

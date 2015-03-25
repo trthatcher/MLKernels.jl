@@ -47,7 +47,8 @@ for (kernel, default_args, test_args) in (
         (LogKernel, (1,), (2,)),
         (LinearKernel, (1,), (2,)),
         (PolynomialKernel, (1, 1, 2), (2, 2, 2)),
-        (SigmoidKernel, (1, 1), (2, 2)))
+        (SigmoidKernel, (1, 1), (2, 2)),
+        (MercerSigmoidKernel, (0, 1), (-1, 2)))
     test_default_constructor(kernel, default_args)
     for T in (Float32, Float64)
         case_defaults = map(x -> convert(T, x), default_args)
@@ -91,7 +92,8 @@ for (kernel, error_case_list) in (
         (LogKernel, ((-1,),)),
         (LinearKernel, ((-1.0,),)),
         (PolynomialKernel, ((-1, 1, 2), (1, -1, 2), (1, 1, 0))),
-        (SigmoidKernel, ((-1, 1), (1, -1))))
+        (SigmoidKernel, ((-1, 1), (1, -1))),
+        (MercerSigmoidKernel, ((0, 0), (0, -1))))
     for T in (Float32, Float64)
         for error_case in error_case_list
             test_case = map(x -> convert(T, x), error_case)
