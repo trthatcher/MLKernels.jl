@@ -114,23 +114,25 @@ for (kernel, default_args, default_value, posdef) in (
         (LogKernel,                     (1,), -log(2),  false),
         (LinearKernel,                  (1,),      3,       true),
         (PolynomialKernel,              (1, 1, 2), 9,       true),
-        (SigmoidKernel,                 (1, 1),    tanh(3), false))
+        (SigmoidKernel,                 (1, 1),    tanh(3), false),
+        (MercerSigmoidKernel,           (0, 1),    tanh(1)*tanh(2), true))
     for T in (Float32, Float64)
         x, y = [one(T)], [convert(T,2)]
-        
+     
+        κ = (kernel)(map(x -> convert(T, x), default_args)...)
+        show(STDOUT, κ)
+
         if kernel <: EuclideanDistanceKernel
             u = MLKernels.euclidean_distance(x, y)
+            v = MLKernels.kernelize_scalar(κ, u)
+            @test_approx_eq v convert(T, default_value)
         end
 
         if kernel <: ScalarProductKernel
             u = MLKernels.scalar_product(x, y)
+            v = MLKernels.kernelize_scalar(κ, u)
+            @test_approx_eq v convert(T, default_value)
         end
-
-        κ = (kernel)(map(x -> convert(T, x), default_args)...)
-        show(κ)
-
-        v = MLKernels.kernelize_scalar(κ, u)
-        @test_approx_eq v convert(T, default_value)
 
         v = kernel_function(κ, x, y)
         @test_approx_eq v convert(T, default_value)
@@ -149,6 +151,10 @@ for (kernel, default_args, default_value, posdef) in (
                 @test convert(ScalarProductKernel{S}, κ) == (kernel)(map(x -> convert(S, x), default_args)...) 
             end
 
+            if kernel <: SeparableKernel
+                @test convert(SeparableKernel{S}, κ) == (kernel)(map(x -> convert(S, x), default_args)...) 
+            end
+
             @test convert(StandardKernel{S}, κ) == (kernel)(map(x -> convert(S, x), default_args)...)
             @test convert(SimpleKernel{S}, κ) == (kernel)(map(x -> convert(S, x), default_args)...)
             @test convert(Kernel{S}, κ) == (kernel)(map(x -> convert(S, x), default_args)...)
@@ -160,4 +166,11 @@ for (kernel, default_args, default_value, posdef) in (
     @test description((kernel)()) == Nothing()
 end
 
+for (kernel, default_args, default_value) in (
+        (MercerSigmoidKernel, (0,1), tanh(1)),)
+    for T in (Float32, Float64)
+        κ = (kernel)(map(x -> convert(T, x), default_args)...)
+        @test_approx_eq MLKernels.kernelize_vector!(κ, [one(T)])[1] convert(T, default_value)
+    end
+end
 
