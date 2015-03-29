@@ -52,7 +52,7 @@ for T in (Float32, Float64)
     @test kernelprod.κ₁ == kernel
     @test kernelprod.κ₂ == LinearKernel(zero(T))
 
-    show(kernelprod)
+    show(STDOUT, kernelprod)
     println()
     
     @test *(kernel, LinearKernel(1.0)).a == 1.0
@@ -100,7 +100,7 @@ for T in (Float32, Float64)
     @test kernelsum.a₂ == convert(T,2)
     @test kernelsum.κ₂ == LinearKernel(zero(T))
 
-    show(kernelsum)
+    show(STDOUT, kernelsum)
     println()
 
     @test (+(kernel, kernel)).a₁ == one(T)

@@ -2,37 +2,22 @@ using Base.Test
 
 importall MLKernels
 
+# Check each field for equality with args (assumed same order)
+function check_fields(kernel::StandardKernel, args)
+    fields = names(kernel)
+    for i = 1:length(fields)
+        @test getfield(kernel, fields[i]) == args[i]
+    end
+end
+
+# Iterate through the test_args and test optional arguments
 function test_constructor(kernel::DataType, default_args, test_args)
     fields = names(kernel)
     n = length(fields)
     for i = 1:n
         case_args = test_args[1:i]
         κ = (kernel)(case_args...)
-        for j = 1:n
-            if j <= i
-                @test getfield(κ, fields[j]) == test_args[j]
-            else
-                @test getfield(κ, fields[j]) == default_args[j]
-            end
-        end
-    end
-end
-
-function test_constructor_case(kernel::DataType, args)
-    fields = names(kernel)
-    n = length(fields)
-    κ = (kernel)(args...)
-    for i = 1:n
-        @test getfield(κ, fields[i]) == args[i]
-    end
-end
-
-function test_default_constructor(kernel::DataType, default_args)
-    κ = (kernel)()
-    fields = names(κ)
-    n = length(fields)
-    for i = 1:n
-        @test getfield(κ, fields[i]) == default_args[i]
+        check_fields(κ, tuple(case_args..., default_args[i+1:n]...))
     end
 end
 
@@ -46,59 +31,61 @@ for (kernel, default_args, test_args) in (
         (PowerKernel, (2,), (2,)),
         (LogKernel, (1,), (2,)),
         (LinearKernel, (1,), (2,)),
-        (PolynomialKernel, (1, 1, 2), (2, 2, 2)),
+        (PolynomialKernel, (1, 1, 2), (2, 2, 4)),
         (SigmoidKernel, (1, 1), (2, 2)),
-        (MercerSigmoidKernel, (0, 1), (-1, 2)))
-    test_default_constructor(kernel, default_args)
+        (MercerSigmoidKernel, (0, 1), (-1, 2))
+    )
+
+    check_fields((kernel)(), default_args)
+
     for T in (Float32, Float64)
         case_defaults = map(x -> convert(T, x), default_args)
-        case_tests =  map(x -> convert(T, x), test_args)
+        case_tests = map(x -> convert(T, x), test_args)
         test_constructor(kernel, case_defaults, case_tests)
     end
+
 end
 
 println()
-println("-- Testing Standard Kernel Edge Cases --")
-for (kernel, edge_case_list) in (
-        (LinearKernel, ((0,),)),
-        (PolynomialKernel, ((1, 0, 2),)),
-        (SigmoidKernel, ((1, 0),)))
-    for T in (Float32, Float64)
-        for edge_case in edge_case_list
-            test_case = map(x -> convert(T, x), edge_case)
-            test_constructor_case(kernel, test_case)
-        end
-    end
-end
-
-println()
-println("-- Testing Standard Kernel Special Cases --")
-for (kernel, special_case) in (
+println("-- Testing Standard Kernel Edge and Special Cases --")
+for (kernel, case) in (
+        # Edge Cases
+        (LinearKernel, (0.0,)),
+        (PolynomialKernel, (1.0, 0.0, 2.0)),
+        (SigmoidKernel, (1.0, 0.0)),
+        # Special Cases
         (PowerKernel, (2,)),
         (LogKernel, (1,)),
-        (PolynomialKernel, (1.0, 1.0, 2)))
-    test_constructor_case(kernel, special_case)
+        (PolynomialKernel, (1.0, 1.0, 2))
+    )
+
+    check_fields((kernel)(case...), case)
+
 end
 
 println()
 println("-- Testing Standard Kernel Error Cases --")
-for (kernel, error_case_list) in (
-        (GaussianKernel, ((-1,),)),
-        (LaplacianKernel, ((-1,),)),
-        (RationalQuadraticKernel, ((-1,),)),
-        (MultiQuadraticKernel, ((-1,),)),
-        (InverseMultiQuadraticKernel, ((-1.0,),)),
-        (PowerKernel, ((-1,),)),
-        (LogKernel, ((-1,),)),
-        (LinearKernel, ((-1.0,),)),
-        (PolynomialKernel, ((-1, 1, 2), (1, -1, 2), (1, 1, 0))),
-        (SigmoidKernel, ((-1, 1), (1, -1))),
-        (MercerSigmoidKernel, ((0, 0), (0, -1))))
+for (kernel, error_case) in (
+        (GaussianKernel, (-1,)),
+        (LaplacianKernel, (-1,)),
+        (RationalQuadraticKernel, (-1,)),
+        (MultiQuadraticKernel, (-1,)),
+        (InverseMultiQuadraticKernel, (-1.0,)),
+        (PowerKernel, (-1,)),
+        (LogKernel, (-1,)),
+        (LinearKernel, (-1.0,)),
+        (PolynomialKernel, (-1, 1, 2)), 
+        (PolynomialKernel, (1, -1, 2)), 
+        (PolynomialKernel, (1, 1, 0)),
+        (SigmoidKernel, (-1, 1)),
+        (SigmoidKernel, (1, -1)),
+        (MercerSigmoidKernel, (0, 0)), 
+        (MercerSigmoidKernel, (0, -1))
+    )
+
     for T in (Float32, Float64)
-        for error_case in error_case_list
-            test_case = map(x -> convert(T, x), error_case)
-            @test_throws ArgumentError (kernel)(test_case...)
-        end
+        test_case = map(x -> convert(T, x), error_case)
+        @test_throws ArgumentError (kernel)(test_case...)
     end
 end
 
