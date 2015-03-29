@@ -64,7 +64,7 @@ function lagged_gramian_matrix{T<:FloatingPoint}(X::Matrix{T}, sym::Bool = true)
     G::Array{T} = gramian_matrix(X, false)
     xᵀx = copy(vec(diag(G)))
     @inbounds for j = 1:n
-        for i = 1:n
+        for i = 1:j
             G[i,j] = xᵀx[i] - convert(T, 2) * G[i,j] + xᵀx[j]
         end
     end
@@ -102,9 +102,10 @@ center_kernel_matrix{T<:FloatingPoint}(K::Matrix{T}) = center_kernel_matrix!(cop
   Generic Kernel Matrix Functions
 ==========================================================================#
 
+# Generic kernel matrix function - will be slow
 function kernel_matrix{T<:FloatingPoint}(κ::StandardKernel{T}, X::Matrix{T})
     n = size(X, 1)
-    K = Array(T, n, n)
+    K::Matrix{T} = Array(T, n, n)
     @inbounds for i = 1:n 
         for j = i:n
             K[i,j] = kernel_function(κ, vec(X[i,:]), vec(X[j,:]))::T
@@ -115,18 +116,19 @@ end
 
 function kernel_matrix_scaled{T<:FloatingPoint}(a::T, κ::StandardKernel{T}, X::Matrix{T})
     K::Matrix{T} = kernel_matrix(κ, X)
-    BLAS.scal!(length(K), a, K, 1)
+    if a != one(T) BLAS.scal!(length(K), a, K, 1) end
+    K
 end
 
 function kernel_matrix_product{T<:FloatingPoint}(a::T, κ₁::StandardKernel{T},
                                                  κ₂::StandardKernel{T}, X::Matrix{T})
-    K::Matrix{T} = a == one(T) ? kernel_matrix(κ₁, X) : kernel_matrix_scaled(a, κ₁, X)
+    K::Matrix{T} = kernel_matrix_scaled(a, κ₁, X)
     hadamard!(K, kernel_matrix(κ₂, X))
 end
 
 function kernel_matrix_sum{T<:FloatingPoint}(a₁::T, κ₁::StandardKernel{T}, a₂::T, 
                                              κ₂::StandardKernel{T}, X::Matrix{T})
-    K::Matrix{T} = a₁ == 1 ? kernel_matrix(κ₁, X) : kernel_matrix_scaled(a₁, κ₁, X)
+    K::Matrix{T} = kernel_matrix_scaled(a₁, κ₁, X)
     BLAS.axpy!(length(K), a₂, kernel_matrix(κ₂, X), 1, K, 1)    
 end
 
@@ -145,10 +147,10 @@ function kernel_matrix{T<:FloatingPoint}(κ::StandardKernel{T}, X::Matrix{T}, Y:
     m = size(Y, 1)
     size(X, 2) == size(Z, 2) || error("X ∈ ℝn×p and Y should be ∈ ℝm×p, but X ∈ " * (
                                       "ℝn×$(size(Y, 2)) and Y∈ ℝm×$(size(Y, 2))."))
-    K = Array(T, n, m)
+    K::Matrix{T} = Array(T, n, m)
     @inbounds for j = 1:m 
         for i = 1:n
-            K[i,j] = kernel_function(κ, vec(X[i,:]), vec(Y[j,:]))
+            K[i,j] = kernel_function(κ, vec(X[i,:]), vec(Y[j,:]))::T
         end
     end
     K
@@ -157,18 +159,19 @@ end
 function kernel_matrix_scaled{T<:FloatingPoint}(a::T, κ::StandardKernel{T}, X::Matrix{T}, 
                                                 Y::Matrix{T})
     K::Matrix{T} = kernel_matrix(κ, X, Y)
-    BLAS.scal!(length(K), a, K, 1)
+    if a != one(T) BLAS.scal!(length(K), a, K, 1) end
+    K
 end
 
 function kernel_matrix_product{T<:FloatingPoint}(a::T, κ₁::StandardKernel{T},
                                                  κ₂::StandardKernel{T}, X::Matrix{T}, Y::Matrix{T})
-    K::Matrix{T} = a == one(T) ? kernel_matrix_scaled(a, κ₁, X, Y) : kernel_matrix(κ₁, X, Y)
+    K::Matrix{T} = kernel_matrix_scaled(a, κ₁, X, Y)
     hadamard!(K, kernel_matrix(κ₂, X, Y))
 end
 
 function kernel_matrix_sum{T<:FloatingPoint}(a₁::T, κ₁::StandardKernel{T}, a₂::T, 
                                              κ₂::StandardKernel{T}, X::Matrix{T}, Y::Matrix{T})
-    K::Matrix{T} = a == one(T) ? kernel_matrix_scaled(a₁, κ₁, X, Y) : kernel_matrix(κ₁, X, Y)
+    K::Matrix{T} = kernel_matrix_scaled(a₁, κ₁, X, Y)
     axpy!(length(K), a₂, kernel_matrix(κ₂, X, Y), 1, K, 1)    
 end
 
@@ -257,6 +260,36 @@ for (kernel, gramian) in ((:EuclideanDistanceKernel, :lagged_gramian_matrix),
             if a₁ != one(T) BLAS.scal!(n, a₁, K, 1) end
             BLAS.axpy!(n, a₂, kernelize_gramian!(G, κ₂), 1, K, 1)
         end
+    end
+end
+
+
+#==========================================================================
+  Optimized kernel matrix functions for Separable kernels
+==========================================================================#
+
+for kernel in (:MercerSigmoidKernel,)
+    @eval begin
+
+        function kernel_matrix_scaled{T<:FloatingPoint}(a::T, κ::$kernel{T}, X::Matrix{T})
+            K::Matrix{T} = BLAS.syrk('U', 'N', a, kernelize_vector!(κ, copy(X)))
+            syml!(K)
+        end
+
+        function kernel_matrix{T<:FloatingPoint}(κ::$kernel{T}, X::Matrix{T})
+            kernel_matrix_scaled!(one(T), κ, X)
+        end
+
+        function kernel_matrix_scaled{T<:FloatingPoint}(a::T, κ::$kernel{T}, X::Matrix{T},
+                                                        Y::Matrix{T})
+            K::Array{T} = BLAS.gemm('N', 'T', a, kernelize_vector!(κ, copy(X)), 
+                                                 kernelize_vector!(κ, copy(Y)))
+        end
+
+        function kernel_matrix{T<:FloatingPoint}(κ::$kernel{T}, X::Matrix{T}, Y::Matrix{T})
+            kernel_matrix_scaled!(one(T), κ, X, Y)
+        end
+
     end
 end
 
