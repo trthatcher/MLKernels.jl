@@ -3,9 +3,9 @@
 [![Build Status](https://travis-ci.org/trthatcher/MLKernels.jl.svg?branch=master)](https://travis-ci.org/trthatcher/MLKernels.jl)
 [![Coverage Status](https://coveralls.io/repos/trthatcher/MLKernels.jl/badge.svg)](https://coveralls.io/r/trthatcher/MLKernels.jl)
 
-MLKernels.jl is a Julia package for (Mercer) kernels used in the kernel methods of machine learning. The goal is to provide a common Julia datatype for machine learning kernels and an efficient set of methods to calculate or approximate kernel matrices. The performance of the package is largely dependent on the underlying BLAS installation but otherwise has no dependencies beyond base Julia.
+MLKernels.jl is a Julia package for Mercer and non-Mercer kernels that are used in the kernel methods of machine learning. The goal is to provide a Julia datatype for machine learning kernels and an efficient set of methods to calculate or approximate kernel matrices. The package has no dependencies beyond base Julia.
 
-The package currently supports nine popular kernels:
+The package currently supports ten pre-defined kernels:
 
 - Gaussian Kernel (radial basis kernel)
 - Laplacian Kernel
@@ -17,9 +17,10 @@ The package currently supports nine popular kernels:
 - Linear Kernel
 - Polynomial Kernel
 - Sigmoid Kernel
+- Mercer Sigmoid Kernel
 
 
-## Creating Basic Kernels and Calculating Kernel Matrices
+## Creating Basic Kernels
 
 A number of standard kernels have been pre-defined. For example, to create a Polynomial Kernel object:
 
@@ -76,7 +77,9 @@ julia> isposdef_kernel(κ)
 true
 ```
 
-Given a data matrix with one observation per row, thekernel matrix for kernel `κ` can be calculated using the `kernel_matrix` method:
+## Calculating Kernel Matrices
+
+Given a data matrix with one observation per row, the kernel matrix for kernel `κ` can be calculated using the `kernel_matrix` method:
 
 ```julia
 julia> X = rand(10, 5)
@@ -109,22 +112,37 @@ julia> kernel_function(κ, vec(X[1,:]), vec(X[1,:]))
 3.02443612827351
 ```
 
-## Convex Cone of Kernels and the Kernel Product
+Optimised `kernel_matrix` methods have been defined for the kernels listed earlier, in addition to a generic fall-back method. Therefore, it is preferable to use the `kernel_matrix` method where possible rather than explicitly calculating each entry in the kernel matrix.
+
+## Convex Cone of Kernels
 
 According to the properties of Mercer kernels:
 
 - If κ is a kernel and a > 0, then aκ is also a kernel
 - If κ₁ is a kernel and κ₂ is a kernel, then κ₁ + κ₂ is a kernel
-- If κ₁ is a kernel and κ₂ is a kernel, then κ₁κ₂ is a kernel
 
-This packages allows new kernels to be defined as the either the linear combination of two standard kernels or the product of two standard kernels:
+In other words, Mercer Kernels form a convex cone. This package implements two wrapper types to accommodate this: `ScaledKernel` and `KernelSum`. They can be constructed by multiplying a kernel by a real number and adding two kernels respectively:
 
 ```julia
+julia> 5 * LinearKernel()
+ScaledKernel{Float64}(5.0,LinearKernel(c=1.0))
+
 julia> 3*PolynomialKernel() + 4*SigmoidKernel()
 KernelSum{Float64}(3.0,PolynomialKernel(α=1.0,c=1.0,d=2.0),4.0,SigmoidKernel(α=1.0,c=1.0))
+```
 
+Optimised methods for `kernel_matrix` have also been defined for `ScaledKernel`s and `KernelSum`s.
+
+
+## Kernel Product
+
+Mercer Kernels have the additional property:
+
+- If κ₁ is a kernel and κ₂ is a kernel, then κ₁κ₂ is a kernel
+
+This package allows for a scaled point-wise product of kernels to be defined using a `KernelProduct` type:
+
+```julia
 julia> 3*PolynomialKernel()*SigmoidKernel()
 KernelProduct{Float64}(3.0,SigmoidKernel(α=1.0,c=1.0),PolynomialKernel(α=1.0,c=1.0,d=2.0))
 ```
-
-These kernel combinations may be used to define a new kernel and calculate a kernel matrix or the kernel function of two vectors. However, the resulting kernel combination may not be combined any further with other kernels.
