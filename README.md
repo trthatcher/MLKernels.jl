@@ -131,7 +131,7 @@ julia> 3*PolynomialKernel() + 4*SigmoidKernel()
 KernelSum{Float64}(3.0,PolynomialKernel(α=1.0,c=1.0,d=2.0),4.0,SigmoidKernel(α=1.0,c=1.0))
 ```
 
-Optimised methods for `kernel_matrix` have also been defined for `ScaledKernel`s and `KernelSum`s.
+Optimised methods for `kernel_matrix` have also been defined for `ScaledKernel` and `KernelSum`.
 
 
 ## Kernel Product
@@ -146,3 +146,9 @@ This package allows for a scaled point-wise product of kernels to be defined usi
 julia> 3*PolynomialKernel()*SigmoidKernel()
 KernelProduct{Float64}(3.0,SigmoidKernel(α=1.0,c=1.0),PolynomialKernel(α=1.0,c=1.0,d=2.0))
 ```
+
+## References
+
+[Marc G. Genton. 2002. Classes of kernels for machine learning: a statistics perspective. J. Mach. Learn. Res. 2 (March 2002), 299-312.](http://dl.acm.org/citation.cfm?id=944815)
+
+
