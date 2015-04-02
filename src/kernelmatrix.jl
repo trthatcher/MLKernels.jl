@@ -294,7 +294,6 @@ for kernel in (:MercerSigmoidKernel,)
 end
 
 
-
 #===================================================================================================
   Kernel Approximation
 ===================================================================================================#
@@ -311,56 +310,27 @@ function dgmm!{T<:FloatingPoint}(D::Array{T}, A::Matrix{T})
     A
 end
 
-function gdmm!{T<:FloatingPoint}(A::Matrix{T}, D::Array{T})
-    n, p = size(A)
-    p == length(D) || error("Diagonal matrix is not of correct dimension")
-    @inbounds for j = 1:p
-        for i = 1:n
-            A[i, j] *= D[j]
-        end
-    end
-    A
-end
-
 # Moore-Penrose pseudo-inverse for positive semidefinite matrices
 function pinv_semiposdef!{T<:FloatingPoint}(S::Matrix{T}, tol::T = eps(T)*maximum(size(S)))
     tol > 0 || error("tol = $tol must be a positive number.")
     n = size(S,1)
     n == size(S,2) || error("not cool")
-    VDVᵀ::Matrix{T} = eigfact(S)
-    D⁻¹ = VDVᵀ[:values]
+    UDVᵀ = svdfact!(S, thin=true)
+    Σ⁻¹::Vector{T} = UDVᵀ[:S]
 	@inbounds for i = 1:n
-		D⁻¹[i] = D⁻¹[i] < tol ? zero(T) : one(T) / D⁻¹[i] 
+		Σ⁻¹[i] = Σ⁻¹[i] < tol ? zero(T) : one(T) / sqrt(Σ⁻¹[i])
 	end
-    V::Matrix{T} = VDVᵀ[:vectors]
-    VD⁻¹ = copy(V)
-    gdmm!(VD⁻¹, D⁻¹)
-    VD⁻¹Vᵀ::Matrix{T} = zeros(T, n, n)
-    BLAS.gemm!('N', 'T', one(T), VD⁻¹, V, one(T), VD⁻¹Vᵀ)
+    Vᵀ::Matrix{T} = UDVᵀ[:Vt]
+    dgmm!(Σ⁻¹, Vᵀ)::Matrix{T}
 end
 
+# Nystrom method for Kernel Matrix approximation
 function nystrom{T<:FloatingPoint,S<:Integer}(κ::Kernel{T}, X::Matrix{T}, sₓ::Array{S})
     c = length(sₓ)
     n = size(X, 1)
     C::Matrix{T} = kernel_matrix(κ, X, X[sₓ,:])
-    W::Matrix{T} = pinv_semiposdef!(C[sₓ,:])
-    WCᵀ::Matrix{T} = BLAS.gemm('N', 'T', W, C)
-    BLAS.gemm('N', 'N', C, WCᵀ)
+    P::Matrix{T} = pinv_semiposdef!(C[sₓ,:])  # P'P = W = pinv(X[sₓ,sₓ]) 
+    PCᵀ::Matrix{T} = BLAS.gemm('N', 'T', P, C)
+    K = BLAS.syrk('U', 'T', one(T), PCᵀ)
+    syml!(K)::Matrix{T}
 end
-
-
-#=
-function init_approx{T<:FloatingPoint}(κ::Kernel{T}, X::Matrix{T}, Sample::Array{Int})
-    k = kernelfunction(kernel)
-    c = length(Sample)
-    n = size(X, 1)
-    Cᵀ = Array(T, n, c)
-    for i = 1:n
-        for j = 1:c
-            Cᵀ[i,j] = k(X[i,:], X[Sample[j],:])
-        end
-    end
-    W = pinv(Cᵀ[Sample,:])
-    return Cᵀ * W * Cᵀ'
-end
-=#
