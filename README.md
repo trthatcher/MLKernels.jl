@@ -147,8 +147,41 @@ julia> 3*PolynomialKernel()*SigmoidKernel()
 KernelProduct{Float64}(3.0,SigmoidKernel(α=1.0,c=1.0),PolynomialKernel(α=1.0,c=1.0,d=2.0))
 ```
 
+
+## Approximating Kernel Matrices
+
+The Nystrom Method of approximating kernel matrices has been implemented. It requires an additional array of integers that specify the sampled columns. It should be noted that the Nystrom method is intended for large matrices:
+
+```julia
+julia> X = rand(5,3)
+5x3 Array{Float64,2}:
+ 0.812068  0.644385  0.933447 
+ 0.243326  0.679563  0.0939346
+ 0.973343  0.864038  0.757773 
+ 0.215628  0.167303  0.256735 
+ 0.932313  0.592807  0.782866 
+
+julia> kernel_matrix(GaussianKernel(), X)
+5x5 Array{Float64,2}:
+ 1.0       0.357191  0.900218  0.353     0.960988
+ 0.357191  1.0       0.365081  0.748502  0.384099
+ 0.900218  0.365081  1.0       0.269655  0.926928
+ 0.353     0.748502  0.269655  1.0       0.378513
+ 0.960988  0.384099  0.926928  0.378513  1.0     
+
+julia> nystrom(GaussianKernel(), X, [1, 3, 5])
+5x5 Array{Float64,2}:
+ 1.0       0.357191  0.900218  0.353     0.960988
+ 0.357191  0.150183  0.365081  0.141043  0.384099
+ 0.900218  0.365081  1.0       0.269655  0.926928
+ 0.353     0.141043  0.269655  0.190468  0.378513
+ 0.960988  0.384099  0.926928  0.378513  1.0     
+```
+
 ## References
 
 [Marc G. Genton. 2002. Classes of kernels for machine learning: a statistics perspective. J. Mach. Learn. Res. 2 (March 2002), 299-312.](http://dl.acm.org/citation.cfm?id=944815)
 
+[Petros Drineas and Michael W. Mahoney. 2005. On the Nyström Method for Approximating a Gram Matrix for Improved Kernel-Based Learning. J. Mach. Learn. Res. 6 (December 2005), 2153-2175.](http://dl.acm.org/citation.cfm?id=1194916)
 
+C. K. I. Williams and M. Seeger. Using the Nyström method to speed up kernel machines. In Annual Advances in Neural Information Processing Systems 13: Proceedings of the 2000 Conference, pages 682-688, 2001.
