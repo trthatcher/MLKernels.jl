@@ -8,12 +8,9 @@ import Base: show, exp, eltype, isposdef, convert, promote #, call
 
 export
     # Functions
-    arguments,
     description,
     isposdef_kernel,
-    kernel_function,
     kernel_matrix,
-    description_string,
     gramian_matrix,
     lagged_gramian_matrix,
     center_kernel_matrix!,
