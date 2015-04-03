@@ -34,8 +34,8 @@ function dot_rows{T<:FloatingPoint}(A::Matrix{T})
 end
 
 # Overwrite A with the hadamard product of A and B. Returns A
-function hadamard!{T<:FloatingPoint}(A::Matrix{T}, B::Matrix{T})
-    size(A) == size(B) || error("Dimensions do not conform.")
+function hadamard!{T<:FloatingPoint}(A::Array{T}, B::Array{T})
+    length(A) == length(B) || error("Dimensions do not conform.")
     @inbounds for i = 1:length(A)
         A[i] *= B[i]
     end
