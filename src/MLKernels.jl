@@ -10,6 +10,7 @@ export
     # Functions
     description,
     isposdef_kernel,
+    kernel_function,
     kernel_matrix,
     gramian_matrix,
     lagged_gramian_matrix,
