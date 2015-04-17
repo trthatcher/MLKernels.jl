@@ -11,7 +11,7 @@ function syml!(S::Matrix)
     p = size(S, 1)
     p == size(S, 2) || error("S ∈ ℝ$(p)×$(size(S, 2)) should be square")
     if p > 1 
-        for j = 1:(p - 1) 
+        @inbounds for j = 1:(p - 1) 
             for i = (j + 1):p 
                 S[i, j] = S[j, i]
             end
@@ -21,6 +21,21 @@ function syml!(S::Matrix)
 end
 syml(S::Matrix) = syml!(copy(S))
 
+# Symmetrize the upper off-diagonal of matrix S using the lower half of S
+function symu!(S::Matrix)
+	p = size(S,1)
+	p == size(S,2) || throw(ArgumentError("S ∈ ℝ$(p)×$(size(S, 2)) must be square"))
+	if p > 1 
+		@inbounds for j = 2:p
+			for i = 1:j-1
+				S[i,j] = S[j,i]
+			end 
+		end
+	end
+	return S
+end
+symu(S::Matrix) = symu!(copy(S))
+
 # Return vector of dot products for each row of A
 function dot_rows{T<:FloatingPoint}(A::Matrix{T})
     n, m = size(A)
@@ -28,6 +43,18 @@ function dot_rows{T<:FloatingPoint}(A::Matrix{T})
     @inbounds for j = 1:m
         for i = 1:n
             aᵀa[i] += A[i,j]*A[i,j]
+        end
+    end
+    aᵀa
+end
+
+# Return vector of dot products for each row of A
+function dot_columns{T<:FloatingPoint}(A::Matrix{T})
+    n, m = size(A)
+    aᵀa = zeros(T, m)
+    @inbounds for j = 1:m
+        for i = 1:n
+            aᵀa[j] += A[i,j]*A[i,j]
         end
     end
     aᵀa
@@ -44,40 +71,47 @@ end
 
 
 #==========================================================================
-  Auxiliary Functions
+  Gramian Functions
 ==========================================================================#
 
-# Calculate the gramian G = XXᵀ of matrix X
-function gramian_matrix{T<:FloatingPoint}(X::Matrix{T}, sym::Bool = true)
-    G::Array{T} = BLAS.syrk('U', 'N', one(T), X)
-    sym ? syml!(G) : G
+# Calculate the gramian
+#    If trans = 'N' then G = XXᵀ (X is a design matrix)
+#    If trans = 'T' then G = XᵀX (X is a transposed design matrix)
+function gramian_matrix{T<:FloatingPoint}(X::Matrix{T}, trans::Char = 'N', uplo::Char = 'U',
+                                          sym::Bool = true)
+    G = BLAS.syrk(uplo, trans, one(T), X)
+    sym ? (uplo == 'U' ? syml!(G) : symu!(G)) : G
 end
 
-# Calculate the upper right corner G = XYᵀ of the gramian of matrix [Xᵀ Yᵀ]ᵀ
-function gramian_matrix{T<:FloatingPoint}(X::Matrix{T}, Y::Matrix{T})
-    G::Array{T} = BLAS.gemm('N', 'T', one(T), X, Y)
+# Calculate the upper right corner of the gramian matrix of [Xᵀ Yᵀ]ᵀ
+#   If trans = 'N' then G = XYᵀ (X and Y are design matrices)
+#   If trans = 'T' then G = XYᵀ (X and Y are transposed design matrices)
+function gramian_matrix{T<:FloatingPoint}(X::Matrix{T}, Y::Matrix{T}, trans::Char = 'N')
+    G::Array{T} = BLAS.gemm(trans, trans == 'N' ? 'T' : 'N', X, Y)
 end
 
 # Calculates G such that Gij is the dot product of the difference of row i and j of matrix X
-function lagged_gramian_matrix{T<:FloatingPoint}(X::Matrix{T}, sym::Bool = true)
-    n = size(X, 1)
-    G::Array{T} = gramian_matrix(X, false)
+function lagged_gramian_matrix{T<:FloatingPoint}(X::Matrix{T}, trans::Char = 'N', uplo::Char = 'U',
+                                                 sym::Bool = true)
+    G = gramian_matrix(X, trans, uplo, false)
+    n = size(X, trans == 'N' ? 1 : 2)
     xᵀx = copy(vec(diag(G)))
-    @inbounds for j = 1:n
-        for i = 1:j
+    for j = 1:n
+        for i = uplo == 'U' ? (1:j) : (j:n)
+            println(i, ",", j)
             G[i,j] = xᵀx[i] - convert(T, 2) * G[i,j] + xᵀx[j]
         end
     end
-    sym ? syml!(G) : G
+    sym ? (uplo == 'U' ? syml!(G) : symu!(G)) : G
 end
 
 # Calculates the upper right corner G of the lagged gramian matrix of matrix [Xᵀ Yᵀ]ᵀ
-function lagged_gramian_matrix{T<:FloatingPoint}(X::Matrix{T}, Y::Matrix{T})
-    n = size(X, 1)
-    m = size(Y, 1)
-    xᵀx::Vector{T} = dot_rows(X)
-    yᵀy::Vector{T} = dot_rows(Y)
-    G::Array{T} = gramian_matrix(X, Y)
+function lagged_gramian_matrix{T<:FloatingPoint}(X::Matrix{T}, Y::Matrix{T}, trans::Char = 'N')
+    n = size(X, trans == 'N' ? 1 : 2)
+    m = size(Y, trans == 'N' ? 1 : 2)
+    xᵀx = trans == 'N' ? dot_rows(X) : dot_columns(X)
+    yᵀy = trans == 'N' ? dot_rows(Y) : dot_columns(Y)
+    G = gramian_matrix(X, Y, trans)
     @inbounds for j = 1:m
         for i = 1:n
             G[i,j] = xᵀx[i] - convert(T, 2) * G[i,j] + yᵀy[j]
