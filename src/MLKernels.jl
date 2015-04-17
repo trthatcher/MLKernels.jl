@@ -41,7 +41,7 @@ export
             KernelProduct,
             KernelSum
 
-include("kerneltypes.jl")
+include("kernels.jl")
 include("kernelmatrix.jl")
 
 end # MLKernels
