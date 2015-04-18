@@ -310,7 +310,7 @@ for kernel in (:MercerSigmoidKernel,)
         end
 
         function kernel_matrix{T<:FloatingPoint}(κ::$kernel{T}, X::Matrix{T})
-            kernel_matrix_scaled!(one(T), κ, X)
+            kernel_matrix_scaled(one(T), κ, X)
         end
 
         function kernel_matrix_scaled{T<:FloatingPoint}(a::T, κ::$kernel{T}, X::Matrix{T},
@@ -320,7 +320,7 @@ for kernel in (:MercerSigmoidKernel,)
         end
 
         function kernel_matrix{T<:FloatingPoint}(κ::$kernel{T}, X::Matrix{T}, Y::Matrix{T})
-            kernel_matrix_scaled!(one(T), κ, X, Y)
+            kernel_matrix_scaled(one(T), κ, X, Y)
         end
 
     end
