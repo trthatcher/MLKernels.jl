@@ -63,8 +63,8 @@ matrix_test_approx_eq(MLKernels.kernel_matrix(2.0 * TestKernel(1.0) * TestKernel
 
 println("-- Testing generic kernel_matrix_sum --")
 matrix_test_approx_eq(MLKernels.kernel_matrix_sum(2.0, TestKernel(1.0), 1.0, TestKernel(1.0), X), [0.0 0; 0 12])
-matrix_test_approx_eq(MLKernels.kernel_matrix(2.0 * TestKernel(1.0) + 1.0 * TestKernel(1.0), X, X), [0.0 0; 0 12])
-matrix_test_approx_eq(MLKernels.kernel_matrix_sum(2.0, TestKernel(1.0), 1.0, TestKernel(1.0), X), [0.0 0; 0 12])
+matrix_test_approx_eq(MLKernels.kernel_matrix(2.0 * TestKernel(1.0) + 1.0 * TestKernel(1.0), X), [0.0 0; 0 12])
+matrix_test_approx_eq(MLKernels.kernel_matrix_sum(2.0, TestKernel(1.0), 1.0, TestKernel(1.0), X, X), [0.0 0; 0 12])
 matrix_test_approx_eq(MLKernels.kernel_matrix(2.0 * TestKernel(1.0) + 1.0 * TestKernel(1.0), X, X), [0.0 0; 0 12])
 
 
@@ -84,10 +84,10 @@ println("-- Testing optimized euclidian distance kernel_matrix_product --")
 matrix_test_approx_eq(MLKernels.kernel_matrix_product(2.0, PowerKernel(2.0), PowerKernel(2.0), X), [0.0 8; 8 0])
 matrix_test_approx_eq(MLKernels.kernel_matrix(2.0 * PowerKernel(2.0) * PowerKernel(2.0), X), [0.0 8; 8 0])
 matrix_test_approx_eq(MLKernels.kernel_matrix_product(2.0, PowerKernel(2.0), PowerKernel(2.0), X, X), [0.0 8; 8 0])
-matrix_test_approx_eq(MLKernels.kernel_matrix(2.0 * PowerKernel(2.0) * PowerKernel(2.0), X), [0.0 8; 8 0])
+matrix_test_approx_eq(MLKernels.kernel_matrix(2.0 * PowerKernel(2.0) * PowerKernel(2.0), X, X), [0.0 8; 8 0])
 
 println("-- Testing optimized euclidian distance kernel_matrix_sum --")
 matrix_test_approx_eq(MLKernels.kernel_matrix_sum(2.0, PowerKernel(2.0), 1.0, PowerKernel(2.0), X), [0.0 -6; -6 0])
-matrix_test_approx_eq(MLKernels.kernel_matrix(2.0 * PowerKernel(2.0) + 1.0 * PowerKernel(2.0), X, X), [0.0 -6; -6 0])
-matrix_test_approx_eq(MLKernels.kernel_matrix_sum(2.0, PowerKernel(2.0), 1.0, PowerKernel(2.0), X), [0.0 -6; -6 0])
+matrix_test_approx_eq(MLKernels.kernel_matrix(2.0 * PowerKernel(2.0) + 1.0 * PowerKernel(2.0), X), [0.0 -6; -6 0])
+matrix_test_approx_eq(MLKernels.kernel_matrix_sum(2.0, PowerKernel(2.0), 1.0, PowerKernel(2.0), X, X), [0.0 -6; -6 0])
 matrix_test_approx_eq(MLKernels.kernel_matrix(2.0 * PowerKernel(2.0) + 1.0 * PowerKernel(2.0), X, X), [0.0 -6; -6 0])
