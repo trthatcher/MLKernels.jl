@@ -98,7 +98,6 @@ function lagged_gramian_matrix{T<:FloatingPoint}(X::Matrix{T}, trans::Char = 'N'
     xᵀx = copy(vec(diag(G)))
     for j = 1:n
         for i = uplo == 'U' ? (1:j) : (j:n)
-            println(i, ",", j)
             G[i,j] = xᵀx[i] - convert(T, 2) * G[i,j] + xᵀx[j]
         end
     end
@@ -179,7 +178,7 @@ end
 function kernel_matrix{T<:FloatingPoint}(κ::StandardKernel{T}, X::Matrix{T}, Y::Matrix{T})
     n = size(X, 1)
     m = size(Y, 1)
-    size(X, 2) == size(Z, 2) || error("X ∈ ℝn×p and Y should be ∈ ℝm×p, but X ∈ " * (
+    size(X, 2) == size(Y, 2) || error("X ∈ ℝn×p and Y should be ∈ ℝm×p, but X ∈ " * (
                                       "ℝn×$(size(Y, 2)) and Y∈ ℝm×$(size(Y, 2))."))
     K::Matrix{T} = Array(T, n, m)
     @inbounds for j = 1:m 
@@ -206,7 +205,7 @@ end
 function kernel_matrix_sum{T<:FloatingPoint}(a₁::T, κ₁::StandardKernel{T}, a₂::T, 
                                              κ₂::StandardKernel{T}, X::Matrix{T}, Y::Matrix{T})
     K::Matrix{T} = kernel_matrix_scaled(a₁, κ₁, X, Y)
-    axpy!(length(K), a₂, kernel_matrix(κ₂, X, Y), 1, K, 1)    
+    BLAS.axpy!(length(K), a₂, kernel_matrix(κ₂, X, Y), 1, K, 1)    
 end
 
 function kernel_matrix{T<:FloatingPoint}(ψ::ScaledKernel{T}, X::Matrix{T}, Y::Matrix{T})
@@ -306,7 +305,7 @@ for kernel in (:MercerSigmoidKernel,)
     @eval begin
 
         function kernel_matrix_scaled{T<:FloatingPoint}(a::T, κ::$kernel{T}, X::Matrix{T})
-            K::Matrix{T} = BLAS.syrk('U', 'N', a, kernelize_vector!(κ, copy(X)))
+            K::Matrix{T} = BLAS.syrk('U', 'N', a, kernelize_array!(κ, copy(X)))
             syml!(K)
         end
 
@@ -316,8 +315,8 @@ for kernel in (:MercerSigmoidKernel,)
 
         function kernel_matrix_scaled{T<:FloatingPoint}(a::T, κ::$kernel{T}, X::Matrix{T},
                                                         Y::Matrix{T})
-            K::Array{T} = BLAS.gemm('N', 'T', a, kernelize_vector!(κ, copy(X)), 
-                                                 kernelize_vector!(κ, copy(Y)))
+            K::Array{T} = BLAS.gemm('N', 'T', a, kernelize_array!(κ, copy(X)), 
+                                                 kernelize_array!(κ, copy(Y)))
         end
 
         function kernel_matrix{T<:FloatingPoint}(κ::$kernel{T}, X::Matrix{T}, Y::Matrix{T})

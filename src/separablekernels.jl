@@ -7,8 +7,8 @@ abstract SeparableKernel{T<:FloatingPoint} <: StandardKernel{T}
 # k(x,y) = ϕ(x)ᵀϕ(y)
 function kernel_function{T<:FloatingPoint}(κ::SeparableKernel{T}, x::Vector{T},
                                            y::Vector{T})
-    v::Vector{T} = kernelize_vector!(κ, copy(x))
-    z::Vector{T} = kernelize_vector!(κ, copy(y))
+    v::Vector{T} = kernelize_array!(κ, copy(x))
+    z::Vector{T} = kernelize_array!(κ, copy(y))
     BLAS.dot(length(v), v, 1, z, 1)
 end
 
@@ -29,7 +29,7 @@ function convert{T<:FloatingPoint}(::Type{MercerSigmoidKernel{T}}, κ::MercerSig
     MercerSigmoidKernel(convert(T, κ.d), convert(T, κ.b))
 end
 
-function kernelize_vector!{T<:FloatingPoint}(κ::MercerSigmoidKernel{T}, z::Vector{T})
+function kernelize_array!{T<:FloatingPoint}(κ::MercerSigmoidKernel{T}, z::Array{T})
     @inbounds for i = 1:length(z)
         z[i] = tanh((z[i] - κ.d)/κ.b)
     end
