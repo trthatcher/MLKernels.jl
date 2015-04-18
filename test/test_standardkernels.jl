@@ -157,7 +157,7 @@ for (kernel, default_args, default_value) in (
         (MercerSigmoidKernel, (0,1), tanh(1)),)
     for T in (Float32, Float64)
         κ = (kernel)(map(x -> convert(T, x), default_args)...)
-        @test_approx_eq MLKernels.kernelize_vector!(κ, [one(T)])[1] convert(T, default_value)
+        @test_approx_eq MLKernels.kernelize_array!(κ, [one(T)])[1] convert(T, default_value)
     end
 end
 
