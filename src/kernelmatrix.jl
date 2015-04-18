@@ -247,7 +247,7 @@ for (kernel, gramian) in ((:EuclideanDistanceKernel, :lagged_gramian_matrix),
             K
         end
 
-        function kernel_matrix_product{T<:FloatingPoint}(a::T, κ₁::$Kernel{T}, κ₂::$Kernel{T},
+        function kernel_matrix_product{T<:FloatingPoint}(a::T, κ₁::$kernel{T}, κ₂::$kernel{T},
                                                          X::Matrix{T})
             G::Matrix{T} = $gramian(X)
             K::Matrix{T} = kernelize_gramian!(copy(G), κ₁)
@@ -255,7 +255,7 @@ for (kernel, gramian) in ((:EuclideanDistanceKernel, :lagged_gramian_matrix),
             hadamard!(K, kernelize_gramian!(G, κ₂))
         end
 
-        function kernel_matrix_sum{T<:FloatingPoint}(a₁::T, κ₁::$Kernel{T}, a₂::T, κ₂::$Kernel{T},
+        function kernel_matrix_sum{T<:FloatingPoint}(a₁::T, κ₁::$kernel{T}, a₂::T, κ₂::$kernel{T},
                                                      X::Matrix{T})
             G::Matrix{T} = $gramian(X)
             K::Matrix{T} = kernelize_gramian!(copy(G), κ₁)
@@ -277,7 +277,7 @@ for (kernel, gramian) in ((:EuclideanDistanceKernel, :lagged_gramian_matrix),
             K
         end
 
-        function kernel_matrix_product{T<:FloatingPoint}(a::T, κ₁::$Kernel{T}, κ₂::$Kernel{T},
+        function kernel_matrix_product{T<:FloatingPoint}(a::T, κ₁::$kernel{T}, κ₂::$kernel{T},
                                                          X::Matrix{T}, Y::Matrix{T})
             G::Matrix{T} = $gramian(X, Y)
             K::Matrix{T} = kernelize_gramian!(copy(G), κ₁)
@@ -285,7 +285,7 @@ for (kernel, gramian) in ((:EuclideanDistanceKernel, :lagged_gramian_matrix),
             hadamard!(K, kernelize_gramian!(G, κ₂))
         end
 
-        function kernel_matrix_sum{T<:FloatingPoint}(a₁::T, κ₁::$Kernel{T}, a₂::T, κ₂::$Kernel{T},
+        function kernel_matrix_sum{T<:FloatingPoint}(a₁::T, κ₁::$kernel{T}, a₂::T, κ₂::$kernel{T},
                                                      X::Matrix{T}, Y::Matrix{T})
             G::Matrix{T} = $gramian(X, Y)
             K::Matrix{T} = kernelize_gramian!(copy(G), κ₁)
