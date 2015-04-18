@@ -42,6 +42,7 @@ immutable TestKernel{T<:FloatingPoint} <: StandardKernel{T}
 end
 kernel_function{T<:FloatingPoint}(::TestKernel{T}, x::Vector{T}, y::Vector{T}) = sum(x)*sum(y)
 
+
 X = [0.0 0; 1 1]
 
 println("-- Testing generic kernel_matrix --")
@@ -50,12 +51,43 @@ matrix_test_approx_eq(kernel_matrix(TestKernel(1.0), X, X), [0.0 0; 0 4])
 
 println("-- Testing generic kernel_matrix_scaled --")
 matrix_test_approx_eq(MLKernels.kernel_matrix_scaled(2.0, TestKernel(1.0), X), [0.0 0; 0 8])
+matrix_test_approx_eq(MLKernels.kernel_matrix(2.0 * TestKernel(1.0), X), [0.0 0; 0 8])
 matrix_test_approx_eq(MLKernels.kernel_matrix_scaled(2.0, TestKernel(1.0), X, X), [0.0 0; 0 8])
+matrix_test_approx_eq(MLKernels.kernel_matrix(2.0 * TestKernel(1.0), X, X), [0.0 0; 0 8])
 
 println("-- Testing generic kernel_matrix_product --")
 matrix_test_approx_eq(MLKernels.kernel_matrix_product(2.0, TestKernel(1.0), TestKernel(1.0), X), [0.0 0; 0 32])
+matrix_test_approx_eq(MLKernels.kernel_matrix(2.0 * TestKernel(1.0) * TestKernel(1.0), X), [0.0 0; 0 32])
 matrix_test_approx_eq(MLKernels.kernel_matrix_product(2.0, TestKernel(1.0), TestKernel(1.0), X, X), [0.0 0; 0 32])
+matrix_test_approx_eq(MLKernels.kernel_matrix(2.0 * TestKernel(1.0) * TestKernel(1.0), X), [0.0 0; 0 32])
 
 println("-- Testing generic kernel_matrix_sum --")
 matrix_test_approx_eq(MLKernels.kernel_matrix_sum(2.0, TestKernel(1.0), 1.0, TestKernel(1.0), X), [0.0 0; 0 12])
-matrix_test_approx_eq(MLKernels.kernel_matrix_sum(2.0, TestKernel(1.0), 1.0, TestKernel(1.0), X, X), [0.0 0; 0 12])
+matrix_test_approx_eq(MLKernels.kernel_matrix(2.0 * TestKernel(1.0) + 1.0 * TestKernel(1.0), X, X), [0.0 0; 0 12])
+matrix_test_approx_eq(MLKernels.kernel_matrix_sum(2.0, TestKernel(1.0), 1.0, TestKernel(1.0), X), [0.0 0; 0 12])
+matrix_test_approx_eq(MLKernels.kernel_matrix(2.0 * TestKernel(1.0) + 1.0 * TestKernel(1.0), X, X), [0.0 0; 0 12])
+
+
+X = [1.0 0; 0 1]
+
+println("-- Testing optimized euclidean distance kernel_matrix --")
+matrix_test_approx_eq(kernel_matrix(PowerKernel(2.0), X), [0.0 -2; -2 0])
+matrix_test_approx_eq(kernel_matrix(PowerKernel(2.0), X, X), [0.0 -2; -2 0])
+
+println("-- Testing optimized euclidian distance kernel_matrix_scaled --")
+matrix_test_approx_eq(MLKernels.kernel_matrix_scaled(2.0, PowerKernel(2.0), X), [0.0 -4; -4 0])
+matrix_test_approx_eq(MLKernels.kernel_matrix(2.0 * PowerKernel(2.0), X), [0.0 -4; -4 0])
+matrix_test_approx_eq(MLKernels.kernel_matrix_scaled(2.0, PowerKernel(2.0), X, X), [0.0 -4; -4 0])
+matrix_test_approx_eq(MLKernels.kernel_matrix(2.0 * PowerKernel(2.0), X, X), [0.0 -4; -4 0])
+
+println("-- Testing optimized euclidian distance kernel_matrix_product --")
+matrix_test_approx_eq(MLKernels.kernel_matrix_product(2.0, PowerKernel(2.0), PowerKernel(2.0), X), [0.0 8; 8 0])
+matrix_test_approx_eq(MLKernels.kernel_matrix(2.0 * PowerKernel(2.0) * PowerKernel(2.0), X), [0.0 8; 8 0])
+matrix_test_approx_eq(MLKernels.kernel_matrix_product(2.0, PowerKernel(2.0), PowerKernel(2.0), X, X), [0.0 8; 8 0])
+matrix_test_approx_eq(MLKernels.kernel_matrix(2.0 * PowerKernel(2.0) * PowerKernel(2.0), X), [0.0 8; 8 0])
+
+println("-- Testing optimized euclidian distance kernel_matrix_sum --")
+matrix_test_approx_eq(MLKernels.kernel_matrix_sum(2.0, PowerKernel(2.0), 1.0, PowerKernel(2.0), X), [0.0 -6; -6 0])
+matrix_test_approx_eq(MLKernels.kernel_matrix(2.0 * PowerKernel(2.0) + 1.0 * PowerKernel(2.0), X, X), [0.0 -6; -6 0])
+matrix_test_approx_eq(MLKernels.kernel_matrix_sum(2.0, PowerKernel(2.0), 1.0, PowerKernel(2.0), X), [0.0 -6; -6 0])
+matrix_test_approx_eq(MLKernels.kernel_matrix(2.0 * PowerKernel(2.0) + 1.0 * PowerKernel(2.0), X, X), [0.0 -6; -6 0])
