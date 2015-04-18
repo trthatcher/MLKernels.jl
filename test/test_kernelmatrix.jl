@@ -91,3 +91,15 @@ matrix_test_approx_eq(MLKernels.kernel_matrix_sum(2.0, PowerKernel(2.0), 1.0, Po
 matrix_test_approx_eq(MLKernels.kernel_matrix(2.0 * PowerKernel(2.0) + 1.0 * PowerKernel(2.0), X), [0.0 -6; -6 0])
 matrix_test_approx_eq(MLKernels.kernel_matrix_sum(2.0, PowerKernel(2.0), 1.0, PowerKernel(2.0), X, X), [0.0 -6; -6 0])
 matrix_test_approx_eq(MLKernels.kernel_matrix(2.0 * PowerKernel(2.0) + 1.0 * PowerKernel(2.0), X, X), [0.0 -6; -6 0])
+
+X = [1.0 0; 0 1]
+
+println("-- Testing optimized separable kernel kernel_matrix --")
+matrix_test_approx_eq(kernel_matrix(MercerSigmoidKernel(0.0, 1.0), X), [tanh(1.0)^2 0; 0 tanh(1.0)^2])
+matrix_test_approx_eq(kernel_matrix(MercerSigmoidKernel(0.0, 1.0), X, X), [tanh(1.0)^2 0; 0 tanh(1.0)^2])
+
+println("-- Testing optimized separable kernel kernel_matrix_scaled --")
+matrix_test_approx_eq(MLKernels.kernel_matrix_scaled(2.0, MercerSigmoidKernel(0.0, 1.0), X), 2*[tanh(1.0)^2 0; 0 tanh(1.0)^2])
+matrix_test_approx_eq(MLKernels.kernel_matrix(2.0 * MercerSigmoidKernel(0.0, 1.0), X), 2*[tanh(1.0)^2 0; 0 tanh(1.0)^2])
+matrix_test_approx_eq(MLKernels.kernel_matrix_scaled(2.0, MercerSigmoidKernel(0.0, 1.0), X, X), 2*[tanh(1.0)^2 0; 0 tanh(1.0)^2])
+matrix_test_approx_eq(MLKernels.kernel_matrix(2.0 * MercerSigmoidKernel(0.0, 1.0), X, X), 2*[tanh(1.0)^2 0; 0 tanh(1.0)^2])
