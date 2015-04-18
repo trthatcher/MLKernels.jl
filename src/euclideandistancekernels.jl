@@ -230,7 +230,7 @@ PowerKernel(d::Integer) = PowerKernel(convert(Float64, d))
 
 convert{T<:FloatingPoint}(::Type{PowerKernel{T}}, κ::PowerKernel) = PowerKernel(convert(T, κ.d))
 
-kernelize_scalar{T<:FloatingPoint}(κ::PowerKernel{T}, ϵᵀϵ::T) = -ϵᵀϵ^(κ.d)
+kernelize_scalar{T<:FloatingPoint}(κ::PowerKernel{T}, ϵᵀϵ::T) = -sqrt(ϵᵀϵ)^(κ.d)
 
 function description_string{T<:FloatingPoint}(κ::PowerKernel{T}, eltype::Bool = true)
     "PowerKernel" * (eltype ? "{$(T)}" : "") * "(d=$(κ.d))"
