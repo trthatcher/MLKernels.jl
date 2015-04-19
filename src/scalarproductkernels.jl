@@ -39,20 +39,18 @@ function description_string{T<:FloatingPoint}(κ::LinearKernel{T}, eltype::Bool 
     "LinearKernel" * (eltype ? "{$(T)}" : "") * "(c=$(κ.c))"
 end
 
-function description(κ::LinearKernel)
-    print(
-        """ 
-         Linear Kernel:
-         
-         The linear kernel differs from the ordinary inner product by the
-         addition of an optional constant c ≥ 0:
+function description_string_long(::LinearKernel)
+    """ 
+    Linear Kernel:
 
-             k(x,y) = xᵀy + c    x ∈ ℝⁿ, y ∈ ℝⁿ, c ≥ 0
+    The linear kernel differs from the ordinary inner product by the
+    addition of an optional constant c ≥ 0:
 
-         Techniques using the linear kernel often do not differ from their
-         non-kernelized versions.
-        """
-    )
+        k(x,y) = xᵀy + c    x ∈ ℝⁿ, y ∈ ℝⁿ, c ≥ 0
+
+    Techniques using the linear kernel often do not differ from their
+    non-kernelized versions.
+    """
 end
 
 
@@ -91,21 +89,19 @@ function description_string{T<:FloatingPoint}(κ::PolynomialKernel{T}, eltype::B
     "PolynomialKernel" * (eltype ? "{$(T)}" : "") * "(α=$(κ.α),c=$(κ.c),d=$(κ.d))"
 end
 
-function description(κ::PolynomialKernel)
-    print(
-        """ 
-         Polynomial Kernel:
-         
-         The polynomial kernel is a non-stationary kernel which represents
-         the original features as in a feature space over polynomials up to 
-         degree d of the original variables:
+function description_string_long(::PolynomialKernel)
+    """ 
+    Polynomial Kernel:
+     
+    The polynomial kernel is a non-stationary kernel which represents
+    the original features as in a feature space over polynomials up to 
+    degree d of the original variables:
 
-             k(x,y) = (αxᵀy + c)ᵈ    x ∈ ℝⁿ, y ∈ ℝⁿ, α > 0, c ≥ 0, d > 0
+        k(x,y) = (αxᵀy + c)ᵈ    x ∈ ℝⁿ, y ∈ ℝⁿ, α > 0, c ≥ 0, d > 0
 
-         This kernel is sensitive to numerical instability in the case that
-         d is increasingly large and αxᵀy + c approaches zero.
-        """
-    )
+    This kernel is sensitive to numerical instability in the case that
+    d is increasingly large and αxᵀy + c approaches zero.
+    """
 end
 
 
@@ -132,18 +128,16 @@ function description_string{T<:FloatingPoint}(κ::SigmoidKernel{T}, eltype::Bool
     "SigmoidKernel" * (eltype ? "{$(T)}" : "") * "(α=$(κ.α),c=$(κ.c))"
 end
 
-function description(κ::SigmoidKernel)
-    print(
-        """ 
-         Sigmoid Kernel:
-         
-         The sigmoid kernel is only positive semidefinite. It is used in the
-         field of neural networks where it is often used as the activation
-         function for artificial neurons.
+function description_string_long(::SigmoidKernel)
+    """ 
+    Sigmoid Kernel:
+     
+    The sigmoid kernel is only positive semidefinite. It is used in the
+    field of neural networks where it is often used as the activation
+    function for artificial neurons.
 
-             k(x,y) = tanh(αxᵀy + c)    x ∈ ℝⁿ, y ∈ ℝⁿ, α > 0, c ≥ 0
-        """
-    )
+        k(x,y) = tanh(αxᵀy + c)    x ∈ ℝⁿ, y ∈ ℝⁿ, α > 0, c ≥ 0
+    """
 end
 
 

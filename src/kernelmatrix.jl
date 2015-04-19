@@ -170,6 +170,7 @@ function kernel_matrix_product{T<:FloatingPoint}(a::T, κ₁::StandardKernel{T},
                                                  sym::Bool = true)
     K::Matrix{T} = kernel_matrix_scaled(a, κ₁, X, trans, uplo, sym)
     hadamard!(K, kernel_matrix(κ₂, X, trans, uplo, sym))
+    K
 end
 
 function kernel_matrix_sum{T<:FloatingPoint}(a₁::T, κ₁::StandardKernel{T}, a₂::T, 
@@ -177,7 +178,8 @@ function kernel_matrix_sum{T<:FloatingPoint}(a₁::T, κ₁::StandardKernel{T}, 
                                              trans::Char = 'N', uplo::Char = 'U', 
                                              sym::Bool = true)
     K::Matrix{T} = kernel_matrix_scaled(a₁, κ₁, X, trans, uplo, sym)
-    BLAS.axpy!(length(K), a₂, kernel_matrix(κ₂, X, trans, uplo, sym), 1, K, 1)    
+    BLAS.axpy!(length(K), a₂, kernel_matrix(κ₂, X, trans, uplo, sym), 1, K, 1)
+    K
 end
 
 function kernel_matrix{T<:FloatingPoint}(ψ::ScaledKernel{T}, X::Matrix{T}, trans::Char = 'N',
@@ -235,13 +237,15 @@ function kernel_matrix_product{T<:FloatingPoint}(a::T, κ₁::StandardKernel{T},
                                                  trans::Char = 'N')
     K::Matrix{T} = kernel_matrix_scaled(a, κ₁, X, Y, trans)
     hadamard!(K, kernel_matrix(κ₂, X, Y, trans))
+    K
 end
 
 function kernel_matrix_sum{T<:FloatingPoint}(a₁::T, κ₁::StandardKernel{T}, a₂::T, 
                                              κ₂::StandardKernel{T}, X::Matrix{T}, Y::Matrix{T},
                                              trans::Char = 'N')
     K::Matrix{T} = kernel_matrix_scaled(a₁, κ₁, X, Y, trans)
-    BLAS.axpy!(length(K), a₂, kernel_matrix(κ₂, X, Y, trans), 1, K, 1)    
+    BLAS.axpy!(length(K), a₂, kernel_matrix(κ₂, X, Y, trans), 1, K, 1)
+    K
 end
 
 function kernel_matrix{T<:FloatingPoint}(ψ::ScaledKernel{T}, X::Matrix{T}, Y::Matrix{T},

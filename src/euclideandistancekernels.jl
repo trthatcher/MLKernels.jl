@@ -40,21 +40,19 @@ function description_string{T<:FloatingPoint}(κ::GaussianKernel{T}, eltype::Boo
     "GaussianKernel" * (eltype ? "{$(T)}" : "") * "(η=$(κ.η))"
 end
 
-function description(κ::GaussianKernel)
-    print(
-        """ 
-         Gaussian Kernel:
-         
-         The Gaussian kernel is a radial basis function based on the
-         Gaussian distribution's probability density function. The feature
-         has an infinite number of dimensions.
-
-             k(x,y) = exp(-η‖x-y‖²)    x ∈ ℝⁿ, y ∈ ℝⁿ, η > 0
-
-         Since the value of the function decreases as x and y differ, it can
-         be interpretted as a similarity measure.
-        """
-    )
+function description_string_long(::GaussianKernel)
+    """ 
+    Gaussian Kernel:
+    
+    The Gaussian kernel is a radial basis function based on the
+    Gaussian distribution's probability density function. The feature
+    has an infinite number of dimensions.
+    
+        k(x,y) = exp(-η‖x-y‖²)    x ∈ ℝⁿ, y ∈ ℝⁿ, η > 0
+    
+    Since the value of the function decreases as x and y differ, it can
+    be interpretted as a similarity measure.
+    """
 end
 
 
@@ -77,25 +75,23 @@ function kernelize_scalar{T<:FloatingPoint}(κ::LaplacianKernel{T}, ϵᵀϵ::T)
     exp(-κ.η*sqrt(ϵᵀϵ))
 end
 
-isposdef_kernel(κ::LaplacianKernel) = true
+isposdef_kernel(::LaplacianKernel) = true
 
 function description_string{T<:FloatingPoint}(κ::LaplacianKernel{T}, eltype::Bool = true) 
     "LaplacianKernel" * (eltype ? "{$(T)}" : "") * "(η=$(κ.η))"
 end
 
-function description(κ::LaplacianKernel)
-    print(
-        """ 
-         Laplacian Kernel:
-         
-         The Laplacian (exponential) kernel is a radial basis function that
-         differs from the Gaussian kernel in that it is a less sensitive
-         similarity measure. Similarly, it is less sensitive to changes in
-         the parameter η:
+function description_string_long(::LaplacianKernel)
+    """ 
+    Laplacian Kernel:
+    
+    The Laplacian (exponential) kernel is a radial basis function that
+    differs from the Gaussian kernel in that it is a less sensitive
+    similarity measure. Similarly, it is less sensitive to changes in
+    the parameter η:
 
-             k(x,y) = exp(-η‖x-y‖)    x ∈ ℝⁿ, y ∈ ℝⁿ, η > 0
-        """
-    )
+        k(x,y) = exp(-η‖x-y‖)    x ∈ ℝⁿ, y ∈ ℝⁿ, η > 0
+    """
 end
 
 
@@ -124,17 +120,15 @@ function description_string{T<:FloatingPoint}(κ::RationalQuadraticKernel{T}, el
     "RationalQuadraticKernel" * (eltype ? "{$(T)}" : "") * "(c=$(κ.c))"
 end
 
-function description(κ::RationalQuadraticKernel)
-    print(
-        """ 
-         Rational Quadratic Kernel:
-         
-         The rational quadratic kernel is a stationary kernel that is
-         similar in shape to the Gaussian kernel:
-
-             k(x,y) = 1 - ‖x-y‖²/(‖x-y‖² + c)    x ∈ ℝⁿ, y ∈ ℝⁿ, c ≥ 0
-        """
-    )
+function description_string_long(::RationalQuadraticKernel)
+    """ 
+    Rational Quadratic Kernel:
+    
+    The rational quadratic kernel is a stationary kernel that is
+    similar in shape to the Gaussian kernel:
+    
+        k(x,y) = 1 - ‖x-y‖²/(‖x-y‖² + c)    x ∈ ℝⁿ, y ∈ ℝⁿ, c ≥ 0
+    """
 end
 
 
@@ -161,16 +155,14 @@ function description_string{T<:FloatingPoint}(κ::MultiQuadraticKernel{T}, eltyp
     "MultiQuadraticKernel" * (eltype ? "{$(T)}" : "") * "(c=$(κ.c))"
 end
 
-function description(κ::MultiQuadraticKernel)
-    print(
-        """ 
-         Multi-Quadratic Kernel:
-         
-         The multi-quadratic kernel is a positive semidefinite kernel:
-
-             k(x,y) = √(‖x-y‖² + c)    x ∈ ℝⁿ, y ∈ ℝⁿ, c ≥ 0
-        """
-    )
+function description_string_long(::MultiQuadraticKernel)
+    """ 
+    Multi-Quadratic Kernel:
+    
+    The multi-quadratic kernel is a positive semidefinite kernel:
+    
+        k(x,y) = √(‖x-y‖² + c)    x ∈ ℝⁿ, y ∈ ℝⁿ, c ≥ 0
+    """
 end
 
 
@@ -199,17 +191,15 @@ function description_string{T<:FloatingPoint}(κ::InverseMultiQuadraticKernel{T}
     "InverseMultiQuadraticKernel" * (eltype ? "{$(T)}" : "") * "(c=$(κ.c))"
 end
 
-function description(κ::InverseMultiQuadraticKernel)
-    print(
-        """ 
-         Inverse Multi-Quadratic Kernel:
-         
-         The inverse multi-quadratic kernel is a radial basis function. The
-         resulting feature has an infinite number of dimensions:
-
-             k(x,y) = 1/√(‖x-y‖² + c)    x ∈ ℝⁿ, y ∈ ℝⁿ, c ≥ 0
-        """
-    )
+function description_string_long(::InverseMultiQuadraticKernel)
+    """ 
+    Inverse Multi-Quadratic Kernel:
+    
+    The inverse multi-quadratic kernel is a radial basis function. The
+    resulting feature has an infinite number of dimensions:
+    
+        k(x,y) = 1/√(‖x-y‖² + c)    x ∈ ℝⁿ, y ∈ ℝⁿ, c ≥ 0
+    """
 end
 
 
@@ -235,19 +225,17 @@ function description_string{T<:FloatingPoint}(κ::PowerKernel{T}, eltype::Bool =
     "PowerKernel" * (eltype ? "{$(T)}" : "") * "(d=$(κ.d))"
 end
 
-function description(κ::PowerKernel)
-    print(
-        """ 
-         Power Kernel:
-         
-         The power kernel (also known as the unrectified triangular kernel)
-         is a positive semidefinite kernel. An important feature of the
-         power kernel is that it is scale invariant. The function is given
-         by:
-
-             k(x,y) = -‖x-y‖ᵈ    x ∈ ℝⁿ, y ∈ ℝⁿ, d > 0
-        """
-    )
+function description_string_long(::PowerKernel)
+    """ 
+    Power Kernel:
+    
+    The power kernel (also known as the unrectified triangular kernel)
+    is a positive semidefinite kernel. An important feature of the
+    power kernel is that it is scale invariant. The function is given
+    by:
+    
+        k(x,y) = -‖x-y‖ᵈ    x ∈ ℝⁿ, y ∈ ℝⁿ, d > 0
+    """
 end
 
 
@@ -275,17 +263,15 @@ function description_string{T<:FloatingPoint}(κ::LogKernel{T}, eltype::Bool = t
     "LogKernel" * (eltype ? "{$(T)}" : "") * "(d=$(κ.d))"
 end
 
-function description(κ::LogKernel)
-    print(
-        """ 
-         Log Kernel:
-         
-         The power kernel is a positive semidefinite kernel. The function is
-         given by:
-
-             k(x,y) = -log(‖x-y‖ᵈ + 1)    x ∈ ℝⁿ, y ∈ ℝⁿ, d > 0
-        """
-    )
+function description_string_long(::LogKernel)
+    """ 
+    Log Kernel:
+    
+    The power kernel is a positive semidefinite kernel. The function is
+    given by:
+    
+        k(x,y) = -log(‖x-y‖ᵈ + 1)    x ∈ ℝⁿ, y ∈ ℝⁿ, d > 0
+    """
 end
 
 

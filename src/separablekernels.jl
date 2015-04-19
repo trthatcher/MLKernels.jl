@@ -41,15 +41,12 @@ function description_string{T<:FloatingPoint}(κ::MercerSigmoidKernel{T}, eltype
     "MercerSigmoidKernel" * (eltype ? "{$(T)}" : "") * "(d=$(κ.d),b=$(κ.b))"
 end
 
-function description(κ::MercerSigmoidKernel)
-    print(
-        """ 
-         Mercer Sigmoid Kernel:
+function description_string_long(::MercerSigmoidKernel)
+    """ 
+    Mercer Sigmoid Kernel:
 
-         Description to be added later.
-         
-        """
-    )
+    Description to be added later.     
+    """
 end
 
 
