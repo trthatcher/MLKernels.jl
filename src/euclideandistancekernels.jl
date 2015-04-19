@@ -12,8 +12,7 @@ function euclidean_distance{T<:FloatingPoint}(x::Array{T}, y::Array{T})
 end
 
 # k(x,y) = f((x-y)ᵀ(x-y))
-function kernel_function{T<:FloatingPoint}(κ::EuclideanDistanceKernel{T}, x::Vector{T},
-                                           y::Vector{T})
+function kernel_function{T<:FloatingPoint}(κ::EuclideanDistanceKernel{T}, x::Array{T}, y::Array{T})
     kernelize_scalar(κ, euclidean_distance(x, y))
 end
 

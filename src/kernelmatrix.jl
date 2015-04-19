@@ -96,7 +96,7 @@ function lagged_gramian_matrix{T<:FloatingPoint}(X::Matrix{T}, trans::Char = 'N'
     G = gramian_matrix(X, trans, uplo, false)
     n = size(X, trans == 'N' ? 1 : 2)
     xᵀx = copy(vec(diag(G)))
-    for j = 1:n
+    @inbounds for j = 1:n
         for i = uplo == 'U' ? (1:j) : (j:n)
             G[i,j] = xᵀx[i] - convert(T, 2) * G[i,j] + xᵀx[j]
         end
@@ -136,86 +136,125 @@ center_kernel_matrix{T<:FloatingPoint}(K::Matrix{T}) = center_kernel_matrix!(cop
 ==========================================================================#
 
 # Generic kernel matrix function - will be slow
-function kernel_matrix{T<:FloatingPoint}(κ::StandardKernel{T}, X::Matrix{T})
-    n = size(X, 1)
+function kernel_matrix{T<:FloatingPoint}(κ::StandardKernel{T}, X::Matrix{T}, trans::Char = 'N',
+                                         uplo::Char = 'U', sym::Bool = true)
+    n = size(X, trans == 'N' ? 1 : 2)
     K::Matrix{T} = Array(T, n, n)
-    @inbounds for i = 1:n 
-        for j = i:n
-            K[i,j] = kernel_function(κ, vec(X[i,:]), vec(X[j,:]))::T
-        end 
+    if trans == 'N'
+        @inbounds for j = 1:n
+            for i = uplo == 'U' ? (1:j) : (j:n)
+                K[i,j] = kernel_function(κ, X[i,:], X[j,:])
+            end 
+        end
+    else
+        @inbounds for j = 1:n
+            for i = uplo == 'U' ? (1:j) : (j:n)
+                K[i,j] = kernel_function(κ, X[:,i], X[:,j])
+            end 
+        end
     end
-    syml!(K)
+    sym ? (uplo == 'U' ? syml!(K) : symu!(K)) : K
 end
 
-function kernel_matrix_scaled{T<:FloatingPoint}(a::T, κ::StandardKernel{T}, X::Matrix{T})
-    K::Matrix{T} = kernel_matrix(κ, X)
+function kernel_matrix_scaled{T<:FloatingPoint}(a::T, κ::StandardKernel{T}, X::Matrix{T},
+                                                trans::Char = 'N', uplo::Char = 'U', 
+                                                sym::Bool = true)
+    K::Matrix{T} = kernel_matrix(κ, X, trans, uplo, sym)
     if a != one(T) BLAS.scal!(length(K), a, K, 1) end
     K
 end
 
 function kernel_matrix_product{T<:FloatingPoint}(a::T, κ₁::StandardKernel{T},
-                                                 κ₂::StandardKernel{T}, X::Matrix{T})
-    K::Matrix{T} = kernel_matrix_scaled(a, κ₁, X)
-    hadamard!(K, kernel_matrix(κ₂, X))
+                                                 κ₂::StandardKernel{T}, X::Matrix{T}, 
+                                                 trans::Char = 'N', uplo::Char = 'U', 
+                                                 sym::Bool = true)
+    K::Matrix{T} = kernel_matrix_scaled(a, κ₁, X, trans, uplo, sym)
+    hadamard!(K, kernel_matrix(κ₂, X, trans, uplo, sym))
 end
 
 function kernel_matrix_sum{T<:FloatingPoint}(a₁::T, κ₁::StandardKernel{T}, a₂::T, 
-                                             κ₂::StandardKernel{T}, X::Matrix{T})
-    K::Matrix{T} = kernel_matrix_scaled(a₁, κ₁, X)
-    BLAS.axpy!(length(K), a₂, kernel_matrix(κ₂, X), 1, K, 1)    
+                                             κ₂::StandardKernel{T}, X::Matrix{T},
+                                             trans::Char = 'N', uplo::Char = 'U', 
+                                             sym::Bool = true)
+    K::Matrix{T} = kernel_matrix_scaled(a₁, κ₁, X, trans, uplo, sym)
+    BLAS.axpy!(length(K), a₂, kernel_matrix(κ₂, X, trans, uplo, sym), 1, K, 1)    
 end
 
-function kernel_matrix{T<:FloatingPoint}(ψ::ScaledKernel{T}, X::Matrix{T})
-    kernel_matrix_scaled(ψ.a, ψ.κ, X)
-end
-function kernel_matrix{T<:FloatingPoint}(ψ::KernelProduct{T}, X::Matrix{T})
-    kernel_matrix_product(ψ.a, ψ.κ₁, ψ.κ₂, X)
-end
-function kernel_matrix{T<:FloatingPoint}(ψ::KernelSum{T}, X::Matrix{T})
-    kernel_matrix_sum(ψ.a₁, ψ.κ₁, ψ.a₂, ψ.κ₂, X)
+function kernel_matrix{T<:FloatingPoint}(ψ::ScaledKernel{T}, X::Matrix{T}, trans::Char = 'N',
+                                         uplo::Char = 'U', sym::Bool = true)
+    kernel_matrix_scaled(ψ.a, ψ.κ, X, trans, uplo, sym)
 end
 
-function kernel_matrix{T<:FloatingPoint}(κ::StandardKernel{T}, X::Matrix{T}, Y::Matrix{T})
-    n = size(X, 1)
-    m = size(Y, 1)
-    size(X, 2) == size(Y, 2) || error("X ∈ ℝn×p and Y should be ∈ ℝm×p, but X ∈ " * (
-                                      "ℝn×$(size(Y, 2)) and Y∈ ℝm×$(size(Y, 2))."))
+function kernel_matrix{T<:FloatingPoint}(ψ::KernelProduct{T}, X::Matrix{T}, trans::Char = 'N',
+                                         uplo::Char = 'U', sym::Bool = true)
+    kernel_matrix_product(ψ.a, ψ.κ₁, ψ.κ₂, X, trans, uplo, sym)
+end
+
+function kernel_matrix{T<:FloatingPoint}(ψ::KernelSum{T}, X::Matrix{T}, trans::Char = 'N',
+                                         uplo::Char = 'U', sym::Bool = true)
+    kernel_matrix_sum(ψ.a₁, ψ.κ₁, ψ.a₂, ψ.κ₂, X, trans, uplo, sym)
+end
+
+function kernel_matrix{T<:FloatingPoint}(κ::StandardKernel{T}, X::Matrix{T}, Y::Matrix{T},
+                                         trans::Char = 'N')
+    idx = trans == 'N' ? 1 : 2
+    n = size(X, idx)
+    m = size(Y, idx)
+    idx = trans == 'N' ? 2 : 1
+    if size(X, idx) != size(Y, idx)
+        throw(ArgumentError(
+                "X and Y have the same number of " * trans == 'N' ? "rows." : "columns."
+        ))
+    end
     K::Matrix{T} = Array(T, n, m)
-    @inbounds for j = 1:m 
-        for i = 1:n
-            K[i,j] = kernel_function(κ, vec(X[i,:]), vec(Y[j,:]))::T
+    if trans == 'N'
+        for j = 1:m 
+            for i = 1:n
+                K[i,j] = kernel_function(κ, X[i,:], Y[j,:])
+            end
+        end
+    else
+        for j = 1:m 
+            for i = 1:n
+                K[i,j] = kernel_function(κ, X[:,i], Y[:,j])
+            end
         end
     end
     K
 end
 
 function kernel_matrix_scaled{T<:FloatingPoint}(a::T, κ::StandardKernel{T}, X::Matrix{T}, 
-                                                Y::Matrix{T})
-    K::Matrix{T} = kernel_matrix(κ, X, Y)
+                                                Y::Matrix{T}, trans::Char = 'N')
+    K::Matrix{T} = kernel_matrix(κ, X, Y, trans)
     if a != one(T) BLAS.scal!(length(K), a, K, 1) end
     K
 end
 
 function kernel_matrix_product{T<:FloatingPoint}(a::T, κ₁::StandardKernel{T},
-                                                 κ₂::StandardKernel{T}, X::Matrix{T}, Y::Matrix{T})
-    K::Matrix{T} = kernel_matrix_scaled(a, κ₁, X, Y)
-    hadamard!(K, kernel_matrix(κ₂, X, Y))
+                                                 κ₂::StandardKernel{T}, X::Matrix{T}, Y::Matrix{T},
+                                                 trans::Char = 'N')
+    K::Matrix{T} = kernel_matrix_scaled(a, κ₁, X, Y, trans)
+    hadamard!(K, kernel_matrix(κ₂, X, Y, trans))
 end
 
 function kernel_matrix_sum{T<:FloatingPoint}(a₁::T, κ₁::StandardKernel{T}, a₂::T, 
-                                             κ₂::StandardKernel{T}, X::Matrix{T}, Y::Matrix{T})
-    K::Matrix{T} = kernel_matrix_scaled(a₁, κ₁, X, Y)
-    BLAS.axpy!(length(K), a₂, kernel_matrix(κ₂, X, Y), 1, K, 1)    
+                                             κ₂::StandardKernel{T}, X::Matrix{T}, Y::Matrix{T},
+                                             trans::Char = 'N')
+    K::Matrix{T} = kernel_matrix_scaled(a₁, κ₁, X, Y, trans)
+    BLAS.axpy!(length(K), a₂, kernel_matrix(κ₂, X, Y, trans), 1, K, 1)    
 end
 
-function kernel_matrix{T<:FloatingPoint}(ψ::ScaledKernel{T}, X::Matrix{T}, Y::Matrix{T})
-    kernel_matrix_scaled(ψ.a, ψ.κ, X, Y)
+function kernel_matrix{T<:FloatingPoint}(ψ::ScaledKernel{T}, X::Matrix{T}, Y::Matrix{T},
+                                         trans::Char = 'N')
+    kernel_matrix_scaled(ψ.a, ψ.κ, X, Y, trans)
 end
-function kernel_matrix{T<:FloatingPoint}(ψ::KernelProduct{T}, X::Matrix{T}, Y::Matrix{T})
-    kernel_matrix_product(ψ.a, ψ.κ₁, ψ.κ₂, X, Y)
+function kernel_matrix{T<:FloatingPoint}(ψ::KernelProduct{T}, X::Matrix{T}, Y::Matrix{T},
+                                         trans::Char = 'N')
+    kernel_matrix_product(ψ.a, ψ.κ₁, ψ.κ₂, X, Y, trans)
 end
-function kernel_matrix{T<:FloatingPoint}(ψ::KernelSum{T}, X::Matrix{T}, Y::Matrix{T})
-    kernel_matrix_sum(ψ.a₁, ψ.κ₁, ψ.a₂, ψ.κ₂, X, Y)
+function kernel_matrix{T<:FloatingPoint}(ψ::KernelSum{T}, X::Matrix{T}, Y::Matrix{T},
+                                         trans::Char = 'N')
+    kernel_matrix_sum(ψ.a₁, ψ.κ₁, ψ.a₂, ψ.κ₂, X, Y, trans)
 end
 
 
@@ -223,7 +262,6 @@ end
   Optimized kernel matrix functions for Euclidean distance and scalar
   product kernels
 ==========================================================================#
-
 
 for (kernel, gramian) in ((:EuclideanDistanceKernel, :lagged_gramian_matrix),
                           (:ScalarProductKernel, :gramian_matrix))

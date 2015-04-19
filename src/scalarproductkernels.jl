@@ -11,8 +11,7 @@ function scalar_product{T<:FloatingPoint}(x::Array{T}, y::Array{T})
 end
 
 # k(x,y) = f(xᵀy)
-function kernel_function{T<:FloatingPoint}(κ::ScalarProductKernel{T}, x::Vector{T},
-                                                   y::Vector{T})
+function kernel_function{T<:FloatingPoint}(κ::ScalarProductKernel{T}, x::Array{T}, y::Array{T})
     kernelize_scalar(κ, scalar_product(x, y))
 end
 

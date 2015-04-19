@@ -5,10 +5,9 @@
 abstract SeparableKernel{T<:FloatingPoint} <: StandardKernel{T}
 
 # k(x,y) = ϕ(x)ᵀϕ(y)
-function kernel_function{T<:FloatingPoint}(κ::SeparableKernel{T}, x::Vector{T},
-                                           y::Vector{T})
-    v::Vector{T} = kernelize_array!(κ, copy(x))
-    z::Vector{T} = kernelize_array!(κ, copy(y))
+function kernel_function{T<:FloatingPoint}(κ::SeparableKernel{T}, x::Array{T}, y::Array{T})
+    v = kernelize_array!(κ, copy(x))
+    z = kernelize_array!(κ, copy(y))
     BLAS.dot(length(v), v, 1, z, 1)
 end
 
