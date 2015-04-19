@@ -22,7 +22,7 @@ matrix_test_approx_eq(MLKernels.dot_columns([1.0 1 ; 0 1]), [1.0 2])
 println("Done")
 
 print("- Testing hadamard! ... ")
-matrix_test_approx_eq(MLKernels.hadamard!([1.0; 1], [3.0; 2]), [3.0; 2])
+matrix_test_approx_eq(MLKernels.hadamard!([3.0; 2], [3.0; 2]), [9.0; 4])
 println("Done")
 
 X = reshape([1.0; 2], 2, 1)

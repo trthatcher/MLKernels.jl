@@ -21,7 +21,26 @@ function test_constructor(kernel::DataType, default_args, test_args)
     end
 end
 
-println("-- Testing Standard Kernel Constructors --")
+println("Testing standard kernel output:")
+for kernel in (
+    GaussianKernel,
+    LaplacianKernel,
+    RationalQuadraticKernel,
+    MultiQuadraticKernel,
+    InverseMultiQuadraticKernel,
+    PowerKernel,
+    LogKernel,
+    LinearKernel,
+    PolynomialKernel,
+    SigmoidKernel,
+    MercerSigmoidKernel
+)
+    print(STDOUT, "    - Testing ")
+    show(STDOUT, (kernel)())
+    println(" ... Done")
+end
+
+println("- Testing StandardKernel constructors:")
 for (kernel, default_args, test_args) in (
         (GaussianKernel, (1,), (2,)),
         (LaplacianKernel, (1,), (2,)),
@@ -35,19 +54,17 @@ for (kernel, default_args, test_args) in (
         (SigmoidKernel, (1, 1), (2, 2)),
         (MercerSigmoidKernel, (0, 1), (-1, 2))
     )
-
+    print("    - Testing ", kernel, " ... ")
     check_fields((kernel)(), default_args)
-
     for T in (Float32, Float64)
         case_defaults = map(x -> convert(T, x), default_args)
         case_tests = map(x -> convert(T, x), test_args)
         test_constructor(kernel, case_defaults, case_tests)
     end
-
+    println("Done")
 end
 
-println()
-println("-- Testing Standard Kernel Edge and Special Cases --")
+println("- Testing StandardKernel edge and special cases:")
 for (kernel, case) in (
         # Edge Cases
         (LinearKernel, (0.0,)),
@@ -58,13 +75,13 @@ for (kernel, case) in (
         (LogKernel, (1,)),
         (PolynomialKernel, (1.0, 1.0, 2))
     )
-
+    print("    - Testing ", kernel, case, " ... ")
     check_fields((kernel)(case...), case)
+    println("Done")
 
 end
 
-println()
-println("-- Testing Standard Kernel Error Cases --")
+println("- Testing StandardKernel error cases:")
 for (kernel, error_case) in (
         (GaussianKernel, (-1,)),
         (LaplacianKernel, (-1,)),
@@ -82,15 +99,15 @@ for (kernel, error_case) in (
         (MercerSigmoidKernel, (0, 0)), 
         (MercerSigmoidKernel, (0, -1))
     )
-
+    print("    - Testing ", kernel, error_case, " ... ")
     for T in (Float32, Float64)
         test_case = map(x -> convert(T, x), error_case)
         @test_throws ArgumentError (kernel)(test_case...)
     end
+    println("Done")
 end
 
-println()
-println("-- Testing Functions --")
+println("- Testing miscellaneous functions:")
 for (kernel, default_args, default_value, posdef) in (
         (GaussianKernel,                (1,), exp(-1),  true),
         (LaplacianKernel,               (1,), exp(-1),  true),
@@ -103,11 +120,11 @@ for (kernel, default_args, default_value, posdef) in (
         (PolynomialKernel,              (1, 1, 2), 9,       true),
         (SigmoidKernel,                 (1, 1),    tanh(3), false),
         (MercerSigmoidKernel,           (0, 1),    tanh(1)*tanh(2), true))
+    print("    - Testing ", kernel, " miscellaneous functions ... ")
     for T in (Float32, Float64)
         x, y = [one(T)], [convert(T,2)]
      
         κ = (kernel)(map(x -> convert(T, x), default_args)...)
-        show(STDOUT, κ)
 
         if kernel <: EuclideanDistanceKernel
             u = MLKernels.euclidean_distance(x, y)
@@ -150,7 +167,9 @@ for (kernel, default_args, default_value, posdef) in (
 
     end
 
-    @test description((kernel)()) == Nothing()
+    @test typeof(MLKernels.description_string_long((kernel)())) <: String
+
+    println("Done")
 end
 
 for (kernel, default_args, default_value) in (
@@ -160,4 +179,3 @@ for (kernel, default_args, default_value) in (
         @test_approx_eq MLKernels.kernelize_array!(κ, [one(T)])[1] convert(T, default_value)
     end
 end
-
