@@ -55,18 +55,11 @@ end
 ==========================================================================#
 
 for kernel in (:MercerSigmoidKernel,)
-    @eval begin
-        function convert{T<:FloatingPoint}(::Type{SeparableKernel{T}}, κ::$kernel)
-            convert($kernel{T}, κ)
-        end
-        function convert{T<:FloatingPoint}(::Type{StandardKernel{T}}, κ::$kernel)
-            convert($kernel{T}, κ)
-        end
-        function convert{T<:FloatingPoint}(::Type{SimpleKernel{T}}, κ::$kernel)
-            convert($kernel{T}, κ)
-        end
-        function convert{T<:FloatingPoint}(::Type{Kernel{T}}, κ::$kernel)
-            convert($kernel{T}, κ)
+    for kerneltype in (:SeparableKernel, :StandardKernel, :SimpleKernel, :Kernel)
+        @eval begin
+            function convert{T<:FloatingPoint}(::Type{$kerneltype{T}}, κ::$kernel)
+                convert($kernel{T}, κ)
+            end
         end
     end
 end
