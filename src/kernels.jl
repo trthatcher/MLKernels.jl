@@ -26,6 +26,15 @@ function show(io::IO, κ::StandardKernel)
     print(io, description_string(κ))
 end
 
+function description(io::IO, κ::StandardKernel)
+    print(io, description_string_long(κ))
+end
+
+function description(κ::StandardKernel)
+    description(STDOUT, κ)
+end
+
+
 # kernels of the form k(x,y) = ϕ(xᵀy)
 include("scalarproductkernels.jl")
 
