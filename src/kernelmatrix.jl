@@ -205,7 +205,7 @@ function kernel_matrix{T<:FloatingPoint}(κ::StandardKernel{T}, X::Matrix{T}, Y:
     idx = trans == 'N' ? 2 : 1
     if size(X, idx) != size(Y, idx)
         throw(ArgumentError(
-                "X and Y have the same number of " * trans == 'N' ? "rows." : "columns."
+                "X and Y do not have the same number of " * trans == 'N' ? "rows." : "columns."
         ))
     end
     K::Matrix{T} = Array(T, n, m)

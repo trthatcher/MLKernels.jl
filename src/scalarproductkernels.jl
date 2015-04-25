@@ -146,18 +146,11 @@ end
 ==========================================================================#
 
 for kernel in (:LinearKernel, :PolynomialKernel, :SigmoidKernel)
-    @eval begin
-        function convert{T<:FloatingPoint}(::Type{ScalarProductKernel{T}}, κ::$kernel)
-            convert($kernel{T}, κ)
-        end
-        function convert{T<:FloatingPoint}(::Type{StandardKernel{T}}, κ::$kernel)
-            convert($kernel{T}, κ)
-        end
-        function convert{T<:FloatingPoint}(::Type{SimpleKernel{T}}, κ::$kernel)
-            convert($kernel{T}, κ)
-        end
-        function convert{T<:FloatingPoint}(::Type{Kernel{T}}, κ::$kernel)
-            convert($kernel{T}, κ)
+    for kerneltype in (:ScalarProductKernel, :StandardKernel, :SimpleKernel, :Kernel)
+        @eval begin
+            function convert{T<:FloatingPoint}(::Type{$kerneltype{T}}, κ::$kernel)
+                convert($kernel{T}, κ)
+            end
         end
     end
 end
