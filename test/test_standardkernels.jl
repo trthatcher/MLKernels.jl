@@ -109,7 +109,7 @@ end
 
 println("- Testing miscellaneous functions:")
 for (kernel, default_args, default_value, posdef) in (
-        (GaussianKernel,                (1,), exp(-1),  true),
+        (GaussianKernel,                (1,), exp(-0.5),  true),
         (LaplacianKernel,               (1,), exp(-1),  true),
         (RationalQuadraticKernel,       (1,), 0.5,      true),
         (MultiQuadraticKernel,          (1,), sqrt(2),  false),

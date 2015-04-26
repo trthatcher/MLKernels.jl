@@ -20,24 +20,27 @@ end
 #== Gaussian Kernel ===============#
 
 immutable GaussianKernel{T<:FloatingPoint} <: EuclideanDistanceKernel{T}
-    η::T
-    function GaussianKernel(η::T)
-        η > 0 || throw(ArgumentError("σ = $(η) must be greater than 0."))
-        new(η)
+    sigma::T
+    function GaussianKernel(σ::T)
+        σ > 0 || throw(ArgumentError("σ = $(σ) must be greater than 0."))
+        new(σ)
     end
 end
-GaussianKernel{T<:FloatingPoint}(η::T = 1.0) = GaussianKernel{T}(η)
+GaussianKernel{T<:FloatingPoint}(σ::T = 1.0) = GaussianKernel{T}(σ)
+SquaredExponentialKernel{T<:FloatingPoint}(l::T = 1.0) = GaussianKernel{T}(l)
 
 function convert{T<:FloatingPoint}(::Type{GaussianKernel{T}}, κ::GaussianKernel) 
-    GaussianKernel(convert(T, κ.η))
+    GaussianKernel(convert(T, κ.sigma))
 end
 
-kernelize_scalar{T<:FloatingPoint}(κ::GaussianKernel{T}, ϵᵀϵ::T) = exp(-κ.η*ϵᵀϵ)
+function kernelize_scalar{T<:FloatingPoint}(κ::GaussianKernel{T}, ϵᵀϵ::T) 
+    exp(ϵᵀϵ/(convert(T,-2)*(κ.sigma^convert(T,2))))
+end
 
 isposdef_kernel(::GaussianKernel) = true
 
 function description_string{T<:FloatingPoint}(κ::GaussianKernel{T}, eltype::Bool = true) 
-    "GaussianKernel" * (eltype ? "{$(T)}" : "") * "(η=$(κ.η))"
+    "GaussianKernel" * (eltype ? "{$(T)}" : "") * "(σ=$(κ.sigma))"
 end
 
 function description_string_long(::GaussianKernel)
@@ -48,7 +51,7 @@ function description_string_long(::GaussianKernel)
     Gaussian distribution's probability density function. The feature
     has an infinite number of dimensions.
     
-        k(x,y) = exp(-η‖x-y‖²)    x ∈ ℝⁿ, y ∈ ℝⁿ, η > 0
+        k(x,y) = exp(-‖x-y‖²/(2σ²))    x ∈ ℝⁿ, y ∈ ℝⁿ, η > 0
     
     Since the value of the function decreases as x and y differ, it can
     be interpretted as a similarity measure.
@@ -59,26 +62,27 @@ end
 #== Laplacian Kernel ===============#
 
 immutable LaplacianKernel{T<:FloatingPoint} <: EuclideanDistanceKernel{T}
-    η::T
-    function LaplacianKernel(η::T)
-        η > 0 || throw(ArgumentError("η = $(η) must be greater than zero."))
-        new(η)
+    sigma::T
+    function LaplacianKernel(σ::T)
+        σ > 0 || throw(ArgumentError("σ = $(σ) must be greater than zero."))
+        new(σ)
     end
 end
-LaplacianKernel{T<:FloatingPoint}(η::T = 1.0) = LaplacianKernel{T}(η)
+LaplacianKernel{T<:FloatingPoint}(σ::T = 1.0) = LaplacianKernel{T}(σ)
+OrnsteinUhlenbeckKernel{T<:FloatingPoint}(σ::T = 1.0) = LaplacianKernel{T}(σ)
 
 function convert{T<:FloatingPoint}(::Type{LaplacianKernel{T}}, κ::LaplacianKernel) 
-    LaplacianKernel(convert(T, κ.η))
+    LaplacianKernel(convert(T, κ.sigma))
 end
 
 function kernelize_scalar{T<:FloatingPoint}(κ::LaplacianKernel{T}, ϵᵀϵ::T)
-    exp(-κ.η*sqrt(ϵᵀϵ))
+    exp(sqrt(ϵᵀϵ)/(-κ.sigma))
 end
 
 isposdef_kernel(::LaplacianKernel) = true
 
 function description_string{T<:FloatingPoint}(κ::LaplacianKernel{T}, eltype::Bool = true) 
-    "LaplacianKernel" * (eltype ? "{$(T)}" : "") * "(η=$(κ.η))"
+    "LaplacianKernel" * (eltype ? "{$(T)}" : "") * "(σ=$(κ.sigma))"
 end
 
 function description_string_long(::LaplacianKernel)
@@ -90,7 +94,7 @@ function description_string_long(::LaplacianKernel)
     similarity measure. Similarly, it is less sensitive to changes in
     the parameter η:
 
-        k(x,y) = exp(-η‖x-y‖)    x ∈ ℝⁿ, y ∈ ℝⁿ, η > 0
+        k(x,y) = exp(-‖x-y‖/σ)    x ∈ ℝⁿ, y ∈ ℝⁿ, η > 0
     """
 end
 
