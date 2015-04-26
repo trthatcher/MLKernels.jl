@@ -51,10 +51,10 @@ function description_string_long(::GaussianKernel)
     Gaussian distribution's probability density function. The feature
     has an infinite number of dimensions.
     
-        k(x,y) = exp(-‖x-y‖²/(2σ²))    x ∈ ℝⁿ, y ∈ ℝⁿ, η > 0
+        k(x,y) = exp(-‖x-y‖²/(2σ²))    x ∈ ℝⁿ, y ∈ ℝⁿ, σ > 0
     
     Since the value of the function decreases as x and y differ, it can
-    be interpretted as a similarity measure.
+    be interpreted as a similarity measure.
     """
 end
 
@@ -92,9 +92,9 @@ function description_string_long(::LaplacianKernel)
     The Laplacian (exponential) kernel is a radial basis function that
     differs from the Gaussian kernel in that it is a less sensitive
     similarity measure. Similarly, it is less sensitive to changes in
-    the parameter η:
+    the parameter σ:
 
-        k(x,y) = exp(-‖x-y‖/σ)    x ∈ ℝⁿ, y ∈ ℝⁿ, η > 0
+        k(x,y) = exp(-‖x-y‖/σ)    x ∈ ℝⁿ, y ∈ ℝⁿ, σ > 0
     """
 end
 
@@ -271,7 +271,7 @@ function description_string_long(::LogKernel)
     """ 
     Log Kernel:
     
-    The power kernel is a positive semidefinite kernel. The function is
+    The log kernel is a positive semidefinite kernel. The function is
     given by:
     
         k(x,y) = -log(‖x-y‖ᵈ + 1)    x ∈ ℝⁿ, y ∈ ℝⁿ, d > 0
