@@ -97,7 +97,7 @@ function gramian_matrix{T<:FloatingPoint}(X::Matrix{T}, trans::Char = 'N', uplo:
     sym ? (uplo == 'U' ? syml!(G) : symu!(G)) : G
 end
 
-# Calculate the upper right corner of the gramian matrix of [Xᵀ Yᵀ]ᵀ or [X Y]
+# Returns the upper right corner of the gramian matrix of [Xᵀ Yᵀ]ᵀ or [X Y]
 #   If trans = 'N' then G = XYᵀ (X and Y are design matrices)
 #   If trans = 'T' then G = XᵀY (X and Y are transposed design matrices)
 function gramian_matrix{T<:FloatingPoint}(X::Matrix{T}, Y::Matrix{T}, trans::Char = 'N')
@@ -149,7 +149,9 @@ center_kernelmatrix{T<:FloatingPoint}(K::Matrix{T}) = center_kernelmatrix!(copy(
   Generic Kernel Matrix Functions
 ==========================================================================#
 
-# Returns kernel matrix using generic approach - will be slow
+# Returns the kernel matrix of [Xᵀ Yᵀ]ᵀ or [X Y]
+#   If trans = 'N' then K = ϕ(X)ϕ(X)ᵀ (X is a design matrix)
+#   If trans = 'T' then K = ϕ(X)ᵀϕ(X) (X is a transposed design matrix)
 function kernelmatrix{T<:FloatingPoint}(κ::StandardKernel{T}, X::Matrix{T}, trans::Char = 'N',
                                         uplo::Char = 'U', sym::Bool = true)
     n = size(X, trans == 'N' ? 1 : 2)
@@ -211,6 +213,9 @@ function kernelmatrix{T<:FloatingPoint}(ψ::KernelSum{T}, X::Matrix{T}, trans::C
     kernelmatrix_sum(ψ.a1, ψ.k1, ψ.a2, ψ.k2, X, trans, uplo, sym)
 end
 
+# Returns the upper right corner of the kernel matrix of [Xᵀ Yᵀ]ᵀ or [X Y]
+#   If trans = 'N' then K = ϕ(X)ϕ(Y)ᵀ (X and Y are design matrices)
+#   If trans = 'T' then K = ϕ(X)ᵀϕ(Y) (X and Y are transposed design matrices)
 function kernelmatrix{T<:FloatingPoint}(κ::StandardKernel{T}, X::Matrix{T}, Y::Matrix{T},
                                         trans::Char = 'N')
     idx = trans == 'N' ? 1 : 2
@@ -308,7 +313,8 @@ for (kernelobject, gramian) in ((:EuclideanDistanceKernel, :lagged_gramian_matri
                                                 trans::Char = 'N', uplo::Char = 'U', 
                                                 sym::Bool = true)
             G = $gramian(X, trans, uplo, false)
-            kernelize_gramian!(κ, G, uplo, sym)
+            K = kernelize_gramian!(κ, G, uplo, sym)
+            sym ? (uplo == 'U' ? syml!(K) : symu!(K)) : K
         end
 
         # Returns scaled kernel matrix of X using BLAS where possible
@@ -349,38 +355,46 @@ for (kernelobject, gramian) in ((:EuclideanDistanceKernel, :lagged_gramian_matri
             sym ? (uplo == 'U' ? syml!(K) : symu!(K)) : K 
         end
 
-        # FIX BELOW
-        function kernelmatrix{T<:FloatingPoint}(κ::$kernelobject{T}, X::Matrix{T}, Y::Matrix{T})
-            G::Matrix{T} = $gramian(X, Y)
-            K::Matrix{T} = kernelize_gramian!(κ, G)
+        # Returns the kernel matrix of X and Y using BLAS where possible
+        function kernelmatrix{T<:FloatingPoint}(κ::$kernelobject{T}, X::Matrix{T}, Y::Matrix{T},
+                                                trans::Char = 'N')
+            G = $gramian(X, Y, trans)
+            kernelize_gramian!(κ, G)
         end
 
+        # Returns the scaled kernel matrix of X and Y using BLAS where possible
         function kernelmatrix_scaled{T<:FloatingPoint}(a::T, κ::$kernelobject{T}, X::Matrix{T},
-                                                       Y::Matrix{T})
-            G::Matrix{T} = $gramian(X, Y)
-            K::Matrix{T} = kernelize_gramian!(κ, G)
-            if a != one(T) BLAS.scal!(length(K), a, K, 1) end
-            K
+                                                       Y::Matrix{T}, trans::Char = 'N')
+            G = $gramian(X, Y, trans)
+            K = kernelize_gramian!(κ, G)
+            a == one(T) ? K : BLAS.scal!(length(K), a, K, 1)
         end
 
+        # Returns the kernel matrix of X and Y for the product of two kernels using BLAS 
         function kernelmatrix_product{T<:FloatingPoint}(a::T, κ₁::$kernelobject{T}, 
                                                         κ₂::$kernelobject{T}, X::Matrix{T},
-                                                        Y::Matrix{T})
-            G::Matrix{T} = $gramian(X, Y)
-            K::Matrix{T} = kernelize_gramian!(κ₁, copy(G))
-            if a != one(T) BLAS.scal!(length(K), a, K, 1) end
+                                                        Y::Matrix{T}, trans::Char = 'N')
+            G = $gramian(X, Y, trans)
+            K = kernelize_gramian!(κ₁, copy(G))
+            if a != one(T) 
+                BLAS.scal!(length(K), a, K, 1) 
+            end
             hadamard!(K, kernelize_gramian!(κ₂, G))
         end
 
+        # Returns the kernel matrix of X and Y for the product of two kernels using BLAS 
         function kernelmatrix_sum{T<:FloatingPoint}(a₁::T, κ₁::$kernelobject{T}, a₂::T, 
                                                     κ₂::$kernelobject{T}, X::Matrix{T}, 
-                                                    Y::Matrix{T})
-            G::Matrix{T} = $gramian(X, Y)
-            K::Matrix{T} = kernelize_gramian!(κ₁, copy(G))
+                                                    Y::Matrix{T}, trans::Char = 'N')
+            G = $gramian(X, Y, trans)
+            K = kernelize_gramian!(κ₁, copy(G))
             n = length(K)
-            if a₁ != one(T) BLAS.scal!(n, a₁, K, 1) end
+            if a₁ != one(T) 
+                BLAS.scal!(n, a₁, K, 1) 
+            end
             BLAS.axpy!(n, a₂, kernelize_gramian!(κ₂, G), 1, K, 1)
         end
+
     end
 end
 
@@ -389,26 +403,31 @@ end
   Optimized kernel matrix functions for Separable kernels
 ==========================================================================#
 
-for kernelobject in (:MercerSigmoidKernel,)
+for kernelobject in (:SeparableKernel,)
     @eval begin
 
-        function kernelmatrix_scaled{T<:FloatingPoint}(a::T, κ::$kernelobject{T}, X::Matrix{T})
-            K::Matrix{T} = BLAS.syrk('U', 'N', a, kernelize_array!(κ, copy(X)))
-            syml!(K)
+        function kernelmatrix_scaled{T<:FloatingPoint}(a::T, κ::$kernelobject{T}, X::Matrix{T},
+                                                       trans::Char = 'N', uplo::Char = 'U',
+                                                       sym::Bool = true)
+            K = BLAS.syrk(uplo, trans, a, kernelize_array!(κ, copy(X)))
+            sym ? (uplo == 'U' ? syml!(K) : symu!(K)) : K
         end
 
-        function kernelmatrix{T<:FloatingPoint}(κ::$kernelobject{T}, X::Matrix{T})
-            kernelmatrix_scaled(one(T), κ, X)
+        function kernelmatrix{T<:FloatingPoint}(κ::$kernelobject{T}, X::Matrix{T}, 
+                                                trans::Char = 'N', uplo::Char = 'U',
+                                                sym::Bool = true)
+            kernelmatrix_scaled(one(T), κ, X, )
         end
 
         function kernelmatrix_scaled{T<:FloatingPoint}(a::T, κ::$kernelobject{T}, X::Matrix{T},
-                                                       Y::Matrix{T})
-            K::Array{T} = BLAS.gemm('N', 'T', a, kernelize_array!(κ, copy(X)), 
-                                                 kernelize_array!(κ, copy(Y)))
+                                                       Y::Matrix{T}, trans::Char = 'N')
+            K = BLAS.gemm(trans, trans == 'N' ? 'T' : 'N', a, kernelize_array!(κ, copy(X)), 
+                                                              kernelize_array!(κ, copy(Y)))
         end
 
-        function kernelmatrix{T<:FloatingPoint}(κ::$kernelobject{T}, X::Matrix{T}, Y::Matrix{T})
-            kernelmatrix_scaled(one(T), κ, X, Y)
+        function kernelmatrix{T<:FloatingPoint}(κ::$kernelobject{T}, X::Matrix{T}, Y::Matrix{T},
+                                                trans::Char = 'N')
+            kernelmatrix_scaled(one(T), κ, X, Y, trans)
         end
 
     end
@@ -445,7 +464,7 @@ function pinv_semiposdef!{T<:FloatingPoint}(S::Matrix{T}, tol::T = eps(T)*maximu
     dgmm!(Σ⁻¹, Vᵀ)::Matrix{T}
 end
 
-# Nystrom method for Kernel Matrix approximation
+# Nystroem method for Kernel Matrix approximation
 function nystrom{T<:FloatingPoint,S<:Integer}(κ::Kernel{T}, X::Matrix{T}, sₓ::Array{S})
     c = length(sₓ)
     n = size(X, 1)
