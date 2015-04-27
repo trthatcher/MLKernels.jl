@@ -24,21 +24,20 @@ function kernel{T<:FloatingPoint}(κ::EuclideanDistanceKernel{T}, x::Array{T}, y
     kernelize_scalar(κ, euclidean_distance(x, y))
 end
 
-function dkernel_dx{T<:FloatingPoint}(κ::EuclideanDistanceKernel{T}, x::Array{T}, y::Array{T})
-    kernelize_scalar_deriv(κ, euclidean_distance(x, y)) * deuclidean_distance_dx(x, y)
+function dkernel_dx{T<:FloatingPoint}(κ::EuclideanDistanceKernel{T}, x::Array{T}, y::Array{T}; ϵᵀϵ = euclidean_distance(x, y))
+    kernelize_scalar_deriv(κ, ϵᵀϵ) * deuclidean_distance_dx(x, y)
 end
 
-function dkernel_dy{T<:FloatingPoint}(κ::EuclideanDistanceKernel{T}, x::Array{T}, y::Array{T})
-    kernelize_scalar_deriv(κ, euclidean_distance(x, y)) * deuclidean_distance_dy(x, y)
+function dkernel_dy{T<:FloatingPoint}(κ::EuclideanDistanceKernel{T}, x::Array{T}, y::Array{T}; ϵᵀϵ = euclidean_distance(x, y))
+    kernelize_scalar_deriv(κ, ϵᵀϵ) * deuclidean_distance_dy(x, y)
 end
 
-function d2kernel_dxdy{T<:FloatingPoint}(κ::EuclideanDistanceKernel{T}, x::Array{T}, y::Array{T})
-    ϵᵀϵ = euclidean_distance(x, y)
+function d2kernel_dxdy{T<:FloatingPoint}(κ::EuclideanDistanceKernel{T}, x::Array{T}, y::Array{T}; ϵᵀϵ = euclidean_distance(x, y))
     -kernelize_scalar_deriv2(κ, ϵᵀϵ) * 4(x-y)*(x-y)' - 2kernelize_scalar_deriv(κ, ϵᵀϵ)*eye(length(x))
 end
 
-function dkernel_dp{T<:FloatingPoint}(κ::EuclideanDistanceKernel{T}, param::Union(Integer,Symbol), x::Array{T}, y::Array{T})
-    kernelize_scalar_pderiv(κ, param, euclidean_distance(x, y))
+function dkernel_dp{T<:FloatingPoint}(κ::EuclideanDistanceKernel{T}, param::Union(Integer,Symbol), x::Array{T}, y::Array{T}; ϵᵀϵ = euclidean_distance(x, y))
+    kernelize_scalar_pderiv(κ, param, ϵᵀϵ)
 end
 
 function kernel{T<:FloatingPoint}(κ::EuclideanDistanceKernel{T}, x::T, y::T)
