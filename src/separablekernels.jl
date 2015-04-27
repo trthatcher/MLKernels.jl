@@ -43,7 +43,7 @@ function kernelize_scalar{T<:FloatingPoint}(κ::MercerSigmoidKernel{T}, x::T)
     tanh((x - κ.d)/κ.b)
 end
 
-isposdef_kernel(::MercerSigmoidKernel) = true
+isposdef(::MercerSigmoidKernel) = true
 
 function description_string{T<:FloatingPoint}(κ::MercerSigmoidKernel{T}, eltype::Bool = true)
     "MercerSigmoidKernel" * (eltype ? "{$(T)}" : "") * "(d=$(κ.d),b=$(κ.b))"

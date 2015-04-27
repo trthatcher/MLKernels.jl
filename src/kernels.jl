@@ -10,7 +10,7 @@ eltype{T}(κ::Kernel{T}) = T
 #call{T<:FloatingPoint}(κ::Kernel{T}, X::Matrix{T}) = kernel_matrix(κ, X)
 #call{T<:FloatingPoint}(κ::Kernel{T}, X::Matrix{T}, Y::Matrix{T}) = kernel_matrix(κ, X, Y)
 
-isposdef_kernel(κ::Kernel) = false
+isposdef(κ::Kernel) = false
 
 abstract SimpleKernel{T<:FloatingPoint} <: Kernel{T}
 abstract CompositeKernel{T<:FloatingPoint} <: Kernel{T}
@@ -79,7 +79,7 @@ end
 function description_string{T<:FloatingPoint}(ψ::ScaledKernel{T})
     "ScaledKernel{$(T)}($(ψ.a)," * description_string(ψ.k, false) * ")"
 end
-isposdef_kernel(ψ::ScaledKernel) = isposdef_kernel(ψ.k)
+isposdef(ψ::ScaledKernel) = isposdef(ψ.k)
 
 function show(io::IO, ψ::ScaledKernel)
     print(io, description_string(ψ))
@@ -126,7 +126,7 @@ function kernel{T<:FloatingPoint}(ψ::KernelProduct{T}, x::Vector{T}, y::Vector{
     ψ.a * kernel(ψ.k1, x, y) * kernel(ψ.k2, x, y)
 end
 
-isposdef_kernel(ψ::KernelProduct) = isposdef_kernel(ψ.k1) & isposdef_kernel(ψ.k2)
+isposdef(ψ::KernelProduct) = isposdef(ψ.k1) & isposdef(ψ.k2)
 
 function description_string{T<:FloatingPoint}(ψ::KernelProduct{T}) 
     "KernelProduct{$(T)}($(ψ.a)," * description_string(ψ.k1, false) * "," * (
@@ -187,7 +187,7 @@ function kernel{T<:FloatingPoint}(ψ::KernelSum{T}, x::Vector{T}, y::Vector{T})
     ψ.a1*kernel(ψ.k1, x, y) + ψ.a2*kernel(ψ.k2, x, y)
 end
 
-isposdef_kernel(ψ::KernelSum) = isposdef_kernel(ψ.k1) | isposdef_kernel(ψ.k2)
+isposdef(ψ::KernelSum) = isposdef(ψ.k1) | isposdef(ψ.k2)
 
 function description_string{T<:FloatingPoint}(ψ::KernelSum{T}) 
     "KernelSum{$(T)}($(ψ.a1)," * description_string(ψ.k1, false) * "," * "$(ψ.a2)," * (

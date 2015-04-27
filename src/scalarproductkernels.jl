@@ -37,7 +37,7 @@ end
 
 kernelize_scalar{T<:FloatingPoint}(κ::LinearKernel{T}, xᵀy::T) = xᵀy + κ.c
 
-isposdef_kernel(κ::LinearKernel) = true
+isposdef(::LinearKernel) = true
 
 function description_string{T<:FloatingPoint}(κ::LinearKernel{T}, eltype::Bool = true)
     "LinearKernel" * (eltype ? "{$(T)}" : "") * "(c=$(κ.c))"
@@ -87,7 +87,7 @@ function kernelize_scalar{T<:FloatingPoint}(κ::PolynomialKernel{T}, xᵀy::T)
     (κ.alpha*xᵀy + κ.c)^κ.d
 end
 
-isposdef_kernel(::PolynomialKernel) = true
+isposdef(::PolynomialKernel) = true
 
 function description_string{T<:FloatingPoint}(κ::PolynomialKernel{T}, eltype::Bool = true) 
     "PolynomialKernel" * (eltype ? "{$(T)}" : "") * "(α=$(κ.alpha),c=$(κ.c),d=$(κ.d))"

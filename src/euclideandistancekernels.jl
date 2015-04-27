@@ -89,7 +89,7 @@ function kernelize_scalar_pderiv{T<:FloatingPoint}(κ::GaussianKernel{T}, param:
     end
 end
 
-isposdef_kernel(::GaussianKernel) = true
+isposdef(::GaussianKernel) = true
 
 function description_string{T<:FloatingPoint}(κ::GaussianKernel{T}, eltype::Bool = true)
     "GaussianKernel" * (eltype ? "{$(T)}" : "") * "(σ=$(κ.sigma))"
@@ -131,7 +131,7 @@ function kernelize_scalar{T<:FloatingPoint}(κ::LaplacianKernel{T}, ϵᵀϵ::T)
     exp(sqrt(ϵᵀϵ)/(-κ.sigma))
 end
 
-isposdef_kernel(::LaplacianKernel) = true
+isposdef(::LaplacianKernel) = true
 
 function description_string{T<:FloatingPoint}(κ::LaplacianKernel{T}, eltype::Bool = true)
     "LaplacianKernel" * (eltype ? "{$(T)}" : "") * "(σ=$(κ.sigma))"
@@ -170,7 +170,7 @@ function kernelize_scalar{T<:FloatingPoint}(κ::RationalQuadraticKernel{T}, ϵ�
     one(T) - ϵᵀϵ/(ϵᵀϵ + κ.c)
 end
 
-isposdef_kernel(κ::RationalQuadraticKernel) = true
+isposdef(::RationalQuadraticKernel) = true
 
 function description_string{T<:FloatingPoint}(κ::RationalQuadraticKernel{T}, eltype::Bool = true)
     "RationalQuadraticKernel" * (eltype ? "{$(T)}" : "") * "(c=$(κ.c))"
