@@ -85,7 +85,7 @@ function kernelize_scalar_pderiv{T<:FloatingPoint}(κ::GaussianKernel{T}, param:
     if param == 1
         kernelize_scalar_pderiv(κ, :sigma, ϵᵀϵ)
     else
-        throw(ArgumentError("idx must be 1"))
+        throw(ArgumentError("param must be 1"))
     end
 end
 

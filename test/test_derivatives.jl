@@ -43,5 +43,8 @@ for T in (Float64,)
         (p,i)->dkernel_dp(GaussianKernel(p...),:sigma,x,y),
         param, 1)) < 1e-8
     @test dkernel_dp(k, :sigma, x, y) == dkernel_dp(k, 1, x, y)
+    @test dkernel_dp(k, :undefined, x, y) == zero(T)
+    @test_throws ArgumentError dkernel_dp(k, 0)
+    @test_throws ArgumentError dkernel_dp(k, 2)
     println("Done")
 end
