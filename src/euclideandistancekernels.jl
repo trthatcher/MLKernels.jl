@@ -20,7 +20,7 @@ function deuclidean_distance_dy{T<:FloatingPoint}(x::Array{T}, y::Array{T})
 end
 
 # k(x,y) = f((x-y)ᵀ(x-y))
-function kernel_function{T<:FloatingPoint}(κ::EuclideanDistanceKernel{T}, x::Array{T}, y::Array{T})
+function kernel{T<:FloatingPoint}(κ::EuclideanDistanceKernel{T}, x::Array{T}, y::Array{T})
     kernelize_scalar(κ, euclidean_distance(x, y))
 end
 
@@ -41,7 +41,9 @@ function dkernel_dp{T<:FloatingPoint}(κ::EuclideanDistanceKernel{T}, param::Uni
     kernelize_scalar_pderiv(κ, param, euclidean_distance(x, y))
 end
 
-
+function kernel{T<:FloatingPoint}(κ::EuclideanDistanceKernel{T}, x::T, y::T)
+    kernelize_scalar(κ, (x - y)^convert(T,2))
+end
 
 #== Gaussian Kernel ===============#
 
@@ -119,7 +121,7 @@ immutable LaplacianKernel{T<:FloatingPoint} <: EuclideanDistanceKernel{T}
     end
 end
 LaplacianKernel{T<:FloatingPoint}(σ::T = 1.0) = LaplacianKernel{T}(σ)
-OrnsteinUhlenbeckKernel{T<:FloatingPoint}(σ::T = 1.0) = LaplacianKernel{T}(σ)
+ExponentialKernel{T<:FloatingPoint}(σ::T = 1.0) = LaplacianKernel{T}(σ)
 
 function convert{T<:FloatingPoint}(::Type{LaplacianKernel{T}}, κ::LaplacianKernel)
     LaplacianKernel(convert(T, κ.sigma))
@@ -333,13 +335,13 @@ end
   Conversions
 ==========================================================================#
 
-for kernel in (:GaussianKernel, :LaplacianKernel, :RationalQuadraticKernel,
+for kernelobject in (:GaussianKernel, :LaplacianKernel, :RationalQuadraticKernel,
                :MultiQuadraticKernel, :InverseMultiQuadraticKernel,
                :PowerKernel, :LogKernel)
     for kerneltype in (:EuclideanDistanceKernel, :StandardKernel, :SimpleKernel, :Kernel)
         @eval begin
-            function convert{T<:FloatingPoint}(::Type{$kerneltype{T}}, κ::$kernel)
-                convert($kernel{T}, κ)
+            function convert{T<:FloatingPoint}(::Type{$kerneltype{T}}, κ::$kernelobject)
+                convert($kernelobject{T}, κ)
             end
         end
     end

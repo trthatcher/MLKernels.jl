@@ -4,11 +4,22 @@
 
 abstract SeparableKernel{T<:FloatingPoint} <: StandardKernel{T}
 
+function kernelize_array!{T<:FloatingPoint}(κ::SeparableKernel{T}, x::Array{T})
+    @inbounds for i = 1:length(x)
+        x[i] = kernelize_scalar(κ, x[i])
+    end
+    x
+end
+
 # k(x,y) = ϕ(x)ᵀϕ(y)
-function kernel_function{T<:FloatingPoint}(κ::SeparableKernel{T}, x::Array{T}, y::Array{T})
+function kernel{T<:FloatingPoint}(κ::SeparableKernel{T}, x::Array{T}, y::Array{T})
     v = kernelize_array!(κ, copy(x))
     z = kernelize_array!(κ, copy(y))
     BLAS.dot(length(v), v, 1, z, 1)
+end
+
+function kernel{T<:FloatingPoint}(κ::SeparableKernel{T}, x::T, y::T)
+    kernelize_scalar(κ, x)*kernelize_scalar(κ, y) 
 end
 
 
@@ -28,11 +39,8 @@ function convert{T<:FloatingPoint}(::Type{MercerSigmoidKernel{T}}, κ::MercerSig
     MercerSigmoidKernel(convert(T, κ.d), convert(T, κ.b))
 end
 
-function kernelize_array!{T<:FloatingPoint}(κ::MercerSigmoidKernel{T}, z::Array{T})
-    @inbounds for i = 1:length(z)
-        z[i] = tanh((z[i] - κ.d)/κ.b)
-    end
-    z
+function kernelize_scalar{T<:FloatingPoint}(κ::MercerSigmoidKernel{T}, x::T)
+    tanh((x - κ.d)/κ.b)
 end
 
 isposdef_kernel(::MercerSigmoidKernel) = true
@@ -54,11 +62,11 @@ end
   Conversions
 ==========================================================================#
 
-for kernel in (:MercerSigmoidKernel,)
+for kernelobject in (:MercerSigmoidKernel,)
     for kerneltype in (:SeparableKernel, :StandardKernel, :SimpleKernel, :Kernel)
         @eval begin
-            function convert{T<:FloatingPoint}(::Type{$kerneltype{T}}, κ::$kernel)
-                convert($kernel{T}, κ)
+            function convert{T<:FloatingPoint}(::Type{$kerneltype{T}}, κ::$kernelobject)
+                convert($kernelobject{T}, κ)
             end
         end
     end

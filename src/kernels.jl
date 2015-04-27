@@ -51,7 +51,7 @@ include("separablekernels.jl")
 
 immutable ScaledKernel{T<:FloatingPoint} <: SimpleKernel{T}
     a::T
-    κ::StandardKernel{T}
+    k::StandardKernel{T}
     function ScaledKernel(a::T, κ::StandardKernel{T})
         a > 0 || error("a = $(a) must be greater than zero.")
         new(a, κ)
@@ -67,19 +67,19 @@ end
 for kernel_type in (:ScaledKernel, :SimpleKernel, :Kernel)
     @eval begin
         function convert{T<:FloatingPoint}(::Type{$kernel_type{T}}, ψ::ScaledKernel) 
-            ScaledKernel(convert(T, ψ.a), convert(Kernel{T}, ψ.κ))
+            ScaledKernel(convert(T, ψ.a), convert(Kernel{T}, ψ.k))
         end
     end
 end
 
-function kernel_function{T<:FloatingPoint}(ψ::ScaledKernel{T}, x::Vector{T}, y::Vector{T})
-    ψ.a * kernel_function(ψ.κ, x, y)
+function kernel{T<:FloatingPoint}(ψ::ScaledKernel{T}, x::Vector{T}, y::Vector{T})
+    ψ.a * kernel(ψ.k, x, y)
 end
 
 function description_string{T<:FloatingPoint}(ψ::ScaledKernel{T})
-    "ScaledKernel{$(T)}($(ψ.a)," * description_string(ψ.κ, false) * ")"
+    "ScaledKernel{$(T)}($(ψ.a)," * description_string(ψ.k, false) * ")"
 end
-isposdef_kernel(ψ::ScaledKernel) = isposdef_kernel(ψ.κ)
+isposdef_kernel(ψ::ScaledKernel) = isposdef_kernel(ψ.k)
 
 function show(io::IO, ψ::ScaledKernel)
     print(io, description_string(ψ))
@@ -88,7 +88,7 @@ end
 *(a::Real, κ::StandardKernel) = ScaledKernel(a, deepcopy(κ))
 *(κ::StandardKernel, a::Real) = *(a, κ)
 
-*(a::Real, ψ::ScaledKernel) = ScaledKernel(a * ψ.a, deepcopy(ψ.κ))
+*(a::Real, ψ::ScaledKernel) = ScaledKernel(a * ψ.a, deepcopy(ψ.k))
 *(ψ::ScaledKernel, a::Real) = *(a, ψ)
 
 
@@ -98,8 +98,8 @@ end
 
 immutable KernelProduct{T<:FloatingPoint} <: CompositeKernel{T}
     a::T
-    κ₁::StandardKernel{T}
-    κ₂::StandardKernel{T}
+    k1::StandardKernel{T}
+    k2::StandardKernel{T}
     function KernelProduct(a::T, κ₁::StandardKernel{T}, κ₂::StandardKernel{T})
         a > 0 || error("a = $(a) must be greater than zero.")
         new(a, κ₁, κ₂)
@@ -117,20 +117,20 @@ end
 for kernel_type in (:KernelProduct, :CompositeKernel, :Kernel)
     @eval begin
         function convert{T<:FloatingPoint}(::Type{$kernel_type{T}}, ψ::KernelProduct) 
-            KernelProduct(convert(T, ψ.a), convert(Kernel{T}, ψ.κ₁),  convert(Kernel{T}, ψ.κ₂))
+            KernelProduct(convert(T, ψ.a), convert(Kernel{T}, ψ.k1), convert(Kernel{T}, ψ.k2))
         end
     end
 end
 
-function kernel_function{T<:FloatingPoint}(ψ::KernelProduct{T}, x::Vector{T}, y::Vector{T})
-    ψ.a * kernel_function(ψ.κ₁, x, y) * kernel_function(ψ.κ₂, x, y)
+function kernel{T<:FloatingPoint}(ψ::KernelProduct{T}, x::Vector{T}, y::Vector{T})
+    ψ.a * kernel(ψ.k1, x, y) * kernel(ψ.k2, x, y)
 end
 
-isposdef_kernel(ψ::KernelProduct) = isposdef_kernel(ψ.κ₁) & isposdef_kernel(ψ.κ₂)
+isposdef_kernel(ψ::KernelProduct) = isposdef_kernel(ψ.k1) & isposdef_kernel(ψ.k2)
 
 function description_string{T<:FloatingPoint}(ψ::KernelProduct{T}) 
-    "KernelProduct{$(T)}($(ψ.a)," * description_string(ψ.κ₁, false) * "," * (
-    description_string(ψ.κ₂, false) * ")")
+    "KernelProduct{$(T)}($(ψ.a)," * description_string(ψ.k1, false) * "," * (
+    description_string(ψ.k2, false) * ")")
 end
 
 function show(io::IO, ψ::KernelProduct)
@@ -141,12 +141,12 @@ function *{T,S}(κ₁::StandardKernel{T}, κ₂::StandardKernel{S})
     KernelProduct(one(promote_type(T, S)), deepcopy(κ₁), deepcopy(κ₂))
 end
 
-*(κ::StandardKernel, ψ::ScaledKernel) = KernelProduct(ψ.a, deepcopy(κ), deepcopy(ψ.κ))
-*(ψ::ScaledKernel, κ::StandardKernel) = KernelProduct(ψ.a, deepcopy(ψ.κ), deepcopy(κ))
+*(κ::StandardKernel, ψ::ScaledKernel) = KernelProduct(ψ.a, deepcopy(κ), deepcopy(ψ.k))
+*(ψ::ScaledKernel, κ::StandardKernel) = KernelProduct(ψ.a, deepcopy(ψ.k), deepcopy(κ))
 
-*(ψ₁::ScaledKernel, ψ₂::ScaledKernel) = KernelProduct(ψ₁.a*ψ₂.a, deepcopy(ψ₁.κ), deepcopy(ψ₂.κ))
+*(ψ₁::ScaledKernel, ψ₂::ScaledKernel) = KernelProduct(ψ₁.a*ψ₂.a, deepcopy(ψ₁.k), deepcopy(ψ₂.k))
 
-*(a::Real, ψ::KernelProduct) = KernelProduct(a * ψ.a, deepcopy(ψ.κ₁), deepcopy(ψ.κ₂))
+*(a::Real, ψ::KernelProduct) = KernelProduct(a * ψ.a, deepcopy(ψ.k1), deepcopy(ψ.k2))
 *(ψ::KernelProduct, a::Real) = *(a, ψ)
 
 
@@ -155,10 +155,10 @@ end
 ===========================================================================#
 
 immutable KernelSum{T<:FloatingPoint} <: CompositeKernel{T}
-    a₁::T
-    κ₁::StandardKernel{T}
-    a₂::T
-    κ₂::StandardKernel{T}
+    a1::T
+    k1::StandardKernel{T}
+    a2::T
+    k2::StandardKernel{T}
     function KernelSum(a₁::T, κ₁::StandardKernel{T}, a₂::T, κ₂::StandardKernel{T})
         a₁ > 0 || error("a₁ = $(a₁) must be greater than zero.")
         a₂ > 0 || error("a₂ = $(a₂) must be greater than zero.")
@@ -177,21 +177,21 @@ end
 for kernel_type in (:KernelSum, :CompositeKernel, :Kernel)
     @eval begin
         function convert{T<:FloatingPoint}(::Type{$kernel_type{T}}, ψ::KernelSum) 
-            KernelSum(convert(T, ψ.a₁), convert(Kernel{T}, ψ.κ₁), convert(T, ψ.a₂), 
-                          convert(Kernel{T}, ψ.κ₂))
+            KernelSum(convert(T, ψ.a1), convert(Kernel{T}, ψ.k1), convert(T, ψ.a2), 
+                          convert(Kernel{T}, ψ.k2))
         end
     end
 end
 
-function kernel_function{T<:FloatingPoint}(ψ::KernelSum{T}, x::Vector{T}, y::Vector{T})
-    ψ.a₁*kernel_function(ψ.κ₁, x, y) + ψ.a₂*kernel_function(ψ.κ₂, x, y)
+function kernel{T<:FloatingPoint}(ψ::KernelSum{T}, x::Vector{T}, y::Vector{T})
+    ψ.a1*kernel(ψ.k1, x, y) + ψ.a2*kernel(ψ.k2, x, y)
 end
 
-isposdef_kernel(ψ::KernelSum) = isposdef_kernel(ψ.κ₁) | isposdef_kernel(ψ.κ₂)
+isposdef_kernel(ψ::KernelSum) = isposdef_kernel(ψ.k1) | isposdef_kernel(ψ.k2)
 
 function description_string{T<:FloatingPoint}(ψ::KernelSum{T}) 
-    "KernelSum{$(T)}($(ψ.a₁)," * description_string(ψ.κ₁, false) * "," * "$(ψ.a₂)," * (
-    description_string(ψ.κ₂, false) * ")")
+    "KernelSum{$(T)}($(ψ.a1)," * description_string(ψ.k1, false) * "," * "$(ψ.a2)," * (
+    description_string(ψ.k1, false) * ")")
 end
 
 function show(io::IO, ψ::KernelSum)
@@ -200,10 +200,10 @@ end
 
 +(κ₁::StandardKernel, κ₂::StandardKernel) = KernelSum(1, deepcopy(κ₁), 1, deepcopy(κ₂))
 
-+(κ::StandardKernel, ψ::ScaledKernel) = KernelSum(1, deepcopy(κ), ψ.a, deepcopy(ψ.κ))
-+(ψ::ScaledKernel, κ::StandardKernel) = KernelSum(ψ.a, deepcopy(ψ.κ), 1, deepcopy(κ))
++(κ::StandardKernel, ψ::ScaledKernel) = KernelSum(1, deepcopy(κ), ψ.a, deepcopy(ψ.k))
++(ψ::ScaledKernel, κ::StandardKernel) = KernelSum(ψ.a, deepcopy(ψ.k), 1, deepcopy(κ))
 
-+(ψ₁::ScaledKernel, ψ₂::ScaledKernel) = KernelSum(ψ₁.a, deepcopy(ψ₁.κ), ψ₂.a, deepcopy(ψ₂.κ))
++(ψ₁::ScaledKernel, ψ₂::ScaledKernel) = KernelSum(ψ₁.a, deepcopy(ψ₁.k), ψ₂.a, deepcopy(ψ₂.k))
 
-*(a::Real, ψ::KernelSum) = KernelSum(a*ψ.a₁, deepcopy(ψ.κ₁), a*ψ.a₂, deepcopy(ψ.κ₂))
+*(a::Real, ψ::KernelSum) = KernelSum(a*ψ.a1, deepcopy(ψ.k1), a*ψ.a2, deepcopy(ψ.k2))
 *(ψ::KernelSum, a::Real) = *(a, ψ)

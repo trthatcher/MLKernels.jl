@@ -10,22 +10,20 @@ export
     # Functions
     description,
     isposdef_kernel,
-    kernel_function,
-    kernel_matrix,
+    kernel,
+    kernelmatrix,
     gramian_matrix,
     lagged_gramian_matrix,
-    center_kernel_matrix!,
-    center_kernel_matrix,
-    nystrom,
-    parameters,
+    center_kernelmatrix!,
+    center_kernelmatrix,
+
     # Types
     Kernel,
         SimpleKernel,
             StandardKernel,
-                # PointwiseProductKernel,
                 EuclideanDistanceKernel,
 	                GaussianKernel, SquaredExponentialKernel,
-	                LaplacianKernel, OrnsteinUhlenbeckKernel,
+	                LaplacianKernel, ExponentialKernel,
             	    RationalQuadraticKernel,
             	    MultiQuadraticKernel,
             	    InverseMultiQuadraticKernel,
@@ -42,7 +40,9 @@ export
             KernelProduct,
             KernelSum
 
+include("matrixfunctions.jl")
 include("kernels.jl")
 include("kernelmatrix.jl")
+include("kernelapprox.jl")
 
 end # MLKernels
