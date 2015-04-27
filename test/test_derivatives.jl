@@ -18,29 +18,30 @@ for T in (Float64,)
     x = T[1, 2, 7, 3]
     y = T[5, 2, 1, 6]
 
-    @test all(checkderivvec(p->MLKernels.euclidean_distance(p,y), p->MLKernels.deuclidean_distance_dx(p,y), x) .< 1e-10)
-    @test all(checkderivvec(p->MLKernels.euclidean_distance(x,p), p->MLKernels.deuclidean_distance_dy(x,p), y) .< 1e-10)
+    @test all(checkderivvec(p->euclidean_distance(p,y), p->deuclidean_distance_dx(p,y), x) .< 1e-10)
+    @test all(checkderivvec(p->euclidean_distance(x,p), p->deuclidean_distance_dy(x,p), y) .< 1e-10)
 
     param = T[3.0]
 
     k = GaussianKernel(param...)
-    @test all(checkderivvec(p->kernel_function(k,p,y), p->MLKernels.dkernel_dx(k,p,y), x) .< 1e-9)
-    @test all(checkderivvec(p->kernel_function(k,x,p), p->MLKernels.dkernel_dy(k,x,p), y) .< 1e-9)
+    @test all(checkderivvec(p->kernel_function(k,p,y), p->dkernel_dx(k,p,y), x) .< 1e-9)
+    @test all(checkderivvec(p->kernel_function(k,x,p), p->dkernel_dy(k,x,p), y) .< 1e-9)
 
     for j=1:4, i=1:4
         @test abs(checkderiv(
-            p->MLKernels.dkernel_dx(k,x,p)[j],
-            (p,i_)->MLKernels.d2kernel_dxdy(k,x,p)[j,i_],
+            p->dkernel_dx(k,x,p)[j],
+            (p,i_)->d2kernel_dxdy(k,x,p)[j,i_],
             y, i)) < 1e-9
         @test abs(checkderiv(
-            p->MLKernels.dkernel_dy(k,p,y)[i],
-            (p,j_)->MLKernels.d2kernel_dxdy(k,p,y)[j_,i],
+            p->dkernel_dy(k,p,y)[i],
+            (p,j_)->d2kernel_dxdy(k,p,y)[j_,i],
             x, j)) < 1e-9
     end
 
     @test abs(checkderiv(
         p->kernel_function(GaussianKernel(p...),x,y),
-        (p,i)->MLKernels.dkernel_dp(GaussianKernel(p...),:sigma,x,y),
+        (p,i)->dkernel_dp(GaussianKernel(p...),:sigma,x,y),
         param, 1)) < 1e-8
+    @test dkernel_dp(k, :sigma, x, y) == dkernel_dp(k, 1, x, y)
     println("Done")
 end
