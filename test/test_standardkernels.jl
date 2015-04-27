@@ -141,7 +141,7 @@ for (kernelobject, default_args, default_value, posdef) in (
         v = kernel(κ, x, y)
         @test_approx_eq v convert(T, default_value)
 
-        @test isposdef_kernel(κ) == posdef
+        @test isposdef(κ) == posdef
         
         for S in (Float32, Float64)
 
