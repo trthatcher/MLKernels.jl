@@ -116,8 +116,7 @@ end
 # Diagonal-General Matrix Multiply: overwrites A with DA (scales A[i,:] by D[i,i])
 function dgmm!{T<:FloatingPoint}(D::Array{T}, A::Matrix{T})
     n, p = size(A)
-    if n != length(D)
-        d = length(D)
+    if n != (d = length(D))
         throw(ArgumentError(
             "The length(D) = $(d) of vector D representing a $(d)×$(d) diagonal matrix must " * (
             "equal the number of rows in Matrix A ∈ ℝ$(n)×$(p) to compute diagonal matrix " * (
@@ -136,8 +135,7 @@ dgmm(D,A) = dgmm!(D, copy(A))
 # General-Diagonal Matrix Multiply: overwrites A with AD (scales A[:,i] by D[i,i]
 function gdmm!{T<:FloatingPoint}(A::Matrix{T}, D::Array{T})
     n, p = size(A)
-    if p != length(D)
-        d = length(D)
+    if p != (d = length(D))
         throw(ArgumentError(
             "The length(D) = $(d) of vector D representing a $(d)×$(d) diagonal matrix must " * (
             "equal the number of columns in Matrix A ∈ ℝ$(n)×$(p) to compute diagonal matrix " * (
@@ -163,7 +161,7 @@ function hadamard!{T<:FloatingPoint}(A::Array{T}, B::Array{T})
 end
 
 # Overwrite A with the hadamard product of A and B. Returns A
-function hadamard!{T<:FloatingPoint}(A::Array{T}, B::Array{T}, uplo::Char, sym::Bool = true)
+function hadamard!{T<:FloatingPoint}(A::Matrix{T}, B::Matrix{T}, uplo::Char, sym::Bool = true)
     n = size(A,1)
     if !(n == size(A,2) == size(B,1) == size(B,2))
         throw(ArgumentError("A and B must be square and of same order."))
