@@ -126,6 +126,25 @@ function kernel{T<:FloatingPoint}(ψ::KernelProduct{T}, x::Vector{T}, y::Vector{
     ψ.a * kernel(ψ.k1, x, y) * kernel(ψ.k2, x, y)
 end
 
+function dkernel_dx{T<:FloatingPoint}(ψ::KernelProduct{T}, x::Vector{T}, y::Vector{T})
+    ψ.a * (dkernel_dx(ψ.k1, x, y)*kernel(ψ.k2, x, y) + kernel(ψ.k1, x, y)*ψ.a2*dkernel_dx(ψ.k2, x, y))
+end
+
+function dkernel_dy{T<:FloatingPoint}(ψ::KernelProduct{T}, x::Vector{T}, y::Vector{T})
+    ψ.a * (dkernel_dy(ψ.k1, x, y)*kernel(ψ.k2, x, y) + kernel(ψ.k1, x, y)*ψ.a2*dkernel_dy(ψ.k2, x, y))
+end
+
+function d2kernel_dxdy{T<:FloatingPoint}(ψ::KernelProduct{T}, x::Vector{T}, y::Vector{T})
+    ψ.a * (d2kernel_dxdy(ψ.k1, x, y)*kernel(ψ.k2, x, y)
+            + dkernel_dy(ψ.k1, x, y)*dkernel_dx(ψ.k2, x, y)
+            + dkernel_dx(ψ.k1, x, y)*dkernel_dy(ψ.k2, x, y)
+            + kernel(ψ.k1, x, y)*d2kernel_dxdy(ψ.k2, x, y))
+end
+
+function dkernel_dp{T<:FloatingPoint}(ψ::KernelProduct{T}, param::Union(Integer,Symbol), x::Vector{T}, y::Vector{T})
+    throw(NotImplemented)
+end
+
 isposdef(ψ::KernelProduct) = isposdef(ψ.k1) & isposdef(ψ.k2)
 
 function description_string{T<:FloatingPoint}(ψ::KernelProduct{T}) 
@@ -185,6 +204,22 @@ end
 
 function kernel{T<:FloatingPoint}(ψ::KernelSum{T}, x::Vector{T}, y::Vector{T})
     ψ.a1*kernel(ψ.k1, x, y) + ψ.a2*kernel(ψ.k2, x, y)
+end
+
+function dkernel_dx{T<:FloatingPoint}(ψ::KernelSum{T}, x::Vector{T}, y::Vector{T})
+    ψ.a1*dkernel_dx(ψ.k1, x, y) + ψ.a2*dkernel_dx(ψ.k2, x, y)
+end
+
+function dkernel_dy{T<:FloatingPoint}(ψ::KernelSum{T}, x::Vector{T}, y::Vector{T})
+    ψ.a1*dkernel_dy(ψ.k1, x, y) + ψ.a2*dkernel_dy(ψ.k2, x, y)
+end
+
+function d2kernel_dxdy{T<:FloatingPoint}(ψ::KernelSum{T}, x::Vector{T}, y::Vector{T})
+    ψ.a1*d2kernel_dxdy(ψ.k1, x, y) + ψ.a2*d2kernel_dxdy(ψ.k2, x, y)
+end
+
+function dkernel_dp{T<:FloatingPoint}(ψ::KernelSum{T}, param::Union(Integer,Symbol), x::Vector{T}, y::Vector{T})
+    throw(NotImplemented)
 end
 
 isposdef(ψ::KernelSum) = isposdef(ψ.k1) | isposdef(ψ.k2)
