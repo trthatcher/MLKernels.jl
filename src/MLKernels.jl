@@ -16,12 +16,11 @@ export
     lagged_gramian_matrix,
     center_kernelmatrix!,
     center_kernelmatrix,
-    #nystrom,
+
     # Types
     Kernel,
         SimpleKernel,
             StandardKernel,
-                # PointwiseProductKernel,
                 EuclideanDistanceKernel,
 	                GaussianKernel, SquaredExponentialKernel,
 	                LaplacianKernel, ExponentialKernel,
@@ -41,7 +40,9 @@ export
             KernelProduct,
             KernelSum
 
+include("matrixfunctions.jl")
 include("kernels.jl")
 include("kernelmatrix.jl")
+include("kernelapprox.jl")
 
 end # MLKernels
