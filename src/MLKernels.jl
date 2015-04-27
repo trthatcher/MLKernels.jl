@@ -16,8 +16,7 @@ export
     lagged_gramian_matrix,
     center_kernelmatrix!,
     center_kernelmatrix,
-    nystrom,
-    parameters,
+    #nystrom,
     # Types
     Kernel,
         SimpleKernel,
