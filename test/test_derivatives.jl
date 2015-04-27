@@ -24,8 +24,8 @@ for T in (Float64,)
     param = T[3.0]
 
     k = GaussianKernel(param...)
-    @test all(checkderivvec(p->kernel_function(k,p,y), p->dkernel_dx(k,p,y), x) .< 1e-9)
-    @test all(checkderivvec(p->kernel_function(k,x,p), p->dkernel_dy(k,x,p), y) .< 1e-9)
+    @test all(checkderivvec(p->kernel(k,p,y), p->dkernel_dx(k,p,y), x) .< 1e-9)
+    @test all(checkderivvec(p->kernel(k,x,p), p->dkernel_dy(k,x,p), y) .< 1e-9)
 
     for j=1:4, i=1:4
         @test abs(checkderiv(
@@ -39,7 +39,7 @@ for T in (Float64,)
     end
 
     @test abs(checkderiv(
-        p->kernel_function(GaussianKernel(p...),x,y),
+        p->kernel(GaussianKernel(p...),x,y),
         (p,i)->dkernel_dp(GaussianKernel(p...),:sigma,x,y),
         param, 1)) < 1e-8
     @test dkernel_dp(k, :sigma, x, y) == dkernel_dp(k, 1, x, y)
