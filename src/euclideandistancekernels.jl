@@ -11,10 +11,31 @@ function euclidean_distance{T<:FloatingPoint}(x::Array{T}, y::Array{T})
     BLAS.dot(n, ϵ, 1, ϵ, 1)
 end
 
+function deuclidean_distance_dx{T<:FloatingPoint}(x::Array{T}, y::Array{T})
+    2(x-y)
+end
+
+function deuclidean_distance_dy{T<:FloatingPoint}(x::Array{T}, y::Array{T})
+    2(y-x))
+end
+
 # k(x,y) = f((x-y)ᵀ(x-y))
 function kernel_function{T<:FloatingPoint}(κ::EuclideanDistanceKernel{T}, x::Array{T}, y::Array{T})
     kernelize_scalar(κ, euclidean_distance(x, y))
 end
+
+function dkernel_dx{T<:FloatingPoint}(κ::EuclideanDistanceKernel{T}, x::Array{T}, y::Array{T})
+    kernelize_scalar_deriv(κ, euclidean_distance(x, y)) * deuclidean_distance_dx(x, y)
+end
+
+function dkernel_dy{T<:FloatingPoint}(κ::EuclideanDistanceKernel{T}, x::Array{T}, y::Array{T})
+    kernelize_scalar_deriv(κ, euclidean_distance(x, y)) * deuclidean_distance_dy(x, y)
+end
+
+function dkernel_dp{T<:FloatingPoint}(κ::EuclideanDistanceKernel{T}, idx::Union{Integer,Symbol}, x::Array{T}, y::Array{T})
+    kernelize_scalar_pderiv(κ, idx, euclidean_distance(x, y))
+end
+
 
 
 #== Gaussian Kernel ===============#
@@ -29,22 +50,42 @@ end
 GaussianKernel{T<:FloatingPoint}(σ::T = 1.0) = GaussianKernel{T}(σ)
 SquaredExponentialKernel{T<:FloatingPoint}(l::T = 1.0) = GaussianKernel{T}(l)
 
-function convert{T<:FloatingPoint}(::Type{GaussianKernel{T}}, κ::GaussianKernel) 
+function convert{T<:FloatingPoint}(::Type{GaussianKernel{T}}, κ::GaussianKernel)
     GaussianKernel(convert(T, κ.sigma))
 end
 
-function kernelize_scalar{T<:FloatingPoint}(κ::GaussianKernel{T}, ϵᵀϵ::T) 
+function kernelize_scalar{T<:FloatingPoint}(κ::GaussianKernel{T}, ϵᵀϵ::T)
     exp(ϵᵀϵ/(convert(T,-2)*(κ.sigma^convert(T,2))))
+end
+
+function kernelize_scalar_deriv{T<:FloatingPoint}(κ::GaussianKernel{T}, ϵᵀϵ::T)
+    exp(ϵᵀϵ/(convert(T,-2)*(κ.sigma^convert(T,2))))
+end
+
+function kernelize_scalar_pderiv{T<:FloatingPoint}(κ::GaussianKernel{T}, param::Symbol, ϵᵀϵ::T)
+    if param == :sigma
+        kernelize_scalar(κ, ϵᵀϵ) * ϵᵀϵ * κ.sigma^convert(T,-3)
+    else
+        zero(T)
+    end
+end
+
+function kernelize_scalar_pderiv{T<:FloatingPoint}(κ::GaussianKernel{T}, param::Integer, ϵᵀϵ::T)
+    if param == 1
+        kernelize_scalar_pderiv(κ, :sigma, ϵᵀϵ)
+    else
+        throw ArgumentError("idx must be 1")
+    end
 end
 
 isposdef_kernel(::GaussianKernel) = true
 
-function description_string{T<:FloatingPoint}(κ::GaussianKernel{T}, eltype::Bool = true) 
+function description_string{T<:FloatingPoint}(κ::GaussianKernel{T}, eltype::Bool = true)
     "GaussianKernel" * (eltype ? "{$(T)}" : "") * "(σ=$(κ.sigma))"
 end
 
 function description_string_long(::GaussianKernel)
-    """ 
+    """
     Gaussian Kernel:
     
     The Gaussian kernel is a radial basis function based on the
@@ -71,7 +112,7 @@ end
 LaplacianKernel{T<:FloatingPoint}(σ::T = 1.0) = LaplacianKernel{T}(σ)
 OrnsteinUhlenbeckKernel{T<:FloatingPoint}(σ::T = 1.0) = LaplacianKernel{T}(σ)
 
-function convert{T<:FloatingPoint}(::Type{LaplacianKernel{T}}, κ::LaplacianKernel) 
+function convert{T<:FloatingPoint}(::Type{LaplacianKernel{T}}, κ::LaplacianKernel)
     LaplacianKernel(convert(T, κ.sigma))
 end
 
@@ -81,12 +122,12 @@ end
 
 isposdef_kernel(::LaplacianKernel) = true
 
-function description_string{T<:FloatingPoint}(κ::LaplacianKernel{T}, eltype::Bool = true) 
+function description_string{T<:FloatingPoint}(κ::LaplacianKernel{T}, eltype::Bool = true)
     "LaplacianKernel" * (eltype ? "{$(T)}" : "") * "(σ=$(κ.sigma))"
 end
 
 function description_string_long(::LaplacianKernel)
-    """ 
+    """
     Laplacian Kernel:
     
     The Laplacian (exponential) kernel is a radial basis function that
@@ -110,7 +151,7 @@ immutable RationalQuadraticKernel{T<:FloatingPoint} <: EuclideanDistanceKernel{T
 end
 RationalQuadraticKernel{T<:FloatingPoint}(c::T = 1.0) = RationalQuadraticKernel{T}(c)
 
-function convert{T<:FloatingPoint}(::Type{RationalQuadraticKernel{T}}, κ::RationalQuadraticKernel) 
+function convert{T<:FloatingPoint}(::Type{RationalQuadraticKernel{T}}, κ::RationalQuadraticKernel)
     RationalQuadraticKernel(convert(T, κ.c))
 end
 
@@ -125,7 +166,7 @@ function description_string{T<:FloatingPoint}(κ::RationalQuadraticKernel{T}, el
 end
 
 function description_string_long(::RationalQuadraticKernel)
-    """ 
+    """
     Rational Quadratic Kernel:
     
     The rational quadratic kernel is a stationary kernel that is
@@ -147,7 +188,7 @@ immutable MultiQuadraticKernel{T<:FloatingPoint} <: EuclideanDistanceKernel{T}
 end
 MultiQuadraticKernel{T<:FloatingPoint}(c::T = 1.0) = MultiQuadraticKernel{T}(c)
 
-function convert{T<:FloatingPoint}(::Type{MultiQuadraticKernel{T}}, κ::MultiQuadraticKernel) 
+function convert{T<:FloatingPoint}(::Type{MultiQuadraticKernel{T}}, κ::MultiQuadraticKernel)
     MultiQuadraticKernel(convert(T, κ.c))
 end
 
@@ -160,7 +201,7 @@ function description_string{T<:FloatingPoint}(κ::MultiQuadraticKernel{T}, eltyp
 end
 
 function description_string_long(::MultiQuadraticKernel)
-    """ 
+    """
     Multi-Quadratic Kernel:
     
     The multi-quadratic kernel is a positive semidefinite kernel:
@@ -181,8 +222,8 @@ immutable InverseMultiQuadraticKernel{T<:FloatingPoint} <: EuclideanDistanceKern
 end
 InverseMultiQuadraticKernel{T<:FloatingPoint}(c::T = 1.0) = InverseMultiQuadraticKernel{T}(c)
 
-function convert{T<:FloatingPoint}(::Type{InverseMultiQuadraticKernel{T}}, 
-                                   κ::InverseMultiQuadraticKernel) 
+function convert{T<:FloatingPoint}(::Type{InverseMultiQuadraticKernel{T}},
+                                   κ::InverseMultiQuadraticKernel)
     InverseMultiQuadraticKernel(convert(T, κ.c))
 end
 
@@ -190,13 +231,13 @@ function kernelize_scalar{T<:FloatingPoint}(κ::InverseMultiQuadraticKernel{T}, 
     one(T) / sqrt(ϵᵀϵ + κ.c)
 end
 
-function description_string{T<:FloatingPoint}(κ::InverseMultiQuadraticKernel{T}, 
+function description_string{T<:FloatingPoint}(κ::InverseMultiQuadraticKernel{T},
                                               eltype::Bool = true)
     "InverseMultiQuadraticKernel" * (eltype ? "{$(T)}" : "") * "(c=$(κ.c))"
 end
 
 function description_string_long(::InverseMultiQuadraticKernel)
-    """ 
+    """
     Inverse Multi-Quadratic Kernel:
     
     The inverse multi-quadratic kernel is a radial basis function. The
@@ -230,7 +271,7 @@ function description_string{T<:FloatingPoint}(κ::PowerKernel{T}, eltype::Bool =
 end
 
 function description_string_long(::PowerKernel)
-    """ 
+    """
     Power Kernel:
     
     The power kernel (also known as the unrectified triangular kernel)
@@ -259,7 +300,7 @@ LogKernel(d::Integer) = LogKernel(convert(Float32, d))
 
 convert{T<:FloatingPoint}(::Type{LogKernel{T}}, κ::LogKernel) = LogKernel(convert(T, κ.d))
 
-function kernelize_scalar{T<:FloatingPoint}(κ::LogKernel{T}, ϵᵀϵ::T) 
+function kernelize_scalar{T<:FloatingPoint}(κ::LogKernel{T}, ϵᵀϵ::T)
     -log(sqrt(ϵᵀϵ)^(κ.d) + one(T))
 end
 
@@ -268,7 +309,7 @@ function description_string{T<:FloatingPoint}(κ::LogKernel{T}, eltype::Bool = t
 end
 
 function description_string_long(::LogKernel)
-    """ 
+    """
     Log Kernel:
     
     The log kernel is a positive semidefinite kernel. The function is
