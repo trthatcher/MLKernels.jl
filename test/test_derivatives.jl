@@ -11,7 +11,7 @@ importall MLKernels
 function checkderiv(f, fprime, p, i; eps=1e-3)
     pplus = copy(p); pplus[i] += eps
     pminus = copy(p); pminus[i] -= eps
-    return fprime(p,i) - (f(pplus)-f(pminus))/2eps
+    return (fprime(p,i) - (f(pplus)-f(pminus))/2eps)
 end
 
 checkderiv(f, fprime, p; eps=1e-3) = eltype(p)[checkderiv(f, fprime, p, i; eps=eps) for i=1:length(p)]
@@ -45,8 +45,8 @@ function test_deriv_dp(kconstructor, param, derivs, x, y, epsilon)
         @test dkernel_dp(k, deriv, x, y) == dkernel_dp(k, i, x, y)
     end
     @test dkernel_dp(k, :undefined, x, y) == zero(eltype(x))
-    @test_throws ArgumentError dkernel_dp(k, 0, x, y)
-    @test_throws ArgumentError dkernel_dp(k, length(derivs)+1, x, y)
+    @test_throws Exception dkernel_dp(k, 0, x, y)
+    @test_throws Exception dkernel_dp(k, length(derivs)+1, x, y)
 end
 
 print("- Testing EuclideanDistanceKernel derivatives ... ")
@@ -65,7 +65,7 @@ for T in (Float64,)
 end
 println("Done")
 
-print("- Testing composite kernel derivatives ... ")
+print("- Testing simple composite kernel derivatives ... ")
 for T in (Float64,)
     x = T[1, 2, 7, 3]
     y = T[5, 2, 1, 6]
@@ -74,10 +74,10 @@ for T in (Float64,)
     ksumconstructor(param) = param[1]*GaussianKernel(param[2]) + param[3]*GaussianKernel(param[4])
 
     for (kconst, param, derivs) in (
-            (kproductconstructor, T[3.2, 1.5, 1.8], ()),
-            (ksumconstructor, T[0.4, 3.2, 1.5, 1.8], ()))
+            (kproductconstructor, T[3.2, 1.5, 1.8], (:a, symbol("k1.sigma"), symbol("k2.sigma"))),
+            (ksumconstructor, T[0.4, 3.2, 1.5, 1.8], (:a1, symbol("k1.sigma"), :a2, symbol("k2.sigma"))))
         test_deriv_dxdy(kconst(param), x, y, 1e-9)
-        #test_deriv_dp(kconst, param, derivs, x, y, 1e-8)
+        test_deriv_dp(kconst, param, derivs, x, y, 1e-7)
     end
 end
 println("Done")

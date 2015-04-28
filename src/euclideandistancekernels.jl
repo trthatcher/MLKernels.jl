@@ -31,6 +31,8 @@ function dkernel_dp{T<:FloatingPoint}(κ::EuclideanDistanceKernel{T}, param::Uni
     dkernelize_dp(κ, param, ϵᵀϵ)
 end
 
+dkernelize_dp{T<:FloatingPoint}(κ::EuclideanDistanceKernel{T}, param::Integer, ϵᵀϵ::T) = dkernelize_dp(κ, names(κ)[param], ϵᵀϵ)
+
 
 #== Gaussian Kernel ===============#
 
@@ -58,9 +60,6 @@ dkernelize_dsigma{T<:FloatingPoint}(κ::GaussianKernel{T}, ϵᵀϵ::T) = kerneli
 
 function dkernelize_dp{T<:FloatingPoint}(κ::GaussianKernel{T}, param::Symbol, ϵᵀϵ::T)
     param == :sigma ? dkernelize_dsigma(κ, ϵᵀϵ) : zero(T)
-end
-function dkernelize_dp{T<:FloatingPoint}(κ::GaussianKernel{T}, param::Integer, ϵᵀϵ::T)
-    param == 1 ? dkernelize_dsigma(κ, ϵᵀϵ) : throw(ArgumentError("param must be 1"))
 end
 
 isposdef(::GaussianKernel) = true
