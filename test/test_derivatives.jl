@@ -62,9 +62,8 @@ for T in (Float64,)
         test_deriv_dxdy(k(param...), x, y, 1e-9)
         test_deriv_dp(p->k(p...), param, derivs, x, y, 1e-8)
     end
-
-    println("Done")
 end
+println("Done")
 
 print("- Testing composite kernel derivatives ... ")
 for T in (Float64,)
@@ -80,6 +79,5 @@ for T in (Float64,)
         test_deriv_dxdy(kconst(param), x, y, 1e-9)
         #test_deriv_dp(kconst, param, derivs, x, y, 1e-8)
     end
-
-    println("Done")
 end
+println("Done")
