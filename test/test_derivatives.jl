@@ -2,6 +2,11 @@ using Base.Test
 
 importall MLKernels
 
+#####
+# All tests on Float64 only
+# Float32 does not have enough precision to calculate finite-difference gradients to sufficient accuracy!
+#####
+
 # compares numerical derivative (f(p+ϵ)-f(p-ϵ))/2ϵ with symbolic derivative to ensure correctness
 function checkderiv(f, fprime, p, i; eps=1e-3)
     pplus = copy(p); pplus[i] += eps
