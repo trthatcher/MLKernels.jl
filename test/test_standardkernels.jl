@@ -147,7 +147,7 @@ for (kernelobject, default_args, default_value, posdef) in (
         end
 
         if kernelobject <: ScalarProductKernel
-            u = MLKernels.scalar_product(x, y)
+            u = dot(x, y)
             v = MLKernels.kernelize(κ, u)
             @test_approx_eq v convert(T, default_value)
         end

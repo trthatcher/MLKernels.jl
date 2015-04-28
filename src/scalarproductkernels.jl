@@ -4,20 +4,11 @@
 
 abstract ScalarProductKernel{T<:FloatingPoint} <: StandardKernel{T}
 
-# xᵀy
-function scalar_product{T<:FloatingPoint}(x::Array{T}, y::Array{T})
-    n = length(x)
-    BLAS.dot(n, x, 1, y, 1)
-end
-
 # k(x,y) = f(xᵀy)
 function kernel{T<:FloatingPoint}(κ::ScalarProductKernel{T}, x::Array{T}, y::Array{T})
-    kernelize(κ, scalar_product(x, y))
+    kernelize(κ, dot(x, y))
 end
-
-function kernel{T<:FloatingPoint}(κ::ScalarProductKernel{T}, x::T, y::T)
-    kernelize(κ, x*y)
-end
+kernel{T<:FloatingPoint}(κ::ScalarProductKernel{T}, x::T, y::T) = kernelize(κ, x*y)
 
 
 #== Linear Kernel ====================#
