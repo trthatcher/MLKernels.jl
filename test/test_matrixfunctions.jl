@@ -13,6 +13,8 @@ for T in (Float32,Float64)
     SU = T[1 4 7;
            4 5 8;
            7 8 9]
+    dr = T[1*1+2*2+3*3, 77, 194]
+    dc = T[1*1+4*4+7*7, 93, 126]
     row = T[11 12 13]
     col = T[11;12;13]
     RA = T[12 14 16;
@@ -36,8 +38,8 @@ for T in (Float32,Float64)
            7 16 27]
     @test MLKernels.syml(S1) == SL
     @test MLKernels.symu(S1) == SU
-    @test MLKernels.dot_rows(S1) == T[1*1+2*2+3*3, 77, 194]
-    @test MLKernels.dot_columns(S1) == T[1*1+4*4+7*7, 93, 126]
+    @test MLKernels.dot_rows(S1) == dr
+    @test MLKernels.dot_columns(S1) == dc
     @test MLKernels.row_add!(copy(S1), row) == RA
     @test MLKernels.col_add!(copy(S1), col) == CA
     @test MLKernels.row_sub!(copy(S1), row) == RS
