@@ -192,7 +192,7 @@ function kernelmatrix{T<:FloatingPoint}(ψ::KernelProduct{T}, X::Matrix{T}, Y::M
     kernelmatrix_product(ψ.a, ψ.k1, ψ.k2, X, Y, trans)
 end
 function kernelmatrix{T<:FloatingPoint}(ψ::KernelSum{T}, X::Matrix{T}, Y::Matrix{T},
-                                        trans::Char = 'N')
+					trans::Char = 'N')
     kernelmatrix_sum(ψ.a1, ψ.k1, ψ.a2, ψ.k2, X, Y, trans)
 end
 
@@ -203,140 +203,140 @@ end
 ==========================================================================#
 
 for (kernelobject, gramian) in ((:EuclideanDistanceKernel, :lagged_gramian_matrix),
-                                (:ScalarProductKernel, :gramian_matrix))
+				(:ScalarProductKernel, :gramian_matrix))
     @eval begin
 
-        # Kernelize a gramian matrix by transforming each element using the scalar kernel function
-        function kernelize_gramian!{T<:FloatingPoint}(κ::$kernelobject{T}, G::Array{T})
-            @inbounds for i = 1:length(G)
-                G[i] = kernelize(κ, G[i])
-            end
-            G
-        end
+	# Kernelize a gramian matrix by transforming each element using the scalar kernel function
+	function kernelize_gramian!{T<:FloatingPoint}(κ::$kernelobject{T}, G::Array{T})
+	    @inbounds for i = 1:length(G)
+		G[i] = kernelize(κ, G[i])
+	    end
+	    G
+	end
 
-        # Kernelize a square gramian by only transforming the upper or lower triangle
-        function kernelize_gramian!{T<:FloatingPoint}(κ::$kernelobject{T}, G::Array{T}, uplo::Char,
-                                                      sym::Bool = true)
-            n = size(G, 1)
-            n == size(G, 2) || throw(ArgumentError("Gramian matrix must be square."))
-            @inbounds for j = 1:n
-                for i = uplo == 'U' ? (1:j) : (j:n)
-                    G[i,j] = kernelize(κ, G[i,j])
-                end 
-            end
-            sym ? (uplo == 'U' ? syml!(G) : symu!(G)) : G
-        end
+	# Kernelize a square gramian by only transforming the upper or lower triangle
+	function kernelize_gramian!{T<:FloatingPoint}(κ::$kernelobject{T}, G::Array{T}, uplo::Char,
+						      sym::Bool = true)
+	    n = size(G, 1)
+	    n == size(G, 2) || throw(ArgumentError("Gramian matrix must be square."))
+	    @inbounds for j = 1:n
+		for i = uplo == 'U' ? (1:j) : (j:n)
+		    G[i,j] = kernelize(κ, G[i,j])
+		end 
+	    end
+	    sym ? (uplo == 'U' ? syml!(G) : symu!(G)) : G
+	end
 
-        # Returns kernel matrix of X using BLAS where possible
-        function kernelmatrix{T<:FloatingPoint}(κ::$kernelobject{T}, X::Matrix{T}, 
-                                                trans::Char = 'N', uplo::Char = 'U', 
-                                                sym::Bool = true)
-            G = $gramian(X, trans, uplo, false)
-            K = kernelize_gramian!(κ, G, uplo, sym)
-            sym ? (uplo == 'U' ? syml!(K) : symu!(K)) : K
-        end
+	# Returns kernel matrix of X using BLAS where possible
+	function kernelmatrix{T<:FloatingPoint}(κ::$kernelobject{T}, X::Matrix{T}, 
+						trans::Char = 'N', uplo::Char = 'U', 
+						sym::Bool = true)
+	    G = $gramian(X, trans, uplo, false)
+	    K = kernelize_gramian!(κ, G, uplo, sym)
+	    sym ? (uplo == 'U' ? syml!(K) : symu!(K)) : K
+	end
 
-        # Returns scaled kernel matrix of X using BLAS where possible
-        function kernelmatrix_scaled{T<:FloatingPoint}(a::T, κ::$kernelobject{T}, X::Matrix{T},
-                                                       trans::Char = 'N', uplo::Char = 'U',
-                                                       sym::Bool = true)
-            K = kernelmatrix(κ, X, trans, uplo, false)
-            a == one(T) ? K : BLAS.scal!(length(K), a, K, 1)
-            sym ? (uplo == 'U' ? syml!(K) : symu!(K)) : K
-        end
+	# Returns scaled kernel matrix of X using BLAS where possible
+	function kernelmatrix_scaled{T<:FloatingPoint}(a::T, κ::$kernelobject{T}, X::Matrix{T},
+						       trans::Char = 'N', uplo::Char = 'U',
+						       sym::Bool = true)
+	    K = kernelmatrix(κ, X, trans, uplo, false)
+	    a == one(T) ? K : BLAS.scal!(length(K), a, K, 1)
+	    sym ? (uplo == 'U' ? syml!(K) : symu!(K)) : K
+	end
 
-        # Returns the kernel matrix of X for the product of two kernels using BLAS where possible
-        function kernelmatrix_product{T<:FloatingPoint}(a::T, κ₁::$kernelobject{T}, 
-                                                        κ₂::$kernelobject{T}, X::Matrix{T}, 
-                                                        trans::Char = 'N', uplo::Char = 'U', 
-                                                        sym::Bool = true)
-            G = $gramian(X, trans, uplo, false)
-            K = kernelize_gramian!(κ₁, copy(G), uplo, false)
-            hadamard!(K, kernelize_gramian!(κ₂, G, uplo, false), uplo, false)
-            if a != one(T)
-                BLAS.scal!(length(K), a, K, 1)
-            end
-            sym ? (uplo == 'U' ? syml!(K) : symu!(K)) : K           
-        end
+	# Returns the kernel matrix of X for the product of two kernels using BLAS where possible
+	function kernelmatrix_product{T<:FloatingPoint}(a::T, κ₁::$kernelobject{T}, 
+							κ₂::$kernelobject{T}, X::Matrix{T}, 
+							trans::Char = 'N', uplo::Char = 'U', 
+							sym::Bool = true)
+	    G = $gramian(X, trans, uplo, false)
+	    K = kernelize_gramian!(κ₁, copy(G), uplo, false)
+	    hadamard!(K, kernelize_gramian!(κ₂, G, uplo, false), uplo, false)
+	    if a != one(T)
+		BLAS.scal!(length(K), a, K, 1)
+	    end
+	    sym ? (uplo == 'U' ? syml!(K) : symu!(K)) : K           
+	end
 
-        # Returns the kernel matrix of X for the sum of two kernels using BLAS where possible
-        function kernelmatrix_sum{T<:FloatingPoint}(a₁::T, κ₁::$kernelobject{T}, a₂::T, 
-                                                    κ₂::$kernelobject{T}, X::Matrix{T}, 
-                                                    trans::Char = 'N', uplo::Char = 'U',
-                                                    sym::Bool = true)
-            G = $gramian(X, trans, uplo, false)
-            K = kernelize_gramian!(κ₁, copy(G), uplo, false)
-            n = length(K)
-            if a₁ != one(T) 
-                BLAS.scal!(n, a₁, K, 1)
-            end
-            BLAS.axpy!(n, a₂, kernelize_gramian!(κ₂, G, uplo, false), 1, K, 1)
-            sym ? (uplo == 'U' ? syml!(K) : symu!(K)) : K 
-        end
+	# Returns the kernel matrix of X for the sum of two kernels using BLAS where possible
+	function kernelmatrix_sum{T<:FloatingPoint}(a₁::T, κ₁::$kernelobject{T}, a₂::T, 
+						    κ₂::$kernelobject{T}, X::Matrix{T}, 
+						    trans::Char = 'N', uplo::Char = 'U',
+						    sym::Bool = true)
+	    G = $gramian(X, trans, uplo, false)
+	    K = kernelize_gramian!(κ₁, copy(G), uplo, false)
+	    n = length(K)
+	    if a₁ != one(T) 
+		BLAS.scal!(n, a₁, K, 1)
+	    end
+	    BLAS.axpy!(n, a₂, kernelize_gramian!(κ₂, G, uplo, false), 1, K, 1)
+	    sym ? (uplo == 'U' ? syml!(K) : symu!(K)) : K 
+	end
 
-        # Returns the kernel matrix of X and Y using BLAS where possible
-        function kernelmatrix{T<:FloatingPoint}(κ::$kernelobject{T}, X::Matrix{T}, Y::Matrix{T},
-                                                trans::Char = 'N')
-            G = $gramian(X, Y, trans)
-            kernelize_gramian!(κ, G)
-        end
+	# Returns the kernel matrix of X and Y using BLAS where possible
+	function kernelmatrix{T<:FloatingPoint}(κ::$kernelobject{T}, X::Matrix{T}, Y::Matrix{T},
+						trans::Char = 'N')
+	    G = $gramian(X, Y, trans)
+	    kernelize_gramian!(κ, G)
+	end
 
-        # Returns the scaled kernel matrix of X and Y using BLAS where possible
-        function kernelmatrix_scaled{T<:FloatingPoint}(a::T, κ::$kernelobject{T}, X::Matrix{T},
-                                                       Y::Matrix{T}, trans::Char = 'N')
-            G = $gramian(X, Y, trans)
-            K = kernelize_gramian!(κ, G)
-            a == one(T) ? K : BLAS.scal!(length(K), a, K, 1)
-        end
+	# Returns the scaled kernel matrix of X and Y using BLAS where possible
+	function kernelmatrix_scaled{T<:FloatingPoint}(a::T, κ::$kernelobject{T}, X::Matrix{T},
+						       Y::Matrix{T}, trans::Char = 'N')
+	    G = $gramian(X, Y, trans)
+	    K = kernelize_gramian!(κ, G)
+	    a == one(T) ? K : BLAS.scal!(length(K), a, K, 1)
+	end
 
-        # Returns the kernel matrix of X and Y for the product of two kernels using BLAS 
-        function kernelmatrix_product{T<:FloatingPoint}(a::T, κ₁::$kernelobject{T}, 
-                                                        κ₂::$kernelobject{T}, X::Matrix{T},
-                                                        Y::Matrix{T}, trans::Char = 'N')
-            G = $gramian(X, Y, trans)
-            K = kernelize_gramian!(κ₁, copy(G))
-            if a != one(T) 
-                BLAS.scal!(length(K), a, K, 1) 
-            end
-            hadamard!(K, kernelize_gramian!(κ₂, G))
-        end
+	# Returns the kernel matrix of X and Y for the product of two kernels using BLAS 
+	function kernelmatrix_product{T<:FloatingPoint}(a::T, κ₁::$kernelobject{T}, 
+							κ₂::$kernelobject{T}, X::Matrix{T},
+							Y::Matrix{T}, trans::Char = 'N')
+	    G = $gramian(X, Y, trans)
+	    K = kernelize_gramian!(κ₁, copy(G))
+	    if a != one(T) 
+		BLAS.scal!(length(K), a, K, 1) 
+	    end
+	    hadamard!(K, kernelize_gramian!(κ₂, G))
+	end
 
-        # Returns the kernel matrix of X and Y for the product of two kernels using BLAS 
-        function kernelmatrix_sum{T<:FloatingPoint}(a₁::T, κ₁::$kernelobject{T}, a₂::T, 
-                                                    κ₂::$kernelobject{T}, X::Matrix{T}, 
-                                                    Y::Matrix{T}, trans::Char = 'N')
-            G = $gramian(X, Y, trans)
-            K = kernelize_gramian!(κ₁, copy(G))
-            n = length(K)
-            if a₁ != one(T) 
-                BLAS.scal!(n, a₁, K, 1) 
-            end
-            BLAS.axpy!(n, a₂, kernelize_gramian!(κ₂, G), 1, K, 1)
-        end
+	# Returns the kernel matrix of X and Y for the product of two kernels using BLAS 
+	function kernelmatrix_sum{T<:FloatingPoint}(a₁::T, κ₁::$kernelobject{T}, a₂::T, 
+						    κ₂::$kernelobject{T}, X::Matrix{T}, 
+						    Y::Matrix{T}, trans::Char = 'N')
+	    G = $gramian(X, Y, trans)
+	    K = kernelize_gramian!(κ₁, copy(G))
+	    n = length(K)
+	    if a₁ != one(T) 
+		BLAS.scal!(n, a₁, K, 1) 
+	    end
+	    BLAS.axpy!(n, a₂, kernelize_gramian!(κ₂, G), 1, K, 1)
+	end
 
     end
 end
 
 
 #==========================================================================
-  Optimized kernel matrix functions for Separable kernels
+	  Optimized kernel matrix functions for Separable kernels
 ==========================================================================#
 
 for kernelobject in (:SeparableKernel,)
     @eval begin
 
-        function kernelmatrix_scaled{T<:FloatingPoint}(a::T, κ::$kernelobject{T}, X::Matrix{T},
-                                                       trans::Char = 'N', uplo::Char = 'U',
-                                                       sym::Bool = true)
-            K = BLAS.syrk(uplo, trans, a, kernelize_array!(κ, copy(X)))
-            sym ? (uplo == 'U' ? syml!(K) : symu!(K)) : K
-        end
+	function kernelmatrix_scaled{T<:FloatingPoint}(a::T, κ::$kernelobject{T}, X::Matrix{T},
+						       trans::Char = 'N', uplo::Char = 'U',
+						       sym::Bool = true)
+	    K = BLAS.syrk(uplo, trans, a, kernelize_array!(κ, copy(X)))
+	    sym ? (uplo == 'U' ? syml!(K) : symu!(K)) : K
+	end
 
-        function kernelmatrix{T<:FloatingPoint}(κ::$kernelobject{T}, X::Matrix{T}, 
-                                                trans::Char = 'N', uplo::Char = 'U',
-                                                sym::Bool = true)
-            kernelmatrix_scaled(one(T), κ, X, )
-        end
+	function kernelmatrix{T<:FloatingPoint}(κ::$kernelobject{T}, X::Matrix{T}, 
+						trans::Char = 'N', uplo::Char = 'U',
+						sym::Bool = true)
+	    kernelmatrix_scaled(one(T), κ, X, )
+	end
 
         function kernelmatrix_scaled{T<:FloatingPoint}(a::T, κ::$kernelobject{T}, X::Matrix{T},
                                                        Y::Matrix{T}, trans::Char = 'N')
