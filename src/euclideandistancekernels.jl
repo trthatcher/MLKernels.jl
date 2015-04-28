@@ -5,44 +5,32 @@
 abstract EuclideanDistanceKernel{T<:FloatingPoint} <: StandardKernel{T}
 
 # ϵᵀϵ = (x-y)ᵀ(x-y)
-function euclidean_distance{T<:FloatingPoint}(x::Array{T}, y::Array{T})
-    n = length(x)
-    ϵ = BLAS.axpy!(n, -one(T), y, 1, copy(x), 1)
-    BLAS.dot(n, ϵ, 1, ϵ, 1)
-end
-
-function deuclidean_distance_dx{T<:FloatingPoint}(x::Array{T}, y::Array{T})
-    2(x-y)
-end
-
-function deuclidean_distance_dy{T<:FloatingPoint}(x::Array{T}, y::Array{T})
-    2(y-x)
-end
+norm2{T<:FloatingPoint}(x::Array{T}, y::Array{T}) = norm(x - y, 2)^2
+dnorm2_dx{T<:FloatingPoint}(x::Array{T}, y::Array{T}) = 2*(x - y)
+dnorm2_dy{T<:FloatingPoint}(x::Array{T}, y::Array{T}) = 2*(y - x)
 
 # k(x,y) = f((x-y)ᵀ(x-y))
 function kernel{T<:FloatingPoint}(κ::EuclideanDistanceKernel{T}, x::Array{T}, y::Array{T})
-    kernelize_scalar(κ, euclidean_distance(x, y))
+    kernelize(κ, norm2(x, y))
+end
+kernel{T<:FloatingPoint}(κ::EuclideanDistanceKernel{T}, x::T, y::T) = kernelize(κ, (x - y)^2)
+
+function dkernel_dx{T<:FloatingPoint}(κ::EuclideanDistanceKernel{T}, x::Array{T}, y::Array{T}; ϵᵀϵ = norm2(x, y))
+    dkernelize_dnorm2(κ, ϵᵀϵ) * dnorm2_dx(x, y)
 end
 
-function dkernel_dx{T<:FloatingPoint}(κ::EuclideanDistanceKernel{T}, x::Array{T}, y::Array{T}; ϵᵀϵ = euclidean_distance(x, y))
-    kernelize_scalar_deriv(κ, ϵᵀϵ) * deuclidean_distance_dx(x, y)
+function dkernel_dy{T<:FloatingPoint}(κ::EuclideanDistanceKernel{T}, x::Array{T}, y::Array{T}; ϵᵀϵ = norm2(x, y))
+    dkernelize_dnorm2(κ, ϵᵀϵ) * dnorm2_dy(x, y)
 end
 
-function dkernel_dy{T<:FloatingPoint}(κ::EuclideanDistanceKernel{T}, x::Array{T}, y::Array{T}; ϵᵀϵ = euclidean_distance(x, y))
-    kernelize_scalar_deriv(κ, ϵᵀϵ) * deuclidean_distance_dy(x, y)
+function d2kernel_dxdy{T<:FloatingPoint}(κ::EuclideanDistanceKernel{T}, x::Array{T}, y::Array{T}; ϵᵀϵ = norm2(x, y))
+    -d2kernelize_d2norm2(κ, ϵᵀϵ) * 4(x-y)*(x-y)' - 2*dkernelize_dnorm2(κ, ϵᵀϵ)*eye(length(x))
 end
 
-function d2kernel_dxdy{T<:FloatingPoint}(κ::EuclideanDistanceKernel{T}, x::Array{T}, y::Array{T}; ϵᵀϵ = euclidean_distance(x, y))
-    -kernelize_scalar_deriv2(κ, ϵᵀϵ) * 4(x-y)*(x-y)' - 2kernelize_scalar_deriv(κ, ϵᵀϵ)*eye(length(x))
+function dkernel_dp{T<:FloatingPoint}(κ::EuclideanDistanceKernel{T}, param::Union(Integer,Symbol), x::Array{T}, y::Array{T}; ϵᵀϵ = norm2(x, y))
+    dkernelize_dp(κ, param, ϵᵀϵ)
 end
 
-function dkernel_dp{T<:FloatingPoint}(κ::EuclideanDistanceKernel{T}, param::Union(Integer,Symbol), x::Array{T}, y::Array{T}; ϵᵀϵ = euclidean_distance(x, y))
-    kernelize_scalar_pderiv(κ, param, ϵᵀϵ)
-end
-
-function kernel{T<:FloatingPoint}(κ::EuclideanDistanceKernel{T}, x::T, y::T)
-    kernelize_scalar(κ, (x - y)^convert(T,2))
-end
 
 #== Gaussian Kernel ===============#
 
@@ -60,32 +48,18 @@ function convert{T<:FloatingPoint}(::Type{GaussianKernel{T}}, κ::GaussianKernel
     GaussianKernel(convert(T, κ.sigma))
 end
 
-function kernelize_scalar{T<:FloatingPoint}(κ::GaussianKernel{T}, ϵᵀϵ::T)
-    exp(ϵᵀϵ/(convert(T,-2)*(κ.sigma^convert(T,2))))
-end
+kernelize{T<:FloatingPoint}(κ::GaussianKernel{T}, ϵᵀϵ::T) = exp(ϵᵀϵ/(-2)*(κ.sigma^2))
 
-function kernelize_scalar_deriv{T<:FloatingPoint}(κ::GaussianKernel{T}, ϵᵀϵ::T)
-    kernelize_scalar(κ, ϵᵀϵ)/(convert(T,-2)*(κ.sigma^convert(T,2)))
-end
+dkernelize_dnorm2{T<:FloatingPoint}(κ::GaussianKernel{T}, ϵᵀϵ::T) = kernelize(κ, ϵᵀϵ)/(-2)*(κ.sigma^2)
+dkernelize_dsigma{T<:FloatingPoint}(κ::GaussianKernel{T}, ϵᵀϵ::T) = kernelize(κ, ϵᵀϵ) * ϵᵀϵ * (κ.sigma^(-3))
 
-function kernelize_scalar_deriv2{T<:FloatingPoint}(κ::GaussianKernel{T}, ϵᵀϵ::T)
-    kernelize_scalar(κ, ϵᵀϵ)/(convert(T,4)*(κ.sigma^convert(T,4)))
-end
+d2kernelize_d2norm2{T<:FloatingPoint}(κ::GaussianKernel{T}, ϵᵀϵ::T) = kernelize(κ, ϵᵀϵ)/(4*(κ.sigma^4))
 
-function kernelize_scalar_pderiv{T<:FloatingPoint}(κ::GaussianKernel{T}, param::Symbol, ϵᵀϵ::T)
-    if param == :sigma
-        kernelize_scalar(κ, ϵᵀϵ) * ϵᵀϵ * κ.sigma^convert(T,-3)
-    else
-        zero(T)
-    end
+function dkernelize_dp{T<:FloatingPoint}(κ::GaussianKernel{T}, param::Symbol, ϵᵀϵ::T)
+    param == :sigma ? dkernelize_dsigma(κ, ϵᵀϵ) : zero(T)
 end
-
-function kernelize_scalar_pderiv{T<:FloatingPoint}(κ::GaussianKernel{T}, param::Integer, ϵᵀϵ::T)
-    if param == 1
-        kernelize_scalar_pderiv(κ, :sigma, ϵᵀϵ)
-    else
-        throw(ArgumentError("param must be 1"))
-    end
+function dkernelize_dp{T<:FloatingPoint}(κ::GaussianKernel{T}, param::Integer, ϵᵀϵ::T)
+    param == 1 ? dkernelize_dsigma(κ, ϵᵀϵ) : throw(ArgumentError("param must be 1"))
 end
 
 isposdef(::GaussianKernel) = true
@@ -126,7 +100,7 @@ function convert{T<:FloatingPoint}(::Type{LaplacianKernel{T}}, κ::LaplacianKern
     LaplacianKernel(convert(T, κ.sigma))
 end
 
-function kernelize_scalar{T<:FloatingPoint}(κ::LaplacianKernel{T}, ϵᵀϵ::T)
+function kernelize{T<:FloatingPoint}(κ::LaplacianKernel{T}, ϵᵀϵ::T)
     exp(sqrt(ϵᵀϵ)/(-κ.sigma))
 end
 
@@ -165,8 +139,8 @@ function convert{T<:FloatingPoint}(::Type{RationalQuadraticKernel{T}}, κ::Ratio
     RationalQuadraticKernel(convert(T, κ.c))
 end
 
-function kernelize_scalar{T<:FloatingPoint}(κ::RationalQuadraticKernel{T}, ϵᵀϵ::T)
-    one(T) - ϵᵀϵ/(ϵᵀϵ + κ.c)
+function kernelize{T<:FloatingPoint}(κ::RationalQuadraticKernel{T}, ϵᵀϵ::T)
+    1 - ϵᵀϵ/(ϵᵀϵ + κ.c)
 end
 
 isposdef(::RationalQuadraticKernel) = true
@@ -202,7 +176,7 @@ function convert{T<:FloatingPoint}(::Type{MultiQuadraticKernel{T}}, κ::MultiQua
     MultiQuadraticKernel(convert(T, κ.c))
 end
 
-function kernelize_scalar{T<:FloatingPoint}(κ::MultiQuadraticKernel{T}, ϵᵀϵ::T)
+function kernelize{T<:FloatingPoint}(κ::MultiQuadraticKernel{T}, ϵᵀϵ::T)
     sqrt(ϵᵀϵ + κ.c)
 end
 
@@ -237,7 +211,7 @@ function convert{T<:FloatingPoint}(::Type{InverseMultiQuadraticKernel{T}},
     InverseMultiQuadraticKernel(convert(T, κ.c))
 end
 
-function kernelize_scalar{T<:FloatingPoint}(κ::InverseMultiQuadraticKernel{T}, ϵᵀϵ::T)
+function kernelize{T<:FloatingPoint}(κ::InverseMultiQuadraticKernel{T}, ϵᵀϵ::T)
     one(T) / sqrt(ϵᵀϵ + κ.c)
 end
 
@@ -274,7 +248,7 @@ PowerKernel(d::Integer) = PowerKernel(convert(Float64, d))
 
 convert{T<:FloatingPoint}(::Type{PowerKernel{T}}, κ::PowerKernel) = PowerKernel(convert(T, κ.d))
 
-kernelize_scalar{T<:FloatingPoint}(κ::PowerKernel{T}, ϵᵀϵ::T) = -sqrt(ϵᵀϵ)^(κ.d)
+kernelize{T<:FloatingPoint}(κ::PowerKernel{T}, ϵᵀϵ::T) = -sqrt(ϵᵀϵ)^(κ.d)
 
 function description_string{T<:FloatingPoint}(κ::PowerKernel{T}, eltype::Bool = true)
     "PowerKernel" * (eltype ? "{$(T)}" : "") * "(d=$(κ.d))"
@@ -310,8 +284,8 @@ LogKernel(d::Integer) = LogKernel(convert(Float32, d))
 
 convert{T<:FloatingPoint}(::Type{LogKernel{T}}, κ::LogKernel) = LogKernel(convert(T, κ.d))
 
-function kernelize_scalar{T<:FloatingPoint}(κ::LogKernel{T}, ϵᵀϵ::T)
-    -log(sqrt(ϵᵀϵ)^(κ.d) + one(T))
+function kernelize{T<:FloatingPoint}(κ::LogKernel{T}, ϵᵀϵ::T)
+    -log(sqrt(ϵᵀϵ)^(κ.d) + 1)
 end
 
 function description_string{T<:FloatingPoint}(κ::LogKernel{T}, eltype::Bool = true)

@@ -12,11 +12,11 @@ end
 
 # k(x,y) = f(xᵀy)
 function kernel{T<:FloatingPoint}(κ::ScalarProductKernel{T}, x::Array{T}, y::Array{T})
-    kernelize_scalar(κ, scalar_product(x, y))
+    kernelize(κ, scalar_product(x, y))
 end
 
 function kernel{T<:FloatingPoint}(κ::ScalarProductKernel{T}, x::T, y::T)
-    kernelize_scalar(κ, x*y)
+    kernelize(κ, x*y)
 end
 
 
@@ -35,7 +35,7 @@ function convert{T<:FloatingPoint}(::Type{LinearKernel{T}}, κ::LinearKernel)
     LinearKernel(convert(T, κ.c))
 end
 
-kernelize_scalar{T<:FloatingPoint}(κ::LinearKernel{T}, xᵀy::T) = xᵀy + κ.c
+kernelize{T<:FloatingPoint}(κ::LinearKernel{T}, xᵀy::T) = xᵀy + κ.c
 
 isposdef(::LinearKernel) = true
 
@@ -83,7 +83,7 @@ function convert{T<:FloatingPoint}(::Type{PolynomialKernel{T}}, κ::PolynomialKe
     PolynomialKernel(convert(T, κ.alpha), convert(T, κ.c), convert(T, κ.d))
 end
 
-function kernelize_scalar{T<:FloatingPoint}(κ::PolynomialKernel{T}, xᵀy::T)
+function kernelize{T<:FloatingPoint}(κ::PolynomialKernel{T}, xᵀy::T)
     (κ.alpha*xᵀy + κ.c)^κ.d
 end
 
@@ -126,7 +126,7 @@ function convert{T<:FloatingPoint}(::Type{SigmoidKernel{T}}, κ::SigmoidKernel)
     SigmoidKernel(convert(T, κ.alpha), convert(T, κ.c))
 end
 
-kernelize_scalar{T<:FloatingPoint}(κ::SigmoidKernel{T}, xᵀy::T) = tanh(κ.alpha*xᵀy + κ.c)
+kernelize{T<:FloatingPoint}(κ::SigmoidKernel{T}, xᵀy::T) = tanh(κ.alpha*xᵀy + κ.c)
 
 function description_string{T<:FloatingPoint}(κ::SigmoidKernel{T}, eltype::Bool = true)
     "SigmoidKernel" * (eltype ? "{$(T)}" : "") * "(α=$(κ.alpha),c=$(κ.c))"

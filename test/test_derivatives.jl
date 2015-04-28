@@ -18,8 +18,8 @@ for T in (Float64,)
     x = T[1, 2, 7, 3]
     y = T[5, 2, 1, 6]
 
-    @test all(checkderivvec(p->MLKernels.euclidean_distance(p,y), p->MLKernels.deuclidean_distance_dx(p,y), x) .< 1e-10)
-    @test all(checkderivvec(p->MLKernels.euclidean_distance(x,p), p->MLKernels.deuclidean_distance_dy(x,p), y) .< 1e-10)
+    @test all(checkderivvec(p->MLKernels.norm2(p,y), p->MLKernels.dnorm2_dx(p,y), x) .< 1e-10)
+    @test all(checkderivvec(p->MLKernels.norm2(x,p), p->MLKernels.dnorm2_dy(x,p), y) .< 1e-10)
 
     param = T[3.0]
 

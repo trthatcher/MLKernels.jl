@@ -209,7 +209,7 @@ for (kernelobject, gramian) in ((:EuclideanDistanceKernel, :lagged_gramian_matri
         # Kernelize a gramian matrix by transforming each element using the scalar kernel function
         function kernelize_gramian!{T<:FloatingPoint}(κ::$kernelobject{T}, G::Array{T})
             @inbounds for i = 1:length(G)
-                G[i] = kernelize_scalar(κ, G[i])
+                G[i] = kernelize(κ, G[i])
             end
             G
         end
@@ -221,7 +221,7 @@ for (kernelobject, gramian) in ((:EuclideanDistanceKernel, :lagged_gramian_matri
             n == size(G, 2) || throw(ArgumentError("Gramian matrix must be square."))
             @inbounds for j = 1:n
                 for i = uplo == 'U' ? (1:j) : (j:n)
-                    G[i,j] = kernelize_scalar(κ, G[i,j])
+                    G[i,j] = kernelize(κ, G[i,j])
                 end 
             end
             sym ? (uplo == 'U' ? syml!(G) : symu!(G)) : G
