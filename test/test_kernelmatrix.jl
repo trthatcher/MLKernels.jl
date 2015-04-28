@@ -41,10 +41,15 @@ Z = X .- mean(X,1)
 matrix_test_approx_eq(center_kernelmatrix(X*X'), Z*Z')
 println("Done")
 
+module TestKernelModule
+using MLKernels
+import MLKernels.kernel
 immutable TestKernel{T<:FloatingPoint} <: StandardKernel{T}
     a::T
 end
 kernel{T<:FloatingPoint}(::TestKernel{T}, x::Array{T}, y::Array{T}) = sum(x)*sum(y)
+end
+import TestKernelModule.TestKernel
 
 
 X = [0.0 0; 1 1]
