@@ -72,10 +72,12 @@ for T in (Float64,)
 
     kproductconstructor(param) = param[1] * GaussianKernel(param[2]) * GaussianKernel(param[3])
     ksumconstructor(param) = param[1]*GaussianKernel(param[2]) + param[3]*GaussianKernel(param[4])
+    kscaledconstructor(param) = param[1]*GaussianKernel(param[2])
 
     for (kconst, param, derivs) in (
             (kproductconstructor, T[3.2, 1.5, 1.8], (:a, symbol("k1.sigma"), symbol("k2.sigma"))),
-            (ksumconstructor, T[0.4, 3.2, 1.5, 1.8], (:a1, symbol("k1.sigma"), :a2, symbol("k2.sigma"))))
+            (ksumconstructor, T[0.4, 3.2, 1.5, 1.8], (:a1, symbol("k1.sigma"), :a2, symbol("k2.sigma"))),
+            (kscaledconstructor, T[0.4, 3.2], (:a, symbol("k.sigma"))))
         test_deriv_dxdy(kconst(param), x, y, 1e-9)
         test_deriv_dp(kconst, param, derivs, x, y, 1e-7)
     end

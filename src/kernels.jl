@@ -76,6 +76,41 @@ function kernel{T<:FloatingPoint}(ψ::ScaledKernel{T}, x::Vector{T}, y::Vector{T
     ψ.a * kernel(ψ.k, x, y)
 end
 
+function dkernel_dx{T<:FloatingPoint}(ψ::ScaledKernel{T}, x::Vector{T}, y::Vector{T})
+    ψ.a * dkernel_dx(ψ.k, x, y)
+end
+
+function dkernel_dy{T<:FloatingPoint}(ψ::ScaledKernel{T}, x::Vector{T}, y::Vector{T})
+    ψ.a * dkernel_dy(ψ.k, x, y)
+end
+
+function d2kernel_dxdy{T<:FloatingPoint}(ψ::ScaledKernel{T}, x::Vector{T}, y::Vector{T})
+    ψ.a * d2kernel_dxdy(ψ.k, x, y)
+end
+
+function dkernel_dp{T<:FloatingPoint}(ψ::ScaledKernel{T}, param::Symbol, x::Vector{T}, y::Vector{T})
+    if param == :a
+        kernel(ψ.k, x, y)
+    elseif (sparam = string(param); beginswith(sparam, "k."))
+        subparam = symbol(sparam[3:end])
+        ψ.a * dkernel_dp(ψ.k, subparam, x, y)
+    else
+        warn("derivative with respect to unrecognized symbol")
+        zero(T)
+    end
+end
+
+function dkernel_dp{T<:FloatingPoint}(ψ::ScaledKernel{T}, param::Integer, x::Vector{T}, y::Vector{T})
+    N = length(names(ψ.k)) #XXX this will need adjustment once composite kernels can be composited... then need something recursive
+    if param == 1
+        dkernel_dp(ψ, :a, x, y)
+    elseif 2 <= param <= N + 1
+        ψ.a * dkernel_dp(ψ.k, param-1, x, y)
+    else
+        throw(ArgumentError("param must be between 1 and $(N+1)"))
+    end
+end
+
 function description_string{T<:FloatingPoint}(ψ::ScaledKernel{T})
     "ScaledKernel{$(T)}($(ψ.a)," * description_string(ψ.k, false) * ")"
 end
@@ -166,7 +201,7 @@ function dkernel_dp{T<:FloatingPoint}(ψ::KernelProduct{T}, param::Integer, x::V
     elseif N1 + 2 <= param <= N1 + N2 + 1
         ψ.a * kernel(ψ.k1, x, y) * dkernel_dp(ψ.k2, param-N1-1, x, y)
     else
-        throw(ArgumentError("param must be between 1 and $(N1+N2)"))
+        throw(ArgumentError("param must be between 1 and $(N1+N2+1)"))
     end
 end
 
@@ -273,7 +308,7 @@ function dkernel_dp{T<:FloatingPoint}(ψ::KernelSum{T}, param::Integer, x::Vecto
     elseif N1 + 3 <= param <= N1 + N2 + 2
         ψ.a2 * dkernel_dp(ψ.k2, param-N1-2, x, y)
     else
-        throw(ArgumentError("param must be between 1 and $(N1+N2)"))
+        throw(ArgumentError("param must be between 1 and $(N1+N2+2)"))
     end
 end
 
