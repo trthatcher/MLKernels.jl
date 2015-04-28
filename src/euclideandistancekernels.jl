@@ -6,8 +6,8 @@ abstract EuclideanDistanceKernel{T<:FloatingPoint} <: StandardKernel{T}
 
 # ϵᵀϵ = (x-y)ᵀ(x-y)
 norm2{T<:FloatingPoint}(x::Array{T}, y::Array{T}) = norm(x - y, 2)^2
-dnorm2_dx{T<:FloatingPoint}(x::Array{T}, y::Array{T}) = 2*(x - y)
-dnorm2_dy{T<:FloatingPoint}(x::Array{T}, y::Array{T}) = 2*(y - x)
+dnorm2_dx{T<:FloatingPoint}(x::Array{T}, y::Array{T}) = 2(x - y)
+dnorm2_dy{T<:FloatingPoint}(x::Array{T}, y::Array{T}) = 2(y - x)
 
 # k(x,y) = f((x-y)ᵀ(x-y))
 function kernel{T<:FloatingPoint}(κ::EuclideanDistanceKernel{T}, x::Array{T}, y::Array{T})
@@ -48,12 +48,13 @@ function convert{T<:FloatingPoint}(::Type{GaussianKernel{T}}, κ::GaussianKernel
     GaussianKernel(convert(T, κ.sigma))
 end
 
-kernelize{T<:FloatingPoint}(κ::GaussianKernel{T}, ϵᵀϵ::T) = exp(ϵᵀϵ/(-2)*(κ.sigma^2))
+kernelize{T<:FloatingPoint}(κ::GaussianKernel{T}, ϵᵀϵ::T) = exp(ϵᵀϵ/(-2κ.sigma^2))
 
-dkernelize_dnorm2{T<:FloatingPoint}(κ::GaussianKernel{T}, ϵᵀϵ::T) = kernelize(κ, ϵᵀϵ)/(-2)*(κ.sigma^2)
-dkernelize_dsigma{T<:FloatingPoint}(κ::GaussianKernel{T}, ϵᵀϵ::T) = kernelize(κ, ϵᵀϵ) * ϵᵀϵ * (κ.sigma^(-3))
+dkernelize_dnorm2{T<:FloatingPoint}(κ::GaussianKernel{T}, ϵᵀϵ::T) = kernelize(κ, ϵᵀϵ)/(-2κ.sigma^2)
 
-d2kernelize_d2norm2{T<:FloatingPoint}(κ::GaussianKernel{T}, ϵᵀϵ::T) = kernelize(κ, ϵᵀϵ)/(4*(κ.sigma^4))
+d2kernelize_d2norm2{T<:FloatingPoint}(κ::GaussianKernel{T}, ϵᵀϵ::T) = kernelize(κ, ϵᵀϵ)/(4κ.sigma^4)
+
+dkernelize_dsigma{T<:FloatingPoint}(κ::GaussianKernel{T}, ϵᵀϵ::T) = kernelize(κ, ϵᵀϵ) * ϵᵀϵ * κ.sigma^(-3)
 
 function dkernelize_dp{T<:FloatingPoint}(κ::GaussianKernel{T}, param::Symbol, ϵᵀϵ::T)
     param == :sigma ? dkernelize_dsigma(κ, ϵᵀϵ) : zero(T)
