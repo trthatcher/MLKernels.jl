@@ -127,17 +127,17 @@ function kernel{T<:FloatingPoint}(ψ::KernelProduct{T}, x::Vector{T}, y::Vector{
 end
 
 function dkernel_dx{T<:FloatingPoint}(ψ::KernelProduct{T}, x::Vector{T}, y::Vector{T})
-    ψ.a * (dkernel_dx(ψ.k1, x, y)*kernel(ψ.k2, x, y) + kernel(ψ.k1, x, y)*ψ.a2*dkernel_dx(ψ.k2, x, y))
+    ψ.a * (dkernel_dx(ψ.k1, x, y)*kernel(ψ.k2, x, y) + kernel(ψ.k1, x, y)*dkernel_dx(ψ.k2, x, y))
 end
 
 function dkernel_dy{T<:FloatingPoint}(ψ::KernelProduct{T}, x::Vector{T}, y::Vector{T})
-    ψ.a * (dkernel_dy(ψ.k1, x, y)*kernel(ψ.k2, x, y) + kernel(ψ.k1, x, y)*ψ.a2*dkernel_dy(ψ.k2, x, y))
+    ψ.a * (dkernel_dy(ψ.k1, x, y)*kernel(ψ.k2, x, y) + kernel(ψ.k1, x, y)*dkernel_dy(ψ.k2, x, y))
 end
 
 function d2kernel_dxdy{T<:FloatingPoint}(ψ::KernelProduct{T}, x::Vector{T}, y::Vector{T})
     ψ.a * (d2kernel_dxdy(ψ.k1, x, y)*kernel(ψ.k2, x, y)
-            + dkernel_dy(ψ.k1, x, y)*dkernel_dx(ψ.k2, x, y)
-            + dkernel_dx(ψ.k1, x, y)*dkernel_dy(ψ.k2, x, y)
+            + dkernel_dy(ψ.k1, x, y)*dkernel_dx(ψ.k2, x, y)'
+            + dkernel_dx(ψ.k1, x, y)*dkernel_dy(ψ.k2, x, y)'
             + kernel(ψ.k1, x, y)*d2kernel_dxdy(ψ.k2, x, y))
 end
 

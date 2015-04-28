@@ -13,6 +13,37 @@ checkderiv(f, fprime, p; eps=1e-3) = eltype(p)[checkderiv(f, fprime, p, i; eps=e
 
 checkderivvec(f, fprime, x; eps=1e-3) = abs(checkderiv(f, (p,i)->fprime(p)[i], x; eps=eps))
 
+function test_deriv_dxdy(k, x, y, epsilon)
+    @test all(checkderivvec(p->kernel(k,p,y), p->dkernel_dx(k,p,y), x) .< epsilon)
+    @test all(checkderivvec(p->kernel(k,x,p), p->dkernel_dy(k,x,p), y) .< epsilon)
+
+    for i=1:length(x), j=1:length(y)
+        @test abs(checkderiv(
+            p -> dkernel_dx(k,x,p)[i],
+            (p,j_) -> d2kernel_dxdy(k,x,p)[i,j_],
+            y, j)) < epsilon
+        @test abs(checkderiv(
+            p -> dkernel_dy(k,p,y)[j],
+            (p,i_) -> d2kernel_dxdy(k,p,y)[i_,j],
+            x, i)) < epsilon
+    end
+end
+
+function test_deriv_dp(kconstructor, param, derivs, x, y, epsilon)
+    @assert length(param) == length(derivs)
+    k = kconstructor(param)
+    for (i, deriv) in enumerate(derivs)
+        @test abs(checkderiv(
+            p -> kernel(kconstructor(p), x, y),
+            (p,i_) -> dkernel_dp(kconstructor(p), i_, x, y),
+            param, i)) < epsilon
+        @test dkernel_dp(k, deriv, x, y) == dkernel_dp(k, i, x, y)
+    end
+    @test dkernel_dp(k, :undefined, x, y) == zero(eltype(x))
+    @test_throws ArgumentError dkernel_dp(k, 0, x, y)
+    @test_throws ArgumentError dkernel_dp(k, length(derivs)+1, x, y)
+end
+
 print("- Testing EuclideanDistanceKernel derivatives ... ")
 for T in (Float64,)
     x = T[1, 2, 7, 3]
@@ -21,30 +52,29 @@ for T in (Float64,)
     @test all(checkderivvec(p->MLKernels.norm2(p,y), p->MLKernels.dnorm2_dx(p,y), x) .< 1e-10)
     @test all(checkderivvec(p->MLKernels.norm2(x,p), p->MLKernels.dnorm2_dy(x,p), y) .< 1e-10)
 
-    param = T[3.0]
-
-    k = GaussianKernel(param...)
-    @test all(checkderivvec(p->kernel(k,p,y), p->dkernel_dx(k,p,y), x) .< 1e-9)
-    @test all(checkderivvec(p->kernel(k,x,p), p->dkernel_dy(k,x,p), y) .< 1e-9)
-
-    for j=1:4, i=1:4
-        @test abs(checkderiv(
-            p->dkernel_dx(k,x,p)[j],
-            (p,i_)->d2kernel_dxdy(k,x,p)[j,i_],
-            y, i)) < 1e-9
-        @test abs(checkderiv(
-            p->dkernel_dy(k,p,y)[i],
-            (p,j_)->d2kernel_dxdy(k,p,y)[j_,i],
-            x, j)) < 1e-9
+    for (k, param, derivs) in (
+            (GaussianKernel, T[3.0], (:sigma,)),)
+        test_deriv_dxdy(k(param...), x, y, 1e-9)
+        test_deriv_dp(p->k(p...), param, derivs, x, y, 1e-8)
     end
 
-    @test abs(checkderiv(
-        p->kernel(GaussianKernel(p...),x,y),
-        (p,i)->dkernel_dp(GaussianKernel(p...),:sigma,x,y),
-        param, 1)) < 1e-8
-    @test dkernel_dp(k, :sigma, x, y) == dkernel_dp(k, 1, x, y)
-    @test dkernel_dp(k, :undefined, x, y) == zero(T)
-    @test_throws ArgumentError dkernel_dp(k, 0, x, y)
-    @test_throws ArgumentError dkernel_dp(k, 2, x, y)
+    println("Done")
+end
+
+print("- Testing composite kernel derivatives ... ")
+for T in (Float64,)
+    x = T[1, 2, 7, 3]
+    y = T[5, 2, 1, 6]
+
+    kproductconstructor(param) = param[1] * GaussianKernel(param[2]) * GaussianKernel(param[3])
+    ksumconstructor(param) = param[1]*GaussianKernel(param[2]) + param[3]*GaussianKernel(param[4])
+
+    for (kconst, param, derivs) in (
+            (kproductconstructor, T[3.2, 1.5, 1.8], ()),
+            (ksumconstructor, T[0.4, 3.2, 1.5, 1.8], ()))
+        test_deriv_dxdy(kconst(param), x, y, 1e-9)
+        #test_deriv_dp(kconst, param, derivs, x, y, 1e-8)
+    end
+
     println("Done")
 end
