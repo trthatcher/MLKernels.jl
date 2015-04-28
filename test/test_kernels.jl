@@ -27,7 +27,7 @@ for T in (Float32, Float64)
     x, y = [one(T)], [one(T)]
     skernel = ScaledKernel{T}(convert(T, 2),LinearKernel(one(T)))
     @test kernel(skernel, x ,y) == convert(T, 4)
-    @test isposdef_kernel(skernel) == true
+    @test isposdef(skernel) == true
     @test eltype(skernel) == T
     @test typeof(MLKernels.description_string(skernel)) <: String
 end
@@ -79,7 +79,7 @@ for T in (Float32, Float64)
     kernelprod = KernelProduct{T}(convert(T, 2),LinearKernel(one(T)), LinearKernel(zero(T)))
 
     @test kernel(kernelprod, x ,y) == convert(T, 4)
-    @test isposdef_kernel(kernelprod) == true
+    @test isposdef(kernelprod) == true
     @test eltype(kernelprod) == T
     @test typeof(MLKernels.description_string(kernelprod)) <: String
 end
@@ -142,7 +142,7 @@ for T in (Float32, Float64)
     x, y = [one(T)], [one(T)]
     kernelsum = KernelSum{T}(one(T),LinearKernel(one(T)), convert(T,2), LinearKernel(zero(T)))
     @test kernel(kernelsum, x ,y) == convert(T, 4)
-    @test isposdef_kernel(kernelsum) == true
+    @test isposdef(kernelsum) == true
     @test eltype(kernelsum) == T
 end
 println("Done")

@@ -9,8 +9,11 @@ import Base: show, exp, eltype, isposdef, convert, promote #, call
 export
     # Functions
     description,
-    isposdef_kernel,
     kernel,
+    dkernel_dx,
+    dkernel_dy,
+    dkernel_dp,
+    d2kernel_dxdy,
     kernelmatrix,
     gramian_matrix,
     lagged_gramian_matrix,

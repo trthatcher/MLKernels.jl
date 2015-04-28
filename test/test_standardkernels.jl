@@ -64,6 +64,20 @@ for (kernelobject, default_args, test_args) in (
     println("Done")
 end
 
+println("- Testing StandardKernel aliases:")
+for (kernelobject, kernelalias, test_args) in (
+        (GaussianKernel, SquaredExponentialKernel, (2,)),
+        (LaplacianKernel, ExponentialKernel, (2,))
+    )
+    print("    - Testing ", kernelalias, " -> ", kernelobject, " ... ")
+    for T in (Float32, Float64)
+        case_tests = map(x -> convert(T, x), test_args)
+        @test kernelobject() === kernelalias()
+        @test kernelobject(case_tests...) === kernelalias(case_tests...)
+    end
+    println("Done")
+end
+
 println("- Testing StandardKernel edge and special cases:")
 for (kernelobject, case) in (
         # Edge Cases
@@ -138,10 +152,13 @@ for (kernelobject, default_args, default_value, posdef) in (
             @test_approx_eq v convert(T, default_value)
         end
 
-        v = kernel(κ, x, y)
+        v = kernel(κ, x, y) # test on vectors
         @test_approx_eq v convert(T, default_value)
 
-        @test isposdef_kernel(κ) == posdef
+        v = kernel(κ, x[1], y[1]) # test on scalars
+        @test_approx_eq v convert(T, default_value)
+
+        @test isposdef(κ) == posdef
         
         for S in (Float32, Float64)
 
