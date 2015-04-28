@@ -54,8 +54,8 @@ for T in (Float64,)
     x = T[1, 2, 7, 3]
     y = T[5, 2, 1, 6]
 
-    @test all(checkderivvec(p->MLKernels.norm2(p,y), p->MLKernels.dnorm2_dx(p,y), x) .< 1e-10)
-    @test all(checkderivvec(p->MLKernels.norm2(x,p), p->MLKernels.dnorm2_dy(x,p), y) .< 1e-10)
+    @test all(checkderivvec(p->MLKernels.sqnorm(p,y), p->MLKernels.dsqnorm_dx(p,y), x) .< 1e-10)
+    @test all(checkderivvec(p->MLKernels.sqnorm(x,p), p->MLKernels.dsqnorm_dy(x,p), y) .< 1e-10)
 
     for (k, param, derivs) in (
             (GaussianKernel, T[3.0], (:sigma,)),)
