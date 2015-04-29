@@ -312,7 +312,7 @@ function dkernel_dp{T<:FloatingPoint}(ψ::KernelSum{T}, param::Integer, x::Vecto
     end
 end
 
-isposdef(ψ::KernelSum) = isposdef(ψ.k1) | isposdef(ψ.k2)
+isposdef(ψ::KernelSum) = isposdef(ψ.k1) & isposdef(ψ.k2)
 
 function description_string{T<:FloatingPoint}(ψ::KernelSum{T}) 
     "KernelSum{$(T)}($(ψ.a1)," * description_string(ψ.k1, false) * "," * "$(ψ.a2)," * (
