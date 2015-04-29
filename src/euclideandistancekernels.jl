@@ -5,29 +5,29 @@
 abstract EuclideanDistanceKernel{T<:FloatingPoint} <: StandardKernel{T}
 
 # ϵᵀϵ = (x-y)ᵀ(x-y)
-sqnorm{T<:FloatingPoint}(x::Array{T}, y::Array{T}) = (ϵ = x - y; dot(ϵ,ϵ))
-dsqnorm_dx{T<:FloatingPoint}(x::Array{T}, y::Array{T}) = 2(x - y)
-dsqnorm_dy{T<:FloatingPoint}(x::Array{T}, y::Array{T}) = 2(y - x)
+sqdist{T<:FloatingPoint}(x::Array{T}, y::Array{T}) = (ϵ = x - y; dot(ϵ,ϵ))
+dsqdist_dx{T<:FloatingPoint}(x::Array{T}, y::Array{T}) = 2(x - y)
+dsqdist_dy{T<:FloatingPoint}(x::Array{T}, y::Array{T}) = 2(y - x)
 
 # k(x,y) = f((x-y)ᵀ(x-y))
 function kernel{T<:FloatingPoint}(κ::EuclideanDistanceKernel{T}, x::Array{T}, y::Array{T})
-    kernelize(κ, sqnorm(x, y))
+    kernelize(κ, sqdist(x, y))
 end
 kernel{T<:FloatingPoint}(κ::EuclideanDistanceKernel{T}, x::T, y::T) = kernelize(κ, (x - y)^2)
 
-function dkernel_dx{T<:FloatingPoint}(κ::EuclideanDistanceKernel{T}, x::Array{T}, y::Array{T}; ϵᵀϵ = sqnorm(x, y))
-    dkernelize_dsqnorm(κ, ϵᵀϵ) * dsqnorm_dx(x, y)
+function dkernel_dx{T<:FloatingPoint}(κ::EuclideanDistanceKernel{T}, x::Array{T}, y::Array{T}; ϵᵀϵ = sqdist(x, y))
+    dkernelize_dsqdist(κ, ϵᵀϵ) * dsqdist_dx(x, y)
 end
 
-function dkernel_dy{T<:FloatingPoint}(κ::EuclideanDistanceKernel{T}, x::Array{T}, y::Array{T}; ϵᵀϵ = sqnorm(x, y))
-    dkernelize_dsqnorm(κ, ϵᵀϵ) * dsqnorm_dy(x, y)
+function dkernel_dy{T<:FloatingPoint}(κ::EuclideanDistanceKernel{T}, x::Array{T}, y::Array{T}; ϵᵀϵ = sqdist(x, y))
+    dkernelize_dsqdist(κ, ϵᵀϵ) * dsqdist_dy(x, y)
 end
 
-function d2kernel_dxdy{T<:FloatingPoint}(κ::EuclideanDistanceKernel{T}, x::Array{T}, y::Array{T}; ϵᵀϵ = sqnorm(x, y))
-    -d2kernelize_dsqnorm2(κ, ϵᵀϵ) * 4(x-y)*(x-y)' - 2*dkernelize_dsqnorm(κ, ϵᵀϵ)*eye(length(x))
+function d2kernel_dxdy{T<:FloatingPoint}(κ::EuclideanDistanceKernel{T}, x::Array{T}, y::Array{T}; ϵᵀϵ = sqdist(x, y))
+    -d2kernelize_dsqdist2(κ, ϵᵀϵ) * 4(x-y)*(x-y)' - 2*dkernelize_dsqdist(κ, ϵᵀϵ)*eye(length(x))
 end
 
-function dkernel_dp{T<:FloatingPoint}(κ::EuclideanDistanceKernel{T}, param::Union(Integer,Symbol), x::Array{T}, y::Array{T}; ϵᵀϵ = sqnorm(x, y))
+function dkernel_dp{T<:FloatingPoint}(κ::EuclideanDistanceKernel{T}, param::Union(Integer,Symbol), x::Array{T}, y::Array{T}; ϵᵀϵ = sqdist(x, y))
     dkernelize_dp(κ, param, ϵᵀϵ)
 end
 
@@ -52,9 +52,9 @@ end
 
 kernelize{T<:FloatingPoint}(κ::GaussianKernel{T}, ϵᵀϵ::T) = exp(ϵᵀϵ/(-2κ.sigma^2))
 
-dkernelize_dsqnorm{T<:FloatingPoint}(κ::GaussianKernel{T}, ϵᵀϵ::T) = kernelize(κ, ϵᵀϵ)/(-2κ.sigma^2)
+dkernelize_dsqdist{T<:FloatingPoint}(κ::GaussianKernel{T}, ϵᵀϵ::T) = kernelize(κ, ϵᵀϵ)/(-2κ.sigma^2)
 
-d2kernelize_dsqnorm2{T<:FloatingPoint}(κ::GaussianKernel{T}, ϵᵀϵ::T) = kernelize(κ, ϵᵀϵ)/(4κ.sigma^4)
+d2kernelize_dsqdist2{T<:FloatingPoint}(κ::GaussianKernel{T}, ϵᵀϵ::T) = kernelize(κ, ϵᵀϵ)/(4κ.sigma^4)
 
 dkernelize_dsigma{T<:FloatingPoint}(κ::GaussianKernel{T}, ϵᵀϵ::T) = kernelize(κ, ϵᵀϵ) * ϵᵀϵ * κ.sigma^(-3)
 
