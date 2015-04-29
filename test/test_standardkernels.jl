@@ -141,7 +141,7 @@ for (kernelobject, default_args, default_value, posdef) in (
         κ = (kernelobject)(map(x -> convert(T, x), default_args)...)
 
         if kernelobject <: EuclideanDistanceKernel
-            u = MLKernels.norm2(x, y)
+            u = MLKernels.sqdist(x, y)
             v = MLKernels.kernelize(κ, u)
             @test_approx_eq v convert(T, default_value)
         end
