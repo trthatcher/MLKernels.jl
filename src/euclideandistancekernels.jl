@@ -5,7 +5,7 @@
 abstract EuclideanDistanceKernel{T<:FloatingPoint} <: StandardKernel{T}
 
 # ϵᵀϵ = (x-y)ᵀ(x-y)
-sqdist{T<:FloatingPoint}(x::Array{T}, y::Array{T}) = (ϵ = x - y; dot(ϵ,ϵ))
+sqdist{T<:FloatingPoint}(x::Array{T}, y::Array{T}) = (ϵ = x - y; BLAS.dot(ϵ,ϵ))
 dsqdist_dx{T<:FloatingPoint}(x::Array{T}, y::Array{T}) = 2(x - y)
 dsqdist_dy{T<:FloatingPoint}(x::Array{T}, y::Array{T}) = 2(y - x)
 
