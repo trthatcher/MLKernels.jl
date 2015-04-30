@@ -49,13 +49,33 @@ function test_deriv_dp(kconstructor, param, derivs, x, y, epsilon)
     @test_throws Exception dkernel_dp(k, length(derivs)+1, x, y)
 end
 
+print("- Testing vector function derivatives ... ")
+for T in (Float64,)
+    x = T[1, 2, 7, 3]
+    y = T[5, 2, 1, 6]
+    w = T[4, 1, 6, 0]
+
+    for s_fun in (:sqdist, :scprod)
+        fun = @eval(MLKernels.$s_fun)
+        for d in (:x, :y, :w)
+            @eval $(symbol("dfun_d$(d)")) = MLKernels.$(symbol("d$(s_fun)_d$(d)"))
+        end
+
+        @test all(checkderivvec(p->fun(p,y), p->dfun_dx(p,y), x) .< 1e-10)
+        @test all(checkderivvec(p->fun(x,p), p->dfun_dy(x,p), y) .< 1e-10)
+
+        @test all(checkderivvec(p->fun(p,y,w), p->dfun_dx(p,y,w), x) .< 1e-10)
+        @test all(checkderivvec(p->fun(x,p,w), p->dfun_dy(x,p,w), y) .< 1e-10)
+
+        @test all(checkderivvec(p->fun(x,y,p), p->dfun_dw(x,y,p), w) .< 1e-10)
+    end
+end
+println("Done")
+
 print("- Testing EuclideanDistanceKernel derivatives ... ")
 for T in (Float64,)
     x = T[1, 2, 7, 3]
     y = T[5, 2, 1, 6]
-
-    @test all(checkderivvec(p->MLKernels.sqdist(p,y), p->MLKernels.dsqdist_dx(p,y), x) .< 1e-10)
-    @test all(checkderivvec(p->MLKernels.sqdist(x,p), p->MLKernels.dsqdist_dy(x,p), y) .< 1e-10)
 
     for (k, param, derivs) in (
             (GaussianKernel, T[3.0], (:sigma,)),)

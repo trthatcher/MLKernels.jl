@@ -68,7 +68,7 @@ center_kernelmatrix{T<:FloatingPoint}(K::Matrix{T}) = center_kernelmatrix!(copy(
   Generic Kernel Matrix Functions
 ==========================================================================#
 
-# Returns the kernel matrix of [Xᵀ Yᵀ]ᵀ or [X Y]
+# Returns the kernel matrix of [Xᵀ Xᵀ]ᵀ or [X X]
 #   If trans = 'N' then K = ϕ(X)ϕ(X)ᵀ (X is a design matrix)
 #   If trans = 'T' then K = ϕ(X)ᵀϕ(X) (X is a transposed design matrix)
 function kernelmatrix{T<:FloatingPoint}(κ::StandardKernel{T}, X::Matrix{T}, trans::Char = 'N',

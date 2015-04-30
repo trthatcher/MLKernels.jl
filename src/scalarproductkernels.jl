@@ -6,7 +6,7 @@ abstract ScalarProductKernel{T<:FloatingPoint} <: StandardKernel{T}
 
 # k(x,y) = f(xᵀy)
 function kernel{T<:FloatingPoint}(κ::ScalarProductKernel{T}, x::Array{T}, y::Array{T})
-    kernelize(κ, BLAS.dot(x, y))
+    kernelize(κ, scprod(x, y))
 end
 kernel{T<:FloatingPoint}(κ::ScalarProductKernel{T}, x::T, y::T) = kernelize(κ, x*y)
 

@@ -43,6 +43,7 @@ export
             KernelProduct,
             KernelSum
 
+include("vectorfunctions.jl")
 include("matrixfunctions.jl")
 include("kernels.jl")
 include("kernelmatrix.jl")
