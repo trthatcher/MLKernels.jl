@@ -54,8 +54,8 @@ for T in (Float64,)
     x = T[1, 2, 7, 3]
     y = T[5, 2, 1, 6]
 
-    @test all(checkderivvec(p->MLKernels.norm2(p,y), p->MLKernels.dnorm2_dx(p,y), x) .< 1e-10)
-    @test all(checkderivvec(p->MLKernels.norm2(x,p), p->MLKernels.dnorm2_dy(x,p), y) .< 1e-10)
+    @test all(checkderivvec(p->MLKernels.sqdist(p,y), p->MLKernels.dsqdist_dx(p,y), x) .< 1e-10)
+    @test all(checkderivvec(p->MLKernels.sqdist(x,p), p->MLKernels.dsqdist_dy(x,p), y) .< 1e-10)
 
     for (k, param, derivs) in (
             (GaussianKernel, T[3.0], (:sigma,)),)
@@ -72,10 +72,12 @@ for T in (Float64,)
 
     kproductconstructor(param) = param[1] * GaussianKernel(param[2]) * GaussianKernel(param[3])
     ksumconstructor(param) = param[1]*GaussianKernel(param[2]) + param[3]*GaussianKernel(param[4])
+    kscaledconstructor(param) = param[1]*GaussianKernel(param[2])
 
     for (kconst, param, derivs) in (
             (kproductconstructor, T[3.2, 1.5, 1.8], (:a, symbol("k1.sigma"), symbol("k2.sigma"))),
-            (ksumconstructor, T[0.4, 3.2, 1.5, 1.8], (:a1, symbol("k1.sigma"), :a2, symbol("k2.sigma"))))
+            (ksumconstructor, T[0.4, 3.2, 1.5, 1.8], (:a1, symbol("k1.sigma"), :a2, symbol("k2.sigma"))),
+            (kscaledconstructor, T[0.4, 3.2], (:a, symbol("k.sigma"))))
         test_deriv_dxdy(kconst(param), x, y, 1e-9)
         test_deriv_dp(kconst, param, derivs, x, y, 1e-7)
     end
