@@ -46,5 +46,10 @@ for T in (Float32,Float64)
     @test MLKernels.col_sub!(copy(S1), col) == CS
     @test MLKernels.dgmm(diag, S1) == DA
     @test MLKernels.gdmm(S1, diag) == AD
+    @test MLKernels.sqdist([1,2.0], [1 3.0]) == 1
+    @test MLKernels.sqdist([1,2.0], [1,3.0], [1,2.0]) == 4
+    @test MLKernels.scalprod([1,2.0], [1 3.0]) == 7
+    @test MLKernels.scalprod([1,2.0], [1,3.0], [1,2.0]) == 13
+
 end
 println("Done")

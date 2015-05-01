@@ -110,6 +110,53 @@ end
 
 
 #==========================================================================
+  Vector Operations
+==========================================================================#
+
+# Scalar Product of vectors x and y
+function scalprod{T<:FloatingPoint}(x::Array{T}, y::Array{T})
+    (n = length(x)) == length(y) || throw(ArgumentError("Dimensions do not conform."))
+    c = zero(T)
+    @inbounds @simd for i = 1:n
+        c += x[i]*y[i]
+    end
+    c
+end
+
+# Weighted Scalar Product of x and y
+function scalprod{T<:FloatingPoint}(x::Array{T}, y::Array{T}, w::Array{T})
+    (n = length(x)) == length(y) == length(w) || throw(ArgumentError("Dimensions do not conform."))
+    c = zero(T)
+    @inbounds @simd for i = 1:n
+        c += x[i]*y[i]*w[i]
+    end
+    c
+end
+
+# Squared distance between vectors x and y
+function sqdist{T<:FloatingPoint}(x::Array{T}, y::Array{T})
+    (n = length(x)) == length(y) || throw(ArgumentError("Dimensions do not conform."))
+    c = zero(T)
+    @inbounds @simd for i = 1:n
+        v = x[i] - y[i]
+        c += v*v
+    end
+    c
+end
+
+# Weighted squared distance function between vectors x and y
+function sqdist{T<:FloatingPoint}(x::Array{T}, y::Array{T}, w::Array{T})
+    (n = length(x)) == length(y) || throw(ArgumentError("Dimensions do not conform."))
+    c = zero(T)
+    @inbounds @simd for i = 1:n
+        v = (x[i] - y[i])*w[i]
+        c += v*v
+    end
+    c
+end
+
+
+#==========================================================================
   Matrix Operations
 ==========================================================================#
 

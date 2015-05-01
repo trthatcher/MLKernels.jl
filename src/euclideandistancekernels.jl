@@ -5,7 +5,6 @@
 abstract EuclideanDistanceKernel{T<:FloatingPoint} <: StandardKernel{T}
 
 # ϵᵀϵ = (x-y)ᵀ(x-y)
-sqdist{T<:FloatingPoint}(x::Array{T}, y::Array{T}) = (ϵ = x - y; BLAS.dot(ϵ,ϵ))
 dsqdist_dx{T<:FloatingPoint}(x::Array{T}, y::Array{T}) = 2(x - y)
 dsqdist_dy{T<:FloatingPoint}(x::Array{T}, y::Array{T}) = 2(y - x)
 
@@ -15,6 +14,12 @@ function kernel{T<:FloatingPoint}(κ::EuclideanDistanceKernel{T}, x::Array{T}, y
 end
 kernel{T<:FloatingPoint}(κ::EuclideanDistanceKernel{T}, x::T, y::T) = kernelize(κ, (x - y)^2)
 
+function kernel{T<:FloatingPoint}(κ::EuclideanDistanceKernel{T}, x::Array{T}, y::Array{T}, w::Array{T})
+    kernelize(κ, sqdist(x, y, y))
+end
+kernel{T<:FloatingPoint}(κ::EuclideanDistanceKernel{T}, x::T, y::T, w::T) = kernelize(κ, ((x - y)*w)^2)
+
+# Derivatives
 function dkernel_dx{T<:FloatingPoint}(κ::EuclideanDistanceKernel{T}, x::Array{T}, y::Array{T}; ϵᵀϵ = sqdist(x, y))
     dkernelize_dsqdist(κ, ϵᵀϵ) * dsqdist_dx(x, y)
 end
