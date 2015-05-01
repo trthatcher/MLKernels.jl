@@ -1,5 +1,10 @@
-# Scalar Product Kernels
+#==========================================================================
+  Vector Operations
+==========================================================================#
 
+### Scalar Product Kernels
+
+# Scalar Product of vectors x and y
 function scprod{T<:FloatingPoint}(x::Array{T}, y::Array{T})
     (n = length(x)) == length(y) || throw(ArgumentError("Dimensions do not conform."))
     c = zero(T)
@@ -9,6 +14,7 @@ function scprod{T<:FloatingPoint}(x::Array{T}, y::Array{T})
     c
 end
 
+# Weighted Scalar Product of x and y
 function scprod{T<:FloatingPoint}(x::Array{T}, y::Array{T}, w::Array{T})
     (n = length(x)) == length(y) == length(w) || throw(ArgumentError("Dimensions do not conform."))
     c = zero(T)
@@ -37,8 +43,9 @@ dscprod_dy{T<:FloatingPoint}(x::Array{T}, y::Array{T}, w::Array{T}) = dscprod_dy
 dscprod_dw{T<:FloatingPoint}(x::Array{T}, y::Array{T}, w::Array{T}) = dscprod_dy!(x, y, similar(w))
 
 
-# Euclidean Distance Kernels
+### Euclidean Distance Kernels
  
+# Squared distance between vectors x and y
 function sqdist{T<:FloatingPoint}(x::Array{T}, y::Array{T})
     (n = length(x)) == length(y) || throw(ArgumentError("Dimensions do not conform."))
     c = zero(T)
@@ -49,6 +56,7 @@ function sqdist{T<:FloatingPoint}(x::Array{T}, y::Array{T})
     c
 end
 
+# Weighted squared distance function between vectors x and y
 function sqdist{T<:FloatingPoint}(x::Array{T}, y::Array{T}, w::Array{T})
     (n = length(x)) == length(y) == length(w) || throw(ArgumentError("Dimensions do not conform."))
     c = zero(T)

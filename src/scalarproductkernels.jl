@@ -10,6 +10,12 @@ function kernel{T<:FloatingPoint}(κ::ScalarProductKernel{T}, x::Array{T}, y::Ar
 end
 kernel{T<:FloatingPoint}(κ::ScalarProductKernel{T}, x::T, y::T) = kernelize(κ, x*y)
 
+function kernel{T<:FloatingPoint}(κ::ScalarProductKernel{T}, x::Array{T}, y::Array{T}, w::Array{T})
+    kernelize(κ, scalprod(x,y,w))
+end
+kernel{T<:FloatingPoint}(κ::ScalarProductKernel{T}, x::T, y::T, w::T) = kernelize(κ, x*y*w)
+
+
 
 #== Linear Kernel ====================#
 
