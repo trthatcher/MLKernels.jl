@@ -26,8 +26,34 @@ function dkernel_dy{T<:FloatingPoint}(κ::EuclideanDistanceKernel{T}, x::Array{T
     dkernelize_dsqdist(κ, ϵᵀϵ) * dsqdist_dy(x, y)
 end
 
+function d2kernel_dxdy!{T<:FloatingPoint}(κ::EuclideanDistanceKernel{T}, d::Int, A::Array{T}, i::Int, j::Int, X::Array{T}, Y::Array{T})
+    #(d = length(x)) == length(y) == size(A,1) == size(A,2) || throw(ArgumentError("dimensions do not match"))
+    #ϵᵀϵ = sqdist(X[i,:], Y[j,:])
+    c = zero(T)
+    @inbounds @simd for n = 1:d
+        v = X[i,n] - Y[j,n]
+        c += v*v
+    end
+    ϵᵀϵ = c
+    a = dkernelize_dsqdist(κ, ϵᵀϵ)
+    b = d2kernelize_dsqdist2(κ, ϵᵀϵ)
+    @inbounds for m = 1:d
+        for n = 1:d
+            A[n,i,m,j] = -4b * (X[i,n] - Y[j,n]) * (X[i,m] - Y[j,m])
+        end
+        A[m,i,m,j] -= 2a
+    end
+    A
+end
+
 function d2kernel_dxdy{T<:FloatingPoint}(κ::EuclideanDistanceKernel{T}, x::Array{T}, y::Array{T}; ϵᵀϵ = sqdist(x, y))
-    -d2kernelize_dsqdist2(κ, ϵᵀϵ) * 4(x-y)*(x-y)' - 2*dkernelize_dsqdist(κ, ϵᵀϵ)*eye(length(x))
+    ϵ = vec(x - y)''
+    -d2kernelize_dsqdist2(κ, ϵᵀϵ) * 4ϵ*ϵ' - dkernelize_dsqdist(κ, ϵᵀϵ) * 2eye(length(x))
+end
+
+function d2kernel_dxdy{T<:FloatingPoint}(κ::EuclideanDistanceKernel{T}, x::T, y::T)
+    ϵᵀϵ = (x-y)^2
+    -d2kernelize_dsqdist2(κ, ϵᵀϵ) * 4ϵᵀϵ - 2*dkernelize_dsqdist(κ, ϵᵀϵ)
 end
 
 function dkernel_dp{T<:FloatingPoint}(κ::EuclideanDistanceKernel{T}, param::Union(Integer,Symbol), x::Array{T}, y::Array{T}; ϵᵀϵ = sqdist(x, y))
@@ -55,11 +81,11 @@ end
 
 kernelize{T<:FloatingPoint}(κ::GaussianKernel{T}, ϵᵀϵ::T) = exp(ϵᵀϵ/(-2κ.sigma^2))
 
-dkernelize_dsqdist{T<:FloatingPoint}(κ::GaussianKernel{T}, ϵᵀϵ::T) = kernelize(κ, ϵᵀϵ)/(-2κ.sigma^2)
+dkernelize_dsqdist{T<:FloatingPoint}(κ::GaussianKernel{T}, ϵᵀϵ::T, kize=kernelize(κ, ϵᵀϵ)) = kize / (-2κ.sigma^2)
 
-d2kernelize_dsqdist2{T<:FloatingPoint}(κ::GaussianKernel{T}, ϵᵀϵ::T) = kernelize(κ, ϵᵀϵ)/(4κ.sigma^4)
+d2kernelize_dsqdist2{T<:FloatingPoint}(κ::GaussianKernel{T}, ϵᵀϵ::T, kize=kernelize(κ, ϵᵀϵ)) = kize / (4κ.sigma^4)
 
-dkernelize_dsigma{T<:FloatingPoint}(κ::GaussianKernel{T}, ϵᵀϵ::T) = kernelize(κ, ϵᵀϵ) * ϵᵀϵ * κ.sigma^(-3)
+dkernelize_dsigma{T<:FloatingPoint}(κ::GaussianKernel{T}, ϵᵀϵ::T, kize=kernelize(κ, ϵᵀϵ)) = kize * ϵᵀϵ * κ.sigma^(-3)
 
 function dkernelize_dp{T<:FloatingPoint}(κ::GaussianKernel{T}, param::Symbol, ϵᵀϵ::T)
     param == :sigma ? dkernelize_dsigma(κ, ϵᵀϵ) : zero(T)
