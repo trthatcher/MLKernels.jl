@@ -72,7 +72,7 @@ for T in (Float64,)
 end
 println("Done")
 
-print("- Testing EuclideanDistanceKernel derivatives ... ")
+print("- Testing SquaredDistanceKernel derivatives ... ")
 for T in (Float64,)
     x = T[1, 2, 7, 3]
     y = T[5, 2, 1, 6]

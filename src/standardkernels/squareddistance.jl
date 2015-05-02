@@ -2,31 +2,27 @@
   Euclidean Distance Kernels
 ===================================================================================================#
 
-abstract EuclideanDistanceKernel{T<:FloatingPoint} <: StandardKernel{T}
+abstract SquaredDistanceKernel{T<:FloatingPoint} <: StandardKernel{T}
 
 # ϵᵀϵ = (x-y)ᵀ(x-y)
 
 # k(x,y) = f((x-y)ᵀ(x-y))
-function kernel{T<:FloatingPoint}(κ::EuclideanDistanceKernel{T}, x::Array{T}, y::Array{T})
-    kernelize(κ, sqdist(x, y))
-end
-kernel{T<:FloatingPoint}(κ::EuclideanDistanceKernel{T}, x::T, y::T) = kernelize(κ, (x - y)^2)
+kernel{T<:FloatingPoint}(κ::SquaredDistanceKernel{T}, x::Array{T}, y::Array{T}) = kappa(κ, sqdist(x, y))
+kernel{T<:FloatingPoint}(κ::SquaredDistanceKernel{T}, x::T, y::T) = kappa(κ, (x - y)^2)
 
-function kernel{T<:FloatingPoint}(κ::EuclideanDistanceKernel{T}, x::Array{T}, y::Array{T}, w::Array{T})
-    kernelize(κ, sqdist(x, y, y))
-end
-kernel{T<:FloatingPoint}(κ::EuclideanDistanceKernel{T}, x::T, y::T, w::T) = kernelize(κ, ((x - y)*w)^2)
+kernel{T<:FloatingPoint}(κ::SquaredDistanceKernel{T}, x::Array{T}, y::Array{T}, w::Array{T}) = kappa(κ, sqdist(x, y, w))
+kernel{T<:FloatingPoint}(κ::SquaredDistanceKernel{T}, x::T, y::T, w::T) = kappa(κ, ((x - y)*w)^2)
 
 # Derivatives
-function dkernel_dx{T<:FloatingPoint}(κ::EuclideanDistanceKernel{T}, x::Array{T}, y::Array{T}; ϵᵀϵ = sqdist(x, y))
-    dkernelize_dsqdist(κ, ϵᵀϵ) * dsqdist_dx(x, y)
+function dkernel_dx{T<:FloatingPoint}(κ::SquaredDistanceKernel{T}, x::Array{T}, y::Array{T}; ϵᵀϵ = sqdist(x, y))
+    dkappa_dsqdist(κ, ϵᵀϵ) * dsqdist_dx(x, y)
 end
 
-function dkernel_dy{T<:FloatingPoint}(κ::EuclideanDistanceKernel{T}, x::Array{T}, y::Array{T}; ϵᵀϵ = sqdist(x, y))
-    dkernelize_dsqdist(κ, ϵᵀϵ) * dsqdist_dy(x, y)
+function dkernel_dy{T<:FloatingPoint}(κ::SquaredDistanceKernel{T}, x::Array{T}, y::Array{T}; ϵᵀϵ = sqdist(x, y))
+    dkappa_dsqdist(κ, ϵᵀϵ) * dsqdist_dy(x, y)
 end
 
-function d2kernel_dxdy!{T<:FloatingPoint}(κ::EuclideanDistanceKernel{T}, d::Int, A::Array{T}, i::Int, j::Int, X::Array{T}, Y::Array{T})
+function d2kernel_dxdy!{T<:FloatingPoint}(κ::SquaredDistanceKernel{T}, d::Int, A::Array{T}, i::Int, j::Int, X::Array{T}, Y::Array{T})
     #(d = length(x)) == length(y) == size(A,1) == size(A,2) || throw(ArgumentError("dimensions do not match"))
     #ϵᵀϵ = sqdist(X[i,:], Y[j,:])
     c = zero(T)
@@ -35,8 +31,8 @@ function d2kernel_dxdy!{T<:FloatingPoint}(κ::EuclideanDistanceKernel{T}, d::Int
         c += v*v
     end
     ϵᵀϵ = c
-    a = dkernelize_dsqdist(κ, ϵᵀϵ)
-    b = d2kernelize_dsqdist2(κ, ϵᵀϵ)
+    a = dkappa_dsqdist(κ, ϵᵀϵ)
+    b = d2kappa_dsqdist2(κ, ϵᵀϵ)
     @inbounds for m = 1:d
         for n = 1:d
             A[n,i,m,j] = -4b * (X[i,n] - Y[j,n]) * (X[i,m] - Y[j,m])
@@ -46,26 +42,26 @@ function d2kernel_dxdy!{T<:FloatingPoint}(κ::EuclideanDistanceKernel{T}, d::Int
     A
 end
 
-function d2kernel_dxdy{T<:FloatingPoint}(κ::EuclideanDistanceKernel{T}, x::Array{T}, y::Array{T}; ϵᵀϵ = sqdist(x, y))
+function d2kernel_dxdy{T<:FloatingPoint}(κ::SquaredDistanceKernel{T}, x::Array{T}, y::Array{T}; ϵᵀϵ = sqdist(x, y))
     ϵ = vec(x - y)''
-    -d2kernelize_dsqdist2(κ, ϵᵀϵ) * 4ϵ*ϵ' - dkernelize_dsqdist(κ, ϵᵀϵ) * 2eye(length(x))
+    -d2kappa_dsqdist2(κ, ϵᵀϵ) * 4ϵ*ϵ' - dkappa_dsqdist(κ, ϵᵀϵ) * 2eye(length(x))
 end
 
-function d2kernel_dxdy{T<:FloatingPoint}(κ::EuclideanDistanceKernel{T}, x::T, y::T)
+function d2kernel_dxdy{T<:FloatingPoint}(κ::SquaredDistanceKernel{T}, x::T, y::T)
     ϵᵀϵ = (x-y)^2
-    -d2kernelize_dsqdist2(κ, ϵᵀϵ) * 4ϵᵀϵ - 2*dkernelize_dsqdist(κ, ϵᵀϵ)
+    -d2kappa_dsqdist2(κ, ϵᵀϵ) * 4ϵᵀϵ - 2*dkappa_dsqdist(κ, ϵᵀϵ)
 end
 
-function dkernel_dp{T<:FloatingPoint}(κ::EuclideanDistanceKernel{T}, param::Union(Integer,Symbol), x::Array{T}, y::Array{T}; ϵᵀϵ = sqdist(x, y))
-    dkernelize_dp(κ, param, ϵᵀϵ)
+function dkernel_dp{T<:FloatingPoint}(κ::SquaredDistanceKernel{T}, param::Union(Integer,Symbol), x::Array{T}, y::Array{T}; ϵᵀϵ = sqdist(x, y))
+    dkappa_dp(κ, param, ϵᵀϵ)
 end
 
-dkernelize_dp{T<:FloatingPoint}(κ::EuclideanDistanceKernel{T}, param::Integer, ϵᵀϵ::T) = dkernelize_dp(κ, names(κ)[param], ϵᵀϵ)
+dkappa_dp{T<:FloatingPoint}(κ::SquaredDistanceKernel{T}, param::Integer, ϵᵀϵ::T) = dkappa_dp(κ, names(κ)[param], ϵᵀϵ)
 
 
 #== Gaussian Kernel ===============#
 
-immutable GaussianKernel{T<:FloatingPoint} <: EuclideanDistanceKernel{T}
+immutable GaussianKernel{T<:FloatingPoint} <: SquaredDistanceKernel{T}
     sigma::T
     function GaussianKernel(σ::T)
         σ > 0 || throw(ArgumentError("σ = $(σ) must be greater than 0."))
@@ -79,16 +75,16 @@ function convert{T<:FloatingPoint}(::Type{GaussianKernel{T}}, κ::GaussianKernel
     GaussianKernel(convert(T, κ.sigma))
 end
 
-kernelize{T<:FloatingPoint}(κ::GaussianKernel{T}, ϵᵀϵ::T) = exp(ϵᵀϵ/(-2κ.sigma^2))
+kappa{T<:FloatingPoint}(κ::GaussianKernel{T}, ϵᵀϵ::T) = exp(ϵᵀϵ/(-2κ.sigma^2))
 
-dkernelize_dsqdist{T<:FloatingPoint}(κ::GaussianKernel{T}, ϵᵀϵ::T, kize=kernelize(κ, ϵᵀϵ)) = kize / (-2κ.sigma^2)
+dkappa_dsqdist{T<:FloatingPoint}(κ::GaussianKernel{T}, ϵᵀϵ::T, kize=kappa(κ, ϵᵀϵ)) = kize / (-2κ.sigma^2)
 
-d2kernelize_dsqdist2{T<:FloatingPoint}(κ::GaussianKernel{T}, ϵᵀϵ::T, kize=kernelize(κ, ϵᵀϵ)) = kize / (4κ.sigma^4)
+d2kappa_dsqdist2{T<:FloatingPoint}(κ::GaussianKernel{T}, ϵᵀϵ::T, kize=kappa(κ, ϵᵀϵ)) = kize / (4κ.sigma^4)
 
-dkernelize_dsigma{T<:FloatingPoint}(κ::GaussianKernel{T}, ϵᵀϵ::T, kize=kernelize(κ, ϵᵀϵ)) = kize * ϵᵀϵ * κ.sigma^(-3)
+dkappa_dsigma{T<:FloatingPoint}(κ::GaussianKernel{T}, ϵᵀϵ::T, kize=kappa(κ, ϵᵀϵ)) = kize * ϵᵀϵ * κ.sigma^(-3)
 
-function dkernelize_dp{T<:FloatingPoint}(κ::GaussianKernel{T}, param::Symbol, ϵᵀϵ::T)
-    param == :sigma ? dkernelize_dsigma(κ, ϵᵀϵ) : zero(T)
+function dkappa_dp{T<:FloatingPoint}(κ::GaussianKernel{T}, param::Symbol, ϵᵀϵ::T)
+    param == :sigma ? dkappa_dsigma(κ, ϵᵀϵ) : zero(T)
 end
 
 isposdef(::GaussianKernel) = true
@@ -115,7 +111,7 @@ end
 
 #== Laplacian Kernel ===============#
 
-immutable LaplacianKernel{T<:FloatingPoint} <: EuclideanDistanceKernel{T}
+immutable LaplacianKernel{T<:FloatingPoint} <: SquaredDistanceKernel{T}
     sigma::T
     function LaplacianKernel(σ::T)
         σ > 0 || throw(ArgumentError("σ = $(σ) must be greater than zero."))
@@ -129,7 +125,7 @@ function convert{T<:FloatingPoint}(::Type{LaplacianKernel{T}}, κ::LaplacianKern
     LaplacianKernel(convert(T, κ.sigma))
 end
 
-function kernelize{T<:FloatingPoint}(κ::LaplacianKernel{T}, ϵᵀϵ::T)
+function kappa{T<:FloatingPoint}(κ::LaplacianKernel{T}, ϵᵀϵ::T)
     exp(sqrt(ϵᵀϵ)/(-κ.sigma))
 end
 
@@ -155,7 +151,7 @@ end
 
 #== Rational Quadratic Kernel ===============#
 
-immutable RationalQuadraticKernel{T<:FloatingPoint} <: EuclideanDistanceKernel{T}
+immutable RationalQuadraticKernel{T<:FloatingPoint} <: SquaredDistanceKernel{T}
     c::T
     function RationalQuadraticKernel(c::T)
         c > 0 || throw(ArgumentError("c = $(c) must be greater than zero."))
@@ -168,7 +164,7 @@ function convert{T<:FloatingPoint}(::Type{RationalQuadraticKernel{T}}, κ::Ratio
     RationalQuadraticKernel(convert(T, κ.c))
 end
 
-function kernelize{T<:FloatingPoint}(κ::RationalQuadraticKernel{T}, ϵᵀϵ::T)
+function kappa{T<:FloatingPoint}(κ::RationalQuadraticKernel{T}, ϵᵀϵ::T)
     1 - ϵᵀϵ/(ϵᵀϵ + κ.c)
 end
 
@@ -192,7 +188,7 @@ end
 
 #== Multi-Quadratic Kernel ===============#
 
-immutable MultiQuadraticKernel{T<:FloatingPoint} <: EuclideanDistanceKernel{T}
+immutable MultiQuadraticKernel{T<:FloatingPoint} <: SquaredDistanceKernel{T}
     c::T
     function MultiQuadraticKernel(c::T)
         c > 0 || throw(ArgumentError("c = $(c) must be greater than zero."))
@@ -205,7 +201,7 @@ function convert{T<:FloatingPoint}(::Type{MultiQuadraticKernel{T}}, κ::MultiQua
     MultiQuadraticKernel(convert(T, κ.c))
 end
 
-function kernelize{T<:FloatingPoint}(κ::MultiQuadraticKernel{T}, ϵᵀϵ::T)
+function kappa{T<:FloatingPoint}(κ::MultiQuadraticKernel{T}, ϵᵀϵ::T)
     sqrt(ϵᵀϵ + κ.c)
 end
 
@@ -226,7 +222,7 @@ end
 
 #== Inverse Multi-Quadratic Kernel ===============#
 
-immutable InverseMultiQuadraticKernel{T<:FloatingPoint} <: EuclideanDistanceKernel{T}
+immutable InverseMultiQuadraticKernel{T<:FloatingPoint} <: SquaredDistanceKernel{T}
     c::T
     function InverseMultiQuadraticKernel(c::T)
         c > 0 || throw(ArgumentError("c = $(c) must be greater than zero."))
@@ -240,7 +236,7 @@ function convert{T<:FloatingPoint}(::Type{InverseMultiQuadraticKernel{T}},
     InverseMultiQuadraticKernel(convert(T, κ.c))
 end
 
-function kernelize{T<:FloatingPoint}(κ::InverseMultiQuadraticKernel{T}, ϵᵀϵ::T)
+function kappa{T<:FloatingPoint}(κ::InverseMultiQuadraticKernel{T}, ϵᵀϵ::T)
     one(T) / sqrt(ϵᵀϵ + κ.c)
 end
 
@@ -263,7 +259,7 @@ end
 
 #== Power Kernel ===============#
 
-immutable PowerKernel{T<:FloatingPoint} <: EuclideanDistanceKernel{T}
+immutable PowerKernel{T<:FloatingPoint} <: SquaredDistanceKernel{T}
     d::T
     function PowerKernel(d::T)
         d > 0 || throw(ArgumentError("d = $(d) must be a positive integer."))
@@ -277,7 +273,7 @@ PowerKernel(d::Integer) = PowerKernel(convert(Float64, d))
 
 convert{T<:FloatingPoint}(::Type{PowerKernel{T}}, κ::PowerKernel) = PowerKernel(convert(T, κ.d))
 
-kernelize{T<:FloatingPoint}(κ::PowerKernel{T}, ϵᵀϵ::T) = -sqrt(ϵᵀϵ)^(κ.d)
+kappa{T<:FloatingPoint}(κ::PowerKernel{T}, ϵᵀϵ::T) = -sqrt(ϵᵀϵ)^(κ.d)
 
 function description_string{T<:FloatingPoint}(κ::PowerKernel{T}, eltype::Bool = true)
     "PowerKernel" * (eltype ? "{$(T)}" : "") * "(d=$(κ.d))"
@@ -299,7 +295,7 @@ end
 
 #== Log Kernel ===============#
 
-immutable LogKernel{T<:FloatingPoint} <: EuclideanDistanceKernel{T}
+immutable LogKernel{T<:FloatingPoint} <: SquaredDistanceKernel{T}
     d::T
     function LogKernel(d::T)
         d > 0 || throw(ArgumentError("d = $(d) must be a positive integer."))
@@ -313,7 +309,7 @@ LogKernel(d::Integer) = LogKernel(convert(Float32, d))
 
 convert{T<:FloatingPoint}(::Type{LogKernel{T}}, κ::LogKernel) = LogKernel(convert(T, κ.d))
 
-function kernelize{T<:FloatingPoint}(κ::LogKernel{T}, ϵᵀϵ::T)
+function kappa{T<:FloatingPoint}(κ::LogKernel{T}, ϵᵀϵ::T)
     -log(sqrt(ϵᵀϵ)^(κ.d) + 1)
 end
 
@@ -340,7 +336,7 @@ end
 for kernelobject in (:GaussianKernel, :LaplacianKernel, :RationalQuadraticKernel,
                :MultiQuadraticKernel, :InverseMultiQuadraticKernel,
                :PowerKernel, :LogKernel)
-    for kerneltype in (:EuclideanDistanceKernel, :StandardKernel, :SimpleKernel, :Kernel)
+    for kerneltype in (:SquaredDistanceKernel, :StandardKernel, :SimpleKernel, :Kernel)
         @eval begin
             function convert{T<:FloatingPoint}(::Type{$kerneltype{T}}, κ::$kernelobject)
                 convert($kernelobject{T}, κ)

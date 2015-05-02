@@ -202,26 +202,26 @@ end
   product kernels
 ==========================================================================#
 
-for (kernelobject, gramian) in ((:EuclideanDistanceKernel, :lagged_gramian_matrix),
+for (kernelobject, gramian) in ((:SquaredDistanceKernel, :lagged_gramian_matrix),
 				(:ScalarProductKernel, :gramian_matrix))
     @eval begin
 
 	# Kernelize a gramian matrix by transforming each element using the scalar kernel function
-	function kernelize_gramian!{T<:FloatingPoint}(κ::$kernelobject{T}, G::Array{T})
+	function kappa_gramian!{T<:FloatingPoint}(κ::$kernelobject{T}, G::Array{T})
 	    @inbounds for i = 1:length(G)
-		G[i] = kernelize(κ, G[i])
+		G[i] = kappa(κ, G[i])
 	    end
 	    G
 	end
 
 	# Kernelize a square gramian by only transforming the upper or lower triangle
-	function kernelize_gramian!{T<:FloatingPoint}(κ::$kernelobject{T}, G::Array{T}, uplo::Char,
+	function kappa_gramian!{T<:FloatingPoint}(κ::$kernelobject{T}, G::Array{T}, uplo::Char,
 						      sym::Bool = true)
 	    n = size(G, 1)
 	    n == size(G, 2) || throw(ArgumentError("Gramian matrix must be square."))
 	    @inbounds for j = 1:n
 		for i = uplo == 'U' ? (1:j) : (j:n)
-		    G[i,j] = kernelize(κ, G[i,j])
+		    G[i,j] = kappa(κ, G[i,j])
 		end 
 	    end
 	    sym ? (uplo == 'U' ? syml!(G) : symu!(G)) : G
@@ -232,7 +232,7 @@ for (kernelobject, gramian) in ((:EuclideanDistanceKernel, :lagged_gramian_matri
 						trans::Char = 'N', uplo::Char = 'U', 
 						sym::Bool = true)
 	    G = $gramian(X, trans, uplo, false)
-	    K = kernelize_gramian!(κ, G, uplo, sym)
+	    K = kappa_gramian!(κ, G, uplo, sym)
 	    sym ? (uplo == 'U' ? syml!(K) : symu!(K)) : K
 	end
 
@@ -251,8 +251,8 @@ for (kernelobject, gramian) in ((:EuclideanDistanceKernel, :lagged_gramian_matri
 							trans::Char = 'N', uplo::Char = 'U', 
 							sym::Bool = true)
 	    G = $gramian(X, trans, uplo, false)
-	    K = kernelize_gramian!(κ₁, copy(G), uplo, false)
-	    hadamard!(K, kernelize_gramian!(κ₂, G, uplo, false), uplo, false)
+	    K = kappa_gramian!(κ₁, copy(G), uplo, false)
+	    hadamard!(K, kappa_gramian!(κ₂, G, uplo, false), uplo, false)
 	    if a != one(T)
 		BLAS.scal!(length(K), a, K, 1)
 	    end
@@ -265,12 +265,12 @@ for (kernelobject, gramian) in ((:EuclideanDistanceKernel, :lagged_gramian_matri
 						    trans::Char = 'N', uplo::Char = 'U',
 						    sym::Bool = true)
 	    G = $gramian(X, trans, uplo, false)
-	    K = kernelize_gramian!(κ₁, copy(G), uplo, false)
+	    K = kappa_gramian!(κ₁, copy(G), uplo, false)
 	    n = length(K)
 	    if a₁ != one(T) 
 		BLAS.scal!(n, a₁, K, 1)
 	    end
-	    BLAS.axpy!(n, a₂, kernelize_gramian!(κ₂, G, uplo, false), 1, K, 1)
+	    BLAS.axpy!(n, a₂, kappa_gramian!(κ₂, G, uplo, false), 1, K, 1)
 	    sym ? (uplo == 'U' ? syml!(K) : symu!(K)) : K 
 	end
 
@@ -278,14 +278,14 @@ for (kernelobject, gramian) in ((:EuclideanDistanceKernel, :lagged_gramian_matri
 	function kernelmatrix{T<:FloatingPoint}(κ::$kernelobject{T}, X::Matrix{T}, Y::Matrix{T},
 						trans::Char = 'N')
 	    G = $gramian(X, Y, trans)
-	    kernelize_gramian!(κ, G)
+	    kappa_gramian!(κ, G)
 	end
 
 	# Returns the scaled kernel matrix of X and Y using BLAS where possible
 	function kernelmatrix_scaled{T<:FloatingPoint}(a::T, κ::$kernelobject{T}, X::Matrix{T},
 						       Y::Matrix{T}, trans::Char = 'N')
 	    G = $gramian(X, Y, trans)
-	    K = kernelize_gramian!(κ, G)
+	    K = kappa_gramian!(κ, G)
 	    a == one(T) ? K : BLAS.scal!(length(K), a, K, 1)
 	end
 
@@ -294,11 +294,11 @@ for (kernelobject, gramian) in ((:EuclideanDistanceKernel, :lagged_gramian_matri
 							κ₂::$kernelobject{T}, X::Matrix{T},
 							Y::Matrix{T}, trans::Char = 'N')
 	    G = $gramian(X, Y, trans)
-	    K = kernelize_gramian!(κ₁, copy(G))
+	    K = kappa_gramian!(κ₁, copy(G))
 	    if a != one(T) 
 		BLAS.scal!(length(K), a, K, 1) 
 	    end
-	    hadamard!(K, kernelize_gramian!(κ₂, G))
+	    hadamard!(K, kappa_gramian!(κ₂, G))
 	end
 
 	# Returns the kernel matrix of X and Y for the product of two kernels using BLAS 
@@ -306,12 +306,12 @@ for (kernelobject, gramian) in ((:EuclideanDistanceKernel, :lagged_gramian_matri
 						    κ₂::$kernelobject{T}, X::Matrix{T}, 
 						    Y::Matrix{T}, trans::Char = 'N')
 	    G = $gramian(X, Y, trans)
-	    K = kernelize_gramian!(κ₁, copy(G))
+	    K = kappa_gramian!(κ₁, copy(G))
 	    n = length(K)
 	    if a₁ != one(T) 
 		BLAS.scal!(n, a₁, K, 1) 
 	    end
-	    BLAS.axpy!(n, a₂, kernelize_gramian!(κ₂, G), 1, K, 1)
+	    BLAS.axpy!(n, a₂, kappa_gramian!(κ₂, G), 1, K, 1)
 	end
 
     end
@@ -328,7 +328,7 @@ for kernelobject in (:SeparableKernel,)
 	function kernelmatrix_scaled{T<:FloatingPoint}(a::T, κ::$kernelobject{T}, X::Matrix{T},
 						       trans::Char = 'N', uplo::Char = 'U',
 						       sym::Bool = true)
-	    K = BLAS.syrk(uplo, trans, a, kernelize_array!(κ, copy(X)))
+	    K = BLAS.syrk(uplo, trans, a, kappa_array!(κ, copy(X)))
 	    sym ? (uplo == 'U' ? syml!(K) : symu!(K)) : K
 	end
 
@@ -340,8 +340,8 @@ for kernelobject in (:SeparableKernel,)
 
         function kernelmatrix_scaled{T<:FloatingPoint}(a::T, κ::$kernelobject{T}, X::Matrix{T},
                                                        Y::Matrix{T}, trans::Char = 'N')
-            K = BLAS.gemm(trans, trans == 'N' ? 'T' : 'N', a, kernelize_array!(κ, copy(X)), 
-                                                              kernelize_array!(κ, copy(Y)))
+            K = BLAS.gemm(trans, trans == 'N' ? 'T' : 'N', a, kappa_array!(κ, copy(X)), 
+                                                              kappa_array!(κ, copy(Y)))
         end
 
         function kernelmatrix{T<:FloatingPoint}(κ::$kernelobject{T}, X::Matrix{T}, Y::Matrix{T},

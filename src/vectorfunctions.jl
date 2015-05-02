@@ -24,8 +24,8 @@ function scprod{T<:FloatingPoint}(x::Array{T}, y::Array{T}, w::Array{T})
     c
 end
 
-dscprod_dx{T<:FloatingPoint}(x::Array{T}, y::Array{T}) = y
-dscprod_dy{T<:FloatingPoint}(x::Array{T}, y::Array{T}) = x
+dscprod_dx{T<:FloatingPoint}(x::Array{T}, y::Array{T}) = copy(y)
+dscprod_dy{T<:FloatingPoint}(x::Array{T}, y::Array{T}) = copy(x)
 
 function dscprod_dx!{T<:FloatingPoint}(x::Array{T}, y::Array{T}, w::Array{T})
     (n = length(x)) == length(y) == length(w) || throw(ArgumentError("Dimensions do not conform."))
@@ -67,7 +67,7 @@ function sqdist{T<:FloatingPoint}(x::Array{T}, y::Array{T}, w::Array{T})
     c
 end
 
-dsqdist_dx{T<:FloatingPoint}(x::Array{T}, y::Array{T}) = 2(x - y)
+dsqdist_dx{T<:FloatingPoint}(x::Array{T}, y::Array{T}) = scalediff
 dsqdist_dy{T<:FloatingPoint}(x::Array{T}, y::Array{T}) = 2(y - x)
 
 function dsqdist_dx!{T<:FloatingPoint}(x::Array{T}, y::Array{T}, w::Array{T})

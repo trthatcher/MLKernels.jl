@@ -10,7 +10,7 @@ eltype{T}(κ::Kernel{T}) = T
 #call{T<:FloatingPoint}(κ::Kernel{T}, X::Matrix{T}) = kernel_matrix(κ, X)
 #call{T<:FloatingPoint}(κ::Kernel{T}, X::Matrix{T}, Y::Matrix{T}) = kernel_matrix(κ, X, Y)
 
-isposdef(κ::Kernel) = false
+isposdef(::Kernel) = false
 
 abstract SimpleKernel{T<:FloatingPoint} <: Kernel{T}
 abstract CompositeKernel{T<:FloatingPoint} <: Kernel{T}
@@ -29,20 +29,16 @@ end
 function description(io::IO, κ::StandardKernel)
     print(io, description_string_long(κ))
 end
-
-function description(κ::StandardKernel)
-    description(STDOUT, κ)
-end
-
+description(κ::StandardKernel) = description(STDOUT, κ)
 
 # kernels of the form k(x,y) = ϕ(xᵀy)
-include("scalarproductkernels.jl")
+include("standardkernels/scalarproduct.jl")
 
 # kernels of the form k(x,y) = ϕ((x-y)ᵀ(x-y))
-include("euclideandistancekernels.jl")
+include("standardkernels/squareddistance.jl")
 
 # kernels of the form k(x,y) = ϕ(x)ᵀϕ(y)
-include("separablekernels.jl")
+include("standardkernels/separable.jl")
 
 
 #===========================================================================

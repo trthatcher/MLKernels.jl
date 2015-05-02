@@ -140,15 +140,15 @@ for (kernelobject, default_args, default_value, posdef) in (
      
         κ = (kernelobject)(map(x -> convert(T, x), default_args)...)
 
-        if kernelobject <: EuclideanDistanceKernel
+        if kernelobject <: SquaredDistanceKernel
             u = MLKernels.sqdist(x, y)
-            v = MLKernels.kernelize(κ, u)
+            v = MLKernels.kappa(κ, u)
             @test_approx_eq v convert(T, default_value)
         end
 
         if kernelobject <: ScalarProductKernel
             u = dot(x, y)
-            v = MLKernels.kernelize(κ, u)
+            v = MLKernels.kappa(κ, u)
             @test_approx_eq v convert(T, default_value)
         end
 
@@ -164,8 +164,8 @@ for (kernelobject, default_args, default_value, posdef) in (
 
             @test convert(kernelobject{S}, κ) == (kernelobject)(map(x -> convert(S, x), default_args)...)
 
-            if kernelobject <: EuclideanDistanceKernel
-                @test convert(EuclideanDistanceKernel{S}, κ) == (kernelobject)(map(x -> convert(S, x), default_args)...)
+            if kernelobject <: SquaredDistanceKernel
+                @test convert(SquaredDistanceKernel{S}, κ) == (kernelobject)(map(x -> convert(S, x), default_args)...)
             end
         
             if kernelobject <: ScalarProductKernel
@@ -193,6 +193,6 @@ for (kernelobject, default_args, default_value) in (
         (MercerSigmoidKernel, (0,1), tanh(1)),)
     for T in (Float32, Float64)
         κ = (kernelobject)(map(x -> convert(T, x), default_args)...)
-        @test_approx_eq MLKernels.kernelize_array!(κ, [one(T)])[1] convert(T, default_value)
+        @test_approx_eq MLKernels.kappa_array!(κ, [one(T)])[1] convert(T, default_value)
     end
 end

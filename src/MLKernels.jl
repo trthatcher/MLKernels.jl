@@ -24,7 +24,7 @@ export
     Kernel,
         SimpleKernel,
             StandardKernel,
-                EuclideanDistanceKernel,
+                SquaredDistanceKernel,
 	                GaussianKernel, SquaredExponentialKernel,
 	                LaplacianKernel, ExponentialKernel,
             	    RationalQuadraticKernel,

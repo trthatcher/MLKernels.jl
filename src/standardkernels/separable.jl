@@ -4,22 +4,22 @@
 
 abstract SeparableKernel{T<:FloatingPoint} <: StandardKernel{T}
 
-function kernelize_array!{T<:FloatingPoint}(κ::SeparableKernel{T}, x::Array{T})
+function kappa_array!{T<:FloatingPoint}(κ::SeparableKernel{T}, x::Array{T})
     @inbounds for i = 1:length(x)
-        x[i] = kernelize_scalar(κ, x[i])
+        x[i] = kappa_scalar(κ, x[i])
     end
     x
 end
 
 # k(x,y) = ϕ(x)ᵀϕ(y)
 function kernel{T<:FloatingPoint}(κ::SeparableKernel{T}, x::Array{T}, y::Array{T})
-    v = kernelize_array!(κ, copy(x))
-    z = kernelize_array!(κ, copy(y))
+    v = kappa_array!(κ, copy(x))
+    z = kappa_array!(κ, copy(y))
     BLAS.dot(length(v), v, 1, z, 1)
 end
 
 function kernel{T<:FloatingPoint}(κ::SeparableKernel{T}, x::T, y::T)
-    kernelize_scalar(κ, x)*kernelize_scalar(κ, y) 
+    kappa_scalar(κ, x)*kappa_scalar(κ, y) 
 end
 
 
@@ -39,7 +39,7 @@ function convert{T<:FloatingPoint}(::Type{MercerSigmoidKernel{T}}, κ::MercerSig
     MercerSigmoidKernel(convert(T, κ.d), convert(T, κ.b))
 end
 
-function kernelize_scalar{T<:FloatingPoint}(κ::MercerSigmoidKernel{T}, x::T)
+function kappa_scalar{T<:FloatingPoint}(κ::MercerSigmoidKernel{T}, x::T)
     tanh((x - κ.d)/κ.b)
 end
 

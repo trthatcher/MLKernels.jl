@@ -6,14 +6,14 @@ abstract ScalarProductKernel{T<:FloatingPoint} <: StandardKernel{T}
 
 # k(x,y) = f(xᵀy)
 function kernel{T<:FloatingPoint}(κ::ScalarProductKernel{T}, x::Array{T}, y::Array{T})
-    kernelize(κ, scprod(x, y))
+    kappa(κ, scprod(x, y))
 end
-kernel{T<:FloatingPoint}(κ::ScalarProductKernel{T}, x::T, y::T) = kernelize(κ, x*y)
+kernel{T<:FloatingPoint}(κ::ScalarProductKernel{T}, x::T, y::T) = kappa(κ, x*y)
 
 function kernel{T<:FloatingPoint}(κ::ScalarProductKernel{T}, x::Array{T}, y::Array{T}, w::Array{T})
-    kernelize(κ, scalprod(x,y,w))
+    kappa(κ, scalprod(x,y,w))
 end
-kernel{T<:FloatingPoint}(κ::ScalarProductKernel{T}, x::T, y::T, w::T) = kernelize(κ, x*y*w)
+kernel{T<:FloatingPoint}(κ::ScalarProductKernel{T}, x::T, y::T, w::T) = kappa(κ, x*y*w)
 
 
 
@@ -32,7 +32,7 @@ function convert{T<:FloatingPoint}(::Type{LinearKernel{T}}, κ::LinearKernel)
     LinearKernel(convert(T, κ.c))
 end
 
-kernelize{T<:FloatingPoint}(κ::LinearKernel{T}, xᵀy::T) = xᵀy + κ.c
+kappa{T<:FloatingPoint}(κ::LinearKernel{T}, xᵀy::T) = xᵀy + κ.c
 
 isposdef(::LinearKernel) = true
 
@@ -50,7 +50,7 @@ function description_string_long(::LinearKernel)
         k(x,y) = xᵀy + c    x ∈ ℝⁿ, y ∈ ℝⁿ, c ≥ 0
 
     Techniques using the linear kernel often do not differ from their
-    non-kernelized versions.
+    non-kappad versions.
     """
 end
 
@@ -80,7 +80,7 @@ function convert{T<:FloatingPoint}(::Type{PolynomialKernel{T}}, κ::PolynomialKe
     PolynomialKernel(convert(T, κ.alpha), convert(T, κ.c), convert(T, κ.d))
 end
 
-function kernelize{T<:FloatingPoint}(κ::PolynomialKernel{T}, xᵀy::T)
+function kappa{T<:FloatingPoint}(κ::PolynomialKernel{T}, xᵀy::T)
     (κ.alpha*xᵀy + κ.c)^κ.d
 end
 
@@ -123,7 +123,7 @@ function convert{T<:FloatingPoint}(::Type{SigmoidKernel{T}}, κ::SigmoidKernel)
     SigmoidKernel(convert(T, κ.alpha), convert(T, κ.c))
 end
 
-kernelize{T<:FloatingPoint}(κ::SigmoidKernel{T}, xᵀy::T) = tanh(κ.alpha*xᵀy + κ.c)
+kappa{T<:FloatingPoint}(κ::SigmoidKernel{T}, xᵀy::T) = tanh(κ.alpha*xᵀy + κ.c)
 
 function description_string{T<:FloatingPoint}(κ::SigmoidKernel{T}, eltype::Bool = true)
     "SigmoidKernel" * (eltype ? "{$(T)}" : "") * "(α=$(κ.alpha),c=$(κ.c))"
