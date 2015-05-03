@@ -14,50 +14,21 @@ kernel{T<:FloatingPoint}(κ::SquaredDistanceKernel{T}, x::Array{T}, y::Array{T},
 kernel{T<:FloatingPoint}(κ::SquaredDistanceKernel{T}, x::T, y::T, w::T) = kappa(κ, ((x - y)*w)^2)
 
 # Derivatives
-function kernel_dx{T<:FloatingPoint}(κ::SquaredDistanceKernel{T}, x::Array{T}, y::Array{T}; ϵᵀϵ = sqdist(x, y))
-    kappa_dz(κ, ϵᵀϵ) * dsqdist_dx(x, y)
-end
+kernel_dx{T<:FloatingPoint}(κ::SquaredDistanceKernel{T}, x::Array{T}, y::Array{T}) = kappa_dz(κ, sqdist(x, y)) * dsqdist_dx(x, y)
+kernel_dy{T<:FloatingPoint}(κ::SquaredDistanceKernel{T}, x::Array{T}, y::Array{T}) = kappa_dz(κ, sqdist(x, y)) * dsqdist_dy(x, y)
 
-function kernel_dy{T<:FloatingPoint}(κ::SquaredDistanceKernel{T}, x::Array{T}, y::Array{T}; ϵᵀϵ = sqdist(x, y))
-    kappa_dz(κ, ϵᵀϵ) * dsqdist_dy(x, y)
+function kernel_dxdy{T<:FloatingPoint}(κ::SquaredDistanceKernel{T}, x::Array{T}, y::Array{T})
+    ϵ = vec(x - y)
+    ϵᵀϵ = scprod(ϵ, ϵ)
+    perturb!(scale!(-4*kappa_dz2(κ, ϵᵀϵ), ϵ*ϵ'), -2*kappa_dz(κ, ϵᵀϵ))
 end
-
-function kernel_dxdy!{T<:FloatingPoint}(κ::SquaredDistanceKernel{T}, d::Int, A::Array{T}, i::Int, j::Int, X::Array{T}, Y::Array{T})
-    #(d = length(x)) == length(y) == size(A,1) == size(A,2) || throw(ArgumentError("dimensions do not match"))
-    #ϵᵀϵ = sqdist(X[i,:], Y[j,:])
-    c = zero(T)
-    @inbounds @simd for n = 1:d
-        v = X[i,n] - Y[j,n]
-        c += v*v
-    end
-    ϵᵀϵ = c
-    a = kappa_dz(κ, ϵᵀϵ)
-    b = kappa_dz2(κ, ϵᵀϵ)
-    @inbounds for m = 1:d
-        for n = 1:d
-            A[n,i,m,j] = -4b * (X[i,n] - Y[j,n]) * (X[i,m] - Y[j,m])
-        end
-        A[m,i,m,j] -= 2a
-    end
-    A
-end
-
-function kernel_dxdy{T<:FloatingPoint}(κ::SquaredDistanceKernel{T}, x::Array{T}, y::Array{T}; ϵᵀϵ = sqdist(x, y))
-    ϵ = vec(x - y)''
-    -kappa_dz2(κ, ϵᵀϵ) * 4ϵ*ϵ' - kappa_dz(κ, ϵᵀϵ) * 2eye(length(x))
-end
-
 function kernel_dxdy{T<:FloatingPoint}(κ::SquaredDistanceKernel{T}, x::T, y::T)
     ϵᵀϵ = (x-y)^2
     -kappa_dz2(κ, ϵᵀϵ) * 4ϵᵀϵ - 2*kappa_dz(κ, ϵᵀϵ)
 end
 
-function kernel_dp{T<:FloatingPoint}(κ::SquaredDistanceKernel{T}, param::Union(Integer,Symbol), x::Array{T}, y::Array{T}; ϵᵀϵ = sqdist(x, y))
-    kappa_dp(κ, param, ϵᵀϵ)
-end
-
-kappa_dp{T<:FloatingPoint}(κ::SquaredDistanceKernel{T}, param::Integer, ϵᵀϵ::T) = kappa_dp(κ, names(κ)[param], ϵᵀϵ)
-
+kernel_dp{T<:FloatingPoint}(κ::SquaredDistanceKernel{T}, param::Symbol, x::Array{T}, y::Array{T}) = kappa_dp(κ, param, sqdist(x, y))
+kernel_dp{T<:FloatingPoint}(κ::SquaredDistanceKernel{T}, param::Integer, x::Array{T}, y::Array{T}) = kernel_dp(κ, names(κ)[param], x, y)
 
 #== Gaussian Kernel ===============#
 
@@ -75,16 +46,14 @@ function convert{T<:FloatingPoint}(::Type{GaussianKernel{T}}, κ::GaussianKernel
     GaussianKernel(convert(T, κ.sigma))
 end
 
-kappa{T<:FloatingPoint}(κ::GaussianKernel{T}, ϵᵀϵ::T) = exp(ϵᵀϵ/(-2κ.sigma^2))
+# z = ϵᵀϵ for squared distance kernels
+kappa{T<:FloatingPoint}(κ::GaussianKernel{T}, z::T) = exp(z/(-2κ.sigma^2))
+kappa_dz{T<:FloatingPoint}(κ::GaussianKernel{T}, z::T, kz = kappa(κ, z))  = kz / (-2κ.sigma^2)
+kappa_dz2{T<:FloatingPoint}(κ::GaussianKernel{T}, z::T, kz = kappa(κ, z)) = kz / (4κ.sigma^4)
+kappa_dsigma{T<:FloatingPoint}(κ::GaussianKernel{T}, z::T, kz=kappa(κ, z)) = kz * z * κ.sigma^(-3)
 
-kappa_dz{T<:FloatingPoint}(κ::GaussianKernel{T}, ϵᵀϵ::T, kize=kappa(κ, ϵᵀϵ)) = kize / (-2κ.sigma^2)
-
-kappa_dz2{T<:FloatingPoint}(κ::GaussianKernel{T}, ϵᵀϵ::T, kize=kappa(κ, ϵᵀϵ)) = kize / (4κ.sigma^4)
-
-kappa_dsigma{T<:FloatingPoint}(κ::GaussianKernel{T}, ϵᵀϵ::T, kize=kappa(κ, ϵᵀϵ)) = kize * ϵᵀϵ * κ.sigma^(-3)
-
-function kappa_dp{T<:FloatingPoint}(κ::GaussianKernel{T}, param::Symbol, ϵᵀϵ::T)
-    param == :sigma ? kappa_dsigma(κ, ϵᵀϵ) : zero(T)
+function kappa_dp{T<:FloatingPoint}(κ::GaussianKernel{T}, param::Symbol, z::T)
+    param == :sigma ? kappa_dsigma(κ, z) : zero(T)
 end
 
 isposdef(::GaussianKernel) = true

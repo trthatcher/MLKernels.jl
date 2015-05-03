@@ -1,3 +1,23 @@
+function kernel_dxdy!{T<:FloatingPoint}(κ::SquaredDistanceKernel{T}, d::Int, A::Array{T}, i::Int, j::Int, X::Array{T}, Y::Array{T})
+    #(d = length(x)) == length(y) == size(A,1) == size(A,2) || throw(ArgumentError("dimensions do not match"))
+    #ϵᵀϵ = sqdist(X[i,:], Y[j,:])
+    c = zero(T)
+    @inbounds @simd for n = 1:d
+        v = X[i,n] - Y[j,n]
+        c += v*v
+    end
+    ϵᵀϵ = c
+    a = kappa_dz(κ, ϵᵀϵ)
+    b = kappa_dz2(κ, ϵᵀϵ)
+    @inbounds for m = 1:d
+        for n = 1:d
+            A[n,i,m,j] = -4b * (X[i,n] - Y[j,n]) * (X[i,m] - Y[j,m])
+        end
+        A[m,i,m,j] -= 2a
+    end
+    A
+end
+
 function kernelmatrix_dk_dx{T<:FloatingPoint}(κ::StandardKernel{T}, X::Matrix{T}, Y::Matrix{T},
                                         trans::Char = 'N')
     idx = trans == 'N' ? 1 : 2
