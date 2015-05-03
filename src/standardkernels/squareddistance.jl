@@ -14,15 +14,15 @@ kernel{T<:FloatingPoint}(κ::SquaredDistanceKernel{T}, x::Array{T}, y::Array{T},
 kernel{T<:FloatingPoint}(κ::SquaredDistanceKernel{T}, x::T, y::T, w::T) = kappa(κ, ((x - y)*w)^2)
 
 # Derivatives
-function dkernel_dx{T<:FloatingPoint}(κ::SquaredDistanceKernel{T}, x::Array{T}, y::Array{T}; ϵᵀϵ = sqdist(x, y))
-    dkappa_dsqdist(κ, ϵᵀϵ) * dsqdist_dx(x, y)
+function kernel_dx{T<:FloatingPoint}(κ::SquaredDistanceKernel{T}, x::Array{T}, y::Array{T}; ϵᵀϵ = sqdist(x, y))
+    kappa_dz(κ, ϵᵀϵ) * dsqdist_dx(x, y)
 end
 
-function dkernel_dy{T<:FloatingPoint}(κ::SquaredDistanceKernel{T}, x::Array{T}, y::Array{T}; ϵᵀϵ = sqdist(x, y))
-    dkappa_dsqdist(κ, ϵᵀϵ) * dsqdist_dy(x, y)
+function kernel_dy{T<:FloatingPoint}(κ::SquaredDistanceKernel{T}, x::Array{T}, y::Array{T}; ϵᵀϵ = sqdist(x, y))
+    kappa_dz(κ, ϵᵀϵ) * dsqdist_dy(x, y)
 end
 
-function d2kernel_dxdy!{T<:FloatingPoint}(κ::SquaredDistanceKernel{T}, d::Int, A::Array{T}, i::Int, j::Int, X::Array{T}, Y::Array{T})
+function kernel_dxdy!{T<:FloatingPoint}(κ::SquaredDistanceKernel{T}, d::Int, A::Array{T}, i::Int, j::Int, X::Array{T}, Y::Array{T})
     #(d = length(x)) == length(y) == size(A,1) == size(A,2) || throw(ArgumentError("dimensions do not match"))
     #ϵᵀϵ = sqdist(X[i,:], Y[j,:])
     c = zero(T)
@@ -31,8 +31,8 @@ function d2kernel_dxdy!{T<:FloatingPoint}(κ::SquaredDistanceKernel{T}, d::Int, 
         c += v*v
     end
     ϵᵀϵ = c
-    a = dkappa_dsqdist(κ, ϵᵀϵ)
-    b = d2kappa_dsqdist2(κ, ϵᵀϵ)
+    a = kappa_dz(κ, ϵᵀϵ)
+    b = kappa_dz2(κ, ϵᵀϵ)
     @inbounds for m = 1:d
         for n = 1:d
             A[n,i,m,j] = -4b * (X[i,n] - Y[j,n]) * (X[i,m] - Y[j,m])
@@ -42,21 +42,21 @@ function d2kernel_dxdy!{T<:FloatingPoint}(κ::SquaredDistanceKernel{T}, d::Int, 
     A
 end
 
-function d2kernel_dxdy{T<:FloatingPoint}(κ::SquaredDistanceKernel{T}, x::Array{T}, y::Array{T}; ϵᵀϵ = sqdist(x, y))
+function kernel_dxdy{T<:FloatingPoint}(κ::SquaredDistanceKernel{T}, x::Array{T}, y::Array{T}; ϵᵀϵ = sqdist(x, y))
     ϵ = vec(x - y)''
-    -d2kappa_dsqdist2(κ, ϵᵀϵ) * 4ϵ*ϵ' - dkappa_dsqdist(κ, ϵᵀϵ) * 2eye(length(x))
+    -kappa_dz2(κ, ϵᵀϵ) * 4ϵ*ϵ' - kappa_dz(κ, ϵᵀϵ) * 2eye(length(x))
 end
 
-function d2kernel_dxdy{T<:FloatingPoint}(κ::SquaredDistanceKernel{T}, x::T, y::T)
+function kernel_dxdy{T<:FloatingPoint}(κ::SquaredDistanceKernel{T}, x::T, y::T)
     ϵᵀϵ = (x-y)^2
-    -d2kappa_dsqdist2(κ, ϵᵀϵ) * 4ϵᵀϵ - 2*dkappa_dsqdist(κ, ϵᵀϵ)
+    -kappa_dz2(κ, ϵᵀϵ) * 4ϵᵀϵ - 2*kappa_dz(κ, ϵᵀϵ)
 end
 
-function dkernel_dp{T<:FloatingPoint}(κ::SquaredDistanceKernel{T}, param::Union(Integer,Symbol), x::Array{T}, y::Array{T}; ϵᵀϵ = sqdist(x, y))
-    dkappa_dp(κ, param, ϵᵀϵ)
+function kernel_dp{T<:FloatingPoint}(κ::SquaredDistanceKernel{T}, param::Union(Integer,Symbol), x::Array{T}, y::Array{T}; ϵᵀϵ = sqdist(x, y))
+    kappa_dp(κ, param, ϵᵀϵ)
 end
 
-dkappa_dp{T<:FloatingPoint}(κ::SquaredDistanceKernel{T}, param::Integer, ϵᵀϵ::T) = dkappa_dp(κ, names(κ)[param], ϵᵀϵ)
+kappa_dp{T<:FloatingPoint}(κ::SquaredDistanceKernel{T}, param::Integer, ϵᵀϵ::T) = kappa_dp(κ, names(κ)[param], ϵᵀϵ)
 
 
 #== Gaussian Kernel ===============#
@@ -77,14 +77,14 @@ end
 
 kappa{T<:FloatingPoint}(κ::GaussianKernel{T}, ϵᵀϵ::T) = exp(ϵᵀϵ/(-2κ.sigma^2))
 
-dkappa_dsqdist{T<:FloatingPoint}(κ::GaussianKernel{T}, ϵᵀϵ::T, kize=kappa(κ, ϵᵀϵ)) = kize / (-2κ.sigma^2)
+kappa_dz{T<:FloatingPoint}(κ::GaussianKernel{T}, ϵᵀϵ::T, kize=kappa(κ, ϵᵀϵ)) = kize / (-2κ.sigma^2)
 
-d2kappa_dsqdist2{T<:FloatingPoint}(κ::GaussianKernel{T}, ϵᵀϵ::T, kize=kappa(κ, ϵᵀϵ)) = kize / (4κ.sigma^4)
+kappa_dz2{T<:FloatingPoint}(κ::GaussianKernel{T}, ϵᵀϵ::T, kize=kappa(κ, ϵᵀϵ)) = kize / (4κ.sigma^4)
 
-dkappa_dsigma{T<:FloatingPoint}(κ::GaussianKernel{T}, ϵᵀϵ::T, kize=kappa(κ, ϵᵀϵ)) = kize * ϵᵀϵ * κ.sigma^(-3)
+kappa_dsigma{T<:FloatingPoint}(κ::GaussianKernel{T}, ϵᵀϵ::T, kize=kappa(κ, ϵᵀϵ)) = kize * ϵᵀϵ * κ.sigma^(-3)
 
-function dkappa_dp{T<:FloatingPoint}(κ::GaussianKernel{T}, param::Symbol, ϵᵀϵ::T)
-    param == :sigma ? dkappa_dsigma(κ, ϵᵀϵ) : zero(T)
+function kappa_dp{T<:FloatingPoint}(κ::GaussianKernel{T}, param::Symbol, ϵᵀϵ::T)
+    param == :sigma ? kappa_dsigma(κ, ϵᵀϵ) : zero(T)
 end
 
 isposdef(::GaussianKernel) = true

@@ -10,13 +10,13 @@ function kernelmatrix_dk_dx{T<:FloatingPoint}(κ::StandardKernel{T}, X::Matrix{T
     if trans == 'N'
         for j = 1:m 
             for i = 1:n
-                K[:,i,j] = dkernel_dx(κ, X[i,:], Y[j,:])
+                K[:,i,j] = kernel_dx(κ, X[i,:], Y[j,:])
             end
         end
     else
         for j = 1:m 
             for i = 1:n
-                K[:,i,j] = dkernel_dx(κ, X[:,i], Y[:,j])
+                K[:,i,j] = kernel_dx(κ, X[:,i], Y[:,j])
             end
         end
     end
@@ -35,13 +35,13 @@ function kernelmatrix_dk_dy{T<:FloatingPoint}(κ::StandardKernel{T}, X::Matrix{T
     if trans == 'N'
         for j = 1:m 
             for i = 1:n
-                K[:,i,j] = dkernel_dy(κ, X[i,:], Y[j,:])
+                K[:,i,j] = kernel_dy(κ, X[i,:], Y[j,:])
             end
         end
     else
         for j = 1:m 
             for i = 1:n
-                K[:,i,j] = dkernel_dy(κ, X[:,i], Y[:,j])
+                K[:,i,j] = kernel_dy(κ, X[:,i], Y[:,j])
             end
         end
     end
@@ -60,16 +60,16 @@ function kernelmatrix_d2k_dxdy{T<:FloatingPoint}(κ::StandardKernel{T}, X::Matri
     if trans == 'N'
         @inbounds for j = 1:m 
             for i = 1:n
-                #K[:,:,i,j] = d2kernel_dxdy(κ, X[i,:], Y[j,:])
-                d2kernel_dxdy!(κ, d, K, i, j, X, Y)
+                #K[:,:,i,j] = kernel_dxdy(κ, X[i,:], Y[j,:])
+                kernel_dxdy!(κ, d, K, i, j, X, Y)
             end
         end
     else
         warn("Not implemented properly")
         @inbounds for j = 1:m 
             for i = 1:n
-                #K[:,:,i,j] = d2kernel_dxdy(κ, X[:,i], Y[:,j])
-                d2kernel_dxdy!(κ, K, i, j, X[:,i], Y[:,j])
+                #K[:,:,i,j] = kernel_dxdy(κ, X[:,i], Y[:,j])
+                kernel_dxdy!(κ, K, i, j, X[:,i], Y[:,j])
             end
         end
     end
@@ -82,7 +82,7 @@ function kernelmatrix_d2k_dxdy{T<:FloatingPoint}(κ::StandardKernel{T}, X::Vecto
     K = Array(T, n, m)
     @inbounds for j = 1:m 
         for i = 1:n
-            K[i,j] = d2kernel_dxdy(κ, X[i], Y[j])
+            K[i,j] = kernel_dxdy(κ, X[i], Y[j])
         end
     end
     K

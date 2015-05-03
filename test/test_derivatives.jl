@@ -19,17 +19,17 @@ checkderiv(f, fprime, p; eps=1e-3) = eltype(p)[checkderiv(f, fprime, p, i; eps=e
 checkderivvec(f, fprime, x; eps=1e-3) = abs(checkderiv(f, (p,i)->fprime(p)[i], x; eps=eps))
 
 function test_deriv_dxdy(k, x, y, epsilon)
-    @test all(checkderivvec(p->kernel(k,p,y), p->dkernel_dx(k,p,y), x) .< epsilon)
-    @test all(checkderivvec(p->kernel(k,x,p), p->dkernel_dy(k,x,p), y) .< epsilon)
+    @test all(checkderivvec(p->kernel(k,p,y), p->kernel_dx(k,p,y), x) .< epsilon)
+    @test all(checkderivvec(p->kernel(k,x,p), p->kernel_dy(k,x,p), y) .< epsilon)
 
     for i=1:length(x), j=1:length(y)
         @test abs(checkderiv(
-            p -> dkernel_dx(k,x,p)[i],
-            (p,j_) -> d2kernel_dxdy(k,x,p)[i,j_],
+            p -> kernel_dx(k,x,p)[i],
+            (p,j_) -> kernel_dxdy(k,x,p)[i,j_],
             y, j)) < epsilon
         @test abs(checkderiv(
-            p -> dkernel_dy(k,p,y)[j],
-            (p,i_) -> d2kernel_dxdy(k,p,y)[i_,j],
+            p -> kernel_dy(k,p,y)[j],
+            (p,i_) -> kernel_dxdy(k,p,y)[i_,j],
             x, i)) < epsilon
     end
 end
@@ -40,13 +40,13 @@ function test_deriv_dp(kconstructor, param, derivs, x, y, epsilon)
     for (i, deriv) in enumerate(derivs)
         @test abs(checkderiv(
             p -> kernel(kconstructor(p), x, y),
-            (p,i_) -> dkernel_dp(kconstructor(p), i_, x, y),
+            (p,i_) -> kernel_dp(kconstructor(p), i_, x, y),
             param, i)) < epsilon
-        @test dkernel_dp(k, deriv, x, y) == dkernel_dp(k, i, x, y)
+        @test kernel_dp(k, deriv, x, y) == kernel_dp(k, i, x, y)
     end
-    @test dkernel_dp(k, :undefined, x, y) == zero(eltype(x))
-    @test_throws Exception dkernel_dp(k, 0, x, y)
-    @test_throws Exception dkernel_dp(k, length(derivs)+1, x, y)
+    @test kernel_dp(k, :undefined, x, y) == zero(eltype(x))
+    @test_throws Exception kernel_dp(k, 0, x, y)
+    @test_throws Exception kernel_dp(k, length(derivs)+1, x, y)
 end
 
 print("- Testing vector function derivatives ... ")
