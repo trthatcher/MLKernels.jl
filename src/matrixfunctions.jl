@@ -23,16 +23,16 @@ syml(S::Matrix) = syml!(copy(S))
 
 # Symmetrize the upper off-diagonal of matrix S using the lower half of S
 function symu!(S::Matrix)
-	p = size(S,1)
-	p == size(S,2) || throw(ArgumentError("S ∈ ℝ$(p)×$(size(S, 2)) must be square"))
-	if p > 1 
-		@inbounds for j = 2:p
-			for i = 1:j-1
-				S[i,j] = S[j,i]
-			end 
-		end
-	end
-	return S
+    p = size(S,1)
+    p == size(S,2) || throw(ArgumentError("S ∈ ℝ$(p)×$(size(S, 2)) must be square"))
+    if p > 1 
+        @inbounds for j = 2:p
+            for i = 1:j-1
+                S[i,j] = S[j,i]
+            end 
+        end
+    end
+    return S
 end
 symu(S::Matrix) = symu!(copy(S))
 
@@ -176,27 +176,82 @@ end
 
 # Regularize a square matrix S, overwrites S with (1-α)*S + α*β*I
 function regularize!{T<:FloatingPoint}(S::Matrix{T}, α::T, β::T=trace(S)/size(S,1))
-	(p = size(S,1)) == size(S,2) || throw(ArgumentError("S ∈ ℝ$(p)×$(size(S, 2)) must be square"))
-	0 <= α <= 1 || throw(ArgumentError("α=$(α) must be in the interval [0,1]"))
-	@inbounds for j = 1:p
+    (p = size(S,1)) == size(S,2) || throw(ArgumentError("S ∈ ℝ$(p)×$(size(S, 2)) must be square"))
+    0 <= α <= 1 || throw(ArgumentError("α=$(α) must be in the interval [0,1]"))
+    @inbounds for j = 1:p
         for i = 1:p
             S[i,j] *= one(T) - α
         end
         S[j,j] += α*β
-	end
-	S
+    end
+    S
 end
 regularize{T<:FloatingPoint}(S::Matrix{T}, α::T) = regularize!(copy(S), α)
 regularize{T<:FloatingPoint}(S::Matrix{T}, α::T, β::T) = regularize!(copy(S), α, β)
 
 # Perturb a symmetric matrix S, overwrites S with S + ϵ*I
 function perturb!{T<:FloatingPoint}(S::Matrix{T}, ϵ::T = 100*eps(T)*size(S,1))
-	(p = size(S,1)) == size(S,2) || throw(ArgumentError("S ∈ ℝ$(p)×$(size(S, 2)) must be square"))
-	0 <= ϵ || throw(ArgumentError("ϵ = $(ϵ) must be in [0,∞)"))
-	@inbounds for i = 1:p
-		S[i,i] += ϵ
-	end
-	S
+    (p = size(S,1)) == size(S,2) || throw(ArgumentError("S ∈ ℝ$(p)×$(size(S, 2)) must be square"))
+    0 <= ϵ || throw(ArgumentError("ϵ = $(ϵ) must be in [0,∞)"))
+    @inbounds for i = 1:p
+        S[i,i] += ϵ
+    end
+    S
 end
 perturb{T<:FloatingPoint}(S::Matrix{T}, ϵ::T) = perturb!(copy(S),ϵ)
 perturb{T<:FloatingPoint}(S::Matrix{T}) = perturb!(copy(S))
+
+# scaled_difference: Difference each coordinate in X by each observation in Y
+#     trans == 'N' -> Each row in X and Y is a coordinate
+#              'T' -> Each column in X and Y is a coordinate
+#     block_X == true  -> Every [:,:,i] block in the returned matrix is X differenced by the ith coordinate in Y
+#             == false -> Every [:,:,i] block in the returned matrix is the ith coordinate of X differenced by Y
+function scaled_difference{T<:FloatingPoint}(a::T, X::Matrix{T}, Y::Matrix{T}, trans::Char = 'N', block_X::Bool = true)
+    is_trans = trans == 'T'  # True if columns are observations
+    n = size(X, is_trans ? 2 : 1)
+    m = size(Y, is_trans ? 2 : 1)
+    if (d = size(X, is_trans ? 1 : 2)) != size(Y, is_trans ? 1 : 2)
+        throw(ArgumentError("X and Y do not have the same number of " * is_trans ? "rows." : "columns."))
+    end
+    if block_X  # Every [:,:,i] block is X differenced by ith coordinate in Y
+        A = Array(T, d, n, m)
+        if trans == 'N'
+            @inbounds for j = 1:m
+                for i = 1:n
+                    for k = 1:d
+                        A[k, i, j] = a*(X[i,k] - Y[j,k])
+                    end
+                end
+            end
+        else
+            @inbounds for j = 1:m
+                for i = 1:n
+                    for k = 1:d
+                        A[k, i, j] = a*(X[k,i] - Y[k,j])
+                    end
+                end
+            end
+        end
+        return A
+    else  # Every [:,:,i] block is the ith coordinate of X differenced by Y
+        A = Array(T, d, m, n)
+        if trans == 'N'
+            @inbounds for j = 1:m
+                for i = 1:n
+                    for k = 1:d
+                        A[k, j, i] = a*(X[i,k] - Y[j,k])
+                    end
+                end
+            end
+        else
+            @inbounds for j = 1:m
+                for i = 1:n
+                    for k = 1:d
+                        A[k, j, i] = a*(X[k,i] - Y[k,j])
+                    end
+                end
+            end
+        end
+        return A
+    end
+end

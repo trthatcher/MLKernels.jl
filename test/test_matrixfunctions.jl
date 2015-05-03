@@ -55,5 +55,20 @@ for T in (Float32,Float64)
           2 2 2]
     @test MLKernels.perturb(S, one(T)) == T[3 2 2; 2 3 2; 2 2 3]
     @test MLKernels.regularize(S, one(T), one(T)) == T[1 0 0; 0 1 0; 0 0 1]
+    A = T[1 1 1;
+          2 2 2]
+    B = T[2 2 2;
+          3 3 3]
+    C1 = reshape(T[-1 -1 -1 0 0 0 -2 -2 -2 -1 -1 -1], (3,2,2))  # block_X == true
+    C2 = reshape(T[-1 -1 -1 -2 -2 -2 -0 -0 -0 -1 -1 -1], (3,2,2))  # block_X == false
+    @test MLKernels.scaled_difference(one(T), A, B, 'N', true) == C1
+    @test MLKernels.scaled_difference(one(T), A', B', 'T', true) == C1
+    @test MLKernels.scaled_difference(one(T), A, B, 'N', false) == C2
+    @test MLKernels.scaled_difference(one(T), A', B', 'T', false) == C2
+    @test MLKernels.scaled_difference(convert(T,2), A, B, 'N', true) == 2*C1
+    @test MLKernels.scaled_difference(convert(T,2), A', B', 'T', true) == 2*C1
+    @test MLKernels.scaled_difference(convert(T,2), A, B, 'N', false) == 2*C2
+    @test MLKernels.scaled_difference(convert(T,2), A', B', 'T', false) == 2*C2
+
 end
 println("Done")
