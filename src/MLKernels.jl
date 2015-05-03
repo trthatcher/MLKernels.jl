@@ -15,8 +15,8 @@ export
     kernel_dp,
     kernel_dxdy,
     kernelmatrix,
-    gramian_matrix,
-    lagged_gramian_matrix,
+    scprodmatrix,
+    sqdistmatrix,
     center_kernelmatrix!,
     center_kernelmatrix,
 

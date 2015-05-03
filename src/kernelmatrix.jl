@@ -2,53 +2,9 @@
   Kernel Matrices
 ===================================================================================================#
 
-
 #==========================================================================
-  Gramian Functions
+  Kernel Matrix Transformation
 ==========================================================================#
-
-# Calculate the gramian
-#    If trans = 'N' then G = XXᵀ (X is a design matrix)
-#    If trans = 'T' then G = XᵀX (X is a transposed design matrix)
-function gramian_matrix{T<:FloatingPoint}(X::Matrix{T}, trans::Char = 'N', uplo::Char = 'U', sym::Bool = true)
-    G = BLAS.syrk(uplo, trans, one(T), X)
-    sym ? (uplo == 'U' ? syml!(G) : symu!(G)) : G
-end
-
-# Returns the upper right corner of the gramian matrix of [Xᵀ Yᵀ]ᵀ or [X Y]
-#   If trans = 'N' then G = XYᵀ (X and Y are design matrices)
-#   If trans = 'T' then G = XᵀY (X and Y are transposed design matrices)
-function gramian_matrix{T<:FloatingPoint}(X::Matrix{T}, Y::Matrix{T}, trans::Char = 'N')
-    G::Array{T} = BLAS.gemm(trans, trans == 'N' ? 'T' : 'N', X, Y)
-end
-
-# Calculates G such that Gij is the dot product of the difference of row i and j of matrix X
-function lagged_gramian_matrix{T<:FloatingPoint}(X::Matrix{T}, trans::Char = 'N', uplo::Char = 'U', sym::Bool = true)
-    G = gramian_matrix(X, trans, uplo, false)
-    n = size(X, trans == 'N' ? 1 : 2)
-    xᵀx = copy(vec(diag(G)))
-    @inbounds for j = 1:n
-        for i = uplo == 'U' ? (1:j) : (j:n)
-            G[i,j] = xᵀx[i] - convert(T, 2) * G[i,j] + xᵀx[j]
-        end
-    end
-    sym ? (uplo == 'U' ? syml!(G) : symu!(G)) : G
-end
-
-# Calculates the upper right corner G of the lagged gramian matrix of matrix [Xᵀ Yᵀ]ᵀ
-function lagged_gramian_matrix{T<:FloatingPoint}(X::Matrix{T}, Y::Matrix{T}, trans::Char = 'N')
-    n = size(X, trans == 'N' ? 1 : 2)
-    m = size(Y, trans == 'N' ? 1 : 2)
-    xᵀx = trans == 'N' ? dot_rows(X) : dot_columns(X)
-    yᵀy = trans == 'N' ? dot_rows(Y) : dot_columns(Y)
-    G = gramian_matrix(X, Y, trans)
-    @inbounds for j = 1:m
-        for i = 1:n
-            G[i,j] = xᵀx[i] - convert(T, 2) * G[i,j] + yᵀy[j]
-        end
-    end
-    G
-end
 
 # Centralize a kernel matrix K
 function center_kernelmatrix!{T<:FloatingPoint}(K::Matrix{T})
@@ -177,8 +133,8 @@ end
   product kernels
 ==========================================================================#
 
-for (kernelobject, gramian) in ((:SquaredDistanceKernel, :lagged_gramian_matrix),
-                (:ScalarProductKernel, :gramian_matrix))
+for (kernelobject, gramian) in ((:SquaredDistanceKernel, :sqdistmatrix),
+                (:ScalarProductKernel, :scprodmatrix))
     @eval begin
 
     # Kernelize a gramian matrix by transforming each element using the scalar kernel function
@@ -292,7 +248,7 @@ for kernelobject in (:SeparableKernel,)
     end
 
     function kernelmatrix_scaled{T<:FloatingPoint}(a::T, κ::$kernelobject{T}, X::Matrix{T}, Y::Matrix{T}, trans::Char = 'N')
-        K = BLAS.gemm(trans, trans == 'N' ? 'T' : 'N', a, kappa_array!(κ, copy(X)), kappa_array!(κ, copy(Y)))
+        BLAS.gemm(trans, trans == 'N' ? 'T' : 'N', a, kappa_array!(κ, copy(X)), kappa_array!(κ, copy(Y)))
     end
 
     function kernelmatrix{T<:FloatingPoint}(κ::$kernelobject{T}, X::Matrix{T}, Y::Matrix{T}, trans::Char = 'N')

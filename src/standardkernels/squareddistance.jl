@@ -1,5 +1,5 @@
 #===================================================================================================
-  Euclidean Distance Kernels
+  Squared Distance Kernels
 ===================================================================================================#
 
 abstract SquaredDistanceKernel{T<:FloatingPoint} <: StandardKernel{T}
@@ -14,8 +14,8 @@ kernel{T<:FloatingPoint}(κ::SquaredDistanceKernel{T}, x::Array{T}, y::Array{T},
 kernel{T<:FloatingPoint}(κ::SquaredDistanceKernel{T}, x::T, y::T, w::T) = kappa(κ, ((x - y)*w)^2)
 
 # Derivatives
-kernel_dx{T<:FloatingPoint}(κ::SquaredDistanceKernel{T}, x::Array{T}, y::Array{T}) = kappa_dz(κ, sqdist(x, y)) * dsqdist_dx(x, y)
-kernel_dy{T<:FloatingPoint}(κ::SquaredDistanceKernel{T}, x::Array{T}, y::Array{T}) = kappa_dz(κ, sqdist(x, y)) * dsqdist_dy(x, y)
+kernel_dx{T<:FloatingPoint}(κ::SquaredDistanceKernel{T}, x::Array{T}, y::Array{T}) = kappa_dz(κ, sqdist(x, y)) * sqdist_dx(x, y)
+kernel_dy{T<:FloatingPoint}(κ::SquaredDistanceKernel{T}, x::Array{T}, y::Array{T}) = kappa_dz(κ, sqdist(x, y)) * sqdist_dy(x, y)
 
 function kernel_dxdy{T<:FloatingPoint}(κ::SquaredDistanceKernel{T}, x::Array{T}, y::Array{T})
     ϵ = vec(x - y)

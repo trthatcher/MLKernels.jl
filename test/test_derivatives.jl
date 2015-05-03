@@ -58,16 +58,16 @@ for T in (Float64,)
     for s_fun in (:sqdist, :scprod)
         fun = @eval(MLKernels.$s_fun)
         for d in (:x, :y, :w)
-            @eval $(symbol("dfun_d$(d)")) = MLKernels.$(symbol("d$(s_fun)_d$(d)"))
+            @eval $(symbol("fun_d$(d)")) = MLKernels.$(symbol("$(s_fun)_d$(d)"))
         end
 
-        @test all(checkderivvec(p->fun(p,y), p->dfun_dx(p,y), x) .< 1e-10)
-        @test all(checkderivvec(p->fun(x,p), p->dfun_dy(x,p), y) .< 1e-10)
+        @test all(checkderivvec(p->fun(p,y), p->fun_dx(p,y), x) .< 1e-10)
+        @test all(checkderivvec(p->fun(x,p), p->fun_dy(x,p), y) .< 1e-10)
 
-        @test all(checkderivvec(p->fun(p,y,w), p->dfun_dx(p,y,w), x) .< 1e-10)
-        @test all(checkderivvec(p->fun(x,p,w), p->dfun_dy(x,p,w), y) .< 1e-10)
+        @test all(checkderivvec(p->fun(p,y,w), p->fun_dx(p,y,w), x) .< 1e-10)
+        @test all(checkderivvec(p->fun(x,p,w), p->fun_dy(x,p,w), y) .< 1e-10)
 
-        @test all(checkderivvec(p->fun(x,y,p), p->dfun_dw(x,y,p), w) .< 1e-10)
+        @test all(checkderivvec(p->fun(x,y,p), p->fun_dw(x,y,p), w) .< 1e-10)
     end
 end
 println("Done")
