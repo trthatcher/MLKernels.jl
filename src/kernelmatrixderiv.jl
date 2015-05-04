@@ -1,11 +1,17 @@
 # WIP
-function kernelmatrix_dx{T<:FloatingPoint}(κ::SquaredDistanceKernel, X::Matrix{T}, Y::Matrix{T}, trans::Char = 'N')
+function applykernel_dxdy!(κ::SquaredDistanceKernel, A::Array{T}, Z::Array{T}, d::Integer, x_pos::Integer, y_pos::Integer)
+    error("Not implemented")
+end
+
+function kernelmatrix_dxdy{T<:FloatingPoint}(κ::SquaredDistanceKernel, X::Matrix{T}, Y::Matrix{T}, trans::Char = 'N')
     error("Not Implemented")
     n = size(X, is_trans ? 2 : 1)
     m = size(Y, is_trans ? 2 : 1)
     if (d = size(X, is_trans ? 1 : 2)) != size(Y, is_trans ? 1 : 2)
         throw(ArgumentError("X and Y do not have the same number of " * is_trans ? "rows." : "columns."))
     end
+    A = tensor_epsilons(X, Y, trans) # A := (∂z/∂x)(∂x/∂y)ᵀ/4
+    Z = scprodmatrix(X, Y, trans)  # Technically, trace(A[:,:,i,j]) = Z[i,j] so Z can be constructed using that
 end
 
 

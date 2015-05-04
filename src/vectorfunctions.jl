@@ -9,11 +9,11 @@
 # Scalar product of vectors x and y
 function scprod{T<:FloatingPoint}(x::Array{T}, y::Array{T})
     (n = length(x)) == length(y) || throw(ArgumentError("Dimensions do not conform."))
-    c = zero(T)
+    z = zero(T)
     @inbounds @simd for i = 1:n
-        c += x[i]*y[i]
+        z += x[i]*y[i]
     end
-    c
+    z
 end
 
 # Partial derivative of the scalar product of vectors x and y
@@ -24,15 +24,15 @@ scprod_dy{T<:FloatingPoint}(x::Array{T}, y::Array{T}) = copy(x)
 #    trans == 'N' -> G = XXᵀ (X is a design matrix)
 #          == 'T' -> G = XᵀX (X is a transposed design matrix)
 function scprodmatrix{T<:FloatingPoint}(X::Matrix{T}, trans::Char = 'N', uplo::Char = 'U', sym::Bool = true)
-    G = BLAS.syrk(uplo, trans, one(T), X)
-    sym ? (uplo == 'U' ? syml!(G) : symu!(G)) : G
+    Z = BLAS.syrk(uplo, trans, one(T), X)
+    sym ? (uplo == 'U' ? syml!(Z) : symu!(Z)) : Z
 end
 
 # Returns the upper right corner of the gramian matrix of [Xᵀ Yᵀ]ᵀ or [X Y]
 #   trans == 'N' -> G = XYᵀ (X and Y are design matrices)
 #         == 'T' -> G = XᵀY (X and Y are transposed design matrices)
 function scprodmatrix{T<:FloatingPoint}(X::Matrix{T}, Y::Matrix{T}, trans::Char = 'N')
-    G::Array{T} = BLAS.gemm(trans, trans == 'N' ? 'T' : 'N', X, Y)
+    BLAS.gemm(trans, trans == 'N' ? 'T' : 'N', X, Y)
 end
 
 
@@ -43,11 +43,11 @@ end
 # Weighted scalar product of x and y
 function scprod{T<:FloatingPoint}(x::Array{T}, y::Array{T}, w::Array{T})
     (n = length(x)) == length(y) == length(w) || throw(ArgumentError("Dimensions do not conform."))
-    c = zero(T)
+    z = zero(T)
     @inbounds @simd for i = 1:n
-        c += x[i]*y[i]*w[i]
+        z += x[i]*y[i]*w[i]
     end
-    c
+    z
 end
 
 function scprod_dx!{T<:FloatingPoint}(x::Array{T}, y::Array{T}, w::Array{T})
@@ -73,12 +73,12 @@ scprod_dw{T<:FloatingPoint}(x::Array{T}, y::Array{T}, w::Array{T}) = scprod_dy!(
 # Squared distance between vectors x and y
 function sqdist{T<:FloatingPoint}(x::Array{T}, y::Array{T})
     (n = length(x)) == length(y) || throw(ArgumentError("Dimensions do not conform."))
-    c = zero(T)
+    z = zero(T)
     @inbounds @simd for i = 1:n
         v = x[i] - y[i]
-        c += v*v
+        z += v*v
     end
-    c
+    z
 end
 
 sqdist_dx{T<:FloatingPoint}(x::Array{T}, y::Array{T}) = scale!(2, x - y)
@@ -89,15 +89,15 @@ sqdist_dy{T<:FloatingPoint}(x::Array{T}, y::Array{T}) = scale!(2, y - x)
 #    trans == 'N' -> X is a design matrix
 #          == 'T' -> X is a transposed design matrix
 function sqdistmatrix{T<:FloatingPoint}(X::Matrix{T}, trans::Char = 'N', uplo::Char = 'U', sym::Bool = true)
-    G = scprodmatrix(X, trans, uplo, false)
+    Z = scprodmatrix(X, trans, uplo, false)
     n = size(X, trans == 'N' ? 1 : 2)
-    xᵀx = copy(vec(diag(G)))
+    xᵀx = copy(vec(diag(Z)))
     @inbounds for j = 1:n
         for i = uplo == 'U' ? (1:j) : (j:n)
-            G[i,j] = xᵀx[i] - convert(T, 2) * G[i,j] + xᵀx[j]
+            Z[i,j] = xᵀx[i] - convert(T, 2) * Z[i,j] + xᵀx[j]
         end
     end
-    sym ? (uplo == 'U' ? syml!(G) : symu!(G)) : G
+    sym ? (uplo == 'U' ? syml!(Z) : symu!(Z)) : Z
 end
 
 # Calculates the upper right corner G of the squared distance matrix of matrix [Xᵀ Yᵀ]ᵀ
@@ -108,13 +108,13 @@ function sqdistmatrix{T<:FloatingPoint}(X::Matrix{T}, Y::Matrix{T}, trans::Char 
     m = size(Y, trans == 'N' ? 1 : 2)
     xᵀx = trans == 'N' ? dot_rows(X) : dot_columns(X)
     yᵀy = trans == 'N' ? dot_rows(Y) : dot_columns(Y)
-    G = scprodmatrix(X, Y, trans)
+    Z = scprodmatrix(X, Y, trans)
     @inbounds for j = 1:m
         for i = 1:n
-            G[i,j] = xᵀx[i] - convert(T, 2) * G[i,j] + yᵀy[j]
+            Z[i,j] = xᵀx[i] - convert(T, 2) * Z[i,j] + yᵀy[j]
         end
     end
-    G
+    Z
 end
 
 
@@ -125,12 +125,12 @@ end
 # Weighted squared distance function between vectors x and y
 function sqdist{T<:FloatingPoint}(x::Array{T}, y::Array{T}, w::Array{T})
     (n = length(x)) == length(y) == length(w) || throw(ArgumentError("Dimensions do not conform."))
-    c = zero(T)
+    z = zero(T)
     @inbounds @simd for i = 1:n
         v = (x[i] - y[i]) * w[i]
-        c += v*v
+        z += v*v
     end
-    c
+    z
 end
 
 function sqdist_dx!{T<:FloatingPoint}(x::Array{T}, y::Array{T}, w::Array{T})
