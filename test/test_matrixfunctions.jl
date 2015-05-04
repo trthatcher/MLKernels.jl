@@ -59,16 +59,9 @@ for T in (Float32,Float64)
           2 2 2]
     B = T[2 2 2;
           3 3 3]
-    C1 = reshape(T[-1 -1 -1 0 0 0 -2 -2 -2 -1 -1 -1], (3,2,2))  # block_X == true
-    C2 = reshape(T[-1 -1 -1 -2 -2 -2 -0 -0 -0 -1 -1 -1], (3,2,2))  # block_X == false
-    @test MLKernels.sqdistmatrix_dx(one(T), A, B, 'N', true) == 2*C1
-    @test MLKernels.sqdistmatrix_dx(one(T), A', B', 'T', true) == 2*C1
-    @test MLKernels.sqdistmatrix_dx(one(T), A, B, 'N', false) == 2*C2
-    @test MLKernels.sqdistmatrix_dx(one(T), A', B', 'T', false) == 2*C2
-    @test MLKernels.sqdistmatrix_dx(convert(T,2), A, B, 'N', true) == 4*C1
-    @test MLKernels.sqdistmatrix_dx(convert(T,2), A', B', 'T', true) == 4*C1
-    @test MLKernels.sqdistmatrix_dx(convert(T,2), A, B, 'N', false) == 4*C2
-    @test MLKernels.sqdistmatrix_dx(convert(T,2), A', B', 'T', false) == 4*C2
+    C = reshape(T[-1 -1 -1 0 0 0 -2 -2 -2 -1 -1 -1], (3,2,2))  # block_X == true
+    @test MLKernels.epsilons(A, B, 'N') == C
+    @test MLKernels.epsilons(A', B', 'T') == C
 
 end
 println("Done")

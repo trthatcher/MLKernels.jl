@@ -215,4 +215,12 @@ Define $\bm{\epsilon} = \mathbf{x} - \mathbf{y}$, then this gives an element-wis
 \end{equation*}
 
 
+\subsection{Kernel Derivative - Implementation}
+To compute $\left[\frac{\partial \kappa^2}{\partial \mathbf{x} \partial \mathbf{y}}\right]_{ij}$:
+\begin{enumerate}
+    \item Compute array $\mathbf{A}$ of element-wise differences for all coordinates in arrays $\mathbf{X}$ and $\mathbf{Y}$.
+    \item Compute the lagged gramian matrix
+    \item Scan through the elements of $\mathbf{A}$ and apply the $\kappa$ functions
+    \item Return K
+\end{enumerate}
 \end{document}

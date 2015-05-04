@@ -1,13 +1,12 @@
-
+# WIP
 function kernelmatrix_dx{T<:FloatingPoint}(κ::SquaredDistanceKernel, X::Matrix{T}, Y::Matrix{T}, trans::Char = 'N')
-    n = size(X, trans == 'N' ? 1 : 2)
-    m = size(Y, trans == 'N' ? 1 : 2)
-    if (d = size(X, trans == 'N' ? 2 : 1)) != size(Y, trans == 'N' ? 2 : 1)
-        throw(ArgumentError("X and Y do not have the same number of " * trans == 'N' ? "rows." : "columns."))
+    error("Not Implemented")
+    n = size(X, is_trans ? 2 : 1)
+    m = size(Y, is_trans ? 2 : 1)
+    if (d = size(X, is_trans ? 1 : 2)) != size(Y, is_trans ? 1 : 2)
+        throw(ArgumentError("X and Y do not have the same number of " * is_trans ? "rows." : "columns."))
     end
-
 end
-
 
 
 function kernelmatrix_dk_dx{T<:FloatingPoint}(κ::StandardKernel{T}, X::Matrix{T}, Y::Matrix{T}, trans::Char = 'N')
@@ -58,8 +57,6 @@ function kernelmatrix_dk_dy{T<:FloatingPoint}(κ::StandardKernel{T}, X::Matrix{T
     end
     reshape(permutedims(K, [2,1,3]), (n, d*m))
 end
-
-
 
 
 function kernel_dxdy!{T<:FloatingPoint}(κ::SquaredDistanceKernel{T}, d::Int, A::Array{T}, i::Int, j::Int, X::Array{T}, Y::Array{T})

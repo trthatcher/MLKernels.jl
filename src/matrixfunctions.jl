@@ -200,3 +200,94 @@ function perturb!{T<:FloatingPoint}(S::Matrix{T}, ϵ::T = 100*eps(T)*size(S,1))
 end
 perturb{T<:FloatingPoint}(S::Matrix{T}, ϵ::T) = perturb!(copy(S),ϵ)
 perturb{T<:FloatingPoint}(S::Matrix{T}) = perturb!(copy(S))
+
+
+#==========================================================================
+  Array Computations
+==========================================================================#
+
+#### Helper Functions for coordinate epsilons
+####     In-place calculation of ϵ = x - y for specified X and Y coordinates
+    function N_epsilon!{T<:FloatingPoint}(A::Array{T}, X::Matrix{T}, Y::Matrix{T}, d::Integer, x_pos::Integer, y_pos::Integer)
+        @inbounds for i = 1:d
+            A[i, x_pos, y_pos] = X[x_pos,i] - Y[y_pos,i]
+        end
+    end
+    function T_epsilon!{T<:FloatingPoint}(A::Array{T}, X::Matrix{T}, Y::Matrix{T}, d::Integer, x_pos::Integer, y_pos::Integer)
+        @inbounds for i = 1:d
+            A[i, x_pos, y_pos] = X[i,x_pos] - Y[i,y_pos]
+        end
+    end
+####
+
+# epsilons: Calculates the set of ϵ vectors for every pair of vectors in X and Y
+#           [:,i,j] is the ith coordinate of X differenced by the jth coordinate of Y
+function epsilons{T<:FloatingPoint}(X::Matrix{T}, Y::Matrix{T}, trans::Char = 'N')
+    is_trans = trans == 'T'  # True if columns are observations
+    n = size(X, is_trans ? 2 : 1)
+    m = size(Y, is_trans ? 2 : 1)
+    if (d = size(X, is_trans ? 1 : 2)) != size(Y, is_trans ? 1 : 2)
+        throw(ArgumentError("X and Y do not have the same number of " * is_trans ? "rows." : "columns."))
+    end
+    A = Array(T, d, n, m)
+    if is_trans
+        @inbounds for j = 1:m
+            for i = 1:n
+                T_epsilon!(A, X, Y, d, i, j)
+            end
+        end
+    else
+        @inbounds for j = 1:m
+            for i = 1:n
+                N_epsilon!(A, X, Y, d, i, j)
+            end
+        end
+    end
+    A
+end
+
+#### Helper Functions for difference_elements
+####     In-place calculation of the tensor product of each epsilon with itself
+    function T_tensor_epsilon!{T<:FloatingPoint}(A::Array{T}, X::Matrix{T}, Y::Matrix{T}, d::Integer, x_pos::Integer, y_pos::Integer)
+        @inbounds for j = 1:d
+            ϵ = X[j,x_pos] - Y[j,y_pos]
+            for i = 1:d
+                A[i,j,x_pos,y_pos] = (X[i,x_pos] - Y[i,y_pos]) * ϵ
+            end
+        end
+    end
+    function N_tensor_epsilon!{T<:FloatingPoint}(A::Array{T}, X::Matrix{T}, Y::Matrix{T}, d::Integer, x_pos::Integer, y_pos::Integer)
+        @inbounds for j = 1:d
+            ϵ = X[x_pos,j] - Y[y_pos,j]
+            for i = 1:d
+                A[i,j,x_pos,y_pos] = (X[x_pos,i] - Y[y_pos,i]) * ϵ
+            end
+        end
+    end
+####
+
+# epsilons: Calculates the set of ϵϵᵀ matrices for every pair of vectors in X and Y
+#     [:,i,j] is the ith coordinate of X differenced by the jth coordinate of Y
+function tensor_epsilons{T<:FloatingPoint}(X::Matrix{T}, Y::Matrix{T}, trans::Char = 'N')
+    is_trans = trans == 'T'  # True if columns are observations
+    n = size(X, is_trans ? 2 : 1)
+    m = size(Y, is_trans ? 2 : 1)
+    if (d = size(X, is_trans ? 1 : 2)) != size(Y, is_trans ? 1 : 2)
+        throw(ArgumentError("X and Y do not have the same number of " * is_trans ? "rows." : "columns."))
+    end
+    A = Array(T, d, d, n, m)
+    if is_trans
+        @inbounds for j = 1:m
+            for i = 1:n
+                T_tensor_epsilon!(A, X, Y, d, i, j)
+            end
+        end
+    else
+        @inbounds for j = 1:m
+            for i = 1:n
+                N_tensor_epsilon!(A, X, Y, d, i, j)
+            end
+        end
+    end
+    A
+end
