@@ -251,21 +251,15 @@ end
 
 #### Helper Functions for difference_elements
 ####     In-place calculation of the tensor product of each epsilon with itself
-    function T_tensor_epsilon!{T<:FloatingPoint}(E::Array{T}, X::Matrix{T}, Y::Matrix{T}, d::Integer, x_pos::Integer, y_pos::Integer)
-        @inbounds for j = 1:d
-            ϵ = X[j,x_pos] - Y[j,y_pos]
-            for i = 1:d
-                E[i,j,x_pos,y_pos] = (X[i,x_pos] - Y[i,y_pos]) * ϵ
-            end
+    function T_tensor_epsilon!{T<:FloatingPoint}(E::Array{T}, X::Matrix{T}, Y::Matrix{T}, d::Int64, x_pos::Int64, y_pos::Int64)
+        @inbounds for j = 1:d, i = 1:d
+            E[i,j,x_pos,y_pos] = (X[i,x_pos] - Y[i,y_pos]) * (X[j,x_pos] - Y[j,y_pos])
         end
         E
     end
-    function N_tensor_epsilon!{T<:FloatingPoint}(E::Array{T}, X::Matrix{T}, Y::Matrix{T}, d::Integer, x_pos::Integer, y_pos::Integer)
-        @inbounds for j = 1:d
-            ϵ = X[x_pos,j] - Y[y_pos,j]
-            for i = 1:d
-                E[i,j,x_pos,y_pos] = (X[x_pos,i] - Y[y_pos,i]) * ϵ
-            end
+    function N_tensor_epsilon!{T<:FloatingPoint}(E::Array{T}, X::Matrix{T}, Y::Matrix{T}, d::Int64, x_pos::Int64, y_pos::Int64)
+        @inbounds for j = 1:d, i = 1:d
+            E[i,j,x_pos,y_pos] = (X[x_pos,i] - Y[y_pos,i]) * (X[x_pos,j] - Y[y_pos,j])
         end
         E
     end
@@ -283,16 +277,12 @@ function tensor_epsilons{T<:FloatingPoint}(X::Matrix{T}, Y::Matrix{T}, trans::Ch
     end
     E = Array(T, d, d, n, m)
     if is_trans
-        @inbounds for j = 1:m
-            for i = 1:n
-                T_tensor_epsilon!(E, X, Y, d, i, j)
-            end
+        @inbounds for j = 1:m, i = 1:n
+            T_tensor_epsilon!(E, X, Y, d, i, j)
         end
     else
-        @inbounds for j = 1:m
-            for i = 1:n
-                N_tensor_epsilon!(E, X, Y, d, i, j)
-            end
+        @inbounds for j = 1:m, i = 1:n
+            N_tensor_epsilon!(E, X, Y, d, i, j)
         end
     end
     E
