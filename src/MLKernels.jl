@@ -48,5 +48,6 @@ include("matrixfunctions.jl")
 include("kernels.jl")
 include("kernelmatrix.jl")
 include("kernelapprox.jl")
+include("kernelmatrixderiv.jl")
 
 end # MLKernels

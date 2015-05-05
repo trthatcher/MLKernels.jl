@@ -1,26 +1,17 @@
-# WIP
-function applykernel_dxdy!(κ::SquaredDistanceKernel, A::Array{T}, Z::Array{T}, d::Integer, x_pos::Integer, y_pos::Integer)
-    error("Not implemented")
-end
+#===================================================================================================
+  Kernel Derivative Matrices
+===================================================================================================#
 
-function kernelmatrix_dxdy{T<:FloatingPoint}(κ::SquaredDistanceKernel, X::Matrix{T}, Y::Matrix{T}, trans::Char = 'N')
-    error("Not Implemented")
-    n = size(X, is_trans ? 2 : 1)
-    m = size(Y, is_trans ? 2 : 1)
-    if (d = size(X, is_trans ? 1 : 2)) != size(Y, is_trans ? 1 : 2)
-        throw(ArgumentError("X and Y do not have the same number of " * is_trans ? "rows." : "columns."))
-    end
-    A = tensor_epsilons(X, Y, trans) # A := (∂z/∂x)(∂x/∂y)ᵀ/4
-    Z = scprodmatrix(X, Y, trans)  # Technically, trace(A[:,:,i,j]) = Z[i,j] so Z can be constructed using that
-end
+#==========================================================================
+  Generic Kernel Derivative Matrices
+==========================================================================#
 
-
-function kernelmatrix_dk_dx{T<:FloatingPoint}(κ::StandardKernel{T}, X::Matrix{T}, Y::Matrix{T}, trans::Char = 'N')
+function kernelmatrix_dx{T<:FloatingPoint}(κ::StandardKernel{T}, X::Matrix{T}, Y::Matrix{T}, trans::Char = 'N')
     is_trans = trans == 'T'  # True if columns are observations
     n = size(X, is_trans ? 2 : 1)
     m = size(Y, is_trans ? 2 : 1)
     if (d = size(X, is_trans ? 1 : 2)) != size(Y, is_trans ? 1 : 2)
-        throw(ArgumentError("X and Y do not have the same number of " * is_trans ? "rows." : "columns."))
+        throw(ArgumentError("X and Y do not have the same number of " * (is_trans ? "rows." : "columns.")))
     end
     K = Array(T, d, n, m)
     if trans == 'N'
@@ -39,13 +30,12 @@ function kernelmatrix_dk_dx{T<:FloatingPoint}(κ::StandardKernel{T}, X::Matrix{T
     reshape(K, (d*n, m))
 end
 
-function kernelmatrix_dk_dy{T<:FloatingPoint}(κ::StandardKernel{T}, X::Matrix{T}, Y::Matrix{T},
-                                        trans::Char = 'N')
+function kernelmatrix_dy{T<:FloatingPoint}(κ::StandardKernel{T}, X::Matrix{T}, Y::Matrix{T}, trans::Char = 'N')
     is_trans = trans == 'T'  # True if columns are observations
     n = size(X, is_trans ? 2 : 1)
     m = size(Y, is_trans ? 2 : 1)
     if (d = size(X, is_trans ? 1 : 2)) != size(Y, is_trans ? 1 : 2)
-        throw(ArgumentError("X and Y do not have the same number of " * is_trans ? "rows." : "columns."))
+        throw(ArgumentError("X and Y do not have the same number of " * (is_trans ? "rows." : "columns.")))
     end
     K = Array(T, d, n, m)
     if trans == 'N'
@@ -63,6 +53,11 @@ function kernelmatrix_dk_dy{T<:FloatingPoint}(κ::StandardKernel{T}, X::Matrix{T
     end
     reshape(permutedims(K, [2,1,3]), (n, d*m))
 end
+
+
+#==========================================================================
+  Optimized Kernel Derivative Matrices for Squared Distance Kernels
+==========================================================================#
 
 
 function kernel_dxdy!{T<:FloatingPoint}(κ::SquaredDistanceKernel{T}, d::Int, A::Array{T}, i::Int, j::Int, X::Array{T}, Y::Array{T})
@@ -85,13 +80,13 @@ function kernel_dxdy!{T<:FloatingPoint}(κ::SquaredDistanceKernel{T}, d::Int, A:
     A
 end
 
-function kernelmatrix_d2k_dxdy{T<:FloatingPoint}(κ::StandardKernel{T}, X::Matrix{T}, Y::Matrix{T},
-                                        trans::Char = 'N')
+
+function kernelmatrix_d2k_dxdy{T<:FloatingPoint}(κ::StandardKernel{T}, X::Matrix{T}, Y::Matrix{T}, trans::Char = 'N')
     is_trans = trans == 'T'  # True if columns are observations
     n = size(X, is_trans ? 2 : 1)
     m = size(Y, is_trans ? 2 : 1)
     if (d = size(X, is_trans ? 1 : 2)) != size(Y, is_trans ? 1 : 2)
-        throw(ArgumentError("X and Y do not have the same number of " * is_trans ? "rows." : "columns."))
+        throw(ArgumentError("X and Y do not have the same number of " * (is_trans ? "rows." : "columns.")))
     end
     K = Array(T, d, n, d, m)
     if trans == 'N'
@@ -113,6 +108,8 @@ function kernelmatrix_d2k_dxdy{T<:FloatingPoint}(κ::StandardKernel{T}, X::Matri
     reshape(K, (d*n, d*m))
 end
 
+
+
 function kernelmatrix_d2k_dxdy{T<:FloatingPoint}(κ::StandardKernel{T}, X::Vector{T}, Y::Vector{T})
     n = length(X)
     m = length(Y)
@@ -125,4 +122,44 @@ function kernelmatrix_d2k_dxdy{T<:FloatingPoint}(κ::StandardKernel{T}, X::Vecto
     K
 end
 
+
+
+# WIP/Experimentation - trthatcher
+
+function trace_submatrix{T<:FloatingPoint}(A::Array{T}, d::Integer, x_pos::Integer, y_pos::Integer)
+    a = zero(T)
+    @inbounds for i = 1:d
+        a += A[i,i,x_pos,y_pos]
+    end
+    a
+end
+
+function applykernel_dxdy!{T<:FloatingPoint}(κ::SquaredDistanceKernel, E::Array{T}, d::Integer, x_pos::Integer, y_pos::Integer)
+    ϵᵀϵ = trace_submatrix(E, d, x_pos, y_pos)  # trace(A[:,:,i,j]) = Z[i,j] = ϵᵀϵ (vector outer product)
+    ∂κ∂z = kappa_dz(κ, ϵᵀϵ)
+    ∂κ²∂z² = kappa_dz2(κ, ϵᵀϵ)
+    @inbounds for j = 1:d
+        for i = 1:d
+            E[i,j,x_pos,y_pos] *= -4∂κ²∂z²
+        end
+        E[j,j,x_pos,y_pos] += 2∂κ∂z
+    end
+    E
+end
+
+function kernelmatrix_dxdy{T<:FloatingPoint}(κ::SquaredDistanceKernel, X::Matrix{T}, Y::Matrix{T}, trans::Char = 'N')
+    is_trans = trans == 'T'  # True if columns are observations
+    n = size(X, is_trans ? 2 : 1)
+    m = size(Y, is_trans ? 2 : 1)
+    if (d = size(X, is_trans ? 1 : 2)) != size(Y, is_trans ? 1 : 2)
+        throw(ArgumentError("X and Y do not have the same number of " * (is_trans ? "rows." : "columns.")))
+    end
+    E = tensor_epsilons(X, Y, trans) # A := (∂z/∂x)(∂x/∂y)ᵀ/4
+    @inbounds for j = 1:m
+        for i = 1:n
+            applykernel_dxdy!(κ, E, d, i, j)
+        end
+    end
+    E
+end
 
