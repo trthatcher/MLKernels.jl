@@ -14,19 +14,11 @@ function kernelmatrix_dx{T<:FloatingPoint}(κ::StandardKernel{T}, X::Matrix{T}, 
         throw(ArgumentError("X and Y do not have the same number of " * (is_trans ? "rows." : "columns.")))
     end
     K = Array(T, d, n, m)
-    if trans == 'N'
-        for j = 1:m 
+    @transpose_access trans=='T' (X,Y) for j = 1:m 
             for i = 1:n
                 K[:,i,j] = kernel_dx(κ, X[i,:], Y[j,:])
             end
         end
-    else
-        for j = 1:m 
-            for i = 1:n
-                K[:,i,j] = kernel_dx(κ, X[:,i], Y[:,j])
-            end
-        end
-    end
     reshape(K, (d*n, m))
 end
 
@@ -37,21 +29,13 @@ function kernelmatrix_dy{T<:FloatingPoint}(κ::StandardKernel{T}, X::Matrix{T}, 
     if (d = size(X, is_trans ? 1 : 2)) != size(Y, is_trans ? 1 : 2)
         throw(ArgumentError("X and Y do not have the same number of " * (is_trans ? "rows." : "columns.")))
     end
-    K = Array(T, d, n, m)
-    if trans == 'N'
-        for j = 1:m 
+    K = Array(T, n, d, m)
+    @transpose_access is_trans (X,Y) for j = 1:m 
             for i = 1:n
-                K[:,i,j] = kernel_dy(κ, X[i,:], Y[j,:])
+                K[i,:,j] = kernel_dy(κ, X[i,:], Y[j,:])
             end
         end
-    else
-        for j = 1:m 
-            for i = 1:n
-                K[:,i,j] = kernel_dy(κ, X[:,i], Y[:,j])
-            end
-        end
-    end
-    reshape(permutedims(K, [2,1,3]), (n, d*m))
+    reshape(K, (n, d*m))
 end
 
 
@@ -103,7 +87,7 @@ function kernelmatrix_dxdy{T<:FloatingPoint}(κ::StandardKernel{T}, X::Matrix{T}
         end
     else
         @inbounds for j = 1:m, i = 1:n
-            N_kernel_dxdy!(κ, d, K, X, i, Y, j)
+            T_kernel_dxdy!(κ, d, K, X, i, Y, j)
         end
     end
     K

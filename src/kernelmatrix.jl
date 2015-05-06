@@ -28,19 +28,11 @@ center_kernelmatrix{T<:FloatingPoint}(K::Matrix{T}) = center_kernelmatrix!(copy(
 function kernelmatrix{T<:FloatingPoint}(κ::StandardKernel{T}, X::Matrix{T}, trans::Char = 'N', uplo::Char = 'U', sym::Bool = true)
     n = size(X, trans == 'N' ? 1 : 2)
     K = Array(T, n, n)
-    if trans == 'N'
-        @inbounds for j = 1:n
+    @transpose_access trans=='T' (X,) @inbounds for j = 1:n
             for i = uplo == 'U' ? (1:j) : (j:n)
                 K[i,j] = kernel(κ, X[i,:], X[j,:])
             end 
         end
-    else
-        @inbounds for j = 1:n
-            for i = uplo == 'U' ? (1:j) : (j:n)
-                K[i,j] = kernel(κ, X[:,i], X[:,j])
-            end 
-        end
-    end
     sym ? (uplo == 'U' ? syml!(K) : symu!(K)) : K
 end
 
@@ -86,19 +78,11 @@ function kernelmatrix{T<:FloatingPoint}(κ::StandardKernel{T}, X::Matrix{T}, Y::
         throw(ArgumentError("X and Y do not have the same number of " * is_trans ? "rows." : "columns."))
     end
     K = Array(T, n, m)
-    if trans == 'N'
-        for j = 1:m 
+    @transpose_access trans=='T' (X,Y) for j = 1:m 
             for i = 1:n
                 K[i,j] = kernel(κ, X[i,:], Y[j,:])
             end
         end
-    else
-        for j = 1:m 
-            for i = 1:n
-                K[i,j] = kernel(κ, X[:,i], Y[:,j])
-            end
-        end
-    end
     K
 end
 
