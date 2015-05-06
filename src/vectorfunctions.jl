@@ -84,6 +84,25 @@ end
 sqdist_dx{T<:FloatingPoint}(x::Array{T}, y::Array{T}) = scale!(2, x - y)
 sqdist_dy{T<:FloatingPoint}(x::Array{T}, y::Array{T}) = scale!(2, y - x)
 
+# Squared distance between vectors X[x_pos,:] and Y[y_pos,:]
+function N_sqdist{T<:FloatingPoint}(d::Int64, X::Array{T}, x_pos::Int64, Y::Array{T}, y_pos::Int64)
+    z = zero(T)
+    @inbounds @simd for i = 1:d
+        v = X[x_pos,i] - Y[y_pos,i]
+        z += v*v
+    end
+    z
+end
+
+# Squared distance between vectors X[:,x_pos] and Y[:,y_pos]
+function T_sqdist{T<:FloatingPoint}(d::Int64, X::Array{T}, x_pos::Int64, Y::Array{T}, y_pos::Int64)
+    z = zero(T)
+    @inbounds @simd for i = 1:d
+        v = X[i,x_pos] - Y[i,y_pos]
+        z += v*v
+    end
+    z
+end
 
 # Calculates G such that Gij is the dot product of the difference of row i and j of matrix X
 #    trans == 'N' -> X is a design matrix
