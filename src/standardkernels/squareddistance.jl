@@ -10,8 +10,6 @@ abstract SquaredDistanceKernel{T<:FloatingPoint} <: StandardKernel{T}
 kernel{T<:FloatingPoint}(κ::SquaredDistanceKernel{T}, x::Array{T}, y::Array{T}) = kappa(κ, sqdist(x, y))
 kernel{T<:FloatingPoint}(κ::SquaredDistanceKernel{T}, x::T, y::T) = kappa(κ, (x - y)^2)
 
-kernel{T<:FloatingPoint}(κ::SquaredDistanceKernel{T}, x::Array{T}, y::Array{T}, w::Array{T}) = kappa(κ, sqdist(x, y, w))
-kernel{T<:FloatingPoint}(κ::SquaredDistanceKernel{T}, x::T, y::T, w::T) = kappa(κ, ((x - y)*w)^2)
 
 # Derivatives
 kernel_dx{T<:FloatingPoint}(κ::SquaredDistanceKernel{T}, x::Array{T}, y::Array{T}) = kappa_dz(κ, sqdist(x, y)) * sqdist_dx(x, y)

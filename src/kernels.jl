@@ -40,6 +40,8 @@ include("standardkernels/squareddistance.jl")
 # kernels of the form k(x,y) = ϕ(x)ᵀϕ(y)
 include("standardkernels/separable.jl")
 
+# Automatic Relevance Determination (ARD) kernels
+include("standardkernels/ard.jl")
 
 #===========================================================================
   Scaled Kernel

@@ -10,10 +10,6 @@ function kernel{T<:FloatingPoint}(κ::ScalarProductKernel{T}, x::Array{T}, y::Ar
 end
 kernel{T<:FloatingPoint}(κ::ScalarProductKernel{T}, x::T, y::T) = kappa(κ, x*y)
 
-function kernel{T<:FloatingPoint}(κ::ScalarProductKernel{T}, x::Array{T}, y::Array{T}, w::Array{T})
-    kappa(κ, scprod(x, y, w))
-end
-kernel{T<:FloatingPoint}(κ::ScalarProductKernel{T}, x::T, y::T, w::T) = kappa(κ, x*y*w)
 
 
 

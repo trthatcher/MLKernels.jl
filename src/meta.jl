@@ -14,7 +14,7 @@ end
 macro transpose_access(cond, symbols, block)
     @assert symbols.head == :tuple
     symbollist = symbols.args
-    return quote
+    quote
         if $(cond)
             $((transpose_access(symbollist, block)))
         else
