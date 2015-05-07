@@ -196,3 +196,32 @@ for (kernelobject, default_args, default_value) in (
         @test_approx_eq MLKernels.kappa_array!(κ, [one(T)])[1] convert(T, default_value)
     end
 end
+
+println("- Testing ARD kernels:")
+print("    - Testing ARD{ScalarProductKernel} ... ")
+for T in (Float32, Float64)
+    x1, y1, d  = T[1, 3, 2], T[4, -2, 2], 3
+    x2, y2, w2 = T[2, 3, 1], T[4, -2, 2], T[0.5, 1.0, 2.0]
+    # weighted dot product = 2 in each case
+    k1 = ARD(LinearKernel(convert(T, 1)), d)
+    k2 = ARD(LinearKernel(convert(T, 1)), w2)
+    for (k, x, y) in ((k1, x1, y1), (k2, x2, y2))
+        @test_approx_eq kernel(k, x, y) convert(T, 3)
+    end
+end
+println("Done")
+print("    - Testing ARD{SquaredDistanceKernel} ... ")
+for T in (Float32, Float64)
+    x1, y1, d  = T[0, 1, 2], T[-1, 1, 2], 3
+    x2, y2, w2 = T[0, 1, 2], T[0, 1.5, 3], T[1, sqrt(2), sqrt(0.5)]
+    args = (1,)
+    result = exp(-0.5)
+    # weighted squared distance = 1 in each case
+    k1 = ARD(GaussianKernel(map(x->convert(T,x), args)...), d)
+    k2 = ARD(GaussianKernel(map(x->convert(T,x), args)...), w2)
+    for (k, x, y) in ((k1, x1, y1), (k2, x2, y2))
+        @test_approx_eq kernel(k, x, y) convert(T, result)
+    end
+end
+println("Done")
+

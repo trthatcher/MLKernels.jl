@@ -14,7 +14,7 @@ function kernelmatrix_dx{T<:FloatingPoint}(κ::StandardKernel{T}, X::Matrix{T}, 
         throw(ArgumentError("X and Y do not have the same number of " * (is_trans ? "rows." : "columns.")))
     end
     K = Array(T, d, n, m)
-    @transpose_access trans=='T' (X,Y) for j = 1:m 
+    @transpose_access is_trans (X,Y) @inbounds for j = 1:m 
             for i = 1:n
                 K[:,i,j] = kernel_dx(κ, X[i,:], Y[j,:])
             end
@@ -30,7 +30,7 @@ function kernelmatrix_dy{T<:FloatingPoint}(κ::StandardKernel{T}, X::Matrix{T}, 
         throw(ArgumentError("X and Y do not have the same number of " * (is_trans ? "rows." : "columns.")))
     end
     K = Array(T, n, d, m)
-    @transpose_access is_trans (X,Y) for j = 1:m 
+    @transpose_access is_trans (X,Y) @inbounds for j = 1:m 
             for i = 1:n
                 K[i,:,j] = kernel_dy(κ, X[i,:], Y[j,:])
             end

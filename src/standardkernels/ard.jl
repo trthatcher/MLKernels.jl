@@ -1,3 +1,7 @@
+#==============================================================================
+  Automatic Relevance Determination Kernels
+==============================================================================#
+
 typealias ARDKernelTypes{T<:FloatingPoint} Union(SquaredDistanceKernel{T}, ScalarProductKernel{T})
 
 immutable ARD{T<:FloatingPoint,K<:StandardKernel{T}} <: StandardKernel{T}
@@ -18,9 +22,12 @@ function description_string{T<:FloatingPoint,K<:StandardKernel}(κ::ARD{T,K}, el
 end
 
 kernel{T<:FloatingPoint,K<:SquaredDistanceKernel}(κ::ARD{T,K}, x::Array{T}, y::Array{T}) = kappa(κ.kernel, sqdist(x, y, κ.weights))
-kernel{T<:FloatingPoint,K<:ScalarProductKernel}(κ::ARD{T,K}, x::Array{T}, y::Array{T}) = kappa(κ.kernel, scprod(x, y, κ.weights))
 
 kernel_dx{T<:FloatingPoint,K<:SquaredDistanceKernel}(κ::ARD{T,K}, x::Array{T}, y::Array{T}) = kappa_dz(κ.kernel, sqdist(x, y, κ.weights)) * sqdist_dx(x, y, κ.weights)
-kernel_dy{T<:FloatingPoint,K<:StandardKernel}(κ::ARD{T,K}, x::Array{T}, y::Array{T}) = kappa_dz(κ.kernel, sqdist(x, y, κ.weights)) * sqdist_dy(x, y, κ.weights)
+kernel_dy{T<:FloatingPoint,K<:SquaredDistanceKernel}(κ::ARD{T,K}, x::Array{T}, y::Array{T}) = kappa_dz(κ.kernel, sqdist(x, y, κ.weights)) * sqdist_dy(x, y, κ.weights)
 
+kernel{T<:FloatingPoint,K<:ScalarProductKernel}(κ::ARD{T,K}, x::Array{T}, y::Array{T}) = kappa(κ.kernel, scprod(x, y, κ.weights))
+
+kernel_dx{T<:FloatingPoint,K<:ScalarProductKernel}(κ::ARD{T,K}, x::Array{T}, y::Array{T}) = kappa_dz(κ.kernel, scprod(x, y, κ.weights)) * scprod_dx(x, y, κ.weights)
+kernel_dy{T<:FloatingPoint,K<:ScalarProductKernel}(κ::ARD{T,K}, x::Array{T}, y::Array{T}) = kappa_dz(κ.kernel, scprod(x, y, κ.weights)) * scprod_dy(x, y, κ.weights)
 
