@@ -11,10 +11,8 @@ function syml!(S::Matrix)
     p = size(S, 1)
     p == size(S, 2) || throw(ArgumentError("S ∈ ℝ$(p)×$(size(S, 2)) must be square"))
     if p > 1 
-        @inbounds for j = 1:(p - 1) 
-            for i = (j + 1):p 
+        @inbounds for j = 1:(p - 1), i = (j + 1):p 
                 S[i, j] = S[j, i]
-            end
         end
     end
     return S
@@ -26,10 +24,8 @@ function symu!(S::Matrix)
     p = size(S,1)
     p == size(S,2) || throw(ArgumentError("S ∈ ℝ$(p)×$(size(S, 2)) must be square"))
     if p > 1 
-        @inbounds for j = 2:p
-            for i = 1:j-1
+        @inbounds for j = 2:p, i = 1:j-1
                 S[i,j] = S[j,i]
-            end 
         end
     end
     return S
@@ -40,22 +36,40 @@ symu(S::Matrix) = symu!(copy(S))
 function dot_rows{T<:FloatingPoint}(A::Matrix{T})
     n, m = size(A)
     aᵀa = zeros(T, n)
-    @inbounds for j = 1:m
-        for i = 1:n
-            aᵀa[i] += A[i,j]*A[i,j]
-        end
+    @inbounds for j = 1:m, i = 1:n
+        aᵀa[i] += A[i,j] * A[i,j]
     end
     aᵀa
 end
 
 # Return vector of dot products for each row of A
+function dot_rows{T<:FloatingPoint}(A::Matrix{T}, w::Array{T})
+    n, m = size(A)
+    length(w) == m || throw(ArgumentError("w must have the same length as A's rows."))
+    aᵀa = zeros(T, n)
+    @inbounds for j = 1:m, i = 1:n
+        aᵀa[i] += A[i,j] * A[i,j] * w[j]
+    end
+    aᵀa
+end
+
+# Return vector of dot products for each column of A
 function dot_columns{T<:FloatingPoint}(A::Matrix{T})
     n, m = size(A)
     aᵀa = zeros(T, m)
-    @inbounds for j = 1:m
-        for i = 1:n
-            aᵀa[j] += A[i,j]*A[i,j]
-        end
+    @inbounds for j = 1:m, i = 1:n
+        aᵀa[j] += A[i,j] * A[i,j]
+    end
+    aᵀa
+end
+
+# Return vector of dot products for each column of A
+function dot_columns{T<:FloatingPoint}(A::Matrix{T}, w::Array{T})
+    n, m = size(A)
+    length(w) == n || throw(ArgumentError("w must have the same length as A's rows."))
+    aᵀa = zeros(T, m)
+    @inbounds for j = 1:m, i = 1:n
+        aᵀa[j] += A[i,j] * A[i,j] * w[i]
     end
     aᵀa
 end

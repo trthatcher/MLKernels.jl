@@ -31,8 +31,27 @@ Y = reshape([1.0; 1], 2, 1)
 print("- Testing scprodmatrix ... ")
 matrix_test_approx_eq(scprodmatrix(X), [1.0 2; 2 4])
 matrix_test_approx_eq(scprodmatrix(X, Y), [1.0 1; 2 2])
+println("Done")
+print("- Testing sqdistmatrix ... ")
 matrix_test_approx_eq(sqdistmatrix(X), [0.0 1; 1 0.0])
 matrix_test_approx_eq(sqdistmatrix(X, Y), [0.0 0; 1 1])
+println("Done")
+
+x1 = [1.0; 2]
+x2 = [2.0; 0]
+X = [x1'; x2']
+y1 = [1.0; 1]
+y2 = [1.0; 1]
+Y = [y1'; y2']
+w = [2.0; 1]
+
+print("- Testing weighted scprodmatrix ... ")
+matrix_test_approx_eq(scprodmatrix(X, w), [MLKernels.scprod(x1,x1,w) MLKernels.scprod(x1,x2,w); MLKernels.scprod(x2,x1,w) MLKernels.scprod(x2,x2,w)])
+matrix_test_approx_eq(scprodmatrix(X, Y, w), [MLKernels.scprod(x1,y1,w) MLKernels.scprod(x1,y2,w); MLKernels.scprod(x2,y1,w) MLKernels.scprod(x2,y2,w)])
+println("Done")
+print("- Testing weighted sqdistmatrix ... ")
+matrix_test_approx_eq(sqdistmatrix(X, w), [MLKernels.sqdist(x1,x1,w) MLKernels.sqdist(x1,x2,w); MLKernels.sqdist(x2,x1,w) MLKernels.sqdist(x2,x2,w)])
+matrix_test_approx_eq(sqdistmatrix(X, Y, w), [MLKernels.sqdist(x1,y1,w) MLKernels.sqdist(x1,y2,w); MLKernels.sqdist(x2,y1,w) MLKernels.sqdist(x2,y2,w)])
 println("Done")
 
 print("- Testing center_kernelmatrix ... ")

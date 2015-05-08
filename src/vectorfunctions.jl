@@ -20,17 +20,17 @@ end
 scprod_dx{T<:FloatingPoint}(x::Array{T}, y::Array{T}) = copy(y)
 scprod_dy{T<:FloatingPoint}(x::Array{T}, y::Array{T}) = copy(x)
 
-# Calculate the gramian (element-wise dot products)
-#    trans == 'N' -> G = XXᵀ (X is a design matrix)
-#             'T' -> G = XᵀX (X is a transposed design matrix)
+# Calculate the scalar product matrix (matrix of scalar products)
+#    trans == 'N' -> Z = XXᵀ (X is a design matrix)
+#             'T' -> Z = XᵀX (X is a transposed design matrix)
 function scprodmatrix{T<:FloatingPoint}(X::Matrix{T}, trans::Char = 'N', uplo::Char = 'U', sym::Bool = true)
     Z = BLAS.syrk(uplo, trans, one(T), X)
     sym ? (uplo == 'U' ? syml!(Z) : symu!(Z)) : Z
 end
 
-# Returns the upper right corner of the gramian matrix of [Xᵀ Yᵀ]ᵀ or [X Y]
-#   trans == 'N' -> G = XYᵀ (X and Y are design matrices)
-#            'T' -> G = XᵀY (X and Y are transposed design matrices)
+# Returns the upper right corner of the scalar product matrix of [Xᵀ Yᵀ]ᵀ or [X Y]
+#   trans == 'N' -> Z = XYᵀ (X and Y are design matrices)
+#            'T' -> Z = XᵀY (X and Y are transposed design matrices)
 function scprodmatrix{T<:FloatingPoint}(X::Matrix{T}, Y::Matrix{T}, trans::Char = 'N')
     BLAS.gemm(trans, trans == 'N' ? 'T' : 'N', X, Y)
 end
@@ -65,6 +65,21 @@ scprod_dx{T<:FloatingPoint}(x::Array{T}, y::Array{T}, w::Array{T}) = scprod_dx!(
 scprod_dy{T<:FloatingPoint}(x::Array{T}, y::Array{T}, w::Array{T}) = scprod_dy!(x, similar(y), w)
 scprod_dw{T<:FloatingPoint}(x::Array{T}, y::Array{T}, w::Array{T}) = scprod_dw!(x, y, similar(w))
 
+# Calculate the gramian 
+#    trans == 'N' -> Z = XDXᵀ (X is a design matrix and D = diag(w))
+#             'T' -> Z = XᵀDX (X is a transposed design matrix and D = diag(w))
+function scprodmatrix{T<:FloatingPoint}(X::Matrix{T}, w::Array{T}, trans::Char = 'N', uplo::Char = 'U', sym::Bool = true)
+    Z = BLAS.syrk(uplo, trans, one(T), trans == 'T' ? scale(vec(sqrt(w)), X) : scale(X, vec(sqrt(w))))
+    sym ? (uplo == 'U' ? syml!(Z) : symu!(Z)) : Z
+end
+
+# Returns the upper right corner of the scalar product matrix of [Xᵀ Yᵀ]ᵀ or [X Y]
+#   trans == 'N' -> G = XDYᵀ (X and Y are design matrices)
+#            'T' -> G = XᵀDY (X and Y are transposed design matrices)
+function scprodmatrix{T<:FloatingPoint}(X::Matrix{T}, Y::Matrix{T}, w::Array{T}, trans::Char = 'N')
+    BLAS.gemm(trans, trans == 'N' ? 'T' : 'N', X, trans == 'T' ? scale(vec(w), Y) : scale(Y, vec(w)))
+end
+
 
 #==========================================================================
   Squared Distance Function (unweighted)
@@ -93,7 +108,7 @@ function sqdistmatrix{T<:FloatingPoint}(X::Matrix{T}, trans::Char = 'N', uplo::C
     xᵀx = copy(vec(diag(Z)))
     @inbounds for j = 1:n
         for i = uplo == 'U' ? (1:j) : (j:n)
-            Z[i,j] = xᵀx[i] - convert(T, 2) * Z[i,j] + xᵀx[j]
+            Z[i,j] = xᵀx[i] - 2Z[i,j] + xᵀx[j]
         end
     end
     sym ? (uplo == 'U' ? syml!(Z) : symu!(Z)) : Z
@@ -110,7 +125,7 @@ function sqdistmatrix{T<:FloatingPoint}(X::Matrix{T}, Y::Matrix{T}, trans::Char 
     Z = scprodmatrix(X, Y, trans)
     @inbounds for j = 1:m
         for i = 1:n
-            Z[i,j] = xᵀx[i] - convert(T, 2) * Z[i,j] + yᵀy[j]
+            Z[i,j] = xᵀx[i] - 2Z[i,j] + yᵀy[j]
         end
     end
     Z
@@ -153,3 +168,36 @@ end
 sqdist_dx{T<:FloatingPoint}(x::Array{T}, y::Array{T}, w::Array{T}) = sqdist_dx!(copy(x), y, w)
 sqdist_dy{T<:FloatingPoint}(x::Array{T}, y::Array{T}, w::Array{T}) = sqdist_dy!(x, copy(y), w)
 sqdist_dw{T<:FloatingPoint}(x::Array{T}, y::Array{T}, w::Array{T}) = sqdist_dw!(x, y, copy(w))
+
+# Calculates G such that Gij is the dot product of the difference of row i and j of matrix X
+#    trans == 'N' -> X is a design matrix
+#             'T' -> X is a transposed design matrix
+function sqdistmatrix{T<:FloatingPoint}(X::Matrix{T}, w::Array{T}, trans::Char = 'N', uplo::Char = 'U', sym::Bool = true)
+    Z = BLAS.syrk(uplo, trans, one(T), trans == 'T' ? scale(vec(w), X) : scale(X, vec(w)))
+    n = size(X, trans == 'N' ? 1 : 2)
+    xᵀDx = copy(vec(diag(Z)))
+    @inbounds for j = 1:n
+        for i = uplo == 'U' ? (1:j) : (j:n)
+            Z[i,j] = xᵀDx[i] - 2Z[i,j] + xᵀDx[j]
+        end
+    end
+    sym ? (uplo == 'U' ? syml!(Z) : symu!(Z)) : Z
+end
+
+# Calculates the upper right corner G of the squared distance matrix of matrix [Xᵀ Yᵀ]ᵀ
+#   trans == 'N' -> X and Y are design matrices
+#            'T' -> X and Y are transposed design matrices
+function sqdistmatrix{T<:FloatingPoint}(X::Matrix{T}, Y::Matrix{T}, w::Array{T}, trans::Char = 'N')
+    n = size(X, trans == 'N' ? 1 : 2)
+    m = size(Y, trans == 'N' ? 1 : 2)
+    w² = vec(w.^2)
+    xᵀDx = trans == 'N' ? dot_rows(X, w²) : dot_columns(X, w²)
+    yᵀDy = trans == 'N' ? dot_rows(Y, w²) : dot_columns(Y, w²)
+    Z = BLAS.gemm(trans, trans == 'N' ? 'T' : 'N', X, trans == 'T' ? scale(w², Y) : scale(Y, w²))
+    @inbounds for j = 1:m
+        for i = 1:n
+            Z[i,j] = xᵀDx[i] - 2Z[i,j] + yᵀDy[j]
+        end
+    end
+    Z
+end
