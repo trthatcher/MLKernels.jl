@@ -22,4 +22,3 @@ macro transpose_access(cond, symbols, block)
         end
     end
 end
-
