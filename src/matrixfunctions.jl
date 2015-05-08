@@ -113,44 +113,6 @@ end
   Matrix Operations
 ==========================================================================#
 
-# Diagonal-General Matrix Multiply: overwrites A with DA (scales A[i,:] by D[i,i])
-function dgmm!{T<:FloatingPoint}(D::Array{T}, A::Matrix{T})
-    n, p = size(A)
-    if n != (d = length(D))
-        throw(ArgumentError(
-            "The length(D) = $(d) of vector D representing a $(d)×$(d) diagonal matrix must " * (
-            "equal the number of rows in Matrix A ∈ ℝ$(n)×$(p) to compute diagonal matrix " * (
-            "product B = DA"))
-        ))
-    end
-    @inbounds for j = 1:p
-        for i = 1:n
-            A[i, j] *= D[i]
-        end
-    end
-    A
-end
-dgmm(D,A) = dgmm!(D, copy(A))
-
-# General-Diagonal Matrix Multiply: overwrites A with AD (scales A[:,i] by D[i,i]
-function gdmm!{T<:FloatingPoint}(A::Matrix{T}, D::Array{T})
-    n, p = size(A)
-    if p != (d = length(D))
-        throw(ArgumentError(
-            "The length(D) = $(d) of vector D representing a $(d)×$(d) diagonal matrix must " * (
-            "equal the number of columns in Matrix A ∈ ℝ$(n)×$(p) to compute diagonal matrix " * (
-            "product B = AD"))
-        ))
-    end
-    @inbounds for j = 1:p
-        for i = 1:n
-            A[i, j] *= D[j]
-        end
-    end
-    A
-end
-gdmm(A,D) = gdmm!(copy(A), D)
-
 # Overwrite A with the hadamard product of A and B. Returns A
 function hadamard!{T<:FloatingPoint}(A::Array{T}, B::Array{T})
     length(A) == length(B) || error("A and B must be of the same length.")

@@ -30,12 +30,6 @@ for T in (Float32,Float64)
            -8 -7 -6;
            -6 -5 -4]
     diag = T[1, 2, 3]
-    DA = T[1 2 3;
-           8 10 12;
-           21 24 27]
-    AD = T[1 4 9;
-           4 10 18;
-           7 16 27]
     @test MLKernels.syml(S1) == SL
     @test MLKernels.symu(S1) == SU
     @test MLKernels.dot_rows(S1) == dr
@@ -44,8 +38,6 @@ for T in (Float32,Float64)
     @test MLKernels.col_add!(copy(S1), col) == CA
     @test MLKernels.row_sub!(copy(S1), row) == RS
     @test MLKernels.col_sub!(copy(S1), col) == CS
-    @test MLKernels.dgmm(diag, S1) == DA
-    @test MLKernels.gdmm(S1, diag) == AD
     @test MLKernels.sqdist([1,2.0], [1 3.0]) == 1
     @test MLKernels.sqdist([1,2.0], [1,3.0], [1,2.0]) == 4
     @test MLKernels.scprod([1,2.0], [1 3.0]) == 7
