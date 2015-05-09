@@ -75,7 +75,7 @@ include("standardkernels/squareddistance.jl")
 
 
 #===========================================================================
-  Squared Distance Kernels - kernels of the form k(x,y) = κ(x)ᵀκ(y)
+  Separable Kernels - kernels of the form k(x,y) = κ(x)ᵀκ(y)
 ===========================================================================#
 
 abstract SeparableKernel{T<:FloatingPoint} <: StandardKernel{T}
