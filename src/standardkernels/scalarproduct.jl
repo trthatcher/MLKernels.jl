@@ -1,17 +1,6 @@
 #===================================================================================================
-  Scalar Product Kernels
+  Scalar Product Kernel Definitions
 ===================================================================================================#
-
-abstract ScalarProductKernel{T<:FloatingPoint} <: StandardKernel{T}
-
-# k(x,y) = f(xᵀy)
-function kernel{T<:FloatingPoint}(κ::ScalarProductKernel{T}, x::Array{T}, y::Array{T})
-    kappa(κ, scprod(x, y))
-end
-kernel{T<:FloatingPoint}(κ::ScalarProductKernel{T}, x::T, y::T) = kappa(κ, x*y)
-
-
-
 
 #== Linear Kernel ====================#
 

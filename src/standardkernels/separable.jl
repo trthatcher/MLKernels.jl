@@ -2,27 +2,6 @@
   Separable Kernels
 ===================================================================================================#
 
-abstract SeparableKernel{T<:FloatingPoint} <: StandardKernel{T}
-
-function kappa_array!{T<:FloatingPoint}(κ::SeparableKernel{T}, x::Array{T})
-    @inbounds for i = 1:length(x)
-        x[i] = kappa_scalar(κ, x[i])
-    end
-    x
-end
-
-# k(x,y) = ϕ(x)ᵀϕ(y)
-function kernel{T<:FloatingPoint}(κ::SeparableKernel{T}, x::Array{T}, y::Array{T})
-    v = kappa_array!(κ, copy(x))
-    z = kappa_array!(κ, copy(y))
-    BLAS.dot(length(v), v, 1, z, 1)
-end
-
-function kernel{T<:FloatingPoint}(κ::SeparableKernel{T}, x::T, y::T)
-    kappa_scalar(κ, x)*kappa_scalar(κ, y) 
-end
-
-
 #== Mercer Sigmoid Kernel ===============#
 
 immutable MercerSigmoidKernel{T<:FloatingPoint} <: SeparableKernel{T}

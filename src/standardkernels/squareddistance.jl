@@ -1,32 +1,6 @@
 #===================================================================================================
-  Squared Distance Kernels
+  Squared Distance Kernel Definitions
 ===================================================================================================#
-
-abstract SquaredDistanceKernel{T<:FloatingPoint} <: StandardKernel{T}
-
-# ϵᵀϵ = (x-y)ᵀ(x-y)
-
-# k(x,y) = f((x-y)ᵀ(x-y))
-kernel{T<:FloatingPoint}(κ::SquaredDistanceKernel{T}, x::Array{T}, y::Array{T}) = kappa(κ, sqdist(x, y))
-kernel{T<:FloatingPoint}(κ::SquaredDistanceKernel{T}, x::T, y::T) = kappa(κ, (x - y)^2)
-
-
-# Derivatives
-kernel_dx{T<:FloatingPoint}(κ::SquaredDistanceKernel{T}, x::Array{T}, y::Array{T}) = kappa_dz(κ, sqdist(x, y)) * sqdist_dx(x, y)
-kernel_dy{T<:FloatingPoint}(κ::SquaredDistanceKernel{T}, x::Array{T}, y::Array{T}) = kappa_dz(κ, sqdist(x, y)) * sqdist_dy(x, y)
-
-function kernel_dxdy{T<:FloatingPoint}(κ::SquaredDistanceKernel{T}, x::Array{T}, y::Array{T})
-    ϵ = vec(x - y)
-    ϵᵀϵ = scprod(ϵ, ϵ)
-    perturb!(scale!(-4*kappa_dz2(κ, ϵᵀϵ), ϵ*ϵ'), -2*kappa_dz(κ, ϵᵀϵ))
-end
-function kernel_dxdy{T<:FloatingPoint}(κ::SquaredDistanceKernel{T}, x::T, y::T)
-    ϵᵀϵ = (x-y)^2
-    -kappa_dz2(κ, ϵᵀϵ) * 4ϵᵀϵ - 2*kappa_dz(κ, ϵᵀϵ)
-end
-
-kernel_dp{T<:FloatingPoint}(κ::SquaredDistanceKernel{T}, param::Symbol, x::Array{T}, y::Array{T}) = kappa_dp(κ, param, sqdist(x, y))
-kernel_dp{T<:FloatingPoint}(κ::SquaredDistanceKernel{T}, param::Integer, x::Array{T}, y::Array{T}) = kernel_dp(κ, names(κ)[param], x, y)
 
 #== Gaussian Kernel ===============#
 
@@ -44,7 +18,6 @@ function convert{T<:FloatingPoint}(::Type{GaussianKernel{T}}, κ::GaussianKernel
     GaussianKernel(convert(T, κ.sigma))
 end
 
-# z = ϵᵀϵ for squared distance kernels
 kappa{T<:FloatingPoint}(κ::GaussianKernel{T}, z::T) = exp(z/(-2κ.sigma^2))
 kappa_dz{T<:FloatingPoint}(κ::GaussianKernel{T}, z::T, kz = kappa(κ, z))  = kz / (-2κ.sigma^2)
 kappa_dz2{T<:FloatingPoint}(κ::GaussianKernel{T}, z::T, kz = kappa(κ, z)) = kz / (4κ.sigma^4)

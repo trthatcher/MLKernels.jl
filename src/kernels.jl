@@ -16,9 +16,9 @@ abstract SimpleKernel{T<:FloatingPoint} <: Kernel{T}
 abstract CompositeKernel{T<:FloatingPoint} <: Kernel{T}
 
 
-#===========================================================================
+#===================================================================================================
   Standard Kernels
-===========================================================================#
+===================================================================================================#
 
 abstract StandardKernel{T<:FloatingPoint} <: SimpleKernel{T}
 
@@ -31,17 +31,85 @@ function description(io::IO, κ::StandardKernel)
 end
 description(κ::StandardKernel) = description(STDOUT, κ)
 
-# kernels of the form k(x,y) = ϕ(xᵀy)
+
+#===========================================================================
+  Scalar Product Kernels - kernels of the form k(x,y) = κ(xᵀy)
+===========================================================================#
+
+abstract ScalarProductKernel{T<:FloatingPoint} <: StandardKernel{T}
+
+kernel{T<:FloatingPoint}(κ::ScalarProductKernel{T}, x::Array{T}, y::Array{T}) = kappa(κ, scprod(x, y))
+kernel{T<:FloatingPoint}(κ::ScalarProductKernel{T}, x::T, y::T) = kappa(κ, x*y)
+
+# Scalar Product Kernel definitions
 include("standardkernels/scalarproduct.jl")
 
-# kernels of the form k(x,y) = ϕ((x-y)ᵀ(x-y))
+
+#===========================================================================
+  Squared Distance Kernels - kernels of the form k(x,y) = κ((x-y)ᵀ(x-y))
+===========================================================================#
+
+abstract SquaredDistanceKernel{T<:FloatingPoint} <: StandardKernel{T}
+
+kernel{T<:FloatingPoint}(κ::SquaredDistanceKernel{T}, x::Array{T}, y::Array{T}) = kappa(κ, sqdist(x, y))
+kernel{T<:FloatingPoint}(κ::SquaredDistanceKernel{T}, x::T, y::T) = kappa(κ, (x - y)^2)
+
+kernel_dx{T<:FloatingPoint}(κ::SquaredDistanceKernel{T}, x::Array{T}, y::Array{T}) = kappa_dz(κ, sqdist(x, y)) * sqdist_dx(x, y)
+kernel_dy{T<:FloatingPoint}(κ::SquaredDistanceKernel{T}, x::Array{T}, y::Array{T}) = kappa_dz(κ, sqdist(x, y)) * sqdist_dy(x, y)
+
+kernel_dp{T<:FloatingPoint}(κ::SquaredDistanceKernel{T}, param::Symbol, x::Array{T}, y::Array{T}) = kappa_dp(κ, param, sqdist(x, y))
+kernel_dp{T<:FloatingPoint}(κ::SquaredDistanceKernel{T}, param::Integer, x::Array{T}, y::Array{T}) = kernel_dp(κ, names(κ)[param], x, y)
+
+function kernel_dxdy{T<:FloatingPoint}(κ::SquaredDistanceKernel{T}, x::Array{T}, y::Array{T})
+    ϵ = vec(x - y)
+    ϵᵀϵ = scprod(ϵ, ϵ)
+    perturb!(scale!(-4*kappa_dz2(κ, ϵᵀϵ), ϵ*ϵ'), -2*kappa_dz(κ, ϵᵀϵ))
+end
+function kernel_dxdy{T<:FloatingPoint}(κ::SquaredDistanceKernel{T}, x::T, y::T)
+    ϵᵀϵ = (x-y)^2
+    -kappa_dz2(κ, ϵᵀϵ) * 4ϵᵀϵ - 2*kappa_dz(κ, ϵᵀϵ)
+end
+
+# Squared Distance Kernel definitions
 include("standardkernels/squareddistance.jl")
 
-# kernels of the form k(x,y) = ϕ(x)ᵀϕ(y)
+
+#===========================================================================
+  Squared Distance Kernels - kernels of the form k(x,y) = κ(x)ᵀκ(y)
+===========================================================================#
+
+abstract SeparableKernel{T<:FloatingPoint} <: StandardKernel{T}
+
+function kappa_array!{T<:FloatingPoint}(κ::SeparableKernel{T}, x::Array{T})
+    @inbounds for i = 1:length(x)
+        x[i] = kappa_scalar(κ, x[i])
+    end
+    x
+end
+
+function kernel{T<:FloatingPoint}(κ::SeparableKernel{T}, x::Array{T}, y::Array{T})
+    v = kappa_array!(κ, copy(x))
+    z = kappa_array!(κ, copy(y))
+    BLAS.dot(length(v), v, 1, z, 1)
+end
+
+kernel{T<:FloatingPoint}(κ::SeparableKernel{T}, x::T, y::T) = kappa_scalar(κ, x) * kappa_scalar(κ, y) 
+
+# Separable Kernel definitions
 include("standardkernels/separable.jl")
+
+
+#===========================================================================
+  Squared Distance Kernels - kernels of the form k(x,y) = κ(x)ᵀκ(y)
+===========================================================================#
 
 # Automatic Relevance Determination (ARD) kernels
 include("standardkernels/ard.jl")
+
+
+#===================================================================================================
+  Composite Kernels
+===================================================================================================#
 
 #===========================================================================
   Scaled Kernel
@@ -70,21 +138,10 @@ for kernel_type in (:ScaledKernel, :SimpleKernel, :Kernel)
     end
 end
 
-function kernel{T<:FloatingPoint}(ψ::ScaledKernel{T}, x::Vector{T}, y::Vector{T})
-    ψ.a * kernel(ψ.k, x, y)
-end
-
-function kernel_dx{T<:FloatingPoint}(ψ::ScaledKernel{T}, x::Vector{T}, y::Vector{T})
-    ψ.a * kernel_dx(ψ.k, x, y)
-end
-
-function kernel_dy{T<:FloatingPoint}(ψ::ScaledKernel{T}, x::Vector{T}, y::Vector{T})
-    ψ.a * kernel_dy(ψ.k, x, y)
-end
-
-function kernel_dxdy{T<:FloatingPoint}(ψ::ScaledKernel{T}, x::Vector{T}, y::Vector{T})
-    ψ.a * kernel_dxdy(ψ.k, x, y)
-end
+kernel{T<:FloatingPoint}(ψ::ScaledKernel{T}, x::Vector{T}, y::Vector{T}) = ψ.a * kernel(ψ.k, x, y)
+kernel_dx{T<:FloatingPoint}(ψ::ScaledKernel{T}, x::Vector{T}, y::Vector{T}) = ψ.a * kernel_dx(ψ.k, x, y)
+kernel_dy{T<:FloatingPoint}(ψ::ScaledKernel{T}, x::Vector{T}, y::Vector{T}) = ψ.a * kernel_dy(ψ.k, x, y)
+kernel_dxdy{T<:FloatingPoint}(ψ::ScaledKernel{T}, x::Vector{T}, y::Vector{T}) = ψ.a * kernel_dxdy(ψ.k, x, y)
 
 function kernel_dp{T<:FloatingPoint}(ψ::ScaledKernel{T}, param::Symbol, x::Vector{T}, y::Vector{T})
     if param == :a
