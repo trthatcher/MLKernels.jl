@@ -1,5 +1,5 @@
 #===================================================================================================
-  Squared Distance Kernel Definitions
+  Squared Distance Kernel Definitions: z = ϵᵀϵ
 ===================================================================================================#
 
 #== Gaussian Kernel ===============#
@@ -65,8 +65,13 @@ function convert{T<:FloatingPoint}(::Type{LaplacianKernel{T}}, κ::LaplacianKern
     LaplacianKernel(convert(T, κ.sigma))
 end
 
-function kappa{T<:FloatingPoint}(κ::LaplacianKernel{T}, ϵᵀϵ::T)
-    exp(sqrt(ϵᵀϵ)/(-κ.sigma))
+kappa{T<:FloatingPoint}(κ::LaplacianKernel{T}, z::T) = exp(sqrt(z)/(-κ.sigma))
+kappa_dz{T<:FloatingPoint}(κ::LaplacianKernel{T}, z::T, kz = kappa(κ, z)) = kz/(-2κ.sigma*sqrt(z))
+kappa_dz2{T<:FloatingPoint}(κ::LaplacianKernel{T}, z::T, kz = kappa(κ, z)) = kz*(κ.sigma + sqrt(z))/(4κ.sigma^2 * z^(3/2))
+kappa_dsigma{T<:FloatingPoint}(κ::LaplacianKernel{T}, z::T, kz = kappa(κ, z)) = kz * sqrt(z) / κ.sigma^2
+
+function kappa_dp{T<:FloatingPoint}(κ::LaplacianKernel{T}, param::Symbol, z::T)
+    param == :sigma ? kappa_dsigma(κ, z) : zero(T)
 end
 
 isposdef(::LaplacianKernel) = true
@@ -104,8 +109,13 @@ function convert{T<:FloatingPoint}(::Type{RationalQuadraticKernel{T}}, κ::Ratio
     RationalQuadraticKernel(convert(T, κ.c))
 end
 
-function kappa{T<:FloatingPoint}(κ::RationalQuadraticKernel{T}, ϵᵀϵ::T)
-    1 - ϵᵀϵ/(ϵᵀϵ + κ.c)
+kappa{T<:FloatingPoint}(κ::RationalQuadraticKernel{T}, z::T) = 1 - z/(z + κ.c)
+kappa_dz{T<:FloatingPoint}(κ::RationalQuadraticKernel{T}, z::T) = -κ.c/((z + κ.c)^2)
+kappa_dz2{T<:FloatingPoint}(κ::RationalQuadraticKernel{T}, z::T) = 2κ.c/((z + κ.c)^3)
+kappa_dc{T<:FloatingPoint}(κ::RationalQuadraticKernel{T}, z::T) = z/((z + κ.c)^2)
+
+function kappa_dp{T<:FloatingPoint}(κ::RationalQuadraticKernel{T}, param::Symbol, z::T)
+    param == :c ? kappa_dc(κ, z) : zero(T)
 end
 
 isposdef(::RationalQuadraticKernel) = true
@@ -141,8 +151,13 @@ function convert{T<:FloatingPoint}(::Type{MultiQuadraticKernel{T}}, κ::MultiQua
     MultiQuadraticKernel(convert(T, κ.c))
 end
 
-function kappa{T<:FloatingPoint}(κ::MultiQuadraticKernel{T}, ϵᵀϵ::T)
-    sqrt(ϵᵀϵ + κ.c)
+kappa{T<:FloatingPoint}(κ::MultiQuadraticKernel{T}, z::T) = sqrt(z + κ.c)
+kappa_dz{T<:FloatingPoint}(κ::MultiQuadraticKernel{T}, z::T) = 1/(2sqrt(z + κ.c))
+kappa_dz2{T<:FloatingPoint}(κ::MultiQuadraticKernel{T}, z::T) = -1/(4(z + κ.c)^(3/2))
+kappa_dc{T<:FloatingPoint}(κ::MultiQuadraticKernel{T}, z::T) = 1/(2sqrt(z + κ.c))
+
+function kappa_dp{T<:FloatingPoint}(κ::MultiQuadraticKernel{T}, param::Symbol, z::T)
+    param == :c ? kappa_dc(κ, z) : zero(T)
 end
 
 function description_string{T<:FloatingPoint}(κ::MultiQuadraticKernel{T}, eltype::Bool = true)
@@ -171,17 +186,20 @@ immutable InverseMultiQuadraticKernel{T<:FloatingPoint} <: SquaredDistanceKernel
 end
 InverseMultiQuadraticKernel{T<:FloatingPoint}(c::T = 1.0) = InverseMultiQuadraticKernel{T}(c)
 
-function convert{T<:FloatingPoint}(::Type{InverseMultiQuadraticKernel{T}},
-                                   κ::InverseMultiQuadraticKernel)
+function convert{T<:FloatingPoint}(::Type{InverseMultiQuadraticKernel{T}}, κ::InverseMultiQuadraticKernel)
     InverseMultiQuadraticKernel(convert(T, κ.c))
 end
 
-function kappa{T<:FloatingPoint}(κ::InverseMultiQuadraticKernel{T}, ϵᵀϵ::T)
-    one(T) / sqrt(ϵᵀϵ + κ.c)
+kappa{T<:FloatingPoint}(κ::InverseMultiQuadraticKernel{T}, z::T) = 1 / sqrt(z + κ.c)
+kappa_dz{T<:FloatingPoint}(κ::InverseMultiQuadraticKernel{T}, z::T) = -1/(2(z + κ.c)^(3/2))
+kappa_dz2{T<:FloatingPoint}(κ::InverseMultiQuadraticKernel{T}, z::T) = 1/(4(z + κ.c)^(5/2))
+kappa_dc{T<:FloatingPoint}(κ::InverseMultiQuadraticKernel{T}, z::T) = -1/(2(z + κ.c)^(3/2))
+
+function kappa_dp{T<:FloatingPoint}(κ::MultiQuadraticKernel{T}, param::Symbol, z::T)
+    param == :c ? kappa_dc(κ, z) : zero(T)
 end
 
-function description_string{T<:FloatingPoint}(κ::InverseMultiQuadraticKernel{T},
-                                              eltype::Bool = true)
+function description_string{T<:FloatingPoint}(κ::InverseMultiQuadraticKernel{T}, eltype::Bool = true)
     "InverseMultiQuadraticKernel" * (eltype ? "{$(T)}" : "") * "(c=$(κ.c))"
 end
 
@@ -213,7 +231,14 @@ PowerKernel(d::Integer) = PowerKernel(convert(Float64, d))
 
 convert{T<:FloatingPoint}(::Type{PowerKernel{T}}, κ::PowerKernel) = PowerKernel(convert(T, κ.d))
 
-kappa{T<:FloatingPoint}(κ::PowerKernel{T}, ϵᵀϵ::T) = -sqrt(ϵᵀϵ)^(κ.d)
+kappa{T<:FloatingPoint}(κ::PowerKernel{T}, z::T) = -z^(κ.d/2)
+kappa_dz{T<:FloatingPoint}(κ::PowerKernel{T}, z::T) = (-κ.d/2)*(z^(κ.d/2 - 1))
+kappa_dz2{T<:FloatingPoint}(κ::PowerKernel{T}, z::T) = -((κ.d^2 - 2d)/4)*sqrt(z)^(κ.d/2 - 2)
+kappa_dd{T<:FloatingPoint}(κ::PowerKernel{T}, z::T) = -(log(z)/2)*sqrt(z)^(κ.d/2)
+
+function kappa_dp{T<:FloatingPoint}(κ::PowerKernel{T}, param::Symbol, z::T)
+    param == :d ? kappa_dd(κ, z) : zero(T)
+end
 
 function description_string{T<:FloatingPoint}(κ::PowerKernel{T}, eltype::Bool = true)
     "PowerKernel" * (eltype ? "{$(T)}" : "") * "(d=$(κ.d))"
@@ -249,8 +274,13 @@ LogKernel(d::Integer) = LogKernel(convert(Float32, d))
 
 convert{T<:FloatingPoint}(::Type{LogKernel{T}}, κ::LogKernel) = LogKernel(convert(T, κ.d))
 
-function kappa{T<:FloatingPoint}(κ::LogKernel{T}, ϵᵀϵ::T)
-    -log(sqrt(ϵᵀϵ)^(κ.d) + 1)
+kappa{T<:FloatingPoint}(κ::LogKernel{T}, z::T) = -log(z^(κ.d/2) + 1)
+kappa_dz{T<:FloatingPoint}(κ::LogKernel{T}, z::T) = -κ.d/(2(z^(d/2 + 1) + z))
+kappa_dz2{T<:FloatingPoint}(κ::LogKernel{T}, z::T) = -κ.d*z^(κ.d/2 - 2)*(2z^(κ.d/2) - κ.d + 2)/(4*(z^(κ.d/2) + 1)^2)
+kappa_dd{T<:FloatingPoint}(κ::LogKernel{T}, z::T) = -z^(κ.d/2)*log(z)/(2(z^(κ.d/2) + 1))
+
+function kappa_dp{T<:FloatingPoint}(κ::LogKernel{T}, param::Symbol, z::T)
+    param == :d ? kappa_dd(κ, z) : zero(T)
 end
 
 function description_string{T<:FloatingPoint}(κ::LogKernel{T}, eltype::Bool = true)

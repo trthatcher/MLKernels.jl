@@ -16,6 +16,15 @@ function scprod{T<:FloatingPoint}(x::Array{T}, y::Array{T})
     z
 end
 
+# In-place scalar product calculation
+function scprod{T<:FloatingPoint}(d::Int64, X::Array{T}, x_pos::Int64, Y::Array{T}, y_pos::Int64, is_trans::Bool)
+    z = zero(T)
+    @transpose_access is_trans (X,Y) @inbounds for i = 1:d
+        z += X[x_pos,i] * Y[y_pos,i]
+    end
+    z
+end
+
 # Partial derivative of the scalar product of vectors x and y
 scprod_dx{T<:FloatingPoint}(x::Array{T}, y::Array{T}) = copy(y)
 scprod_dy{T<:FloatingPoint}(x::Array{T}, y::Array{T}) = copy(x)

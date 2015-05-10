@@ -100,10 +100,9 @@ include("standardkernels/separable.jl")
 
 
 #===========================================================================
-  Squared Distance Kernels - kernels of the form k(x,y) = κ(x)ᵀκ(y)
+  Automatic Relevance Determination (ARD) kernels
 ===========================================================================#
 
-# Automatic Relevance Determination (ARD) kernels
 include("standardkernels/ard.jl")
 
 
