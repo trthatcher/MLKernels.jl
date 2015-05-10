@@ -96,10 +96,20 @@ function sqdist{T<:FloatingPoint}(x::Array{T}, y::Array{T})
     z
 end
 
+# In-place squared distance calculation
+function sqdist{T<:FloatingPoint}(d::Int64, X::Array{T}, x_pos::Int64, Y::Array{T}, y_pos::Int64, is_trans::Bool)
+    z = zero(T)
+    @transpose_access is_trans (X,Y) @inbounds for i = 1:d
+        v = X[x_pos,i] - Y[y_pos,i]
+        z += v*v
+    end
+    z
+end
+
 sqdist_dx{T<:FloatingPoint}(x::Array{T}, y::Array{T}) = scale!(2, x - y)
 sqdist_dy{T<:FloatingPoint}(x::Array{T}, y::Array{T}) = scale!(2, y - x)
 
-# Calculates G such that Gij is the dot product of the difference of row i and j of matrix X
+# Calculates Z such that Zij is the dot product of the difference of row i and j of matrix X
 #    trans == 'N' -> X is a design matrix
 #             'T' -> X is a transposed design matrix
 function sqdistmatrix{T<:FloatingPoint}(X::Matrix{T}, trans::Char = 'N', uplo::Char = 'U', sym::Bool = true)
@@ -114,7 +124,7 @@ function sqdistmatrix{T<:FloatingPoint}(X::Matrix{T}, trans::Char = 'N', uplo::C
     sym ? (uplo == 'U' ? syml!(Z) : symu!(Z)) : Z
 end
 
-# Calculates the upper right corner G of the squared distance matrix of matrix [Xᵀ Yᵀ]ᵀ
+# Calculates the upper right corner, Z, of the squared distance matrix of matrix [Xᵀ Yᵀ]ᵀ
 #   trans == 'N' -> X and Y are design matrices
 #            'T' -> X and Y are transposed design matrices
 function sqdistmatrix{T<:FloatingPoint}(X::Matrix{T}, Y::Matrix{T}, trans::Char = 'N')
@@ -169,7 +179,7 @@ sqdist_dx{T<:FloatingPoint}(x::Array{T}, y::Array{T}, w::Array{T}) = sqdist_dx!(
 sqdist_dy{T<:FloatingPoint}(x::Array{T}, y::Array{T}, w::Array{T}) = sqdist_dy!(x, copy(y), w)
 sqdist_dw{T<:FloatingPoint}(x::Array{T}, y::Array{T}, w::Array{T}) = sqdist_dw!(x, y, copy(w))
 
-# Calculates G such that Gij is the dot product of the difference of row i and j of matrix X
+# Calculates Z such that Zij is the dot product of the difference of row i and j of matrix X
 #    trans == 'N' -> X is a design matrix
 #             'T' -> X is a transposed design matrix
 function sqdistmatrix{T<:FloatingPoint}(X::Matrix{T}, w::Array{T}, trans::Char = 'N', uplo::Char = 'U', sym::Bool = true)
@@ -184,7 +194,7 @@ function sqdistmatrix{T<:FloatingPoint}(X::Matrix{T}, w::Array{T}, trans::Char =
     sym ? (uplo == 'U' ? syml!(Z) : symu!(Z)) : Z
 end
 
-# Calculates the upper right corner G of the squared distance matrix of matrix [Xᵀ Yᵀ]ᵀ
+# Calculates the upper right corner, Z, of the squared distance matrix of matrix [Xᵀ Yᵀ]ᵀ
 #   trans == 'N' -> X and Y are design matrices
 #            'T' -> X and Y are transposed design matrices
 function sqdistmatrix{T<:FloatingPoint}(X::Matrix{T}, Y::Matrix{T}, w::Array{T}, trans::Char = 'N')
