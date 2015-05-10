@@ -43,9 +43,13 @@ println("Done")
 print("- Testing in-place scprod ... ")
 Z = MLKernels.scprodmatrix(X,Y)
 @test MLKernels.scprod(2,X,2,Y,1,false) == Z[2,1]
+Z = MLKernels.scprodmatrix(X,Y,w)
+@test MLKernels.scprod(2,X,2,Y,1,w,false) == Z[2,1]
 println("Done")
 
 print("- Testing in-place sqdist ... ")
 Z = MLKernels.sqdistmatrix(X,Y)
 @test MLKernels.sqdist(2,X,2,Y,1,false) == Z[2,1]
+Z = MLKernels.sqdistmatrix(X,Y,w)
+@test MLKernels.sqdist(2,X,2,Y,1,w,false) == Z[2,1]
 println("Done")
