@@ -47,13 +47,6 @@ for T in (Float32,Float64)
           2 2 2]
     @test MLKernels.perturb(S, one(T)) == T[3 2 2; 2 3 2; 2 2 3]
     @test MLKernels.regularize(S, one(T), one(T)) == T[1 0 0; 0 1 0; 0 0 1]
-    A = T[1 1 1;
-          2 2 2]
-    B = T[2 2 2;
-          3 3 3]
-    C = reshape(T[-1 -1 -1 0 0 0 -2 -2 -2 -1 -1 -1], (3,2,2))  # block_X == true
-    @test MLKernels.epsilons(A, B, 'N') == C
-    @test MLKernels.epsilons(A', B', 'T') == C
 
 end
 println("Done")
