@@ -78,7 +78,8 @@ for T in (Float64,)
     y = T[5, 2, 1, 6]
 
     for (k, param, derivs) in (
-            (GaussianKernel, T[3.0], (:sigma,)),)
+            (GaussianKernel, T[3.0], (:sigma,)),
+            (LaplacianKernel, T[3.0], (:sigma,)),)
         test_deriv_dxdy(k(param...), x, y, 1e-9)
         test_deriv_dp(p->k(p...), param, derivs, x, y, 1e-8)
     end
