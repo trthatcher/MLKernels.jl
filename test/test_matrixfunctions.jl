@@ -38,15 +38,12 @@ for T in (Float32,Float64)
     @test MLKernels.col_add!(copy(S1), col) == CA
     @test MLKernels.row_sub!(copy(S1), row) == RS
     @test MLKernels.col_sub!(copy(S1), col) == CS
-    @test MLKernels.sqdist([1,2.0], [1 3.0]) == 1
-    @test MLKernels.sqdist([1,2.0], [1,3.0], [1,2.0]) == 4
-    @test MLKernels.scprod([1,2.0], [1 3.0]) == 7
-    @test MLKernels.scprod([1,2.0], [1,3.0], [1,2.0]) == 13
     S = T[2 2 2;
           2 2 2;
           2 2 2]
     @test MLKernels.perturb(S, one(T)) == T[3 2 2; 2 3 2; 2 2 3]
     @test MLKernels.regularize(S, one(T), one(T)) == T[1 0 0; 0 1 0; 0 0 1]
+    @test MLKernels.hadamard!(T[3; 2], T[3; 2]) == T[9; 4]
 
 end
 println("Done")
