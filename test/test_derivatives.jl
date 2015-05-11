@@ -93,7 +93,8 @@ for T in (Float64,)
             (PowerKernel, T[2], (:d,)),
             (LogKernel, T[1], (:d,)),
             (LinearKernel, T[1.2], (:c,)),
-            (PolynomialKernel, T[1.1, 1.3, 2.2], (:alpha, :c, :d)),
+	    (PolynomialKernel, T[1.1, 1.3, 2.2], (:alpha, :c, :d)),
+            (SigmoidKernel, T[1.1, 1.3], (:alpha, :c)),
         )
         print("    - Testing $(k) ... ")
         test_deriv_dxdy(k(param...), x, y, 1e-7)

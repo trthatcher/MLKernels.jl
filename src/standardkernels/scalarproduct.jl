@@ -125,6 +125,16 @@ function convert{T<:FloatingPoint}(::Type{SigmoidKernel{T}}, κ::SigmoidKernel)
 end
 
 kappa{T<:FloatingPoint}(κ::SigmoidKernel{T}, xᵀy::T) = tanh(κ.alpha*xᵀy + κ.c)
+kappa_dz{T<:FloatingPoint}(κ::SigmoidKernel{T}, xᵀy::T) = (1 - kappa(κ,xᵀy)^2) * κ.alpha
+kappa_dz2{T<:FloatingPoint}(κ::SigmoidKernel{T}, xᵀy::T) = -2κ.alpha^2 * kappa(κ,xᵀy)*(1-kappa(κ,xᵀy)^2)
+kappa_dalpha{T<:FloatingPoint}(κ::SigmoidKernel{T}, xᵀy::T) = (1 - tanh(κ.alpha*xᵀy + κ.c)^2) * xᵀy
+kappa_dc{T<:FloatingPoint}(κ::SigmoidKernel{T}, xᵀy::T) = (1 - tanh(κ.alpha*xᵀy + κ.c)^2)
+
+function kappa_dp{T<:FloatingPoint}(κ::SigmoidKernel{T}, param::Symbol, z::T)
+    param == :alpha ? kappa_dalpha(κ, z) :
+    param == :c     ? kappa_dc(κ, z) :
+                      zero(T)
+end
 
 function description_string{T<:FloatingPoint}(κ::SigmoidKernel{T}, eltype::Bool = true)
     "SigmoidKernel" * (eltype ? "{$(T)}" : "") * "(α=$(κ.alpha),c=$(κ.c))"
