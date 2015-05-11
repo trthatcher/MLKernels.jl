@@ -18,6 +18,13 @@ function convert{T<:FloatingPoint}(::Type{LinearKernel{T}}, κ::LinearKernel)
 end
 
 kappa{T<:FloatingPoint}(κ::LinearKernel{T}, xᵀy::T) = xᵀy + κ.c
+kappa_dz{T<:FloatingPoint}(κ::LinearKernel{T}, xᵀy::T) = one(T)
+kappa_dz2{T<:FloatingPoint}(κ::LinearKernel{T}, xᵀy::T) = zero(T)
+kappa_dc{T<:FloatingPoint}(κ::LinearKernel{T}, xᵀy::T) = one(T)
+
+function kappa_dp{T<:FloatingPoint}(κ::LinearKernel{T}, param::Symbol, z::T)
+    param == :c ? kappa_dc(κ, z) : zero(T)
+end
 
 isposdef(::LinearKernel) = true
 
@@ -49,10 +56,8 @@ immutable PolynomialKernel{T<:FloatingPoint} <: ScalarProductKernel{T}
     function PolynomialKernel(α::T, c::T, d::T)
         α > 0 || throw(ArgumentError("α = $(α) must be greater than zero."))
         c >= 0 || throw(ArgumentError("c = $(c) must be a non-negative number."))
-        d > 0 || throw(ArgumentError("d = $(d) must be a positive integer."))
-        b = trunc(d)
-        d == b || warn("d = $(d) was truncated to $(b).")
-        new(α, c, b)
+        d > 0 || throw(ArgumentError("d = $(d) must be greater than zero."))
+        new(α, c, d)
     end
 end
 function PolynomialKernel{T<:FloatingPoint}(α::T = 1.0, c::T = one(T), d::T = convert(T, 2))
@@ -65,9 +70,20 @@ function convert{T<:FloatingPoint}(::Type{PolynomialKernel{T}}, κ::PolynomialKe
     PolynomialKernel(convert(T, κ.alpha), convert(T, κ.c), convert(T, κ.d))
 end
 
-function kappa{T<:FloatingPoint}(κ::PolynomialKernel{T}, xᵀy::T)
-    (κ.alpha*xᵀy + κ.c)^κ.d
+kappa{T<:FloatingPoint}(κ::PolynomialKernel{T}, xᵀy::T) = (κ.alpha*xᵀy + κ.c)^κ.d
+kappa_dz{T<:FloatingPoint}(κ::PolynomialKernel{T}, xᵀy::T) = κ.alpha*κ.d*(κ.alpha*xᵀy + κ.c)^(κ.d-1)
+kappa_dz2{T<:FloatingPoint}(κ::PolynomialKernel{T}, xᵀy::T) = κ.alpha^2*κ.d*(κ.d-1)*(κ.alpha*xᵀy + κ.c)^(κ.d-2)
+kappa_dalpha{T<:FloatingPoint}(κ::PolynomialKernel{T}, xᵀy::T) = xᵀy*κ.d*(κ.alpha*xᵀy + κ.c)^(κ.d-1)
+kappa_dc{T<:FloatingPoint}(κ::PolynomialKernel{T}, xᵀy::T) = κ.d*(κ.alpha*xᵀy + κ.c)^(κ.d-1)
+kappa_dd{T<:FloatingPoint}(κ::PolynomialKernel{T}, xᵀy::T) = log(κ.alpha*xᵀy + κ.c)*(κ.alpha*xᵀy + κ.c)^κ.d
+
+function kappa_dp{T<:FloatingPoint}(κ::PolynomialKernel{T}, param::Symbol, z::T)
+    param == :alpha ? kappa_dalpha(κ, z) :
+    param == :c     ? kappa_dc(κ, z) :
+    param == :d     ? kappa_dd(κ, z) :
+                      zero(T)
 end
+
 
 isposdef(::PolynomialKernel) = true
 

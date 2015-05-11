@@ -168,7 +168,7 @@ regularize{T<:FloatingPoint}(S::Matrix{T}, α::T, β::T) = regularize!(copy(S), 
 # Perturb a symmetric matrix S, overwrites S with S + ϵ*I
 function perturb!{T<:FloatingPoint}(S::Matrix{T}, ϵ::T = 100*eps(T)*size(S,1))
     (p = size(S,1)) == size(S,2) || throw(ArgumentError("S ∈ ℝ$(p)×$(size(S, 2)) must be square"))
-    0 <= ϵ || throw(ArgumentError("ϵ = $(ϵ) must be in [0,∞)"))
+    #0 <= ϵ || throw(ArgumentError("ϵ = $(ϵ) must be in [0,∞)"))
     @inbounds for i = 1:p
         S[i,i] += ϵ
     end

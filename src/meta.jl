@@ -14,8 +14,8 @@ function transpose_access(symbols, ex)
 end
 
 # Generate a second branch of code with array access transposed for listed symbols
-#     cond: a symbol representing a condition
-#     symbols: the tuple of variables where the access should be swapped
+#     cond: an expression representing a condition
+#     symbols: the tuple of variables for which array access should be swapped
 #     block: the default block of code
 macro transpose_access(cond, symbols, block)
     @assert symbols.head == :tuple

@@ -192,10 +192,10 @@ end
 
 kappa{T<:FloatingPoint}(κ::InverseMultiQuadraticKernel{T}, z::T) = 1 / sqrt(z + κ.c)
 kappa_dz{T<:FloatingPoint}(κ::InverseMultiQuadraticKernel{T}, z::T) = -1/(2(z + κ.c)^(3/2))
-kappa_dz2{T<:FloatingPoint}(κ::InverseMultiQuadraticKernel{T}, z::T) = 1/(4(z + κ.c)^(5/2))
+kappa_dz2{T<:FloatingPoint}(κ::InverseMultiQuadraticKernel{T}, z::T) = 3/(4(z + κ.c)^(5/2))
 kappa_dc{T<:FloatingPoint}(κ::InverseMultiQuadraticKernel{T}, z::T) = -1/(2(z + κ.c)^(3/2))
 
-function kappa_dp{T<:FloatingPoint}(κ::MultiQuadraticKernel{T}, param::Symbol, z::T)
+function kappa_dp{T<:FloatingPoint}(κ::InverseMultiQuadraticKernel{T}, param::Symbol, z::T)
     param == :c ? kappa_dc(κ, z) : zero(T)
 end
 
@@ -220,10 +220,8 @@ end
 immutable PowerKernel{T<:FloatingPoint} <: SquaredDistanceKernel{T}
     d::T
     function PowerKernel(d::T)
-        d > 0 || throw(ArgumentError("d = $(d) must be a positive integer."))
-        b = trunc(d)
-        d == b || warn("d = $(d) was truncated to $(b).")
-        new(b)
+        d > 0 || throw(ArgumentError("d = $(d) must be a greater than zero."))
+        new(d)
     end
 end
 PowerKernel{T<:FloatingPoint}(d::T = 2.0) = PowerKernel{T}(d)
@@ -233,8 +231,8 @@ convert{T<:FloatingPoint}(::Type{PowerKernel{T}}, κ::PowerKernel) = PowerKernel
 
 kappa{T<:FloatingPoint}(κ::PowerKernel{T}, z::T) = -z^(κ.d/2)
 kappa_dz{T<:FloatingPoint}(κ::PowerKernel{T}, z::T) = (-κ.d/2)*(z^(κ.d/2 - 1))
-kappa_dz2{T<:FloatingPoint}(κ::PowerKernel{T}, z::T) = -((κ.d^2 - 2d)/4)*sqrt(z)^(κ.d/2 - 2)
-kappa_dd{T<:FloatingPoint}(κ::PowerKernel{T}, z::T) = -(log(z)/2)*sqrt(z)^(κ.d/2)
+kappa_dz2{T<:FloatingPoint}(κ::PowerKernel{T}, z::T) = -((κ.d^2 - 2κ.d)/4)*(z^(κ.d/2 - 2))
+kappa_dd{T<:FloatingPoint}(κ::PowerKernel{T}, z::T) = -(log(z)/2)*(z^(κ.d/2))
 
 function kappa_dp{T<:FloatingPoint}(κ::PowerKernel{T}, param::Symbol, z::T)
     param == :d ? kappa_dd(κ, z) : zero(T)
@@ -263,10 +261,8 @@ end
 immutable LogKernel{T<:FloatingPoint} <: SquaredDistanceKernel{T}
     d::T
     function LogKernel(d::T)
-        d > 0 || throw(ArgumentError("d = $(d) must be a positive integer."))
-        b = trunc(d)
-        d == b || warn("d = $(d) was truncated to $(b).")
-        new(b)
+        d > 0 || throw(ArgumentError("d = $(d) must be greater than zero."))
+        new(d)
     end
 end
 LogKernel{T<:FloatingPoint}(d::T = 1.0) = LogKernel{T}(d)
@@ -275,8 +271,8 @@ LogKernel(d::Integer) = LogKernel(convert(Float32, d))
 convert{T<:FloatingPoint}(::Type{LogKernel{T}}, κ::LogKernel) = LogKernel(convert(T, κ.d))
 
 kappa{T<:FloatingPoint}(κ::LogKernel{T}, z::T) = -log(z^(κ.d/2) + 1)
-kappa_dz{T<:FloatingPoint}(κ::LogKernel{T}, z::T) = -κ.d/(2(z^(d/2 + 1) + z))
-kappa_dz2{T<:FloatingPoint}(κ::LogKernel{T}, z::T) = -κ.d*z^(κ.d/2 - 2)*(2z^(κ.d/2) - κ.d + 2)/(4*(z^(κ.d/2) + 1)^2)
+kappa_dz{T<:FloatingPoint}(κ::LogKernel{T}, z::T) = -κ.d/(2(z^(-κ.d/2 + 1) + z))
+kappa_dz2{T<:FloatingPoint}(κ::LogKernel{T}, z::T) = κ.d/2 * (1 + z^(-κ.d/2)*(-κ.d/2 + 1))/((z^(-κ.d/2 + 1) + z)^2)
 kappa_dd{T<:FloatingPoint}(κ::LogKernel{T}, z::T) = -z^(κ.d/2)*log(z)/(2(z^(κ.d/2) + 1))
 
 function kappa_dp{T<:FloatingPoint}(κ::LogKernel{T}, param::Symbol, z::T)

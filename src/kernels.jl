@@ -41,6 +41,21 @@ abstract ScalarProductKernel{T<:FloatingPoint} <: StandardKernel{T}
 kernel{T<:FloatingPoint}(κ::ScalarProductKernel{T}, x::Array{T}, y::Array{T}) = kappa(κ, scprod(x, y))
 kernel{T<:FloatingPoint}(κ::ScalarProductKernel{T}, x::T, y::T) = kappa(κ, x*y)
 
+kernel_dx{T<:FloatingPoint}(κ::ScalarProductKernel{T}, x::Array{T}, y::Array{T}) = kappa_dz(κ, scprod(x, y)) * scprod_dx(x, y)
+kernel_dy{T<:FloatingPoint}(κ::ScalarProductKernel{T}, x::Array{T}, y::Array{T}) = kappa_dz(κ, scprod(x, y)) * scprod_dy(x, y)
+
+function kernel_dxdy{T<:FloatingPoint}(κ::ScalarProductKernel{T}, x::Array{T}, y::Array{T})
+    xᵀy = scprod(x, y)
+    perturb!(scale!(kappa_dz2(κ, xᵀy), y*x'), kappa_dz(κ, xᵀy))
+end
+function kernel_dxdy{T<:FloatingPoint}(κ::ScalarProductKernel{T}, x::T, y::T)
+    xy = x * y
+    kappa_dz2(κ, xy) * xy + kappa_dz(κ, xy)
+end
+
+kernel_dp{T<:FloatingPoint}(κ::ScalarProductKernel{T}, param::Symbol, x::Array{T}, y::Array{T}) = kappa_dp(κ, param, scprod(x, y))
+kernel_dp{T<:FloatingPoint}(κ::ScalarProductKernel{T}, param::Integer, x::Array{T}, y::Array{T}) = kernel_dp(κ, names(κ)[param], x, y)
+
 # Scalar Product Kernel definitions
 include("standardkernels/scalarproduct.jl")
 
