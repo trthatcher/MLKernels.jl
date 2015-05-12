@@ -97,7 +97,7 @@ abstract SeparableKernel{T<:FloatingPoint} <: StandardKernel{T}
 
 function kappa_array!{T<:FloatingPoint}(κ::SeparableKernel{T}, x::Array{T})
     @inbounds for i = 1:length(x)
-        x[i] = kappa_scalar(κ, x[i])
+        x[i] = kappa(κ, x[i])
     end
     x
 end
@@ -108,7 +108,45 @@ function kernel{T<:FloatingPoint}(κ::SeparableKernel{T}, x::Array{T}, y::Array{
     BLAS.dot(length(v), v, 1, z, 1)
 end
 
-kernel{T<:FloatingPoint}(κ::SeparableKernel{T}, x::T, y::T) = kappa_scalar(κ, x) * kappa_scalar(κ, y) 
+function kappa_dz_array!{T<:FloatingPoint}(κ::SeparableKernel{T}, x::Array{T})
+    @inbounds for i = 1:length(x)
+        x[i] = kappa_dz(κ, x[i])
+    end
+    x
+end
+
+function kernel_dx{T<:FloatingPoint}(κ::SeparableKernel{T}, x::Array{T}, y::Array{T})
+    v = kappa_dz_array!(κ, copy(x))
+    z = kappa_array!(κ, copy(y))
+    v.*z
+end
+
+function kernel_dy{T<:FloatingPoint}(κ::SeparableKernel{T}, x::Array{T}, y::Array{T})
+    v = kappa_array!(κ, copy(x))
+    z = kappa_dz_array!(κ, copy(y))
+    v.*z
+end
+
+function kernel_dxdy{T<:FloatingPoint}(κ::SeparableKernel{T}, x::Array{T}, y::Array{T})
+    v = kappa_dz_array!(κ, copy(x))
+    z = kappa_dz_array!(κ, copy(y))
+    diagm(v.*z)
+end
+
+function kernel_dp{T<:FloatingPoint}(κ::SeparableKernel{T}, param::Symbol, x::Array{T}, y::Array{T})
+    v = similar(x)
+    z = similar(y)
+    @inbounds for i = 1:length(x)
+        v[i] = kappa_dp(κ, param, x[i])
+        z[i] = kappa_dp(κ, param, y[i])
+    end
+    warn("kernel_dp(::SeparableKernel,...) isn't working yet")
+    sum(v.*y) + sum(x.*z)
+end
+
+kernel_dp{T<:FloatingPoint}(κ::SeparableKernel{T}, param::Integer, x::Array{T}, y::Array{T}) = kernel_dp(κ, names(κ)[param], x, y)
+
+kernel{T<:FloatingPoint}(κ::SeparableKernel{T}, x::T, y::T) = kappa(κ, x) * kappa(κ, y) 
 
 # Separable Kernel definitions
 include("standardkernels/separable.jl")

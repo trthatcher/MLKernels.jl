@@ -127,8 +127,8 @@ end
 kappa{T<:FloatingPoint}(κ::SigmoidKernel{T}, xᵀy::T) = tanh(κ.alpha*xᵀy + κ.c)
 kappa_dz{T<:FloatingPoint}(κ::SigmoidKernel{T}, xᵀy::T) = (1 - kappa(κ,xᵀy)^2) * κ.alpha
 kappa_dz2{T<:FloatingPoint}(κ::SigmoidKernel{T}, xᵀy::T) = -2κ.alpha^2 * kappa(κ,xᵀy)*(1-kappa(κ,xᵀy)^2)
-kappa_dalpha{T<:FloatingPoint}(κ::SigmoidKernel{T}, xᵀy::T) = (1 - tanh(κ.alpha*xᵀy + κ.c)^2) * xᵀy
-kappa_dc{T<:FloatingPoint}(κ::SigmoidKernel{T}, xᵀy::T) = (1 - tanh(κ.alpha*xᵀy + κ.c)^2)
+kappa_dalpha{T<:FloatingPoint}(κ::SigmoidKernel{T}, xᵀy::T) = (1 - kappa(κ,xᵀy)^2) * xᵀy
+kappa_dc{T<:FloatingPoint}(κ::SigmoidKernel{T}, xᵀy::T) = (1 - kappa(κ,xᵀy)^2)
 
 function kappa_dp{T<:FloatingPoint}(κ::SigmoidKernel{T}, param::Symbol, z::T)
     param == :alpha ? kappa_dalpha(κ, z) :

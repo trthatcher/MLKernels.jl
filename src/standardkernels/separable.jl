@@ -18,8 +18,15 @@ function convert{T<:FloatingPoint}(::Type{MercerSigmoidKernel{T}}, κ::MercerSig
     MercerSigmoidKernel(convert(T, κ.d), convert(T, κ.b))
 end
 
-function kappa_scalar{T<:FloatingPoint}(κ::MercerSigmoidKernel{T}, x::T)
-    tanh((x - κ.d)/κ.b)
+kappa{T<:FloatingPoint}(κ::MercerSigmoidKernel{T}, z::T) = tanh((z - κ.d)/κ.b)
+kappa_dz{T<:FloatingPoint}(κ::MercerSigmoidKernel{T}, z::T) = (1 - kappa(κ,z)^2) / κ.b
+kappa_db{T<:FloatingPoint}(κ::MercerSigmoidKernel{T}, z::T) = -(1 - kappa(κ,z)^2) * (z - κ.d) * κ.b^-2
+kappa_dd{T<:FloatingPoint}(κ::MercerSigmoidKernel{T}, z::T) = (kappa(κ,z)^2 - 1) / κ.b
+
+function kappa_dp{T<:FloatingPoint}(κ::MercerSigmoidKernel{T}, param::Symbol, z::T)
+    param == :b ? kappa_db(κ, z) :
+    param == :d ? kappa_dd(κ, z) :
+                  zero(T)
 end
 
 isposdef(::MercerSigmoidKernel) = true
