@@ -134,14 +134,12 @@ function kernel_dxdy{T<:FloatingPoint}(κ::SeparableKernel{T}, x::Array{T}, y::A
 end
 
 function kernel_dp{T<:FloatingPoint}(κ::SeparableKernel{T}, param::Symbol, x::Array{T}, y::Array{T})
-    v = similar(x)
-    z = similar(y)
-    @inbounds for i = 1:length(x)
-        v[i] = kappa_dp(κ, param, x[i])
-        z[i] = kappa_dp(κ, param, y[i])
+    (n = length(x)) == length(y) || error("Dimensions do not match")
+    v = zero(T)
+    @inbounds for i = 1:n
+        v += kappa_dp(κ, param, x[i])*kappa(κ, y[i]) + kappa(κ, x[i])*kappa_dp(κ, param, y[i])
     end
-    warn("kernel_dp(::SeparableKernel,...) isn't working yet")
-    sum(v.*y) + sum(x.*z)
+    v
 end
 
 kernel_dp{T<:FloatingPoint}(κ::SeparableKernel{T}, param::Integer, x::Array{T}, y::Array{T}) = kernel_dp(κ, names(κ)[param], x, y)

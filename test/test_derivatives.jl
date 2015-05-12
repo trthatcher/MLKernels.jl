@@ -100,7 +100,6 @@ for T in (Float64,)
         )
         print("    - Testing $(k) ... ")
         test_deriv_dxdy(k(param...), x, y, 1e-7)
-        k == MercerSigmoidKernel && continue # kernel_dp(::MercerSigmoidKernel,...) not working yet
         test_deriv_dp(p->k(p...), param, derivs, x, y, 6e-5)
         println("Done")
     end
