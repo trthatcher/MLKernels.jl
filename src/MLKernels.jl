@@ -36,6 +36,7 @@ export
                     InverseMultiQuadraticKernel,
                     PowerKernel,
                     LogKernel,
+                    PeriodicKernel,
                 ScalarProductKernel,
                     LinearKernel,
                     PolynomialKernel,
