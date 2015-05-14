@@ -8,8 +8,7 @@
 
 # Centralize a kernel matrix K
 function center_kernelmatrix!{T<:FloatingPoint}(K::Matrix{T})
-    n = size(K, 1)
-    n == size(K, 2) || error("Kernel matrix must be square")
+    (n = size(K, 1)) == size(K, 2) || error("Kernel matrix must be square")
     row_mean = sum(K, 1)
     element_mean = sum(row_mean) / (convert(T, n)^2)
     BLAS.scal!(n, one(T)/convert(T,n), row_mean, 1)

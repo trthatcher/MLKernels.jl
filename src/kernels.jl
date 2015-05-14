@@ -11,6 +11,7 @@ eltype{T}(κ::Kernel{T}) = T
 #call{T<:FloatingPoint}(κ::Kernel{T}, X::Matrix{T}, Y::Matrix{T}) = kernel_matrix(κ, X, Y)
 
 isposdef(::Kernel) = false
+iscondposdef(::Kernel) = false
 
 abstract SimpleKernel{T<:FloatingPoint} <: Kernel{T}
 abstract CompositeKernel{T<:FloatingPoint} <: Kernel{T}
@@ -41,13 +42,32 @@ abstract ScalarProductKernel{T<:FloatingPoint} <: StandardKernel{T}
 kernel{T<:FloatingPoint}(κ::ScalarProductKernel{T}, x::Array{T}, y::Array{T}) = kappa(κ, scprod(x, y))
 kernel{T<:FloatingPoint}(κ::ScalarProductKernel{T}, x::T, y::T) = kappa(κ, x*y)
 
-kernel_dx{T<:FloatingPoint}(κ::ScalarProductKernel{T}, x::Array{T}, y::Array{T}) = kappa_dz(κ, scprod(x, y)) * scprod_dx(x, y)
-kernel_dy{T<:FloatingPoint}(κ::ScalarProductKernel{T}, x::Array{T}, y::Array{T}) = kappa_dz(κ, scprod(x, y)) * scprod_dy(x, y)
+function kernel_dx{T<:FloatingPoint}(κ::ScalarProductKernel{T}, x::Array{T}, y::Array{T}) # = kappa_dz(κ, scprod(x, y)) * scprod_dx(x, y)
+    ∂κ_∂z = kappa_dz(κ, scprod(x, y))
+    d = length(x)
+    ∂k_∂x = Array(T, d)
+    @inbounds @simd for i = 1:d
+        ∂k_∂x[i] = ∂κ_∂z * y[i]
+    end
+    ∂k_∂x
+end
+kernel_dy{T<:FloatingPoint}(κ::ScalarProductKernel{T}, x::Array{T}, y::Array{T}) = kernel_dx(κ, y, x)
 
 function kernel_dxdy{T<:FloatingPoint}(κ::ScalarProductKernel{T}, x::Array{T}, y::Array{T})
     xᵀy = scprod(x, y)
-    perturb!(scale!(kappa_dz2(κ, xᵀy), y*x'), kappa_dz(κ, xᵀy))
+    ∂κ_∂z = kappa_dz(κ, xᵀy)
+    ∂κ²_∂z² = kappa_dz2(κ, xᵀy)
+    d = length(x)
+    ∂k²_∂x∂y = Array(T, d, d)
+    @inbounds for j = 1:d
+        for i = 1:d
+            ∂k²_∂x∂y[i,j] = ∂κ²_∂z² * y[i] * x[j]
+        end
+        ∂k²_∂x∂y[j,j] += ∂κ_∂z
+    end
+    ∂k²_∂x∂y #perturb!(scale!(kappa_dz2(κ, xᵀy), y*x'), kappa_dz(κ, xᵀy))
 end
+
 function kernel_dxdy{T<:FloatingPoint}(κ::ScalarProductKernel{T}, x::T, y::T)
     xy = x * y
     kappa_dz2(κ, xy) * xy + kappa_dz(κ, xy)
@@ -69,20 +89,39 @@ abstract SquaredDistanceKernel{T<:FloatingPoint} <: StandardKernel{T}
 kernel{T<:FloatingPoint}(κ::SquaredDistanceKernel{T}, x::Array{T}, y::Array{T}) = kappa(κ, sqdist(x, y))
 kernel{T<:FloatingPoint}(κ::SquaredDistanceKernel{T}, x::T, y::T) = kappa(κ, (x - y)^2)
 
-kernel_dx{T<:FloatingPoint}(κ::SquaredDistanceKernel{T}, x::Array{T}, y::Array{T}) = kappa_dz(κ, sqdist(x, y)) * sqdist_dx(x, y)
-kernel_dy{T<:FloatingPoint}(κ::SquaredDistanceKernel{T}, x::Array{T}, y::Array{T}) = kappa_dz(κ, sqdist(x, y)) * sqdist_dy(x, y)
+function kernel_dx{T<:FloatingPoint}(κ::SquaredDistanceKernel{T}, x::Array{T}, y::Array{T}) # = kappa_dz(κ, sqdist(x, y)) * sqdist_dx(x, y)
+    ∂κ_∂z = kappa_dz(κ, sqdist(x, y))
+    d = length(x)
+    ∂k_∂x = Array(T, d)
+    @inbounds @simd for i = 1:d
+        ∂k_∂x[i] = 2∂κ_∂z * (x[i] - y[i])
+    end
+    ∂k_∂x
+end
+kernel_dy{T<:FloatingPoint}(κ::SquaredDistanceKernel{T}, x::Array{T}, y::Array{T}) = kernel_dx(κ, y, x)
 
 kernel_dp{T<:FloatingPoint}(κ::SquaredDistanceKernel{T}, param::Symbol, x::Array{T}, y::Array{T}) = kappa_dp(κ, param, sqdist(x, y))
 kernel_dp{T<:FloatingPoint}(κ::SquaredDistanceKernel{T}, param::Integer, x::Array{T}, y::Array{T}) = kernel_dp(κ, names(κ)[param], x, y)
 
 function kernel_dxdy{T<:FloatingPoint}(κ::SquaredDistanceKernel{T}, x::Array{T}, y::Array{T})
-    ϵ = vec(x - y)
-    ϵᵀϵ = scprod(ϵ, ϵ)
-    perturb!(scale!(-4*kappa_dz2(κ, ϵᵀϵ), ϵ*ϵ'), -2*kappa_dz(κ, ϵᵀϵ))
+    ϵᵀϵ = sqdist(x, y)
+    ∂κ_∂z = kappa_dz(κ, ϵᵀϵ)
+    ∂κ²_∂z² = kappa_dz2(κ, ϵᵀϵ)
+    d = length(x)
+    ∂k²_∂x∂y = Array(T, d, d)
+    @inbounds for j = 1:d
+        v = x[j] - y[j]
+        for i = 1:d
+            ∂k²_∂x∂y[i,j] = -4∂κ²_∂z² * v * (x[i] - y[i])
+        end
+        ∂k²_∂x∂y[j,j] -= 2∂κ_∂z
+    end
+    ∂k²_∂x∂y
 end
+
 function kernel_dxdy{T<:FloatingPoint}(κ::SquaredDistanceKernel{T}, x::T, y::T)
     ϵᵀϵ = (x-y)^2
-    -kappa_dz2(κ, ϵᵀϵ) * 4ϵᵀϵ - 2*kappa_dz(κ, ϵᵀϵ)
+    -kappa_dz2(κ, ϵᵀϵ) * 4ϵᵀϵ - 2kappa_dz(κ, ϵᵀϵ)
 end
 
 # Squared Distance Kernel definitions
