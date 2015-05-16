@@ -47,7 +47,7 @@ for (kernelobject, default_args, test_args) in (
         (RationalQuadraticKernel, (1,), (2,)),
         (MultiQuadraticKernel, (1,), (2,)),
         (InverseMultiQuadraticKernel, (1,), (2,)),
-        (PowerKernel, (2,), (2,)),
+        (PowerKernel, (1,), (0.5,)),
         (LogKernel, (1,), (2,)),
         (LinearKernel, (1,), (2,)),
         (PolynomialKernel, (1, 1, 2), (2, 2, 4)),
@@ -85,7 +85,6 @@ for (kernelobject, case) in (
         (PolynomialKernel, (1.0, 0.0, 2.0)),
         (SigmoidKernel, (1.0, 0.0)),
         # Special Cases
-        (PowerKernel, (2,)),
         (LogKernel, (1,)),
         (PolynomialKernel, (1.0, 1.0, 2))
     )
@@ -102,7 +101,7 @@ for (kernelobject, error_case) in (
         (RationalQuadraticKernel, (-1,)),
         (MultiQuadraticKernel, (-1,)),
         (InverseMultiQuadraticKernel, (-1.0,)),
-        (PowerKernel, (-1,)),
+        (PowerKernel, (0,)),
         (LogKernel, (-1,)),
         (LinearKernel, (-1.0,)),
         (PolynomialKernel, (-1, 1, 2)), 
@@ -128,7 +127,7 @@ for (kernelobject, default_args, default_value, posdef) in (
         (RationalQuadraticKernel,       (1,), 0.5,      true),
         (MultiQuadraticKernel,          (1,), sqrt(2),  false),
         (InverseMultiQuadraticKernel,   (1,), 1/sqrt(2),false),
-        (PowerKernel,                   (2,), -1,       false),
+        (PowerKernel,                   (1,), -1,       false),
         (LogKernel,                     (1,), -log(2),  false),
         (LinearKernel,                  (1,),      3,       true),
         (PolynomialKernel,              (1, 1, 2), 9,       true),

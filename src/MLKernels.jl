@@ -13,6 +13,7 @@ export
     kernel_dx,
     kernel_dy,
     kernel_dp,
+    kernel_dw,
     kernel_dxdy,
     kernelmatrix,
     kernelmatrix_dx,

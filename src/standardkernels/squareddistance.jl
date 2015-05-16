@@ -218,28 +218,29 @@ end
 #== Power Kernel ===============#
 
 immutable PowerKernel{T<:FloatingPoint} <: SquaredDistanceKernel{T}
-    d::T
-    function PowerKernel(d::T)
-        d > 0 || throw(ArgumentError("d = $(d) must be a greater than zero."))
-        new(d)
+    gamma::T
+    function PowerKernel(gamma::T)
+        0 < gamma <= 1 || throw(ArgumentError("γ = $(gamma) must be in the interval (0,1]."))
+        new(gamma)
     end
 end
-PowerKernel{T<:FloatingPoint}(d::T = 2.0) = PowerKernel{T}(d)
-PowerKernel(d::Integer) = PowerKernel(convert(Float64, d))
+PowerKernel{T<:FloatingPoint}(gamma::T = 1.0) = PowerKernel{T}(gamma)
 
-convert{T<:FloatingPoint}(::Type{PowerKernel{T}}, κ::PowerKernel) = PowerKernel(convert(T, κ.d))
+convert{T<:FloatingPoint}(::Type{PowerKernel{T}}, κ::PowerKernel) = PowerKernel(convert(T, κ.gamma))
 
-kappa{T<:FloatingPoint}(κ::PowerKernel{T}, z::T) = -z^(κ.d/2)
-kappa_dz{T<:FloatingPoint}(κ::PowerKernel{T}, z::T) = (-κ.d/2)*(z^(κ.d/2 - 1))
-kappa_dz2{T<:FloatingPoint}(κ::PowerKernel{T}, z::T) = -((κ.d^2 - 2κ.d)/4)*(z^(κ.d/2 - 2))
-kappa_dd{T<:FloatingPoint}(κ::PowerKernel{T}, z::T) = -(log(z)/2)*(z^(κ.d/2))
+kappa{T<:FloatingPoint}(κ::PowerKernel{T}, z::T) = -z^(κ.gamma)
+kappa_dz{T<:FloatingPoint}(κ::PowerKernel{T}, z::T) = (-κ.gamma)*(z^(κ.gamma - 1))
+kappa_dz2{T<:FloatingPoint}(κ::PowerKernel{T}, z::T) = (κ.gamma - κ.gamma^2)*(z^(κ.gamma - 2))
+kappa_dgamma{T<:FloatingPoint}(κ::PowerKernel{T}, z::T) = -log(z)*(z^(κ.gamma))
 
 function kappa_dp{T<:FloatingPoint}(κ::PowerKernel{T}, param::Symbol, z::T)
-    param == :d ? kappa_dd(κ, z) : zero(T)
+    param == :gamma ? kappa_dgamma(κ, z) : zero(T)
 end
 
+iscondposdef(::PowerKernel) = true
+
 function description_string{T<:FloatingPoint}(κ::PowerKernel{T}, eltype::Bool = true)
-    "PowerKernel" * (eltype ? "{$(T)}" : "") * "(d=$(κ.d))"
+    "PowerKernel" * (eltype ? "{$(T)}" : "") * "(γ=$(κ.gamma))"
 end
 
 function description_string_long(::PowerKernel)
@@ -251,7 +252,7 @@ function description_string_long(::PowerKernel)
     power kernel is that it is scale invariant. The function is given
     by:
     
-        k(x,y) = -‖x-y‖ᵈ    x ∈ ℝⁿ, y ∈ ℝⁿ, d > 0
+        k(x,y) = -‖x-y‖ᵞ   x ∈ ℝⁿ, y ∈ ℝⁿ, 0 < γ ≦ 1
     """
 end
 
