@@ -54,7 +54,7 @@ function scprod{T<:FloatingPoint}(x::Array{T}, y::Array{T}, w::Array{T})
     (n = length(x)) == length(y) == length(w) || throw(ArgumentError("Dimensions do not conform."))
     z = zero(T)
     @inbounds @simd for i = 1:n
-        z += x[i]*y[i]*w[i]
+        z += x[i] * y[i] * w[i]^2
     end
     z
 end
@@ -63,7 +63,7 @@ end
 function scprod{T<:FloatingPoint}(d::Int64, X::Array{T}, x_pos::Int64, Y::Array{T}, y_pos::Int64, w::Array{T}, is_trans::Bool)
     z = zero(T)
     @transpose_access is_trans (X,Y) @inbounds for i = 1:d
-        z += X[x_pos,i] * Y[y_pos,i] * w[i]
+        z += X[x_pos,i] * Y[y_pos,i] * w[i]^2
     end
     z
 end
@@ -71,13 +71,21 @@ end
 function scprod_dx!{T<:FloatingPoint}(x::Array{T}, y::Array{T}, w::Array{T})
     (n = length(x)) == length(y) == length(w) || throw(ArgumentError("Dimensions do not conform."))
     @inbounds @simd for i = 1:n
-        x[i] = y[i]*w[i]
+        x[i] = y[i]*w[i]^2
     end
     x
 end
 
+function scprod_dw!{T<:FloatingPoint}(x::Array{T}, y::Array{T}, w::Array{T})
+    (n = length(x)) == length(y) == length(w) || throw(ArgumentError("Dimensions do not conform."))
+    @inbounds @simd for i = 1:n
+        w[i] = 2y[i]*x[i]*w[i]
+    end
+    w
+end
+
+
 scprod_dy!{T<:FloatingPoint}(x::Array{T}, y::Array{T}, w::Array{T}) = scprod_dx!(y, x, w)
-scprod_dw!{T<:FloatingPoint}(x::Array{T}, y::Array{T}, w::Array{T}) = scprod_dx!(w, x, y)
 
 scprod_dx{T<:FloatingPoint}(x::Array{T}, y::Array{T}, w::Array{T}) = scprod_dx!(similar(x), y, w)
 scprod_dy{T<:FloatingPoint}(x::Array{T}, y::Array{T}, w::Array{T}) = scprod_dy!(x, similar(y), w)
@@ -87,7 +95,7 @@ scprod_dw{T<:FloatingPoint}(x::Array{T}, y::Array{T}, w::Array{T}) = scprod_dw!(
 #    trans == 'N' -> Z = XDXᵀ (X is a design matrix and D = diag(w))
 #             'T' -> Z = XᵀDX (X is a transposed design matrix and D = diag(w))
 function scprodmatrix{T<:FloatingPoint}(X::Matrix{T}, w::Array{T}, trans::Char = 'N', uplo::Char = 'U', sym::Bool = true)
-    Z = BLAS.syrk(uplo, trans, one(T), trans == 'T' ? scale(vec(sqrt(w)), X) : scale(X, vec(sqrt(w))))
+    Z = BLAS.syrk(uplo, trans, one(T), trans == 'T' ? scale(vec(w), X) : scale(X, vec(w)))
     sym ? (uplo == 'U' ? syml!(Z) : symu!(Z)) : Z
 end
 
@@ -95,7 +103,7 @@ end
 #   trans == 'N' -> Z = XDYᵀ (X and Y are design matrices)
 #            'T' -> Z = XᵀDY (X and Y are transposed design matrices)
 function scprodmatrix{T<:FloatingPoint}(X::Matrix{T}, Y::Matrix{T}, w::Array{T}, trans::Char = 'N')
-    trans == 'T' ? BLAS.gemm('T', 'N', X, scale(vec(w), Y)) : BLAS.gemm('N', 'T', X, scale(Y, vec(w)))
+    trans == 'T' ? BLAS.gemm('T', 'N', X, scale(vec(w.^2), Y)) : BLAS.gemm('N', 'T', X, scale(Y, vec(w.^2)))
 end
 
 #==========================================================================

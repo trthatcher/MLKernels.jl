@@ -24,6 +24,7 @@ export
     sqdistmatrix,
     center_kernelmatrix!,
     center_kernelmatrix,
+    nystrom,
 
     # Types
     Kernel,
