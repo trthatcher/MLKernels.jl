@@ -79,7 +79,7 @@ end
 function scprod_dw!{T<:FloatingPoint}(x::Array{T}, y::Array{T}, w::Array{T})
     (n = length(x)) == length(y) == length(w) || throw(ArgumentError("Dimensions do not conform."))
     @inbounds @simd for i = 1:n
-        w[i] = 2y[i]*x[i]*w[i]
+        w[i] = 2x[i]*y[i]*w[i]
     end
     w
 end
@@ -89,7 +89,7 @@ scprod_dy!{T<:FloatingPoint}(x::Array{T}, y::Array{T}, w::Array{T}) = scprod_dx!
 
 scprod_dx{T<:FloatingPoint}(x::Array{T}, y::Array{T}, w::Array{T}) = scprod_dx!(similar(x), y, w)
 scprod_dy{T<:FloatingPoint}(x::Array{T}, y::Array{T}, w::Array{T}) = scprod_dy!(x, similar(y), w)
-scprod_dw{T<:FloatingPoint}(x::Array{T}, y::Array{T}, w::Array{T}) = scprod_dw!(x, y, similar(w))
+scprod_dw{T<:FloatingPoint}(x::Array{T}, y::Array{T}, w::Array{T}) = scprod_dw!(x, y, copy(w))
 
 # Calculate the weighted scalar product matrix 
 #    trans == 'N' -> Z = XDXᵀ (X is a design matrix and D = diag(w))

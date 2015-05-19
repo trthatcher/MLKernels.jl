@@ -15,7 +15,7 @@ println("Done")
 
 print("- Testing scprod ...")
 @test MLKernels.scprod([1,2.0], [1 3.0]) == 7
-@test MLKernels.scprod([1,2.0], [1,3.0], [1,2.0]) == 13
+@test MLKernels.scprod([1,2.0], [1,3.0], [1,2.0]) == 25
 println("Done")
 
 x1 = [1.0; 2]

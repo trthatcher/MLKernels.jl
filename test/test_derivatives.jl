@@ -66,10 +66,10 @@ function test_kappa_dp(kconstructor, param, derivs, z, epsilon)
     k = kconstructor(param...)
     for (i, deriv) in enumerate(derivs)
         print(":$deriv")
-        @test abs(checkderiv(
+        @test_approx_eq_eps checkderiv(
             p -> MLKernels.kappa(kconstructor(p...), z),
             (p,i_) -> MLKernels.kappa_dp(kconstructor(p...), deriv, z),
-            param, i)) < epsilon
+            param, i) zero(eltype(z)) epsilon
     end
     @test MLKernels.kappa_dp(k, :undefined, z) == zero(eltype(z))
     print(" ")
@@ -98,28 +98,29 @@ function test_kernel_dp(kconstructor, param, derivs, x, y, epsilon)
     print(" ")
 end
 
-print("- Testing vector function derivatives ... ")
+println("- Testing vector function derivatives:")
 for T in (Float64,)
     x = T[1, 2, 7, 3]
     y = T[5, 2, 1, 6]
     w = T[4, 1, 6, 0]
 
     for s_fun in (:sqdist, :scprod)
+        print("- Testing $(s_fun) ... ")
         fun = @eval(MLKernels.$s_fun)
         for d in (:x, :y, :w)
             @eval $(symbol("fun_d$(d)")) = MLKernels.$(symbol("$(s_fun)_d$(d)"))
         end
 
-        @test all(checkderivvec(p->fun(p,y), p->fun_dx(p,y), x) .< 1e-7)
-        @test all(checkderivvec(p->fun(x,p), p->fun_dy(x,p), y) .< 1e-7)
+        @test_approx_eq_eps checkderivvec(p->fun(p,y), p->fun_dx(p,y), x) zeros(x) 1e-7
+        @test_approx_eq_eps checkderivvec(p->fun(x,p), p->fun_dy(x,p), y) zeros(y) 1e-7
 
-        @test all(checkderivvec(p->fun(p,y,w), p->fun_dx(p,y,w), x) .< 1e-7)
-        @test all(checkderivvec(p->fun(x,p,w), p->fun_dy(x,p,w), y) .< 1e-7)
+        @test_approx_eq_eps checkderivvec(p->fun(p,y,w), p->fun_dx(p,y,w), x) zeros(x) 1e-7
+        @test_approx_eq_eps checkderivvec(p->fun(x,p,w), p->fun_dy(x,p,w), y) zeros(y) 1e-7
 
-        @test all(checkderivvec(p->fun(x,y,p), p->fun_dw(x,y,p), w) .< 1e-7)
+        @test_approx_eq_eps checkderivvec(p->fun(x,y,p), p->fun_dw(x,y,p), w) zeros(w) 1e-7
+        println("Done")
     end
 end
-println("Done")
 
 println("- Testing standard kernel derivatives")
 for T in (Float64,)

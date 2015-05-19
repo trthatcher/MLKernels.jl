@@ -32,6 +32,13 @@ function description(io::IO, κ::StandardKernel)
 end
 description(κ::StandardKernel) = description(STDOUT, κ)
 
+kernelparameters(κ::StandardKernel) = names(κ) # default: all parameters of a kernel are scalars
+# need to provide a more specific method if this doesn't apply
+
+# concrete kernel types should provide kernel_dp(::<KernelType>, param::Symbol, x, y)
+kernel_dp{T<:FloatingPoint}(κ::StandardKernel{T}, param::Integer, x::Array{T}, y::Array{T}) = kernel_dp(κ, kernelparameters(κ)[param], x, y)
+kernel_dp{T<:FloatingPoint}(κ::StandardKernel{T}, param::Integer, x::T, y::T) = kernel_dp(κ, kernelparameters(κ)[param], x, y)
+
 
 #===========================================================================
   Scalar Product Kernels - kernels of the form k(x,y) = κ(xᵀy)
@@ -74,7 +81,6 @@ function kernel_dxdy{T<:FloatingPoint}(κ::ScalarProductKernel{T}, x::T, y::T)
 end
 
 kernel_dp{T<:FloatingPoint}(κ::ScalarProductKernel{T}, param::Symbol, x::Array{T}, y::Array{T}) = kappa_dp(κ, param, scprod(x, y))
-kernel_dp{T<:FloatingPoint}(κ::ScalarProductKernel{T}, param::Integer, x::Array{T}, y::Array{T}) = kernel_dp(κ, names(κ)[param], x, y)
 
 # Scalar Product Kernel definitions
 include("standardkernels/scalarproduct.jl")
@@ -101,7 +107,6 @@ end
 kernel_dy{T<:FloatingPoint}(κ::SquaredDistanceKernel{T}, x::Array{T}, y::Array{T}) = kernel_dx(κ, y, x)
 
 kernel_dp{T<:FloatingPoint}(κ::SquaredDistanceKernel{T}, param::Symbol, x::Array{T}, y::Array{T}) = kappa_dp(κ, param, sqdist(x, y))
-kernel_dp{T<:FloatingPoint}(κ::SquaredDistanceKernel{T}, param::Integer, x::Array{T}, y::Array{T}) = kernel_dp(κ, names(κ)[param], x, y)
 
 function kernel_dxdy{T<:FloatingPoint}(κ::SquaredDistanceKernel{T}, x::Array{T}, y::Array{T})
     ϵᵀϵ = sqdist(x, y)
@@ -183,7 +188,6 @@ function kernel_dp{T<:FloatingPoint}(κ::SeparableKernel{T}, param::Symbol, x::A
     v
 end
 
-kernel_dp{T<:FloatingPoint}(κ::SeparableKernel{T}, param::Integer, x::Array{T}, y::Array{T}) = kernel_dp(κ, names(κ)[param], x, y)
 
 kernel{T<:FloatingPoint}(κ::SeparableKernel{T}, x::T, y::T) = kappa(κ, x) * kappa(κ, y) 
 
@@ -199,8 +203,8 @@ include("standardkernels/separable.jl")
 
 typealias ARDKernelTypes{T<:FloatingPoint} Union(SquaredDistanceKernel{T}, ScalarProductKernel{T})
 
-immutable ARD{T<:FloatingPoint,K<:StandardKernel{T}} <: StandardKernel{T}
-    kernel::K
+immutable ARD{T<:FloatingPoint,K<:StandardKernel{T}} <: SimpleKernel{T} # let's not have an ARD{,ARD{,...{,Kernel}}}...
+    k::K
     weights::Vector{T}
     function ARD(k::K, weights::Vector{T})
         isa(k, ARDKernelTypes) || throw(ArgumentError("ARD only implemented for $(join(ARDKernelTypes.body.types, ", ", " and "))"))
@@ -213,16 +217,16 @@ ARD{T<:FloatingPoint}(kernel::ARDKernelTypes{T}, weights::Vector{T}) = ARD{T,typ
 ARD{T<:FloatingPoint}(kernel::ARDKernelTypes{T}, dim::Integer) = ARD{T,typeof(kernel)}(kernel, ones(T, dim))
 
 function description_string{T<:FloatingPoint,K<:StandardKernel}(κ::ARD{T,K}, eltype::Bool = true)
-    "ARD" * (eltype ? "{$(T)}" : "") * "(kernel=$(description_string(κ.kernel, false)), weights=$(κ.weights))"
+    "ARD" * (eltype ? "{$(T)}" : "") * "(kernel=$(description_string(κ.k, false)), weights=$(κ.weights))"
 end
 
 #=== ARD Squared Distance ===#
 
-kernel{T<:FloatingPoint,U<:SquaredDistanceKernel}(κ::ARD{T,U}, x::Array{T}, y::Array{T}) = kappa(κ.kernel, sqdist(x, y, κ.weights))
+kernel{T<:FloatingPoint,U<:SquaredDistanceKernel}(κ::ARD{T,U}, x::Array{T}, y::Array{T}) = kappa(κ.k, sqdist(x, y, κ.weights))
 
 function kernel_dx{T<:FloatingPoint,U<:SquaredDistanceKernel}(κ::ARD{T,U}, x::Array{T}, y::Array{T})
     w = κ.weights
-    ∂κ_∂z = kappa_dz(κ.kernel, sqdist(x, y, w))
+    ∂κ_∂z = kappa_dz(κ.k, sqdist(x, y, w))
     d = length(x)
     ∂k_∂x = Array(T, d)
     @inbounds @simd for i = 1:d
@@ -234,7 +238,7 @@ kernel_dy{T<:FloatingPoint,U<:SquaredDistanceKernel}(κ::ARD{T,U}, x::Array{T}, 
 
 function kernel_dw{T<:FloatingPoint,U<:SquaredDistanceKernel}(κ::ARD{T,U}, x::Array{T}, y::Array{T})
     w = κ.weights
-    ∂κ_∂z = kappa_dz(κ.kernel, sqdist(x, y, w))
+    ∂κ_∂z = kappa_dz(κ.k, sqdist(x, y, w))
     d = length(x)
     ∂k_∂w = Array(T, d)
     @inbounds @simd for i = 1:d
@@ -246,8 +250,8 @@ end
 function kernel_dxdy{T<:FloatingPoint,U<:SquaredDistanceKernel}(κ::ARD{T,U}, x::Array{T}, y::Array{T})
     w = κ.weights
     ϵᵀW²ϵ = sqdist(x, y, w)
-    ∂κ_∂z = kappa_dz(κ.kernel, ϵᵀW²ϵ)
-    ∂κ²_∂z² = kappa_dz2(κ.kernel, ϵᵀW²ϵ)
+    ∂κ_∂z = kappa_dz(κ.k, ϵᵀW²ϵ)
+    ∂κ²_∂z² = kappa_dz2(κ.k, ϵᵀW²ϵ)
     d = length(x)
     ∂k²_∂x∂y = Array(T, d, d)
     @inbounds for j = 1:d
@@ -266,15 +270,15 @@ function kernel_dp{T<:FloatingPoint,U<:SquaredDistanceKernel}(κ::ARD{T,U}, para
     if param == :weights
         return kernel_dw(κ, x, y)
     else
-        return kappa_dp(κ.kernel, param, sqdist(x, y, κ.weights))
+        return kappa_dp(κ.k, param, sqdist(x, y, κ.weights))
     end
 end
 
 #=== ARD Scalar Product ===#
 
-kernel{T<:FloatingPoint,K<:ScalarProductKernel}(κ::ARD{T,K}, x::Array{T}, y::Array{T}) = kappa(κ.kernel, scprod(x, y, κ.weights))
-kernel_dx{T<:FloatingPoint,K<:ScalarProductKernel}(κ::ARD{T,K}, x::Array{T}, y::Array{T}) = kappa_dz(κ.kernel, scprod(x, y, κ.weights)) * scprod_dx(x, y, κ.weights)
-kernel_dy{T<:FloatingPoint,K<:ScalarProductKernel}(κ::ARD{T,K}, x::Array{T}, y::Array{T}) = kappa_dz(κ.kernel, scprod(x, y, κ.weights)) * scprod_dy(x, y, κ.weights)
+kernel{T<:FloatingPoint,K<:ScalarProductKernel}(κ::ARD{T,K}, x::Array{T}, y::Array{T}) = kappa(κ.k, scprod(x, y, κ.weights))
+kernel_dx{T<:FloatingPoint,K<:ScalarProductKernel}(κ::ARD{T,K}, x::Array{T}, y::Array{T}) = kappa_dz(κ.k, scprod(x, y, κ.weights)) * scprod_dx(x, y, κ.weights)
+kernel_dy{T<:FloatingPoint,K<:ScalarProductKernel}(κ::ARD{T,K}, x::Array{T}, y::Array{T}) = kappa_dz(κ.k, scprod(x, y, κ.weights)) * scprod_dy(x, y, κ.weights)
 
 
 #===================================================================================================
@@ -313,6 +317,8 @@ kernel_dx{T<:FloatingPoint}(ψ::ScaledKernel{T}, x::Vector{T}, y::Vector{T}) = �
 kernel_dy{T<:FloatingPoint}(ψ::ScaledKernel{T}, x::Vector{T}, y::Vector{T}) = ψ.a * kernel_dy(ψ.k, x, y)
 kernel_dxdy{T<:FloatingPoint}(ψ::ScaledKernel{T}, x::Vector{T}, y::Vector{T}) = ψ.a * kernel_dxdy(ψ.k, x, y)
 
+kernelparameters(κ::ScaledKernel) = vcat([:a], [symbol("k.$(param)") for param in kernelparameters(κ.k)])
+
 function kernel_dp{T<:FloatingPoint}(ψ::ScaledKernel{T}, param::Symbol, x::Vector{T}, y::Vector{T})
     if param == :a
         kernel(ψ.k, x, y)
@@ -326,7 +332,7 @@ function kernel_dp{T<:FloatingPoint}(ψ::ScaledKernel{T}, param::Symbol, x::Vect
 end
 
 function kernel_dp{T<:FloatingPoint}(ψ::ScaledKernel{T}, param::Integer, x::Vector{T}, y::Vector{T})
-    N = length(names(ψ.k)) #XXX this will need adjustment once composite kernels can be composited... then need something recursive
+    N = length(kernelparameters(ψ.k))
     if param == 1
         kernel_dp(ψ, :a, x, y)
     elseif 2 <= param <= N + 1
@@ -358,18 +364,18 @@ end
 
 immutable KernelProduct{T<:FloatingPoint} <: CompositeKernel{T}
     a::T
-    k1::StandardKernel{T}
-    k2::StandardKernel{T}
-    function KernelProduct(a::T, κ₁::StandardKernel{T}, κ₂::StandardKernel{T})
+    k1::Kernel{T}
+    k2::Kernel{T}
+    function KernelProduct(a::T, κ₁::Kernel{T}, κ₂::Kernel{T})
         a > 0 || error("a = $(a) must be greater than zero.")
         new(a, κ₁, κ₂)
     end
 end
-function KernelProduct{T<:FloatingPoint}(a::T, κ₁::StandardKernel{T}, κ₂::StandardKernel{T})
+function KernelProduct{T<:FloatingPoint}(a::T, κ₁::Kernel{T}, κ₂::Kernel{T})
     KernelProduct{T}(a, κ₁, κ₂)
 end
 
-function KernelProduct{T,S}(a::Real, κ₁::StandardKernel{T}, κ₂::StandardKernel{S})
+function KernelProduct{T,S}(a::Real, κ₁::Kernel{T}, κ₂::Kernel{S})
     U = promote_type(typeof(a), T, S)
     KernelProduct(convert(U, a), convert(Kernel{U}, κ₁), convert(Kernel{U}, κ₂))
 end
@@ -401,6 +407,8 @@ function kernel_dxdy{T<:FloatingPoint}(ψ::KernelProduct{T}, x::Vector{T}, y::Ve
             + kernel(ψ.k1, x, y)*kernel_dxdy(ψ.k2, x, y))
 end
 
+kernelparameters(κ::KernelProduct) = vcat([:a], [symbol("k1.$(param)") for param in kernelparameters(κ.k)], [symbol("k2.$(param)") for param in kernelparameters(κ.k)])
+
 function kernel_dp{T<:FloatingPoint}(ψ::KernelProduct{T}, param::Symbol, x::Vector{T}, y::Vector{T})
     if param == :a
         kernel(ψ.k1, x, y) * kernel(ψ.k2, x, y)
@@ -417,8 +425,8 @@ function kernel_dp{T<:FloatingPoint}(ψ::KernelProduct{T}, param::Symbol, x::Vec
 end
 
 function kernel_dp{T<:FloatingPoint}(ψ::KernelProduct{T}, param::Integer, x::Vector{T}, y::Vector{T})
-    N1 = length(names(ψ.k1)) #XXX this will need adjustment once composite kernels can be composited... then need something recursive
-    N2 = length(names(ψ.k2))
+    N1 = length(kernelparameters(ψ.k1))
+    N2 = length(kernelparameters(ψ.k2))
     if param == 1
         kernel_dp(ψ, :a, x, y)
     elseif 2 <= param <= N1 + 1
@@ -461,20 +469,20 @@ end
 
 immutable KernelSum{T<:FloatingPoint} <: CompositeKernel{T}
     a1::T
-    k1::StandardKernel{T}
+    k1::Kernel{T}
     a2::T
-    k2::StandardKernel{T}
-    function KernelSum(a₁::T, κ₁::StandardKernel{T}, a₂::T, κ₂::StandardKernel{T})
+    k2::Kernel{T}
+    function KernelSum(a₁::T, κ₁::Kernel{T}, a₂::T, κ₂::Kernel{T})
         a₁ > 0 || error("a₁ = $(a₁) must be greater than zero.")
         a₂ > 0 || error("a₂ = $(a₂) must be greater than zero.")
         new(a₁, κ₁, a₂, κ₂)
     end
 end
-function KernelSum{T<:FloatingPoint}(a₁::T, κ₁::StandardKernel{T}, a₂::T, κ₂::StandardKernel{T})
+function KernelSum{T<:FloatingPoint}(a₁::T, κ₁::Kernel{T}, a₂::T, κ₂::Kernel{T})
     KernelSum{T}(a₁, κ₁, a₂, κ₂)
 end
 
-function KernelSum{T,S}(a₁::Real, κ₁::StandardKernel{T}, a₂::Real, κ₂::StandardKernel{S})
+function KernelSum{T,S}(a₁::Real, κ₁::Kernel{T}, a₂::Real, κ₂::Kernel{S})
     U = promote_type(typeof(a₁), typeof(a₂), T, S)
     KernelSum{U}(convert(U, a₁), convert(Kernel{U}, κ₁), convert(U, a₂), convert(Kernel{U}, κ₂))
 end
@@ -504,6 +512,8 @@ function kernel_dxdy{T<:FloatingPoint}(ψ::KernelSum{T}, x::Vector{T}, y::Vector
     ψ.a1*kernel_dxdy(ψ.k1, x, y) + ψ.a2*kernel_dxdy(ψ.k2, x, y)
 end
 
+kernelparameters(κ::KernelSum) = vcat([:a1], [symbol("k1.$(param)") for param in kernelparameters(κ.k)], [:a2], [symbol("k2.$(param)") for param in kernelparameters(κ.k)])
+
 function kernel_dp{T<:FloatingPoint}(ψ::KernelSum{T}, param::Symbol, x::Vector{T}, y::Vector{T})
     if param == :a1
         kernel(ψ.k1, x, y)
@@ -522,8 +532,8 @@ function kernel_dp{T<:FloatingPoint}(ψ::KernelSum{T}, param::Symbol, x::Vector{
 end
 
 function kernel_dp{T<:FloatingPoint}(ψ::KernelSum{T}, param::Integer, x::Vector{T}, y::Vector{T})
-    N1 = length(names(ψ.k1)) #XXX this will need adjustment once composite kernels can be composited... then need something recursive
-    N2 = length(names(ψ.k2))
+    N1 = length(kernelparameters(ψ.k1))
+    N2 = length(kernelparameters(ψ.k2))
     if param == 1
         kernel_dp(ψ, :a1, x, y)
     elseif 2 <= param <= N1 + 1
