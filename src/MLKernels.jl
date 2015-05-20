@@ -56,7 +56,7 @@ include("vectorfunctions.jl")
 include("matrixfunctions.jl")
 include("kernels.jl")
 include("kernelmatrix.jl")
-include("kernelapprox.jl")
+include("kernelmatrixapprox.jl")
 include("kernelmatrixderiv.jl")
 
 end # MLKernels

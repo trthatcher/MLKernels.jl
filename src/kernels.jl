@@ -72,7 +72,7 @@ function kernel_dxdy{T<:FloatingPoint}(κ::ScalarProductKernel{T}, x::Array{T}, 
         end
         ∂k²_∂x∂y[j,j] += ∂κ_∂z
     end
-    ∂k²_∂x∂y #perturb!(scale!(kappa_dz2(κ, xᵀy), y*x'), kappa_dz(κ, xᵀy))
+    ∂k²_∂x∂y
 end
 
 function kernel_dxdy{T<:FloatingPoint}(κ::ScalarProductKernel{T}, x::T, y::T)
@@ -129,7 +129,6 @@ function kernel_dxdy{T<:FloatingPoint}(κ::SquaredDistanceKernel{T}, x::T, y::T)
     ϵᵀϵ = (x-y)^2
     -kappa_dz2(κ, ϵᵀϵ) * 4ϵᵀϵ - 2kappa_dz(κ, ϵᵀϵ)
 end
-
 
 # Squared Distance Kernel definitions
 include("standardkernels/squareddistance.jl")
@@ -255,13 +254,13 @@ function kernel_dxdy{T<:FloatingPoint,U<:SquaredDistanceKernel}(κ::ARD{T,U}, x:
     d = length(x)
     ∂k²_∂x∂y = Array(T, d, d)
     @inbounds for j = 1:d
-        wj2 = w[j]^2
-        ϵj = (x[j] - y[j]) * wj2
+        wj² = w[j]^2
+        ϵj = (x[j] - y[j]) * wj²
         for i = 1:d
             ϵi = (x[i] - y[i]) * w[i]^2
             ∂k²_∂x∂y[i,j] = -4∂κ²_∂z² * ϵj * ϵi
         end
-        ∂k²_∂x∂y[j,j] -= 2∂κ_∂z * wj2
+        ∂k²_∂x∂y[j,j] -= 2∂κ_∂z * wj²
     end
     ∂k²_∂x∂y
 end
@@ -276,9 +275,50 @@ end
 
 #=== ARD Scalar Product ===#
 
-kernel{T<:FloatingPoint,K<:ScalarProductKernel}(κ::ARD{T,K}, x::Array{T}, y::Array{T}) = kappa(κ.k, scprod(x, y, κ.weights))
-kernel_dx{T<:FloatingPoint,K<:ScalarProductKernel}(κ::ARD{T,K}, x::Array{T}, y::Array{T}) = kappa_dz(κ.k, scprod(x, y, κ.weights)) * scprod_dx(x, y, κ.weights)
-kernel_dy{T<:FloatingPoint,K<:ScalarProductKernel}(κ::ARD{T,K}, x::Array{T}, y::Array{T}) = kappa_dz(κ.k, scprod(x, y, κ.weights)) * scprod_dy(x, y, κ.weights)
+kernel{T<:FloatingPoint,U<:ScalarProductKernel}(κ::ARD{T,U}, x::Array{T}, y::Array{T}) = kappa(κ.k, scprod(x, y, κ.weights))
+
+function kernel_dx{T<:FloatingPoint,U<:ScalarProductKernel}(κ::ARD{T,U}, x::Array{T}, y::Array{T})
+    w = κ.weights
+    ∂κ_∂z = kappa_dz(κ.k, scprod(x, y, w))
+    d = length(x)
+    ∂k_∂x = Array(T, d)
+    @inbounds @simd for i = 1:d
+        ∂k_∂x[i] = ∂κ_∂z * y[i] * w[i]^2
+    end
+    ∂k_∂x
+end
+kernel_dy{T<:FloatingPoint,U<:ScalarProductKernel}(κ::ARD{T,U}, x::Array{T}, y::Array{T}) = kernel_dx(κ, y, x)
+
+function kernel_dw{T<:FloatingPoint,U<:ScalarProductKernel}(κ::ARD{T,U}, x::Array{T}, y::Array{T})
+    w = κ.weights
+    ∂κ_∂z = kappa_dz(κ.k, scprod(x, y, w))
+    d = length(x)
+    ∂k_∂w = Array(T, d)
+    @inbounds @simd for i = 1:d
+        ∂k_∂w[i] = 2∂κ_∂z * x[i] * y[i] * w[i]
+    end
+    ∂k_∂w
+end
+
+#= WIP
+function kernel_dxdy{T<:FloatingPoint,U<:ScalarProductKernel}(κ::ARD{T,U}, x::Array{T}, y::Array{T})
+    w = κ.weights
+    xᵀW²y = scprod(x, y, w)
+    ∂κ_∂z = kappa_dz(κ.k, xᵀW²y)
+    ∂κ²_∂z² = kappa_dz2(κ.k, xᵀW²y)
+    d = length(x)
+    ∂k²_∂x∂y = Array(T, d, d)
+    @inbounds for j = 1:d
+        wj² = w[j]^2
+        v = ∂κ²_∂z² * x[j] * wj²
+        for i = 1:d
+            ∂k²_∂x∂y[i,j] = v * y[i]
+        end
+        ∂k²_∂x∂y[j,j] += ∂κ_∂z * wj²
+    end
+    ∂k²_∂x∂y
+end
+=#
 
 
 #===================================================================================================
@@ -550,8 +590,7 @@ end
 isposdef(ψ::KernelSum) = isposdef(ψ.k1) & isposdef(ψ.k2)
 
 function description_string{T<:FloatingPoint}(ψ::KernelSum{T}) 
-    "KernelSum{$(T)}($(ψ.a1)," * description_string(ψ.k1, false) * "," * "$(ψ.a2)," * (
-    description_string(ψ.k1, false) * ")")
+    "KernelSum{$(T)}($(ψ.a1)," * description_string(ψ.k1, false) * "," * "$(ψ.a2)," * description_string(ψ.k1, false) * ")"
 end
 
 function show(io::IO, ψ::KernelSum)
