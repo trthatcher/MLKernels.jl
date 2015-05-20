@@ -24,24 +24,20 @@ checkderivvec(f, fprime, x; eps=1e-5) = abs(checkderiv(f, (p,i)->fprime(p)[i], x
 
 function test_kappa_dz(k, z, epsilon)
     print("dz ")
-    @test abs(checkderiv(p->MLKernels.kappa(k,p), p->MLKernels.kappa_dz(k,p), z)) < epsilon
+    @test_approx_eq_eps checkderiv(p->MLKernels.kappa(k,p), p->MLKernels.kappa_dz(k,p), z) zero(z) epsilon
 
     if !isa(k, SeparableKernel)
         print("dz2 ")
-        @test abs(checkderiv(p->MLKernels.kappa_dz(k,p), p->MLKernels.kappa_dz2(k,p), z)) < epsilon
+        @test_approx_eq_eps checkderiv(p->MLKernels.kappa_dz(k,p), p->MLKernels.kappa_dz2(k,p), z) zero(z) epsilon
     end
 end
 
 function test_kernel_dxdy(k, x, y, epsilon)
     print("dx ")
-    @test all(checkderivvec(p->kernel(k,p,y), p->kernel_dx(k,p,y), x) .< epsilon)
+    @test_approx_eq_eps checkderivvec(p->kernel(k,p,y), p->kernel_dx(k,p,y), x) zeros(x) epsilon
     print("dy ")
-    @test all(checkderivvec(p->kernel(k,x,p), p->kernel_dy(k,x,p), y) .< epsilon)
+    @test_approx_eq_eps checkderivvec(p->kernel(k,x,p), p->kernel_dy(k,x,p), y) zeros(y) epsilon
 
-    if isa(k, ARD)
-        warn("kernel_dxdy not yet implemented for ARD kernels")
-        return #XXX TODO not implemented yet
-    end
     if isa(k, PeriodicKernel)
         warn("kernel_dxdy too low precision for PeriodicKernel")
         return
@@ -49,14 +45,14 @@ function test_kernel_dxdy(k, x, y, epsilon)
 
     print("dxdy ")
     for i=1:length(x), j=1:length(y)
-        @test abs(checkderiv(
+        @test_approx_eq_eps checkderiv(
             p -> kernel_dx(k,x,p)[i],
             (p,j_) -> kernel_dxdy(k,x,p)[i,j_],
-            y, j)) < epsilon
-        @test abs(checkderiv(
+            y, j) zero(eltype(x)) epsilon
+        @test_approx_eq_eps checkderiv(
             p -> kernel_dy(k,p,y)[j],
             (p,i_) -> kernel_dxdy(k,p,y)[i_,j],
-            x, i)) < epsilon
+            x, i) zero(eltype(y)) epsilon
     end
 end
 
@@ -86,10 +82,10 @@ function test_kernel_dp(kconstructor, param, derivs, x, y, epsilon)
     k = kconstructor(param...)
     for (i, deriv) in enumerate(derivs)
         print(":$deriv")
-        @test abs(checkderiv(
+        @test_approx_eq_eps checkderiv(
             p -> kernel(kconstructor(p...), x, y),
             (p,i_) -> kernel_dp(kconstructor(p...), i_, x, y),
-            param, i)) < epsilon
+            param, i) zero(x) epsilon
         @test kernel_dp(k, deriv, x, y) == kernel_dp(k, i, x, y)
     end
     @test kernel_dp(k, :undefined, x, y) == zero(eltype(x))

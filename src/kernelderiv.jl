@@ -214,7 +214,7 @@ function kernel_dp{T<:FloatingPoint,U<:ScalarProductKernel}(κ::ARD{T,U}, param:
 end
 
 
-#= WIP
+
 function kernel_dxdy{T<:FloatingPoint,U<:ScalarProductKernel}(κ::ARD{T,U}, x::Array{T}, y::Array{T})
     w = κ.weights
     xᵀW²y = scprod(x, y, w)
@@ -226,13 +226,13 @@ function kernel_dxdy{T<:FloatingPoint,U<:ScalarProductKernel}(κ::ARD{T,U}, x::A
         wj² = w[j]^2
         v = ∂κ²_∂z² * x[j] * wj²
         for i = 1:d
-            ∂k²_∂x∂y[i,j] = v * y[i]
+            ∂k²_∂x∂y[i,j] = v * w[i]^2 * y[i]
         end
         ∂k²_∂x∂y[j,j] += ∂κ_∂z * wj²
     end
     ∂k²_∂x∂y
 end
-=#
+
 
 
 #===================================================================================================
