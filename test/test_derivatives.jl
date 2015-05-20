@@ -39,7 +39,7 @@ function test_kernel_dxdy(k, x, y, epsilon)
     @test_approx_eq_eps checkderivvec(p->kernel(k,x,p), p->kernel_dy(k,x,p), y) zeros(y) epsilon
 
     if isa(k, PeriodicKernel)
-        warn("kernel_dxdy too low precision for PeriodicKernel")
+        warn("!!! NOT TESTED: kernel_dxdy too low precision for PeriodicKernel !!!")
         return
     end
 
@@ -54,6 +54,26 @@ function test_kernel_dxdy(k, x, y, epsilon)
             (p,i_) -> kernel_dxdy(k,p,y)[i_,j],
             x, i) zero(eltype(y)) epsilon
     end
+
+    if isa(k, ARD)
+        warn("kernelmatrix_dxdy not implemented for ARD")
+        return
+    end
+    if isa(k, ScaledKernel)
+        warn("kernelmatrix_dxdy not implemented for ScaledKernel")
+        return
+    end
+    if isa(k, CompositeKernel)
+        warn("kernelmatrix_dxdy not implemented for CompositeKernel")
+        return
+    end
+    print("matrix ")
+    @test_approx_eq kernel_dx(k,x,y) kernelmatrix_dx(k, x'', y'', 'T')
+    @test_approx_eq kernel_dx(k,x,y) kernelmatrix_dx(k, x', y')
+    @test_approx_eq kernel_dy(k,x,y) kernelmatrix_dy(k, x'', y'', 'T')
+    @test_approx_eq kernel_dy(k,x,y) kernelmatrix_dy(k, x', y')
+    @test_approx_eq kernel_dxdy(k,x,y) kernelmatrix_dxdy(k, x'', y'', 'T')
+    @test_approx_eq kernel_dxdy(k,x,y) kernelmatrix_dxdy(k, x', y')
 end
 
 function test_kappa_dp(kconstructor, param, derivs, z, epsilon)

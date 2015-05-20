@@ -84,9 +84,9 @@ function kernel_dxdy!{T<:FloatingPoint}(κ::ScalarProductKernel{T}, d::Int64, K:
     ∂κ²_∂z² = kappa_dz2(κ, xᵀy)
     @transpose_access is_trans (X,Y) @inbounds for j = 1:d 
         for i = 1:d
-            K[i,x_pos,j,y_pos] = ∂κ²_∂z² * X[x_pos,i] * Y[y_pos,j]
+            K[j,x_pos,i,y_pos] = ∂κ²_∂z² * X[x_pos,i] * Y[y_pos,j]
         end
-        K[i,x_pos,j,y_pos] += ∂κ_∂z
+        K[j,x_pos,j,y_pos] += ∂κ_∂z
     end
     K
 end
