@@ -10,18 +10,16 @@ export
     # Functions
     description,
     kernel,
+    kernelparameters,
     kernel_dx,
     kernel_dy,
-    kernel_dp,
-    kernel_dw,
     kernel_dxdy,
+    kernel_dp,
     kernelmatrix,
     kernelmatrix_dx,
     kernelmatrix_dy,
-    kernelmatrix_dp,
     kernelmatrix_dxdy,
-    scprodmatrix,
-    sqdistmatrix,
+    kernelmatrix_dp,
     center_kernelmatrix!,
     center_kernelmatrix,
     nystrom,
@@ -45,7 +43,7 @@ export
                     SigmoidKernel,
                 SeparableKernel,
                     MercerSigmoidKernel,
-                ARD,
+            ARD,
             ScaledKernel,
         CompositeKernel,
             KernelProduct,
@@ -55,8 +53,8 @@ include("meta.jl")
 include("vectorfunctions.jl")
 include("matrixfunctions.jl")
 include("kernels.jl")
+include("kernelderiv.jl")
 include("kernelmatrix.jl")
-include("kernelderivs.jl")
 include("kernelmatrixderiv.jl")
 include("kernelmatrixapprox.jl")
 

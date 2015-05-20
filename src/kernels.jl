@@ -90,8 +90,6 @@ include("standardkernels/separable.jl")
   Automatic Relevance Determination (ARD) kernels
 ===========================================================================#
 
-#include("standardkernels/ard.jl")
-
 typealias ARDKernelTypes{T<:FloatingPoint} Union(SquaredDistanceKernel{T}, ScalarProductKernel{T})
 
 immutable ARD{T<:FloatingPoint,K<:StandardKernel{T}} <: SimpleKernel{T} # let's not have an ARD{,ARD{,...{,Kernel}}}...
@@ -201,7 +199,7 @@ function kernel{T<:FloatingPoint}(ψ::KernelProduct{T}, x::Vector{T}, y::Vector{
     ψ.a * kernel(ψ.k1, x, y) * kernel(ψ.k2, x, y)
 end
 
-kernelparameters(κ::KernelProduct) = vcat([:a], [symbol("k1.$(param)") for param in kernelparameters(κ.k)], [symbol("k2.$(param)") for param in kernelparameters(κ.k)])
+kernelparameters(κ::KernelProduct) = vcat([:a], [symbol("k1.$(param)") for param in kernelparameters(κ.k1)], [symbol("k2.$(param)") for param in kernelparameters(κ.k2)])
 
 isposdef(ψ::KernelProduct) = isposdef(ψ.k1) & isposdef(ψ.k2)
 
@@ -263,7 +261,7 @@ function kernel{T<:FloatingPoint}(ψ::KernelSum{T}, x::Vector{T}, y::Vector{T})
     ψ.a1*kernel(ψ.k1, x, y) + ψ.a2*kernel(ψ.k2, x, y)
 end
 
-kernelparameters(κ::KernelSum) = vcat([:a1], [symbol("k1.$(param)") for param in kernelparameters(κ.k)], [:a2], [symbol("k2.$(param)") for param in kernelparameters(κ.k)])
+kernelparameters(κ::KernelSum) = vcat([:a1], [symbol("k1.$(param)") for param in kernelparameters(κ.k1)], [:a2], [symbol("k2.$(param)") for param in kernelparameters(κ.k2)])
 
 isposdef(ψ::KernelSum) = isposdef(ψ.k1) & isposdef(ψ.k2)
 
