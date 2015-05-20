@@ -85,7 +85,7 @@ function test_kernel_dp(kconstructor, param, derivs, x, y, epsilon)
         @test_approx_eq_eps checkderiv(
             p -> kernel(kconstructor(p...), x, y),
             (p,i_) -> kernel_dp(kconstructor(p...), i_, x, y),
-            param, i) zero(x) epsilon
+            param, i) zero(eltype(x)) epsilon
         @test kernel_dp(k, deriv, x, y) == kernel_dp(k, i, x, y)
     end
     @test kernel_dp(k, :undefined, x, y) == zero(eltype(x))
