@@ -23,13 +23,13 @@ end
 
 println("Testing standard kernel output:")
 for kernelobject in (
-    GaussianKernel,
-    LaplacianKernel,
+    SquaredExponentialKernel,
+    GammaExponentialKernel,
+    InverseQuadraticKernel,
     RationalQuadraticKernel,
-    MultiQuadraticKernel,
-    InverseMultiQuadraticKernel,
-    PowerKernel,
+    PowerKernel, 
     LogKernel,
+    PeriodicKernel,
     LinearKernel,
     PolynomialKernel,
     SigmoidKernel,
