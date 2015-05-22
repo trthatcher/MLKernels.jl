@@ -32,7 +32,15 @@ function test_kappa_dz(k, z, epsilon)
     end
 end
 
-function test_kernel_dxdy(k, x, y, epsilon)
+function test_kernel_dxdy(k::Kernel, x::Real, y::Real, epsilon)
+    print("scalar ")
+    @test_approx_eq_eps checkderiv(p->kernel(k,p,y), p->kernel_dx(k,p,y), x) zero(x) epsilon
+    @test_approx_eq_eps checkderiv(p->kernel(k,x,p), p->kernel_dy(k,x,p), y) zero(y) epsilon
+    @test_approx_eq_eps checkderiv(p->kernel_dx(k,x,p), p->kernel_dxdy(k,x,p), y) zero(x) epsilon
+    @test_approx_eq_eps checkderiv(p->kernel_dy(k,p,y), p->kernel_dxdy(k,p,y), x) zero(y) epsilon
+end
+
+function test_kernel_dxdy(k::Kernel, x::Vector, y::Vector, epsilon)
     print("dx ")
     @test_approx_eq_eps checkderivvec(p->kernel(k,p,y), p->kernel_dx(k,p,y), x) zeros(x) epsilon
     print("dy ")
@@ -144,7 +152,7 @@ for T in (Float64,)
     y = T[5, 2, 1, 6]
     z = convert(T, 1.5)
 
-    for (k, param, derivs) in (
+    for (ktype, param, derivs) in (
             (SquaredExponentialKernel, T[0.3], (:alpha,)),
             (GammaExponentialKernel, T[1.3, 0.45], (:alpha, :gamma)),
             (InverseQuadraticKernel, T[1.3], (:alpha,)),
@@ -157,11 +165,13 @@ for T in (Float64,)
             (SigmoidKernel, T[1.1, 1.3], (:alpha, :c)),
             (MercerSigmoidKernel, T[1.1, 1.3], (:d, :b)),
         )
-        print("    - Testing $(k) ... ")
-        test_kappa_dz(k(param...), z, 5e-7)
-        test_kernel_dxdy(k(param...), x, y, 1e-5)
-        test_kappa_dp(k, param, derivs, z, 6e-5)
-        test_kernel_dp(k, param, derivs, x, y, 6e-5)
+        print("    - Testing $(ktype) ... ")
+        k = ktype(param...)
+        test_kappa_dz(k, z, 5e-7)
+        test_kernel_dxdy(k, x[1], y[1], 1e-7)
+        test_kernel_dxdy(k, x, y, 1e-5)
+        test_kappa_dp(ktype, param, derivs, z, 6e-5)
+        test_kernel_dp(ktype, param, derivs, x, y, 6e-5)
         println("Done")
     end
 end
@@ -172,7 +182,7 @@ for T in (Float64,)
     y = T[5, 2, 1, 6]
     w = T[0.0, 0.5, 1.5, 1.0]
 
-    for (k, param, derivs) in (
+    for (ktype, param, derivs) in (
             (SquaredExponentialKernel, T[0.3], (:alpha,)),
             (GammaExponentialKernel, T[1.3, 0.45], (:alpha, :gamma)),
             (InverseQuadraticKernel, T[1.3], (:alpha,)),
@@ -184,10 +194,10 @@ for T in (Float64,)
             (PolynomialKernel, T[1.1, 1.3, 2.2], (:alpha, :c, :d)),
             (SigmoidKernel, T[1.1, 1.3], (:alpha, :c)),
         )
-        print("    - Testing ARD{$(k)} ... ")
-        test_kernel_dxdy(ARD(k(param...), w), x, y, 2e-6)
-        test_kernel_dxdy(ARD(k(param...), length(x)), x, y, 1e-6)
-        #test_kernel_dp(k, param, derivs, x, y, 6e-5)
+        print("    - Testing ARD{$(ktype)} ... ")
+        test_kernel_dxdy(ARD(ktype(param...), w), x, y, 2e-6)
+        test_kernel_dxdy(ARD(ktype(param...), length(x)), x, y, 1e-6)
+        #test_kernel_dp(ktype, param, derivs, x, y, 6e-5)
         println("Done")
     end
 end

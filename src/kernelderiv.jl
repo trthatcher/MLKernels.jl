@@ -37,6 +37,9 @@ function kernel_dxdy{T<:FloatingPoint}(κ::ScalarProductKernel{T}, x::Array{T}, 
     ∂k²_∂x∂y
 end
 
+kernel_dx{T<:FloatingPoint}(κ::ScalarProductKernel{T}, x::T, y::T) = kappa_dz(κ, x*y) * y
+kernel_dy{T<:FloatingPoint}(κ::ScalarProductKernel{T}, x::T, y::T) = kappa_dz(κ, x*y) * x
+
 function kernel_dxdy{T<:FloatingPoint}(κ::ScalarProductKernel{T}, x::T, y::T)
     xy = x * y
     kappa_dz2(κ, xy) * xy + kappa_dz(κ, xy)
@@ -79,6 +82,9 @@ function kernel_dxdy{T<:FloatingPoint}(κ::SquaredDistanceKernel{T}, x::Array{T}
     ∂k²_∂x∂y
 end
 
+kernel_dx{T<:FloatingPoint}(κ::SquaredDistanceKernel{T}, x::T, y::T) = kappa_dz(κ, (x-y)^2) * 2(x-y)
+kernel_dy{T<:FloatingPoint}(κ::SquaredDistanceKernel{T}, x::T, y::T) = kappa_dz(κ, (x-y)^2) * 2(y-x)
+
 function kernel_dxdy{T<:FloatingPoint}(κ::SquaredDistanceKernel{T}, x::T, y::T)
     ϵᵀϵ = (x-y)^2
     -kappa_dz2(κ, ϵᵀϵ) * 4ϵᵀϵ - 2kappa_dz(κ, ϵᵀϵ)
@@ -113,6 +119,10 @@ function kernel_dxdy{T<:FloatingPoint}(κ::SeparableKernel{T}, x::Array{T}, y::A
     z = kappa_dz_array!(κ, copy(y))
     diagm(v.*z)
 end
+
+kernel_dx{T<:FloatingPoint}(κ::SeparableKernel{T}, x::T, y::T) = kappa_dz(κ, x) * kappa(κ, y)
+kernel_dy{T<:FloatingPoint}(κ::SeparableKernel{T}, x::T, y::T) = kappa(κ, x) * kappa_dz(κ, y)
+kernel_dxdy{T<:FloatingPoint}(κ::SeparableKernel{T}, x::T, y::T) = kappa_dz(κ, x) * kappa_dz(κ, y)
 
 function kernel_dp{T<:FloatingPoint}(κ::SeparableKernel{T}, param::Symbol, x::Array{T}, y::Array{T})
     (n = length(x)) == length(y) || error("Dimensions do not match")
