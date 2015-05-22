@@ -84,39 +84,34 @@ function test_kernel_dxdy(k::Kernel, x::Vector, y::Vector, epsilon)
     @test_approx_eq kernel_dxdy(k,x,y) kernelmatrix_dxdy(k, x', y')
 end
 
-function test_kappa_dp(kconstructor, param, derivs, z, epsilon)
+function test_kappa_dp(ktype, param, derivs, z, epsilon)
     @assert length(param) == length(derivs)
     print("d")
-    k = kconstructor(param...)
+    k = ktype(param...)
     for (i, deriv) in enumerate(derivs)
         print(":$deriv")
         @test_approx_eq_eps checkderiv(
-            p -> MLKernels.kappa(kconstructor(p...), z),
-            (p,i_) -> MLKernels.kappa_dp(kconstructor(p...), deriv, z),
+            p -> MLKernels.kappa(ktype(p...), z),
+            (p,i_) -> MLKernels.kappa_dp(ktype(p...), deriv, z),
             param, i) zero(eltype(z)) epsilon
     end
     @test MLKernels.kappa_dp(k, :undefined, z) == zero(eltype(z))
     print(" ")
 end
 
-function test_kernel_dp(kconstructor, param, derivs, x, y, epsilon)
-    #if kconstructor == PeriodicKernel
-    #    warn("kernel_dp too low precision for PeriodicKernel")
-    #    return
-    #end
-
+function test_kernel_dp(ktype, param, derivs, x, y, epsilon)
     @assert length(param) == length(derivs)
     print("d")
-    k = kconstructor(param...)
+    k = ktype(param...)
     for (i, deriv) in enumerate(derivs)
         print(":$deriv")
         @test_approx_eq_eps checkderiv(
-            p -> kernel(kconstructor(p...), x, y),
-            (p,i_) -> kernel_dp(kconstructor(p...), i_, x, y),
-            param, i) zero(eltype(x)) epsilon
+            p -> kernel(ktype(p...), x, y),
+            (p,i_) -> kernel_dp(ktype(p...), i_, x, y),
+            param, i) 0.0 epsilon
         @test kernel_dp(k, deriv, x, y) == kernel_dp(k, i, x, y)
     end
-    @test kernel_dp(k, :undefined, x, y) == zero(eltype(x))
+    @test kernel_dp(k, :undefined, x, y) == 0.0
     @test_throws Exception kernel_dp(k, 0, x, y)
     @test_throws Exception kernel_dp(k, length(derivs)+1, x, y)
     print(" ")
@@ -172,6 +167,7 @@ for T in (Float64,)
         test_kernel_dxdy(k, x, y, 1e-5)
         test_kappa_dp(ktype, param, derivs, z, 6e-5)
         test_kernel_dp(ktype, param, derivs, x, y, 6e-5)
+        test_kernel_dp(ktype, param, derivs, x[1], y[1], 1e-7)
         println("Done")
     end
 end

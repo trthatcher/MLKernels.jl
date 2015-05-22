@@ -46,6 +46,7 @@ function kernel_dxdy{T<:FloatingPoint}(κ::ScalarProductKernel{T}, x::T, y::T)
 end
 
 kernel_dp{T<:FloatingPoint}(κ::ScalarProductKernel{T}, param::Symbol, x::Array{T}, y::Array{T}) = kappa_dp(κ, param, scprod(x, y))
+kernel_dp{T<:FloatingPoint}(κ::ScalarProductKernel{T}, param::Symbol, x::T, y::T) = kappa_dp(κ, param, x*y)
 
 
 #===========================================================================
@@ -64,6 +65,7 @@ end
 kernel_dy{T<:FloatingPoint}(κ::SquaredDistanceKernel{T}, x::Array{T}, y::Array{T}) = kernel_dx(κ, y, x)
 
 kernel_dp{T<:FloatingPoint}(κ::SquaredDistanceKernel{T}, param::Symbol, x::Array{T}, y::Array{T}) = kappa_dp(κ, param, sqdist(x, y))
+kernel_dp{T<:FloatingPoint}(κ::SquaredDistanceKernel{T}, param::Symbol, x::T, y::T) = kappa_dp(κ, param, (x-y)^2)
 
 function kernel_dxdy{T<:FloatingPoint}(κ::SquaredDistanceKernel{T}, x::Array{T}, y::Array{T})
     ϵᵀϵ = sqdist(x, y)
@@ -132,6 +134,7 @@ function kernel_dp{T<:FloatingPoint}(κ::SeparableKernel{T}, param::Symbol, x::A
     end
     v
 end
+kernel_dp{T<:FloatingPoint}(κ::SeparableKernel{T}, param::Symbol, x::T, y::T) = kappa_dp(κ, param, x)*kappa(κ, y) + kappa(κ, x)*kappa_dp(κ, param, y)
 
 
 #===================================================================================================
