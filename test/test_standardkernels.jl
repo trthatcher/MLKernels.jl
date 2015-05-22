@@ -42,11 +42,10 @@ end
 
 println("- Testing StandardKernel constructors:")
 for (kernelobject, default_args, test_args) in (
-        (GaussianKernel, (1,), (2,)),
-        (LaplacianKernel, (1,), (2,)),
-        (RationalQuadraticKernel, (1,), (2,)),
-        (MultiQuadraticKernel, (1,), (2,)),
-        (InverseMultiQuadraticKernel, (1,), (2,)),
+        (SquaredExponentialKernel, (1,), (2,)),
+        (GammaExponentialKernel, (1, 0.5), (2, 0.3)),
+        (InverseQuadraticKernel, (1,), (2,)),
+        (RationalQuadraticKernel, (1, 1), (2, 2)),
         (PowerKernel, (1,), (0.5,)),
         (LogKernel, (1,), (2,)),
         (LinearKernel, (1,), (2,)),
@@ -60,20 +59,6 @@ for (kernelobject, default_args, test_args) in (
         case_defaults = map(x -> convert(T, x), default_args)
         case_tests = map(x -> convert(T, x), test_args)
         test_constructor(kernelobject, case_defaults, case_tests)
-    end
-    println("Done")
-end
-
-println("- Testing StandardKernel aliases:")
-for (kernelobject, kernelalias, test_args) in (
-        (GaussianKernel, SquaredExponentialKernel, (2,)),
-        (LaplacianKernel, ExponentialKernel, (2,))
-    )
-    print("    - Testing ", kernelalias, " -> ", kernelobject, " ... ")
-    for T in (Float32, Float64)
-        case_tests = map(x -> convert(T, x), test_args)
-        @test kernelobject() === kernelalias()
-        @test kernelobject(case_tests...) === kernelalias(case_tests...)
     end
     println("Done")
 end
@@ -96,11 +81,13 @@ end
 
 println("- Testing StandardKernel error cases:")
 for (kernelobject, error_case) in (
-        (GaussianKernel, (-1,)),
-        (LaplacianKernel, (-1,)),
+        (SquaredExponentialKernel, (-1,)),
+        (GammaExponentialKernel, (-1, 0.5)),
+        (GammaExponentialKernel, (1, 0)),
+        (GammaExponentialKernel, (-1, 2)),
+        (GammaExponentialKernel, (-1,)),
+        (InverseQuadraticKernel, (-1,)),
         (RationalQuadraticKernel, (-1,)),
-        (MultiQuadraticKernel, (-1,)),
-        (InverseMultiQuadraticKernel, (-1.0,)),
         (PowerKernel, (0,)),
         (LogKernel, (-1,)),
         (LinearKernel, (-1.0,)),
@@ -122,13 +109,12 @@ end
 
 println("- Testing miscellaneous functions:")
 for (kernelobject, default_args, default_value, posdef) in (
-        (GaussianKernel,                (1,), exp(-0.5),  true),
-        (LaplacianKernel,               (1,), exp(-1),  true),
-        (RationalQuadraticKernel,       (1,), 0.5,      true),
-        (MultiQuadraticKernel,          (1,), sqrt(2),  false),
-        (InverseMultiQuadraticKernel,   (1,), 1/sqrt(2),false),
-        (PowerKernel,                   (1,), -1,       false),
-        (LogKernel,                     (1,), -log(2),  false),
+        (SquaredExponentialKernel,      (1,),      exp(-1), true),
+        (GammaExponentialKernel,        (1, 0.5),  exp(-1), true),
+        (InverseQuadraticKernel,        (1,),      0.5,     true),
+        (RationalQuadraticKernel,       (1, 1),    0.5,     true),
+        (PowerKernel,                   (1,),      -1,      false),
+        (LogKernel,                     (1,),      -log(2), false),
         (LinearKernel,                  (1,),      3,       true),
         (PolynomialKernel,              (1, 1, 2), 9,       true),
         (SigmoidKernel,                 (1, 1),    tanh(3), false),
@@ -214,10 +200,10 @@ for T in (Float32, Float64)
     x1, y1, d  = T[0, 1, 2], T[-1, 1, 2], 3
     x2, y2, w2 = T[0, 1, 2], T[0, 1.5, 3], T[1, sqrt(2), sqrt(0.5)]
     args = (1,)
-    result = exp(-0.5)
+    result = exp(-1)
     # weighted squared distance = 1 in each case
-    k1 = ARD(GaussianKernel(map(x->convert(T,x), args)...), d)
-    k2 = ARD(GaussianKernel(map(x->convert(T,x), args)...), w2)
+    k1 = ARD(SquaredExponentialKernel(map(x->convert(T,x), args)...), d)
+    k2 = ARD(SquaredExponentialKernel(map(x->convert(T,x), args)...), w2)
     for (k, x, y) in ((k1, x1, y1), (k2, x2, y2))
         @test_approx_eq kernel(k, x, y) convert(T, result)
     end
