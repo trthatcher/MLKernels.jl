@@ -20,9 +20,10 @@ function convert{T<:FloatingPoint}(::Type{SquaredExponentialKernel{T}}, κ::Squa
 end
 
 kappa{T<:FloatingPoint}(κ::SquaredExponentialKernel{T}, z::T) = exp(-κ.alpha * z)
-kappa_dz{T<:FloatingPoint}(κ::SquaredExponentialKernel{T}, z::T) = -κ.alpha*exp(-κ.alpha * z)
-kappa_dz2{T<:FloatingPoint}(κ::SquaredExponentialKernel{T}, z::T) = (α^2)*exp(-κ.alpha * z)
-kappa_dalpha{T<:FloatingPoint}(κ::SquaredExponentialKernel{T}, z::T) = z*exp(-κ.alpha * z)
+kappa_dz{T<:FloatingPoint}(κ::SquaredExponentialKernel{T}, z::T) = -κ.alpha * exp(-κ.alpha * z)
+kappa_dz2{T<:FloatingPoint}(κ::SquaredExponentialKernel{T}, z::T) = (κ.alpha^2) * exp(-κ.alpha * z)
+kappa_dalpha{T<:FloatingPoint}(κ::SquaredExponentialKernel{T}, z::T) = -z * exp(-κ.alpha * z)
+
 kappa_dp{T<:FloatingPoint}(κ::SquaredExponentialKernel{T}, param::Symbol, z::T) = param == :alpha ? kappa_dalpha(κ, z) : zero(T)
 
 function description_string{T<:FloatingPoint}(κ::SquaredExponentialKernel{T}, eltype::Bool = true)
@@ -32,10 +33,10 @@ end
 immutable GammaExponentialKernel{T<:FloatingPoint} <: ExponentialKernel{T}
     alpha::T
     gamma::T
-    function GammaExponentialKernel(α::T, gamma::T)
+    function GammaExponentialKernel(α::T, γ::T)
         α > 0 || throw(ArgumentError("α = $(α) must be in the range (0,∞)."))
-        0 < gamma <= 1 || throw(ArgumentError("γ = $(gamma) must be in the range (0,1]."))
-        new(α, gamma)
+        0 < γ <= 1 || throw(ArgumentError("γ = $(γ) must be in the range (0,1]."))
+        new(α, γ)
     end
 end
 GammaExponentialKernel{T<:FloatingPoint}(α::T = 1.0, gamma::T = convert(T,0.5)) = GammaExponentialKernel{T}(α, gamma)
@@ -52,12 +53,12 @@ function kappa_dz2{T<:FloatingPoint}(κ::GammaExponentialKernel{T}, z::T)
     return αγ*(z^(κ.gamma-2))*exp(-αz_γ)*(κ.gamma*αz_γ - κ.gamma + 1)
 end
 function kappa_dalpha{T<:FloatingPoint}(κ::GammaExponentialKernel{T}, z::T)
-    z_β = z^κ.beta
-    return -z_β*exp(-κ.alpha * z_β)
+    z_γ = z^κ.gamma
+    return -z_γ*exp(-κ.alpha * z_γ)
 end
 function kappa_dgamma{T<:FloatingPoint}(κ::GammaExponentialKernel{T}, z::T)
     neg_αz_γ = -κ.alpha * z^κ.gamma
-    return neg_αz_γ * exp(neg_αz_β) * log(z)
+    return neg_αz_γ * exp(neg_αz_γ) * log(z)
 end
 function kappa_dp{T<:FloatingPoint}(κ::GammaExponentialKernel{T}, param::Symbol, z::T)
     if param == :alpha
@@ -78,7 +79,7 @@ function convert{T<:FloatingPoint}(::Type{ExponentialKernel{T}}, κ::GammaExpone
 end
 
 function convert{T<:FloatingPoint}(::Type{ExponentialKernel{T}}, κ::SquaredExponentialKernel)
-    SquaredExponentialKernel(convert(T, κ.alpha), convert(T, κ.beta))
+    SquaredExponentialKernel(convert(T, κ.alpha))
 end
 
 isposdef(::ExponentialKernel) = true
@@ -87,7 +88,7 @@ function description_string_long(::ExponentialKernel)
     """
     Gamma-Exponential Kernel:
     
-    The gamma-exponetial kernel is a positive definite kernel defined as:
+    The gamma-exponential kernel is a positive definite kernel defined as:
     
         k(x,y) = exp(-α‖x-y‖²ᵞ)    x ∈ ℝⁿ, y ∈ ℝⁿ, α > 0, γ ∈ (0,1]
     
@@ -123,7 +124,7 @@ end
 
 kappa{T<:FloatingPoint}(κ::InverseQuadraticKernel{T}, z::T) = 1/(1 + κ.alpha*z)
 kappa_dz{T<:FloatingPoint}(κ::InverseQuadraticKernel{T}, z::T) = -κ.alpha/(1 + κ.alpha*z)^2
-kappa_dz2{T<:FloatingPoint}(κ::InverseQuadraticKernel{T}, z::T) = 2κ.alpha/(1 + κ.alpha*z)^3
+kappa_dz2{T<:FloatingPoint}(κ::InverseQuadraticKernel{T}, z::T) = 2κ.alpha^2/(1 + κ.alpha*z)^3
 kappa_dalpha{T<:FloatingPoint}(κ::InverseQuadraticKernel{T}, z::T) = -z/(1 + κ.alpha*z)^2
 kappa_dp{T<:FloatingPoint}(κ::InverseQuadraticKernel{T}, param::Symbol, z::T) = param == :alpha ? kappa_dalpha(κ, z) : zero(T)
 
@@ -146,16 +147,16 @@ function convert{T<:FloatingPoint}(::Type{RationalQuadraticKernel{T}}, κ::Ratio
     RationalQuadraticKernel(convert(T, κ.alpha), convert(T, κ.beta))
 end
 
-kappa{T<:FloatingPoint}(κ::RationalQuadraticKernel{T}, z::T) = (1 + κ.alpha*z/κ.beta)^(-κ.beta)
-kappa_dz{T<:FloatingPoint}(κ::RationalQuadraticKernel{T}, z::T) = -κ.alpha*(κ.alpha*z/κ.beta + 1)^(-κ.beta - 1)
+kappa{T<:FloatingPoint}(κ::RationalQuadraticKernel{T}, z::T) = (1 + κ.alpha*z)^(-κ.beta)
+kappa_dz{T<:FloatingPoint}(κ::RationalQuadraticKernel{T}, z::T) = -κ.alpha * κ.beta * (1 + κ.alpha*z)^(-κ.beta - 1)
 function kappa_dz2{T<:FloatingPoint}(κ::RationalQuadraticKernel{T}, z::T)
     α2 = κ.alpha^2
     αz = κ.alpha * z
     β = κ.beta
-    return α2*β*(β + 1)*(αz/β + 1)^(-β)*(αz + β)^(-2)
+    return α2*β*(β + 1)*(αz + 1)^(-β-2)
 end
-kappa_dalpha{T<:FloatingPoint}(κ::RationalQuadraticKernel{T}, z::T) = -z*(κ.alpha*z/κ.beta + 1)^(-κ.beta - 1)
-kappa_dbeta{T<:FloatingPoint}(κ::RationalQuadraticKernel{T}, z::T) = error("Too complicated")
+kappa_dalpha{T<:FloatingPoint}(κ::RationalQuadraticKernel{T}, z::T) = -κ.beta * z * (1 + κ.alpha*z)^(-κ.beta - 1)
+kappa_dbeta{T<:FloatingPoint}(κ::RationalQuadraticKernel{T}, z::T) = -log(1 + κ.alpha*z) * kappa(κ, z)
 
 function kappa_dp{T<:FloatingPoint}(κ::RationalQuadraticKernel{T}, param::Symbol, z::T)
     if param == :alpha

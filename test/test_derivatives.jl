@@ -8,7 +8,7 @@ importall MLKernels
 #####
 
 # compares numerical derivative (f(p+ϵ)-f(p-ϵ))/2ϵ with symbolic derivative to ensure correctness
-function checkderiv(f, fprime, p, i; eps=1e-5)
+function checkderiv(f, fprime, p, i; eps=1e-6)
     pplus = copy(p); pplus[i] += eps
     pminus = copy(p); pminus[i] -= eps
     delta = (fprime(p,i) - (f(pplus)-f(pminus))/2eps)
@@ -16,11 +16,11 @@ function checkderiv(f, fprime, p, i; eps=1e-5)
     return (delta)
 end
 
-checkderiv(f, fprime, p::Number; eps=1e-5) = (fprime(p) - (f(p+eps)-f(p-eps))/2eps)
+checkderiv(f, fprime, p::Number; eps=1e-6) = (fprime(p) - (f(p+eps)-f(p-eps))/2eps)
 
-checkderiv(f, fprime, p::Vector; eps=1e-4) = eltype(p)[checkderiv(f, fprime, p, i; eps=eps) for i=1:length(p)]
+checkderiv(f, fprime, p::Vector; eps=1e-6) = eltype(p)[checkderiv(f, fprime, p, i; eps=eps) for i=1:length(p)]
 
-checkderivvec(f, fprime, x; eps=1e-5) = abs(checkderiv(f, (p,i)->fprime(p)[i], x; eps=eps))
+checkderivvec(f, fprime, x; eps=1e-6) = abs(checkderiv(f, (p,i)->fprime(p)[i], x; eps=eps))
 
 function test_kappa_dz(k, z, epsilon)
     print("dz ")
@@ -38,8 +38,8 @@ function test_kernel_dxdy(k, x, y, epsilon)
     print("dy ")
     @test_approx_eq_eps checkderivvec(p->kernel(k,x,p), p->kernel_dy(k,x,p), y) zeros(y) epsilon
 
-    if isa(k, PeriodicKernel)
-        warn("!!! NOT TESTED: kernel_dxdy too low precision for PeriodicKernel !!!")
+    if isa(k, ARD) && isa(k.k, PeriodicKernel)
+        warn("!!! NOT TESTED: kernel_dxdy too low precision for ARD{PeriodicKernel} !!!")
         return
     end
 
@@ -92,10 +92,10 @@ function test_kappa_dp(kconstructor, param, derivs, z, epsilon)
 end
 
 function test_kernel_dp(kconstructor, param, derivs, x, y, epsilon)
-    if kconstructor == PeriodicKernel
-        warn("kernel_dp too low precision for PeriodicKernel")
-        return
-    end
+    #if kconstructor == PeriodicKernel
+    #    warn("kernel_dp too low precision for PeriodicKernel")
+    #    return
+    #end
 
     @assert length(param) == length(derivs)
     print("d")
@@ -145,11 +145,10 @@ for T in (Float64,)
     z = convert(T, 1.5)
 
     for (k, param, derivs) in (
-            (GaussianKernel, T[3.0], (:sigma,)),
-            (LaplacianKernel, T[1.3], (:sigma,)),
-            (RationalQuadraticKernel, T[1.3], (:c,)),
-            (MultiQuadraticKernel, T[1.3], (:c,)),
-            (InverseMultiQuadraticKernel, T[1.3], (:c,)),
+            (SquaredExponentialKernel, T[0.3], (:alpha,)),
+            (GammaExponentialKernel, T[1.3, 0.45], (:alpha, :gamma)),
+            (InverseQuadraticKernel, T[1.3], (:alpha,)),
+            (RationalQuadraticKernel, T[1.3, 2.1], (:alpha, :beta)),
             (PowerKernel, T[0.8], (:gamma,)),
             (LogKernel, T[1], (:d,)),
             (PeriodicKernel, T[1.1, 1.3], (:p, :ell)),
@@ -174,20 +173,20 @@ for T in (Float64,)
     w = T[0.0, 0.5, 1.5, 1.0]
 
     for (k, param, derivs) in (
-            (GaussianKernel, T[3.0], (:sigma,)),
-            (LaplacianKernel, T[1.3], (:sigma,)),
-            (RationalQuadraticKernel, T[1.3], (:c,)),
-            (MultiQuadraticKernel, T[1.3], (:c,)),
-            (InverseMultiQuadraticKernel, T[1.3], (:c,)),
-            (PowerKernel, T[1], (:gamma,)),
+            (SquaredExponentialKernel, T[0.3], (:alpha,)),
+            (GammaExponentialKernel, T[1.3, 0.45], (:alpha, :gamma)),
+            (InverseQuadraticKernel, T[1.3], (:alpha,)),
+            (RationalQuadraticKernel, T[1.3, 2.1], (:alpha, :beta)),
+            (PowerKernel, T[0.8], (:gamma,)),
             (LogKernel, T[1], (:d,)),
+            (PeriodicKernel, T[1.1, 1.3], (:p, :ell)),
             (LinearKernel, T[1.2], (:c,)),
             (PolynomialKernel, T[1.1, 1.3, 2.2], (:alpha, :c, :d)),
             (SigmoidKernel, T[1.1, 1.3], (:alpha, :c)),
         )
         print("    - Testing ARD{$(k)} ... ")
-        test_kernel_dxdy(ARD(k(param...), w), x, y, 5e-7)
-        test_kernel_dxdy(ARD(k(param...), length(x)), x, y, 5e-7)
+        test_kernel_dxdy(ARD(k(param...), w), x, y, 2e-6)
+        test_kernel_dxdy(ARD(k(param...), length(x)), x, y, 1e-6)
         #test_kernel_dp(k, param, derivs, x, y, 6e-5)
         println("Done")
     end
@@ -198,14 +197,14 @@ for T in (Float64,)
     x = T[1, 2, 7, 3]
     y = T[5, 2, 1, 6]
 
-    kproductconstructor(param...) = param[1] * GaussianKernel(param[2]) * GaussianKernel(param[3])
-    ksumconstructor(param...) = param[1]*GaussianKernel(param[2]) + param[3]*GaussianKernel(param[4])
-    kscaledconstructor(param...) = param[1]*GaussianKernel(param[2])
+    kproductconstructor(param...) = param[1] * SquaredExponentialKernel(param[2]) * SquaredExponentialKernel(param[3])
+    ksumconstructor(param...) = param[1]*SquaredExponentialKernel(param[2]) + param[3]*SquaredExponentialKernel(param[4])
+    kscaledconstructor(param...) = param[1]*SquaredExponentialKernel(param[2])
 
     for (kconst, param, derivs) in (
-            (kproductconstructor, T[3.2, 1.5, 1.8], (:a, symbol("k1.sigma"), symbol("k2.sigma"))),
-            (ksumconstructor, T[0.4, 3.2, 1.5, 1.8], (:a1, symbol("k1.sigma"), :a2, symbol("k2.sigma"))),
-            (kscaledconstructor, T[0.4, 3.2], (:a, symbol("k.sigma"))))
+            (kproductconstructor, T[3.2, 1.5, 1.8], (:a, symbol("k1.alpha"), symbol("k2.alpha"))),
+            (ksumconstructor, T[0.4, 3.2, 1.5, 1.8], (:a1, symbol("k1.alpha"), :a2, symbol("k2.alpha"))),
+            (kscaledconstructor, T[0.4, 3.2], (:a, symbol("k.alpha"))))
         k = kconst(param...)
         print("    - Testing $k ... ")
         test_kernel_dxdy(k, x, y, 1e-9)
