@@ -2,6 +2,30 @@ using Base.Test
 
 importall MLKernels
 
+
+# Check each field for equality with args (assumed same order)
+function check_fields(kernelobject::StandardKernel, args)
+    fields = names(kernelobject)
+    for i = 1:length(fields)
+        @test getfield(kernelobject, fields[i]) == args[i]
+    end
+end
+
+# Iterate through the test_args and test optional arguments
+function test_constructor(kernelobject::DataType, default_args, test_args)
+    fields = names(kernelobject)
+    n = length(fields)
+    for i = 1:n
+        case_args = test_args[1:i]
+        κ = (kernelobject)(case_args...)
+        check_fields(κ, tuple(case_args..., default_args[i+1:n]...))
+    end
+end
+
+# Test Standard Kernels
+include("standardkernels/test_squareddistance.jl")
+
+
 # Test Scaled Kernel
 print("- Testing ScaledKernel constructors ... ")
 for T in (Float32, Float64)

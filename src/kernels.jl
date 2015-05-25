@@ -11,7 +11,7 @@ eltype{T}(κ::Kernel{T}) = T
 #call{T<:FloatingPoint}(κ::Kernel{T}, X::Matrix{T}, Y::Matrix{T}) = kernel_matrix(κ, X, Y)
 
 isposdef(::Kernel) = false
-iscondposdef(::Kernel) = false
+iscondposdef(κ::Kernel) = isposdef(κ)
 
 abstract SimpleKernel{T<:FloatingPoint} <: Kernel{T}
 abstract CompositeKernel{T<:FloatingPoint} <: Kernel{T}

@@ -70,30 +70,32 @@ println("Done")
 
 X = [1.0 0; 0 1]
 
+K = GammaPowerKernel(1.0)
+
 print("- Testing optimized euclidean distance kernelmatrix ... ")
-matrix_test_approx_eq(kernelmatrix(PowerKernel(1.0), X), [0.0 -2; -2 0])
-matrix_test_approx_eq(kernelmatrix(PowerKernel(1.0), X, X), [0.0 -2; -2 0])
+matrix_test_approx_eq(kernelmatrix(K, X), [0.0 -2; -2 0])
+matrix_test_approx_eq(kernelmatrix(K, X, X), [0.0 -2; -2 0])
 println("Done")
 
 print("- Testing optimized euclidian distance kernelmatrix_scaled ... ")
-matrix_test_approx_eq(MLKernels.kernelmatrix_scaled(2.0, PowerKernel(1.0), X), [0.0 -4; -4 0])
-matrix_test_approx_eq(MLKernels.kernelmatrix(2.0 * PowerKernel(1.0), X), [0.0 -4; -4 0])
-matrix_test_approx_eq(MLKernels.kernelmatrix_scaled(2.0, PowerKernel(1.0), X, X), [0.0 -4; -4 0])
-matrix_test_approx_eq(MLKernels.kernelmatrix(2.0 * PowerKernel(1.0), X, X), [0.0 -4; -4 0])
+matrix_test_approx_eq(MLKernels.kernelmatrix_scaled(2.0, K, X), [0.0 -4; -4 0])
+matrix_test_approx_eq(MLKernels.kernelmatrix(2.0 * K, X), [0.0 -4; -4 0])
+matrix_test_approx_eq(MLKernels.kernelmatrix_scaled(2.0, K, X, X), [0.0 -4; -4 0])
+matrix_test_approx_eq(MLKernels.kernelmatrix(2.0 * K, X, X), [0.0 -4; -4 0])
 println("Done")
 
 print("- Testing optimized euclidian distance kernelmatrix_product ... ")
-matrix_test_approx_eq(MLKernels.kernelmatrix_product(2.0, PowerKernel(1.0), PowerKernel(1.0), X), [0.0 8; 8 0])
-matrix_test_approx_eq(MLKernels.kernelmatrix(2.0 * PowerKernel(1.0) * PowerKernel(1.0), X), [0.0 8; 8 0])
-matrix_test_approx_eq(MLKernels.kernelmatrix_product(2.0, PowerKernel(1.0), PowerKernel(1.0), X, X), [0.0 8; 8 0])
-matrix_test_approx_eq(MLKernels.kernelmatrix(2.0 * PowerKernel(1.0) * PowerKernel(1.0), X, X), [0.0 8; 8 0])
+matrix_test_approx_eq(MLKernels.kernelmatrix_product(2.0, K, K, X), [0.0 8; 8 0])
+matrix_test_approx_eq(MLKernels.kernelmatrix(2.0 * K * K, X), [0.0 8; 8 0])
+matrix_test_approx_eq(MLKernels.kernelmatrix_product(2.0, K, K, X, X), [0.0 8; 8 0])
+matrix_test_approx_eq(MLKernels.kernelmatrix(2.0 * K * K, X, X), [0.0 8; 8 0])
 println("Done")
 
 print("- Testing optimized euclidian distance kernelmatrix_sum ... ")
-matrix_test_approx_eq(MLKernels.kernelmatrix_sum(2.0, PowerKernel(1.0), 1.0, PowerKernel(1.0), X), [0.0 -6; -6 0])
-matrix_test_approx_eq(MLKernels.kernelmatrix(2.0 * PowerKernel(1.0) + 1.0 * PowerKernel(1.0), X), [0.0 -6; -6 0])
-matrix_test_approx_eq(MLKernels.kernelmatrix_sum(2.0, PowerKernel(1.0), 1.0, PowerKernel(1.0), X, X), [0.0 -6; -6 0])
-matrix_test_approx_eq(MLKernels.kernelmatrix(2.0 * PowerKernel(1.0) + 1.0 * PowerKernel(1.0), X, X), [0.0 -6; -6 0])
+matrix_test_approx_eq(MLKernels.kernelmatrix_sum(2.0, K, 1.0, K, X), [0.0 -6; -6 0])
+matrix_test_approx_eq(MLKernels.kernelmatrix(2.0 * K + 1.0 * K, X), [0.0 -6; -6 0])
+matrix_test_approx_eq(MLKernels.kernelmatrix_sum(2.0, K, 1.0, K, X, X), [0.0 -6; -6 0])
+matrix_test_approx_eq(MLKernels.kernelmatrix(2.0 * K + 1.0 * K, X, X), [0.0 -6; -6 0])
 println("Done")
 
 X = [1.0 0; 0 1]
