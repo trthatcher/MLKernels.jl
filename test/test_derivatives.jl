@@ -88,14 +88,16 @@ function test_kappa_dp(ktype, param, derivs, z, epsilon)
     @assert length(param) == length(derivs)
     print("d")
     k = ktype(param...)
+    @test MLKernels.kappa_dp(k, :undefined, z) == zero(eltype(z))
     for (i, deriv) in enumerate(derivs)
         print(":$deriv")
         @test_approx_eq_eps checkderiv(
             p -> MLKernels.kappa(ktype(p...), z),
             (p,i_) -> MLKernels.kappa_dp(ktype(p...), deriv, z),
             param, i) zero(eltype(z)) epsilon
+        @eval kappa_deriv = MLKernels.$(symbol("kappa_d$(deriv)"))
+        @test MLKernels.kappa_dp(k, deriv, z) == kappa_deriv(k, z)
     end
-    @test MLKernels.kappa_dp(k, :undefined, z) == zero(eltype(z))
     print(" ")
 end
 

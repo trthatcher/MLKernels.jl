@@ -27,7 +27,7 @@ for kernelobject in (
     GammaExponentialKernel,
     InverseQuadraticKernel,
     RationalQuadraticKernel,
-    PowerKernel, 
+    GammaPowerKernel, 
     LogKernel,
     PeriodicKernel,
     LinearKernel,
@@ -46,8 +46,8 @@ for (kernelobject, default_args, test_args) in (
         (GammaExponentialKernel, (1, 0.5), (2, 0.3)),
         (InverseQuadraticKernel, (1,), (2,)),
         (RationalQuadraticKernel, (1, 1), (2, 2)),
-        (PowerKernel, (1,), (0.5,)),
-        (LogKernel, (1,), (2,)),
+        (GammaPowerKernel, (1,), (0.5,)),
+        (LogKernel, (1,0.5), (2,1)),
         (LinearKernel, (1,), (2,)),
         (PolynomialKernel, (1, 1, 2), (2, 2, 4)),
         (SigmoidKernel, (1, 1), (2, 2)),
@@ -70,7 +70,7 @@ for (kernelobject, case) in (
         (PolynomialKernel, (1.0, 0.0, 2.0)),
         (SigmoidKernel, (1.0, 0.0)),
         # Special Cases
-        (LogKernel, (1,)),
+        #(LogKernel, (1.0,)),
         (PolynomialKernel, (1.0, 1.0, 2))
     )
     print("    - Testing ", kernelobject, case, " ... ")
@@ -88,7 +88,7 @@ for (kernelobject, error_case) in (
         (GammaExponentialKernel, (-1,)),
         (InverseQuadraticKernel, (-1,)),
         (RationalQuadraticKernel, (-1,)),
-        (PowerKernel, (0,)),
+        (GammaPowerKernel, (0,)),
         (LogKernel, (-1,)),
         (LinearKernel, (-1.0,)),
         (PolynomialKernel, (-1, 1, 2)), 
@@ -113,7 +113,7 @@ for (kernelobject, default_args, default_value, posdef) in (
         (GammaExponentialKernel,        (1, 0.5),  exp(-1), true),
         (InverseQuadraticKernel,        (1,),      0.5,     true),
         (RationalQuadraticKernel,       (1, 1),    0.5,     true),
-        (PowerKernel,                   (1,),      -1,      false),
+        (GammaPowerKernel,              (1,),      -1,      false),
         (LogKernel,                     (1,),      -log(2), false),
         (LinearKernel,                  (1,),      3,       true),
         (PolynomialKernel,              (1, 1, 2), 9,       true),
