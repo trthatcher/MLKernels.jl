@@ -108,17 +108,17 @@ for (kernelobject, error_case) in (
 end
 
 println("- Testing miscellaneous functions:")
-for (kernelobject, default_args, default_value, posdef) in (
-        (SquaredExponentialKernel,      (1,),      exp(-1), true),
-        (GammaExponentialKernel,        (1, 0.5),  exp(-1), true),
-        (InverseQuadraticKernel,        (1,),      0.5,     true),
-        (RationalQuadraticKernel,       (1, 1),    0.5,     true),
-        (GammaPowerKernel,              (1,),      -1,      false),
-        (LogKernel,                     (1,),      -log(2), false),
-        (LinearKernel,                  (1,),      3,       true),
-        (PolynomialKernel,              (1, 1, 2), 9,       true),
-        (SigmoidKernel,                 (1, 1),    tanh(3), false),
-        (MercerSigmoidKernel,           (0, 1),    tanh(1)*tanh(2), true))
+for (kernelobject, default_args, default_value, definiteness) in (
+        (SquaredExponentialKernel,      (1,),      exp(-1), :pd),
+        (GammaExponentialKernel,        (1, 0.5),  exp(-1), :pd),
+        (InverseQuadraticKernel,        (1,),      0.5,     :pd),
+        (RationalQuadraticKernel,       (1, 1),    0.5,     :pd),
+        (GammaPowerKernel,              (1,),      -1,      :cpd),
+        (LogKernel,                     (1,),      -log(2), :cpd),
+        (LinearKernel,                  (1,),      3,       :pd),
+        (PolynomialKernel,              (1, 1, 2), 9,       :pd),
+        (SigmoidKernel,                 (1, 1),    tanh(3), :cpd),
+        (MercerSigmoidKernel,           (0, 1),    tanh(1)*tanh(2), :pd))
     print("    - Testing ", kernelobject, " miscellaneous functions ... ")
     for T in (Float32, Float64)
         x, y = [one(T)], [convert(T,2)]
@@ -143,7 +143,16 @@ for (kernelobject, default_args, default_value, posdef) in (
         v = kernel(κ, x[1], y[1]) # test on scalars
         @test_approx_eq v convert(T, default_value)
 
-        @test isposdef(κ) == posdef
+        if definiteness == :pd
+            @test isposdef(κ) == true
+            @test iscondposdef(κ) == true
+        elseif definiteness == :cpd
+            @test isposdef(κ) == false
+            @test iscondposdef(κ) == true
+        else # do we even want this branch?...
+            @test isposdef(κ) == false
+            @test iscondposdef(κ) == false
+        end
         
         for S in (Float32, Float64)
 

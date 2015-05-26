@@ -112,6 +112,8 @@ immutable SigmoidKernel{T<:FloatingPoint} <: ScalarProductKernel{T}
 end
 SigmoidKernel{T<:FloatingPoint}(α::T = 1.0, c::T = one(T)) = SigmoidKernel{T}(α, c)
 
+iscondposdef(::SigmoidKernel) = true
+
 kappa{T<:FloatingPoint}(κ::SigmoidKernel{T}, xᵀy::T) = tanh(κ.alpha*xᵀy + κ.c)
 kappa_dz{T<:FloatingPoint}(κ::SigmoidKernel{T}, xᵀy::T) = (1 - kappa(κ,xᵀy)^2) * κ.alpha
 kappa_dz2{T<:FloatingPoint}(κ::SigmoidKernel{T}, xᵀy::T) = -2κ.alpha^2 * kappa(κ,xᵀy)*(1-kappa(κ,xᵀy)^2)

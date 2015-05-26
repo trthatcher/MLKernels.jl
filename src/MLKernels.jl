@@ -9,6 +9,7 @@ import Base: show, exp, eltype, isposdef, convert, promote #, call
 export
     # Functions
     description,
+    iscondposdef,
     kernel,
     kernelparameters,
     kernel_dx,
