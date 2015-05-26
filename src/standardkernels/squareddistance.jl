@@ -372,10 +372,10 @@ LogKernel{T<:FloatingPoint}(α::T = 1.0, γ::T = convert(T,0.5)) = LogKernel{T}(
 convert{T<:FloatingPoint}(::Type{LogKernel{T}}, κ::LogKernel) = LogKernel(convert(T, κ.alpha), convert(T, κ.gamma))
 
 kappa{T<:FloatingPoint}(κ::LogKernel{T}, z::T) = -log(κ.alpha*z^(κ.gamma) + 1)
-kappa_dz{T<:FloatingPoint}(κ::LogKernel{T}, z::T) = error("work in progress") #-κ.d/(2(z^(-κ.d/2 + 1) + z))
-kappa_dz2{T<:FloatingPoint}(κ::LogKernel{T}, z::T) = error("work in progress") #κ.d/2 * (1 + z^(-κ.d/2)*(-κ.d/2 + 1))/((z^(-κ.d/2 + 1) + z)^2)
-kappa_dalpha{T<:FloatingPoint}(κ::LogKernel{T}, z::T) = error("work in progress")
-kappa_dgamma{T<:FloatingPoint}(κ::LogKernel{T}, z::T) = error("work in progesss") #-z^(κ.d/2)*log(z)/(2(z^(κ.d/2) + 1))
+kappa_dz{T<:FloatingPoint}(κ::LogKernel{T}, z::T) = - κ.alpha * κ.gamma * z^(κ.gamma-1) / (κ.alpha*z^(κ.gamma) + 1)
+kappa_dz2{T<:FloatingPoint}(κ::LogKernel{T}, z::T) = - κ.alpha * κ.gamma * z^(κ.gamma-2) * (κ.gamma - 1 - κ.alpha*z^(κ.gamma)) / (κ.alpha*z^(κ.gamma) + 1)^2
+kappa_dalpha{T<:FloatingPoint}(κ::LogKernel{T}, z::T) = - z^(κ.gamma) / (κ.alpha*z^(κ.gamma) + 1)
+kappa_dgamma{T<:FloatingPoint}(κ::LogKernel{T}, z::T) = - log(z) * κ.alpha * z^(κ.gamma) / (κ.alpha*z^(κ.gamma) + 1)
 
 function kappa_dp{T<:FloatingPoint}(κ::LogKernel{T}, param::Symbol, z::T)
     if param == :alpha

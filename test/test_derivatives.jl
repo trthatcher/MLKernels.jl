@@ -153,7 +153,7 @@ for T in (Float64,)
             (InverseQuadraticKernel, T[1.3], (:alpha,)),
             (RationalQuadraticKernel, T[1.3, 2.1], (:alpha, :beta)),
             (GammaPowerKernel, T[0.8], (:gamma,)),
-            #(LogKernel, T[1], (:d,)),
+            (LogKernel, T[1, 0.5], (:alpha, :gamma)),
             (PeriodicKernel, T[1.1, 1.3], (:p, :ell)),
             (LinearKernel, T[1.2], (:c,)),
             (PolynomialKernel, T[1.1, 1.3, 2.2], (:alpha, :c, :d)),
