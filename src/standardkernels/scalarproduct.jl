@@ -13,10 +13,6 @@ immutable LinearKernel{T<:FloatingPoint} <: ScalarProductKernel{T}
 end
 LinearKernel{T<:FloatingPoint}(c::T = 1.0) = LinearKernel{T}(c)
 
-function convert{T<:FloatingPoint}(::Type{LinearKernel{T}}, κ::LinearKernel)
-    LinearKernel(convert(T, κ.c))
-end
-
 kappa{T<:FloatingPoint}(κ::LinearKernel{T}, xᵀy::T) = xᵀy + κ.c
 kappa_dz{T<:FloatingPoint}(κ::LinearKernel{T}, xᵀy::T) = one(T)
 kappa_dz2{T<:FloatingPoint}(κ::LinearKernel{T}, xᵀy::T) = zero(T)
@@ -65,10 +61,6 @@ function PolynomialKernel{T<:FloatingPoint}(α::T = 1.0, c::T = one(T), d::T = c
 end
 
 PolynomialKernel{T<:FloatingPoint}(α::T, c::T, d::Integer) = PolynomialKernel(α, c, convert(T, d))
-
-function convert{T<:FloatingPoint}(::Type{PolynomialKernel{T}}, κ::PolynomialKernel)
-    PolynomialKernel(convert(T, κ.alpha), convert(T, κ.c), convert(T, κ.d))
-end
 
 kappa{T<:FloatingPoint}(κ::PolynomialKernel{T}, xᵀy::T) = (κ.alpha*xᵀy + κ.c)^κ.d
 kappa_dz{T<:FloatingPoint}(κ::PolynomialKernel{T}, xᵀy::T) = κ.alpha*κ.d*(κ.alpha*xᵀy + κ.c)^(κ.d-1)
@@ -120,10 +112,6 @@ immutable SigmoidKernel{T<:FloatingPoint} <: ScalarProductKernel{T}
 end
 SigmoidKernel{T<:FloatingPoint}(α::T = 1.0, c::T = one(T)) = SigmoidKernel{T}(α, c)
 
-function convert{T<:FloatingPoint}(::Type{SigmoidKernel{T}}, κ::SigmoidKernel)
-    SigmoidKernel(convert(T, κ.alpha), convert(T, κ.c))
-end
-
 kappa{T<:FloatingPoint}(κ::SigmoidKernel{T}, xᵀy::T) = tanh(κ.alpha*xᵀy + κ.c)
 kappa_dz{T<:FloatingPoint}(κ::SigmoidKernel{T}, xᵀy::T) = (1 - kappa(κ,xᵀy)^2) * κ.alpha
 kappa_dz2{T<:FloatingPoint}(κ::SigmoidKernel{T}, xᵀy::T) = -2κ.alpha^2 * kappa(κ,xᵀy)*(1-kappa(κ,xᵀy)^2)
@@ -152,17 +140,3 @@ function description_string_long(::SigmoidKernel)
     """
 end
 
-
-#==========================================================================
-  Conversions
-==========================================================================#
-
-for kernelobject in (:LinearKernel, :PolynomialKernel, :SigmoidKernel)
-    for kerneltype in (:ScalarProductKernel, :StandardKernel, :SimpleKernel, :Kernel)
-        @eval begin
-            function convert{T<:FloatingPoint}(::Type{$kerneltype{T}}, κ::$kernelobject)
-                convert($kernelobject{T}, κ)
-            end
-        end
-    end
-end

@@ -43,14 +43,6 @@ immutable SquaredExponentialKernel{T<:FloatingPoint} <: ExponentialKernel{T}
 end
 SquaredExponentialKernel{T<:FloatingPoint}(α::T = 1.0) = SquaredExponentialKernel{T}(α)
 
-function convert{T<:FloatingPoint}(::Type{SquaredExponentialKernel{T}}, κ::SquaredExponentialKernel)
-    SquaredExponentialKernel(convert(T, κ.alpha))
-end
-
-function convert{T<:FloatingPoint}(::Type{ExponentialKernel{T}}, κ::SquaredExponentialKernel)
-    SquaredExponentialKernel(convert(T, κ.alpha))
-end
-
 kappa{T<:FloatingPoint}(κ::SquaredExponentialKernel{T}, z::T) = exp(-κ.alpha * z)
 kappa_dz{T<:FloatingPoint}(κ::SquaredExponentialKernel{T}, z::T) = -κ.alpha * exp(-κ.alpha * z)
 kappa_dz2{T<:FloatingPoint}(κ::SquaredExponentialKernel{T}, z::T) = (κ.alpha^2) * exp(-κ.alpha * z)
@@ -74,14 +66,6 @@ immutable GammaExponentialKernel{T<:FloatingPoint} <: ExponentialKernel{T}
     end
 end
 GammaExponentialKernel{T<:FloatingPoint}(α::T = 1.0, gamma::T = convert(T,0.5)) = GammaExponentialKernel{T}(α, gamma)
-
-function convert{T<:FloatingPoint}(::Type{GammaExponentialKernel{T}}, κ::GammaExponentialKernel)
-    GammaExponentialKernel(convert(T, κ.alpha), convert(T, κ.gamma))
-end
-
-function convert{T<:FloatingPoint}(::Type{ExponentialKernel{T}}, κ::GammaExponentialKernel)
-    GammaExponentialKernel(convert(T, κ.alpha), convert(T, κ.gamma))
-end
 
 kappa{T<:FloatingPoint}(κ::GammaExponentialKernel{T}, z::T) = exp(-κ.alpha * z^κ.gamma)
 kappa_dz{T<:FloatingPoint}(κ::GammaExponentialKernel{T}, z::T) = -κ.alpha* κ.gamma * z^(κ.gamma - 1) * exp(-κ.alpha * z^κ.gamma)
@@ -154,14 +138,6 @@ immutable InverseQuadraticKernel{T<:FloatingPoint} <: QuadraticKernel{T}
 end
 InverseQuadraticKernel{T<:FloatingPoint}(α::T = 1.0) = InverseQuadraticKernel{T}(α)
 
-function convert{T<:FloatingPoint}(::Type{InverseQuadraticKernel{T}}, κ::InverseQuadraticKernel)
-    InverseQuadraticKernel(convert(T, κ.alpha))
-end
-
-function convert{T<:FloatingPoint}(::Type{QuadraticKernel{T}}, κ::InverseQuadraticKernel)
-    InverseQuadraticKernel(convert(T, κ.alpha))
-end
-
 kappa{T<:FloatingPoint}(κ::InverseQuadraticKernel{T}, z::T) = 1/(1 + κ.alpha*z)
 kappa_dz{T<:FloatingPoint}(κ::InverseQuadraticKernel{T}, z::T) = -κ.alpha/(1 + κ.alpha*z)^2
 kappa_dz2{T<:FloatingPoint}(κ::InverseQuadraticKernel{T}, z::T) = 2κ.alpha^2/(1 + κ.alpha*z)^3
@@ -184,10 +160,6 @@ immutable RationalQuadraticKernel{T<:FloatingPoint} <: QuadraticKernel{T}
     end
 end
 RationalQuadraticKernel{T<:FloatingPoint}(α::T = 1.0, β::T = one(T)) = RationalQuadraticKernel{T}(α, β)
-
-function convert{T<:FloatingPoint}(::Type{RationalQuadraticKernel{T}}, κ::RationalQuadraticKernel)
-    RationalQuadraticKernel(convert(T, κ.alpha), convert(T, κ.beta))
-end
 
 kappa{T<:FloatingPoint}(κ::RationalQuadraticKernel{T}, z::T) = (1 + κ.alpha*z)^(-κ.beta)
 kappa_dz{T<:FloatingPoint}(κ::RationalQuadraticKernel{T}, z::T) = -κ.alpha * κ.beta * (1 + κ.alpha*z)^(-κ.beta - 1)
@@ -229,14 +201,6 @@ immutable GammaRationalQuadraticKernel{T<:FloatingPoint} <: QuadraticKernel{T}
     end
 end
 GammaRationalQuadraticKernel{T<:FloatingPoint}(α::T = 1.0, β::T = convert(T,2), γ::T = convert(T,0.5)) = GammaRationalQuadraticKernel{T}(α, β, γ)
-
-function convert{T<:FloatingPoint}(::Type{GammaRationalQuadraticKernel{T}}, κ::GammaRationalQuadraticKernel)
-    GammaRationalKernel(convert(T, κ.alpha), convert(T, κ.beta), convert(T, κ.gamma))
-end
-
-function convert{T<:FloatingPoint}(::Type{QuadraticKernel{T}}, κ::GammaRationalQuadraticKernel)
-    GammaRationalKernel(convert(T, κ.alpha), convert(T, κ.beta), convert(T, κ.gamma))
-end
 
 kappa{T<:FloatingPoint}(κ::GammaRationalQuadraticKernel{T}, z::T) = (1 + κ.alpha*z^κ.gamma)^(-κ.beta)
 function kappa_dz{T<:FloatingPoint}(κ::GammaRationalQuadraticKernel{T}, z::T)
@@ -338,9 +302,6 @@ immutable GammaPowerKernel{T<:FloatingPoint} <: PowerKernel{T}
 end
 GammaPowerKernel{T<:FloatingPoint}(γ::T = 1.0) = GammaPowerKernel{T}(γ)
 
-convert{T<:FloatingPoint}(::Type{GammaPowerKernel{T}}, κ::GammaPowerKernel) = GammaPowerKernel(convert(T, κ.gamma))
-convert{T<:FloatingPoint}(::Type{PowerKernel{T}}, κ::GammaPowerKernel) = GammaPowerKernel(convert(T, κ.gamma))
-
 kappa{T<:FloatingPoint}(κ::GammaPowerKernel{T}, z::T) = -z^(κ.gamma)
 kappa_dz{T<:FloatingPoint}(κ::GammaPowerKernel{T}, z::T) = -κ.gamma*(z^(κ.gamma - 1))
 kappa_dz2{T<:FloatingPoint}(κ::GammaPowerKernel{T}, z::T) = (κ.gamma - κ.gamma^2)*(z^(κ.gamma - 2))
@@ -368,8 +329,6 @@ immutable LogKernel{T<:FloatingPoint} <: SquaredDistanceKernel{T}
     end
 end
 LogKernel{T<:FloatingPoint}(α::T = 1.0, γ::T = convert(T,0.5)) = LogKernel{T}(α,γ)
-
-convert{T<:FloatingPoint}(::Type{LogKernel{T}}, κ::LogKernel) = LogKernel(convert(T, κ.alpha), convert(T, κ.gamma))
 
 kappa{T<:FloatingPoint}(κ::LogKernel{T}, z::T) = -log(κ.alpha*z^(κ.gamma) + 1)
 kappa_dz{T<:FloatingPoint}(κ::LogKernel{T}, z::T) = - κ.alpha * κ.gamma * z^(κ.gamma-1) / (κ.alpha*z^(κ.gamma) + 1)
@@ -426,8 +385,6 @@ immutable PeriodicKernel{T<:FloatingPoint} <: SquaredDistanceKernel{T}
 end
 PeriodicKernel{T<:FloatingPoint}(p::T = 1.0, ell::T = 1.0) = PeriodicKernel{T}(p, ell)
 
-convert{T<:FloatingPoint}(::Type{PeriodicKernel{T}}, κ::PeriodicKernel) = PeriodicKernel(convert(T, κ.p), convert(T, κ.ell))
-
 kappa{T<:FloatingPoint}(κ::PeriodicKernel{T}, z::T) = exp(-2sin(π*z/κ.p)^2 / κ.ell^2)
 kappa_dz{T<:FloatingPoint}(κ::PeriodicKernel{T}, z::T) = -2sin(2π*z/κ.p) * π/κ.p / κ.ell^2 * kappa(κ, z)
 #kappa_dz2{T<:FloatingPoint}(κ::PeriodicKernel{T}, z::T) =  -2π/κ.p / κ.ell^2 * (cos(2π*z/κ.p)*(2π/κ.p) * kappa(κ, z) + sin(2π*z/κ.p) * kappa_dz(κ, z))
@@ -451,23 +408,3 @@ function description_string_long(::PeriodicKernel)
     """
 end
 
-
-#==========================================================================
-  Conversions
-==========================================================================#
-
-for kernelobject in (:SquaredExponentialKernel,
-                     :GammaExponentialKernel,
-                     :InverseQuadraticKernel,
-                     :RationalQuadraticKernel,
-                     :PowerKernel, 
-                     :LogKernel,
-                     :PeriodicKernel)
-    for kerneltype in (:SquaredDistanceKernel, :StandardKernel, :SimpleKernel, :Kernel)
-        @eval begin
-            function convert{T<:FloatingPoint}(::Type{$kerneltype{T}}, κ::$kernelobject)
-                convert($kernelobject{T}, κ)
-            end
-        end
-    end
-end

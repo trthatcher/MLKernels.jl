@@ -14,10 +14,6 @@ immutable MercerSigmoidKernel{T<:FloatingPoint} <: SeparableKernel{T}
 end
 MercerSigmoidKernel{T<:FloatingPoint}(d::T = 0.0, b::T = one(T)) = MercerSigmoidKernel{T}(d, b)
 
-function convert{T<:FloatingPoint}(::Type{MercerSigmoidKernel{T}}, κ::MercerSigmoidKernel)
-    MercerSigmoidKernel(convert(T, κ.d), convert(T, κ.b))
-end
-
 kappa{T<:FloatingPoint}(κ::MercerSigmoidKernel{T}, z::T) = tanh((z - κ.d)/κ.b)
 kappa_dz{T<:FloatingPoint}(κ::MercerSigmoidKernel{T}, z::T) = (1 - kappa(κ,z)^2) / κ.b
 kappa_db{T<:FloatingPoint}(κ::MercerSigmoidKernel{T}, z::T) = -(1 - kappa(κ,z)^2) * (z - κ.d) * κ.b^-2
@@ -43,17 +39,3 @@ function description_string_long(::MercerSigmoidKernel)
     """
 end
 
-
-#==========================================================================
-  Conversions
-==========================================================================#
-
-for kernelobject in (:MercerSigmoidKernel,)
-    for kerneltype in (:SeparableKernel, :StandardKernel, :SimpleKernel, :Kernel)
-        @eval begin
-            function convert{T<:FloatingPoint}(::Type{$kerneltype{T}}, κ::$kernelobject)
-                convert($kernelobject{T}, κ)
-            end
-        end
-    end
-end
