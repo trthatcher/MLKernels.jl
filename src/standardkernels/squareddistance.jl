@@ -257,29 +257,29 @@ function kappa_dz2{T<:FloatingPoint}(κ::GammaRationalQuadraticKernel{T}, z::T)
     f1 = α*β*γ
     f2 = z^(γ - 2)
     f3 = (1 + v1)^(-β - 2)
-    f4 = β*γ*v1 + v1 - t + 1
+    f4 = β*γ*v1 + v1 - γ + 1
     f1*f2*f3*f4
 end
 function kappa_dalpha{T<:FloatingPoint}(κ::GammaRationalQuadraticKernel{T}, z::T)
+    f1 = z^κ.gamma
+    v1 = 1 + κ.alpha*f1
+    f2 = v1^(-κ.beta - 1)
+    -κ.beta * f1 * f2
+end
+function kappa_dbeta{T<:FloatingPoint}(κ::GammaRationalQuadraticKernel{T}, z::T)
     v1 = κ.alpha * z^κ.gamma + 1
     f1 = log(v1)
     f2 = v1^(-κ.beta)
     -f1*f2
 end
-function kappa_dbeta{T<:FloatingPoint}(κ::GammaRationalQuadraticKernel{T}, z::T)
-    f1 = z^κ.gamma
-    v1 = 1 + κ.alpha*v1
-    f2 = v1^(-κ.beta - 1)
-    -κ.beta * f1 * f2
-end
 function kappa_dgamma{T<:FloatingPoint}(κ::GammaRationalQuadraticKernel{T}, z::T)
     f1 = κ.alpha*z^κ.gamma
-    f2 = (v1 + 1)^(κ.beta - 1)
+    f2 = (f1 + 1)^(-κ.beta - 1)
     f3 = log(z)
-    κ.beta * f1 * f2 * f3
+    -κ.beta * f1 * f2 * f3
 end
 
-function kappa_dp{T<:FloatingPoint}(κ::RationalQuadraticKernel{T}, param::Symbol, z::T)
+function kappa_dp{T<:FloatingPoint}(κ::GammaRationalQuadraticKernel{T}, param::Symbol, z::T)
     if param == :alpha
         return kappa_dalpha(κ, z)
     elseif param == :beta

@@ -152,6 +152,7 @@ for T in (Float64,)
             (GammaExponentialKernel, T[1.3, 0.45], (:alpha, :gamma)),
             (InverseQuadraticKernel, T[1.3], (:alpha,)),
             (RationalQuadraticKernel, T[1.3, 2.1], (:alpha, :beta)),
+            (GammaRationalQuadraticKernel, T[1.3, 2.1, 0.6], (:alpha, :beta, :gamma)),
             (GammaPowerKernel, T[0.8], (:gamma,)),
             (LogKernel, T[1, 0.5], (:alpha, :gamma)),
             (PeriodicKernel, T[1.1, 1.3], (:p, :ell)),
