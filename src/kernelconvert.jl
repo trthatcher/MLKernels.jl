@@ -1,32 +1,4 @@
-function isconcretetype(T::DataType)
-    try
-        T() # fails if T is concrete but does not provide a no-argument default constructor
-        return true
-    catch
-        return false
-    end
-end
-
-function subtypeleaves(T::DataType)
-    ST = subtypes(T)
-    if length(ST) > 0
-        vcat(map(subtypeleaves, ST)...)
-    else
-        T
-    end
-end
-
-function supertypes(T::DataType)
-    result = DataType[]
-    S = super(T)
-    while S !== Any
-        push!(result, S)
-        S = super(S)
-    end
-    result
-end
-
-for kernelobject in filter(isconcretetype, subtypeleaves(StandardKernel))
+for kernelobject in concretesubtypes(StandardKernel)
     kernelobjectname = kernelobject.name.name # symbol for concrete kernel type
 
     fieldconversions = [:(convert(T, κ.$field)) for field in names(kernelobject)]

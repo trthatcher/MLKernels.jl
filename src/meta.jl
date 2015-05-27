@@ -28,3 +28,26 @@ macro transpose_access(cond, symbols, block)
         end
     end
 end
+
+
+function concretesubtypes(T::DataType)
+    ST = subtypes(T)
+    if length(ST) > 0
+        vcat(map(concretesubtypes, ST)...)
+    elseif !T.abstract # only collect concrete types
+        [T]
+    else
+        []
+    end
+end
+
+function supertypes(T::DataType)
+    ancestors = DataType[]
+    S = super(T)
+    while S !== Any
+        push!(ancestors, S)
+        S = super(S)
+    end
+    ancestors
+end
+
