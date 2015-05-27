@@ -26,7 +26,7 @@ function test_kappa_dz(k, z, epsilon)
     print("dz ")
     @test_approx_eq_eps checkderiv(p->MLKernels.kappa(k,p), p->MLKernels.kappa_dz(k,p), z) zero(z) epsilon
 
-    if !isa(k, SeparableKernel)
+    if !isa(k, SeparableKernel) # SeparableKernels only need to define kappa_dz
         print("dz2 ")
         @test_approx_eq_eps checkderiv(p->MLKernels.kappa_dz(k,p), p->MLKernels.kappa_dz2(k,p), z) zero(z) epsilon
     end
@@ -63,18 +63,6 @@ function test_kernel_dxdy(k::Kernel, x::Vector, y::Vector, epsilon)
             x, i) zero(eltype(y)) epsilon
     end
 
-    if isa(k, ARD)
-        warn("kernelmatrix_dxdy not implemented for ARD")
-        return
-    end
-    if isa(k, ScaledKernel)
-        warn("kernelmatrix_dxdy not implemented for ScaledKernel")
-        return
-    end
-    if isa(k, CompositeKernel)
-        warn("kernelmatrix_dxdy not implemented for CompositeKernel")
-        return
-    end
     print("matrix ")
     @test_approx_eq kernel_dx(k,x,y) kernelmatrix_dx(k, x'', y'', 'T')
     @test_approx_eq kernel_dx(k,x,y) kernelmatrix_dx(k, x', y')

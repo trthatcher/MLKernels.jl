@@ -6,7 +6,7 @@
   Generic Kernel Derivative Matrices
 ==========================================================================#
 
-function kernel_dx!{T<:FloatingPoint}(κ::StandardKernel{T}, d::Int64, K::Array{T}, X::Array{T}, x_pos::Int64, Y::Array{T}, y_pos::Int64, is_trans::Bool)
+function kernel_dx!{T<:FloatingPoint}(κ::Kernel{T}, d::Int64, K::Array{T}, X::Array{T}, x_pos::Int64, Y::Array{T}, y_pos::Int64, is_trans::Bool)
     if is_trans
         K[1:d,x_pos,y_pos] = kernel_dx(κ, vec(X[1:d,x_pos]), vec(Y[1:d,y_pos]))
     else
@@ -14,7 +14,7 @@ function kernel_dx!{T<:FloatingPoint}(κ::StandardKernel{T}, d::Int64, K::Array{
     end
 end
 
-function kernelmatrix_dx{T<:FloatingPoint}(κ::StandardKernel{T}, X::Matrix{T}, Y::Matrix{T}, trans::Char = 'N')
+function generic_kernelmatrix_dx{T<:FloatingPoint}(κ::Kernel{T}, X::Matrix{T}, Y::Matrix{T}, trans::Char = 'N')
     is_trans = trans == 'T'  # True if columns are observations
     n = size(X, is_trans ? 2 : 1)
     m = size(Y, is_trans ? 2 : 1)
@@ -28,8 +28,10 @@ function kernelmatrix_dx{T<:FloatingPoint}(κ::StandardKernel{T}, X::Matrix{T}, 
     reshape(K, (d*n, m))
 end
 
+kernelmatrix_dx{T<:FloatingPoint}(κ::StandardKernel{T}, X::Matrix{T}, Y::Matrix{T}, trans::Char = 'N') = generic_kernelmatrix_dx(κ, X, Y, trans)
 
-function kernel_dy!{T<:FloatingPoint}(κ::StandardKernel{T}, d::Int64, K::Array{T}, X::Array{T}, x_pos::Int64, Y::Array{T}, y_pos::Int64, is_trans::Bool)
+
+function kernel_dy!{T<:FloatingPoint}(κ::Kernel{T}, d::Int64, K::Array{T}, X::Array{T}, x_pos::Int64, Y::Array{T}, y_pos::Int64, is_trans::Bool)
     if is_trans
         K[x_pos,1:d,y_pos] = kernel_dy(κ, vec(X[1:d,x_pos]), vec(Y[1:d,y_pos]))
     else
@@ -37,7 +39,7 @@ function kernel_dy!{T<:FloatingPoint}(κ::StandardKernel{T}, d::Int64, K::Array{
     end
 end
 
-function kernelmatrix_dy{T<:FloatingPoint}(κ::StandardKernel{T}, X::Matrix{T}, Y::Matrix{T}, trans::Char = 'N')
+function generic_kernelmatrix_dy{T<:FloatingPoint}(κ::Kernel{T}, X::Matrix{T}, Y::Matrix{T}, trans::Char = 'N')
     is_trans = trans == 'T'  # True if columns are observations
     n = size(X, is_trans ? 2 : 1)
     m = size(Y, is_trans ? 2 : 1)
@@ -51,8 +53,9 @@ function kernelmatrix_dy{T<:FloatingPoint}(κ::StandardKernel{T}, X::Matrix{T}, 
     reshape(K, (n, d*m))
 end
 
+kernelmatrix_dy{T<:FloatingPoint}(κ::StandardKernel{T}, X::Matrix{T}, Y::Matrix{T}, trans::Char = 'N') = generic_kernelmatrix_dy(κ, X, Y, trans)
 
-function kernel_dxdy!{T<:FloatingPoint}(κ::StandardKernel{T}, d::Int64, K::Array{T}, X::Array{T}, x_pos::Int64, Y::Array{T}, y_pos::Int64, is_trans::Bool)
+function kernel_dxdy!{T<:FloatingPoint}(κ::Kernel{T}, d::Int64, K::Array{T}, X::Array{T}, x_pos::Int64, Y::Array{T}, y_pos::Int64, is_trans::Bool)
     if is_trans
         K[1:d,x_pos,1:d,y_pos] = kernel_dxdy(κ, vec(X[1:d,x_pos]), vec(Y[1:d,y_pos]))
     else
@@ -60,7 +63,7 @@ function kernel_dxdy!{T<:FloatingPoint}(κ::StandardKernel{T}, d::Int64, K::Arra
     end
 end
 
-function kernelmatrix_dxdy{T<:FloatingPoint}(κ::StandardKernel{T}, X::Matrix{T}, Y::Matrix{T}, trans::Char = 'N')
+function generic_kernelmatrix_dxdy{T<:FloatingPoint}(κ::Kernel{T}, X::Matrix{T}, Y::Matrix{T}, trans::Char = 'N')
     is_trans = trans == 'T'  # True if columns are observations
     n = size(X, is_trans ? 2 : 1)
     m = size(Y, is_trans ? 2 : 1)
@@ -73,6 +76,9 @@ function kernelmatrix_dxdy{T<:FloatingPoint}(κ::StandardKernel{T}, X::Matrix{T}
     end
     K # reshape(K, (d*n, d*m))
 end
+
+kernelmatrix_dxdy{T<:FloatingPoint}(κ::StandardKernel{T}, X::Matrix{T}, Y::Matrix{T}, trans::Char = 'N') = generic_kernelmatrix_dxdy(κ, X, Y, trans)
+
 
 #==========================================================================
   Optimized Kernel Derivative Matrices for Scalar Product Kernels
@@ -109,3 +115,73 @@ function kernel_dxdy!{T<:FloatingPoint}(κ::SquaredDistanceKernel{T}, d::Int64, 
     end
     K
 end
+
+
+
+#==========================================================================
+  Kernel Derivative Matrices for Composite Kernels
+==========================================================================#
+
+function kernelmatrix_dx{T<:FloatingPoint}(k::ScaledKernel{T}, X::Matrix{T}, Y::Matrix{T}, trans::Char = 'N')
+    k.a * kernelmatrix_dx(k.k, X, Y, trans)
+end
+
+function kernelmatrix_dy{T<:FloatingPoint}(k::ScaledKernel{T}, X::Matrix{T}, Y::Matrix{T}, trans::Char = 'N')
+    k.a * kernelmatrix_dy(k.k, X, Y, trans)
+end
+
+function kernelmatrix_dxdy{T<:FloatingPoint}(k::ScaledKernel{T}, X::Matrix{T}, Y::Matrix{T}, trans::Char = 'N')
+    k.a * kernelmatrix_dxdy(k.k, X, Y, trans)
+end
+
+function kernelmatrix_dx{T<:FloatingPoint}(k::KernelSum{T}, X::Matrix{T}, Y::Matrix{T}, trans::Char = 'N')
+    k.a1 * kernelmatrix_dx(k.k1, X, Y, trans) + k.a2 * kernelmatrix_dx(k.k2, X, Y, trans)
+end
+
+function kernelmatrix_dy{T<:FloatingPoint}(k::KernelSum{T}, X::Matrix{T}, Y::Matrix{T}, trans::Char = 'N')
+    k.a1 * kernelmatrix_dy(k.k1, X, Y, trans) + k.a2 * kernelmatrix_dy(k.k2, X, Y, trans)
+end
+
+function kernelmatrix_dxdy{T<:FloatingPoint}(k::KernelSum{T}, X::Matrix{T}, Y::Matrix{T}, trans::Char = 'N')
+    k.a1 * kernelmatrix_dxdy(k.k1, X, Y, trans) + k.a2 * kernelmatrix_dxdy(k.k2, X, Y, trans)
+end
+
+function kernelmatrix_dx{T<:FloatingPoint}(k::KernelProduct{T}, X::Matrix{T}, Y::Matrix{T}, trans::Char = 'N')
+    #M1 = kernelmatrix(k.k1, X, Y, trans)
+    #D1 = kernelmatrix_dx(k.k1, X, Y, trans)
+    #M2 = kernelmatrix(k.k2, X, Y, trans)
+    #D2 = kernelmatrix_dx(k.k2, X, Y, trans)
+    #k.a * (D1 .* M2 + D2 .* M1) # D? and M? have different shapes...
+    generic_kernelmatrix_dx(k, X, Y, trans)
+end
+
+function kernelmatrix_dy{T<:FloatingPoint}(k::KernelProduct{T}, X::Matrix{T}, Y::Matrix{T}, trans::Char = 'N')
+    #M1 = kernelmatrix(k.k1, X, Y, trans)
+    #D1 = kernelmatrix_dy(k.k1, X, Y, trans)
+    #M2 = kernelmatrix(k.k2, X, Y, trans)
+    #D2 = kernelmatrix_dy(k.k2, X, Y, trans)
+    #k.a * (D1 .* M2 + D2 .* M1)
+    generic_kernelmatrix_dy(k, X, Y, trans)
+end
+
+function kernelmatrix_dxdy{T<:FloatingPoint}(k::KernelProduct{T}, X::Matrix{T}, Y::Matrix{T}, trans::Char = 'N')
+    #M1 = kernelmatrix(k.k1, X, Y, trans)
+    #Dx1 = kernelmatrix_dx(k.k1, X, Y, trans)
+    #Dy1 = kernelmatrix_dy(k.k1, X, Y, trans)
+    #Dxy1 = kernelmatrix_dxdy(k.k1, X, Y, trans)
+    #M2 = kernelmatrix(k.k2, X, Y, trans)
+    #Dx2 = kernelmatrix_dx(k.k2, X, Y, trans)
+    #Dy2 = kernelmatrix_dy(k.k2, X, Y, trans)
+    #Dxy2 = kernelmatrix_dxdy(k.k2, X, Y, trans)
+    #k.a * (Dxy1 .* M2 + Dy1 .* Dx2 + Dx1 .* Dy2
+    #)
+    #ψ.a * (kernel_dxdy(ψ.k1, x, y)*kernel(ψ.k2, x, y)
+    #        + kernel_dy(ψ.k1, x, y)*kernel_dx(ψ.k2, x, y)'
+    #        + kernel_dx(ψ.k1, x, y)*kernel_dy(ψ.k2, x, y)'
+    #        + kernel(ψ.k1, x, y)*kernel_dxdy(ψ.k2, x, y))
+    generic_kernelmatrix_dxdy(k, X, Y, trans)
+end
+
+kernelmatrix_dx(k::ARD, X::Matrix, Y::Matrix, trans::Char = 'N') = generic_kernelmatrix_dx(k, X, Y, trans)
+kernelmatrix_dy(k::ARD, X::Matrix, Y::Matrix, trans::Char = 'N') = generic_kernelmatrix_dy(k, X, Y, trans)
+kernelmatrix_dxdy(k::ARD, X::Matrix, Y::Matrix, trans::Char = 'N') = generic_kernelmatrix_dxdy(k, X, Y, trans)
