@@ -1,60 +1,76 @@
+# Check each field for equality with args (assumed same order)
+function check_fields(kernelobject::StandardKernel, args)
+    fields = names(kernelobject)
+    for i = 1:length(fields)
+        @test getfield(kernelobject, fields[i]) == args[i]
+    end
+end
+
+# Iterate through constructor cases 
+function test_constructor_case(kernelobject, default_args, test_args)
+    check_fields((kernelobject)(), default_args)
+    for T in (Float32, Float64)
+        case_defaults = map(x -> convert(T, x), default_args)
+        case_tests = map(x -> convert(T, x), test_args)
+        fields = names(kernelobject)
+        n = length(fields)
+        for i = 1:n
+            case_args = test_args[1:i]
+            κ = (kernelobject)(case_args...)
+            check_fields(κ, tuple(case_args..., default_args[i+1:n]...))
+        end
+    end
+end
+
+# Test constructor for argument error
+function test_argument_error_case(kernelobject, error_case)
+    for T in (Float32, Float64)
+        test_case = map(x -> convert(T, x), error_case)
+        @test_throws ArgumentError (kernelobject)(test_case...)
+    end
+end
+
+
 println("- Testing SquaredDistanceKernel show():")
 for kernelobject in (
-        SquaredExponentialKernel,
-        GammaExponentialKernel,
-        InverseQuadraticKernel,
+        ExponentialKernel,
         RationalQuadraticKernel,
-        GammaRationalQuadraticKernel,
-        GammaPowerKernel, 
-        LogKernel,
-        PeriodicKernel,
+        PowerKernel,
+        LogKernel
     )
     print(STDOUT, "    - Testing ")
     show(STDOUT, (kernelobject)())
     println(" ... Done")
 end
 
+
 println("- Testing SquaredDistanceKernel constructors:")
 for (kernelobject, default_args, test_args) in (
-        (SquaredExponentialKernel, (1,), (2,)),
-        (GammaExponentialKernel, (1, 0.5), (2, 1)),
-        (InverseQuadraticKernel, (1,), (2,)),
-        (RationalQuadraticKernel, (1, 1), (2, 2)),
-        (GammaRationalQuadraticKernel, (1, 2, 0.5), (2, 4, 1)),
-        (GammaPowerKernel, (1,), (0.5,)),
-        (LogKernel, (1,0.5), (2,1)),
+        (ExponentialKernel, [1], [2]),
+        (RationalQuadraticKernel, [1, 1, 1], [2, 2, 0.5]),
+        (PowerKernel, [1], [0.5]),
+        (LogKernel, [1,0.5], [2,1])
     )
     print("    - Testing ", kernelobject, " ... ")
-    check_fields((kernelobject)(), default_args)
-    for T in (Float32, Float64)
-        case_defaults = map(x -> convert(T, x), default_args)
-        case_tests = map(x -> convert(T, x), test_args)
-        test_constructor(kernelobject, case_defaults, case_tests)
-    end
+    test_constructor_case(kernelobject, default_args, test_args)
     println("Done")
 end
 
 println("- Testing SquaredDistanceKernel error cases:")
 for (kernelobject, error_cases) in (
-        (SquaredExponentialKernel, ((0,),)),
-        (GammaExponentialKernel, ((0,), (0, 1), (1, 0), (1, 2))),
-        (InverseQuadraticKernel, ((0,),)),
-        (RationalQuadraticKernel, ((0,), (1, 0))),
-        (GammaRationalQuadraticKernel, ((0,), (1, 0), (1, 1, 0), (1,1,1.01))),
-        (GammaPowerKernel, ((0,),)),
-        (LogKernel, ((-1,),)),
+        (ExponentialKernel, ([0], [0, 1], [1, 0], [1, 2])),
+        (RationalQuadraticKernel, ([0], [1, 0], [1, 1, 0], [1,1,1.01])),
+        (PowerKernel, ([0],)),
+        (LogKernel, ([-1],))
     )
     print("    - Testing ", kernelobject, " error cases ... ")
     for error_case in error_cases
-        print(error_case, " ")
-        for T in (Float32, Float64)
-            test_case = map(x -> convert(T, x), error_case)
-            @test_throws ArgumentError (kernelobject)(test_case...)
-        end
-    end
+        print(" ", error_case)
+        test_argument_error_case(kernelobject, error_case)
     println("... Done")
 end
 
+#=
 println("- Testing miscellaneous functions:")
 for (kernelobject, default_args, default_value, posdef) in (
         (SquaredExponentialKernel,      (1,),      exp(-1), true),
@@ -125,6 +141,8 @@ for (kernelobject, default_args, default_value) in (
         @test_approx_eq MLKernels.kappa_array!(κ, [one(T)])[1] convert(T, default_value)
     end
 end
+
+=#
 
 println("- Testing ARD kernels:")
 print("    - Testing ARD{ScalarProductKernel} ... ")
