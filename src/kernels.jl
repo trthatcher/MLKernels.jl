@@ -85,6 +85,11 @@ kernel{T<:FloatingPoint}(κ::SeparableKernel{T}, x::T, y::T) = kappa(κ, x) * ka
 # Separable Kernel definitions
 include("standardkernels/separable.jl")
 
+#===========================================================================
+  Periodic Kernel
+===========================================================================#
+
+include("standardkernels/periodic.jl")
 
 #===========================================================================
   Automatic Relevance Determination (ARD) kernels
