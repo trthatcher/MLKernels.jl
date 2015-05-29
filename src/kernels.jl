@@ -271,7 +271,7 @@ kernelparameters(κ::KernelSum) = vcat([:a1], [symbol("k1.$(param)") for param i
 isposdef(ψ::KernelSum) = isposdef(ψ.k1) & isposdef(ψ.k2)
 
 function description_string{T<:FloatingPoint}(ψ::KernelSum{T}) 
-    "KernelSum{$(T)}($(ψ.a1)," * description_string(ψ.k1, false) * "," * "$(ψ.a2)," * description_string(ψ.k1, false) * ")"
+    "KernelSum{$(T)}($(ψ.a1)," * description_string(ψ.k1, false) * "," * "$(ψ.a2)," * description_string(ψ.k2, false) * ")"
 end
 
 function show(io::IO, ψ::KernelSum)
