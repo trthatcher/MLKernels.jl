@@ -253,7 +253,7 @@ immutable LogKernel{T<:FloatingPoint,CASE} <: SquaredDistanceKernel{T}
     gamma::T
     function LogKernel(α::T, γ::T)
         α > 0 || throw(ArgumentError("α = $(α) must be greater than zero."))
-        γ > 0 || throw(ArgumentError("γ = $(γ) must be in the interval (0,1]."))
+        0 < γ <= 1 || throw(ArgumentError("γ = $(γ) must be in the interval (0,1]."))
         if CASE == :γ1 && γ != 1
             warn("Special case γ = 1 flagged but γ = $(γ)")
         end
