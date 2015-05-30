@@ -10,8 +10,7 @@ eltype{T}(κ::Kernel{T}) = T
 #call{T<:FloatingPoint}(κ::Kernel{T}, X::Matrix{T}) = kernel_matrix(κ, X)
 #call{T<:FloatingPoint}(κ::Kernel{T}, X::Matrix{T}, Y::Matrix{T}) = kernel_matrix(κ, X, Y)
 
-isposdef(::Kernel) = false
-iscondposdef(κ::Kernel) = isposdef(κ)
+is_mercer(::Kernel) = false
 
 abstract SimpleKernel{T<:FloatingPoint} <: Kernel{T}
 abstract CompositeKernel{T<:FloatingPoint} <: Kernel{T}
@@ -117,6 +116,21 @@ end
 kernel{T<:FloatingPoint,U<:SquaredDistanceKernel}(κ::ARD{T,U}, x::Array{T}, y::Array{T}) = kappa(κ.k, sqdist(x, y, κ.weights))
 kernel{T<:FloatingPoint,U<:ScalarProductKernel}(κ::ARD{T,U}, x::Array{T}, y::Array{T}) = kappa(κ.k, scprod(x, y, κ.weights))
 
+function kernel{T<:FloatingPoint,U<:SquaredDistanceKernel}(κ::ARD{T,U}, x::T, y::T)
+    if length(κ.weights) == 1
+        kappa(κ.k, sqdist(x, y, κ.weights[1]))
+    else
+        throw(ArgumentError("Dimensions do not conform."))
+    end
+end
+function kernel{T<:FloatingPoint,U<:ScalarProductKernel}(κ::ARD{T,U}, x::T, y::T)
+    if length(κ.weights) == 1
+        kappa(κ.k, scprod(x, y, κ.weights[1]))
+    else
+        throw(ArgumentError("Dimensions do not conform."))
+    end
+end
+
 
 #===================================================================================================
   Composite Kernels
@@ -157,7 +171,7 @@ function description_string{T<:FloatingPoint}(ψ::ScaledKernel{T})
     "ScaledKernel{$(T)}($(ψ.a)," * description_string(ψ.k, false) * ")"
 end
 
-isposdef(ψ::ScaledKernel) = isposdef(ψ.k)
+ismercer(ψ::ScaledKernel) = ismercer(ψ.k)
 
 function show(io::IO, ψ::ScaledKernel)
     print(io, description_string(ψ))
@@ -206,7 +220,7 @@ end
 
 kernelparameters(κ::KernelProduct) = vcat([:a], [symbol("k1.$(param)") for param in kernelparameters(κ.k1)], [symbol("k2.$(param)") for param in kernelparameters(κ.k2)])
 
-isposdef(ψ::KernelProduct) = isposdef(ψ.k1) & isposdef(ψ.k2)
+ismercer(ψ::KernelProduct) = ismercer(ψ.k1) & ismercer(ψ.k2)
 
 function description_string{T<:FloatingPoint}(ψ::KernelProduct{T}) 
     "KernelProduct{$(T)}($(ψ.a)," * description_string(ψ.k1, false) * "," * description_string(ψ.k2, false) * ")"
@@ -268,7 +282,7 @@ end
 
 kernelparameters(κ::KernelSum) = vcat([:a1], [symbol("k1.$(param)") for param in kernelparameters(κ.k1)], [:a2], [symbol("k2.$(param)") for param in kernelparameters(κ.k2)])
 
-isposdef(ψ::KernelSum) = isposdef(ψ.k1) & isposdef(ψ.k2)
+ismercer(ψ::KernelSum) = ismercer(ψ.k1) & ismercer(ψ.k2)
 
 function description_string{T<:FloatingPoint}(ψ::KernelSum{T}) 
     "KernelSum{$(T)}($(ψ.a1)," * description_string(ψ.k1, false) * "," * "$(ψ.a2)," * description_string(ψ.k2, false) * ")"

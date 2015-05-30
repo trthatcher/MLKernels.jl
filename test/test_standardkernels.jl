@@ -1,40 +1,12 @@
-using Base.Test
-
-importall MLKernels
-
-# Check each field for equality with args (assumed same order)
-function check_fields(kernelobject::StandardKernel, args)
-    fields = names(kernelobject)
-    for i = 1:length(fields)
-        @test getfield(kernelobject, fields[i]) == args[i]
-    end
-end
-
-# Iterate through the test_args and test optional arguments
-function test_constructor(kernelobject::DataType, default_args, test_args)
-    fields = names(kernelobject)
-    n = length(fields)
-    for i = 1:n
-        case_args = test_args[1:i]
-        κ = (kernelobject)(case_args...)
-        check_fields(κ, tuple(case_args..., default_args[i+1:n]...))
-    end
-end
-
-println("Testing standard kernel output:")
+println("- Testing StandardKernel show():")
 for kernelobject in (
-    SquaredExponentialKernel,
-    GammaExponentialKernel,
-    InverseQuadraticKernel,
-    RationalQuadraticKernel,
-    GammaPowerKernel, 
-    LogKernel,
-    PeriodicKernel,
-    LinearKernel,
-    PolynomialKernel,
-    SigmoidKernel,
-    MercerSigmoidKernel
-)
+        ExponentialKernel,
+        RationalQuadraticKernel,
+        PowerKernel,
+        LogKernel,
+        PolynomialKernel,
+        SigmoidKernel
+    )
     print(STDOUT, "    - Testing ")
     show(STDOUT, (kernelobject)())
     println(" ... Done")
@@ -42,180 +14,126 @@ end
 
 println("- Testing StandardKernel constructors:")
 for (kernelobject, default_args, test_args) in (
-        (SquaredExponentialKernel, (1,), (2,)),
-        (GammaExponentialKernel, (1, 0.5), (2, 0.3)),
-        (InverseQuadraticKernel, (1,), (2,)),
-        (RationalQuadraticKernel, (1, 1), (2, 2)),
-        (GammaPowerKernel, (1,), (0.5,)),
-        (LogKernel, (1,0.5), (2,1)),
-        (LinearKernel, (1,), (2,)),
-        (PolynomialKernel, (1, 1, 2), (2, 2, 4)),
-        (SigmoidKernel, (1, 1), (2, 2)),
-        (MercerSigmoidKernel, (0, 1), (-1, 2))
+        (ExponentialKernel, [1, 1], [2, 0.5]),
+        (RationalQuadraticKernel, [1, 1, 1], [2, 2, 0.5]),
+        (PowerKernel, [1], [0.5]),
+        (LogKernel, [1,1], [2,0.5]),
+        (PolynomialKernel, [1,1,2], [2,2,3]),
+        (SigmoidKernel, [1,1], [2,2])
     )
     print("    - Testing ", kernelobject, " ... ")
-    check_fields((kernelobject)(), default_args)
+    test_constructor_case(kernelobject, default_args, test_args)
+    println("Done")
+end
+
+println("- Testing ARD constructors:")
+for (kernelobject, test_args) in (
+        (ExponentialKernel, [2, 0.5]),
+        (RationalQuadraticKernel, [2, 2, 0.5]),
+        (PowerKernel, [0.5]),
+        (LogKernel, [2,0.5]),
+        (PolynomialKernel, [2,2,3]),
+        (SigmoidKernel, [2,2])
+    )
+    print("    - Testing ARD ", kernelobject, " ... ")
     for T in (Float32, Float64)
-        case_defaults = map(x -> convert(T, x), default_args)
-        case_tests = map(x -> convert(T, x), test_args)
-        test_constructor(kernelobject, case_defaults, case_tests)
+        w = [convert(T,2)]
+        case_args = T[test_args...]
+        K = ARD((kernelobject)(case_args...),w)
+        @test K.weights == w
+        check_fields(K.k, case_args)
+        d = 3
+        K = ARD((kernelobject)(case_args...),d)
+        @test K.weights == ones(T,d)
+        check_fields(K.k, case_args)
     end
     println("Done")
 end
 
-println("- Testing StandardKernel edge and special cases:")
-for (kernelobject, case) in (
-        # Edge Cases
-        (LinearKernel, (0.0,)),
-        (PolynomialKernel, (1.0, 0.0, 2.0)),
-        (SigmoidKernel, (1.0, 0.0)),
-        # Special Cases
-        #(LogKernel, (1.0,)),
-        (PolynomialKernel, (1.0, 1.0, 2))
-    )
-    print("    - Testing ", kernelobject, case, " ... ")
-    check_fields((kernelobject)(case...), case)
-    println("Done")
-
-end
 
 println("- Testing StandardKernel error cases:")
-for (kernelobject, error_case) in (
-        (SquaredExponentialKernel, (-1,)),
-        (GammaExponentialKernel, (-1, 0.5)),
-        (GammaExponentialKernel, (1, 0)),
-        (GammaExponentialKernel, (-1, 2)),
-        (GammaExponentialKernel, (-1,)),
-        (InverseQuadraticKernel, (-1,)),
-        (RationalQuadraticKernel, (-1,)),
-        (GammaPowerKernel, (0,)),
-        (LogKernel, (-1,)),
-        (LinearKernel, (-1.0,)),
-        (PolynomialKernel, (-1, 1, 2)), 
-        (PolynomialKernel, (1, -1, 2)), 
-        (PolynomialKernel, (1, 1, 0)),
-        (SigmoidKernel, (-1, 1)),
-        (SigmoidKernel, (1, -1)),
-        (MercerSigmoidKernel, (0, 0)), 
-        (MercerSigmoidKernel, (0, -1))
+for (kernelobject, error_cases) in (
+        (ExponentialKernel, ([0], [0, 1], [1, 0], [1, 2])),
+        (RationalQuadraticKernel, ([0], [1, 0], [1, 1, 0], [1,1,1.01])),
+        (PowerKernel, ([0],[1.0001])),
+        (LogKernel, ([0],[1,0], [1,1.0001])),
+        (PolynomialKernel, ([0,1,2], [1,-0.0001,3], [1,1,0], [1,1,1.5])),
+        (SigmoidKernel, ([0,1], [1,-0.00001]))
     )
-    print("    - Testing ", kernelobject, error_case, " ... ")
-    for T in (Float32, Float64)
-        test_case = map(x -> convert(T, x), error_case)
-        @test_throws ArgumentError (kernelobject)(test_case...)
+    print("    - Testing ", kernelobject, " error cases ... ")
+    for error_case in error_cases
+        print(" ", error_case)
+        test_error_case(kernelobject, error_case)
     end
+    println(" ... Done")
+end
+
+println("- Testing ismercer() property:")
+for (kernelobject, mercer) in (
+        (ExponentialKernel, true),
+        (RationalQuadraticKernel, true),
+        (PowerKernel, false),
+        (LogKernel, false),
+        (PolynomialKernel, true),
+        (SigmoidKernel, false)
+    )
+    print("    - Testing ", kernelobject, "... ")
+    @test ismercer((kernelobject)()) == mercer
     println("Done")
 end
 
-println("- Testing miscellaneous functions:")
-for (kernelobject, default_args, default_value, definiteness) in (
-        (SquaredExponentialKernel,      (1,),      exp(-1), :pd),
-        (GammaExponentialKernel,        (1, 0.5),  exp(-1), :pd),
-        (InverseQuadraticKernel,        (1,),      0.5,     :pd),
-        (RationalQuadraticKernel,       (1, 1),    0.5,     :pd),
-        (GammaPowerKernel,              (1,),      -1,      :cpd),
-        (LogKernel,                     (1,),      -log(2), :cpd),
-        (LinearKernel,                  (1,),      3,       :pd),
-        (PolynomialKernel,              (1, 1, 2), 9,       :pd),
-        (SigmoidKernel,                 (1, 1),    tanh(3), :cpd),
-        (MercerSigmoidKernel,           (0, 1),    tanh(1)*tanh(2), :pd))
-    print("    - Testing ", kernelobject, " miscellaneous functions ... ")
-    for T in (Float32, Float64)
-        x, y = [one(T)], [convert(T,2)]
-     
-        κ = (kernelobject)(map(x -> convert(T, x), default_args)...)
-
-        if kernelobject <: SquaredDistanceKernel
-            u = MLKernels.sqdist(x, y)
-            v = MLKernels.kappa(κ, u)
-            @test_approx_eq v convert(T, default_value)
+println("- Testing ScalarProductKernel kernel() function:")
+for (kernelobject, test_args, test_function) in (
+        (PolynomialKernel, [1,1,2], (z,a,c,d) -> (a * z + c )^d),
+        (SigmoidKernel, [1,1], (z,a,c) -> tanh(a*z + c))
+    )
+    for is_ARD in (false, true)
+        for T in (Float32, Float64)
+            case_args = T[test_args...]
+            x, y, w = T[1], T[2], T[2]
+            K = is_ARD ? ARD((kernelobject)(case_args...),w) : (kernelobject)(case_args...)
+            xy = is_ARD ? sum(x .* y .* w.^2) : sum(x .* y)
+            test_value = test_function(xy, case_args...)
+            print("    - Testing ", K, "... ")
+            kernel_value = is_ARD ? MLKernels.kappa(K.k, dot(w .*x, w.*y)) : MLKernels.kappa(K, dot(x,y))
+            @test_approx_eq kernel_value test_value
+            @test isa(kernel_value,T)
+            kernel_value = kernel(K,x,y)
+            @test_approx_eq kernel_value test_value
+            @test isa(kernel_value,T)
+            kernel_value = kernel(K,x[1],y[1])
+            @test_approx_eq kernel_value test_value
+            @test isa(kernel_value,T)
+            println("Done")
         end
-
-        if kernelobject <: ScalarProductKernel
-            u = dot(x, y)
-            v = MLKernels.kappa(κ, u)
-            @test_approx_eq v convert(T, default_value)
-        end
-
-        v = kernel(κ, x, y) # test on vectors
-        @test_approx_eq v convert(T, default_value)
-
-        v = kernel(κ, x[1], y[1]) # test on scalars
-        @test_approx_eq v convert(T, default_value)
-
-        if definiteness == :pd
-            @test isposdef(κ) == true
-            @test iscondposdef(κ) == true
-        elseif definiteness == :cpd
-            @test isposdef(κ) == false
-            @test iscondposdef(κ) == true
-        else # do we even want this branch?...
-            @test isposdef(κ) == false
-            @test iscondposdef(κ) == false
-        end
-        
-        for S in (Float32, Float64)
-
-            @test convert(kernelobject{S}, κ) == (kernelobject)(map(x -> convert(S, x), default_args)...)
-
-            if kernelobject <: SquaredDistanceKernel
-                @test convert(SquaredDistanceKernel{S}, κ) == (kernelobject)(map(x -> convert(S, x), default_args)...)
-            end
-        
-            if kernelobject <: ScalarProductKernel
-                @test convert(ScalarProductKernel{S}, κ) == (kernelobject)(map(x -> convert(S, x), default_args)...) 
-            end
-
-            if kernelobject <: SeparableKernel
-                @test convert(SeparableKernel{S}, κ) == (kernelobject)(map(x -> convert(S, x), default_args)...) 
-            end
-
-            @test convert(StandardKernel{S}, κ) == (kernelobject)(map(x -> convert(S, x), default_args)...)
-            @test convert(SimpleKernel{S}, κ) == (kernelobject)(map(x -> convert(S, x), default_args)...)
-            @test convert(Kernel{S}, κ) == (kernelobject)(map(x -> convert(S, x), default_args)...)
-
-        end
-
-    end
-
-    @test typeof(MLKernels.description_string_long((kernelobject)())) <: String
-
-    println("Done")
-end
-
-for (kernelobject, default_args, default_value) in (
-        (MercerSigmoidKernel, (0,1), tanh(1)),)
-    for T in (Float32, Float64)
-        κ = (kernelobject)(map(x -> convert(T, x), default_args)...)
-        @test_approx_eq MLKernels.kappa_array!(κ, [one(T)])[1] convert(T, default_value)
     end
 end
 
-println("- Testing ARD kernels:")
-print("    - Testing ARD{ScalarProductKernel} ... ")
-for T in (Float32, Float64)
-    x1, y1, d  = T[1, 3, 2], T[4, -2, 2], 3
-    x2, y2, w2 = T[2, 3, 1], T[4, -2, 2], T[sqrt(0.5), 1.0, sqrt(2.0)]
-    # weighted dot product = 2 in each case
-    k1 = ARD(LinearKernel(convert(T, 1)), d)
-    k2 = ARD(LinearKernel(convert(T, 1)), w2)
-    for (k, x, y) in ((k1, x1, y1), (k2, x2, y2))
-        @test_approx_eq kernel(k, x, y) convert(T, 3)
+println("- Testing SquaredDistanceKernel kernel() function:")
+for (kernelobject, test_args, test_function) in (
+        (ExponentialKernel, [2,0.5], (z,a,t) -> exp(-a * z^t)),
+        (RationalQuadraticKernel, [2,2,0.5], (z,a,b,t) -> (1 + a*z^t)^(-b)),
+        (PowerKernel, [0.5], (z,t) -> -z^t),
+        (LogKernel, [2,0.5], (z,a,t) -> -log(a*z^t + 1))
+    )
+    for is_ARD in (false,true)
+        for T in (Float32, Float64)
+            case_args = T[test_args...]
+            x, y, w = T[1], T[2], T[2]
+            K = is_ARD ? ARD((kernelobject)(case_args...), w) : (kernelobject)(case_args...)
+            lag = is_ARD ? w .* (x - y) : x - y
+            test_value = test_function(dot(lag,lag), case_args...)
+            print("    - Testing ", K, "... ")
+            kernel_value = MLKernels.kappa(is_ARD ? K.k : K,dot(lag,lag))
+            @test_approx_eq kernel_value test_value
+            @test isa(kernel_value,T)
+            kernel_value = kernel(K,x,y)
+            @test_approx_eq kernel_value test_value
+            @test isa(kernel_value,T)
+            kernel_value = kernel(K,x[1],y[1])
+            @test_approx_eq kernel_value test_value
+            @test isa(kernel_value,T)
+            println("Done")
+        end
     end
 end
-println("Done")
-print("    - Testing ARD{SquaredDistanceKernel} ... ")
-for T in (Float32, Float64)
-    x1, y1, d  = T[0, 1, 2], T[-1, 1, 2], 3
-    x2, y2, w2 = T[0, 1, 2], T[0, 1.5, 3], T[1, sqrt(2), sqrt(0.5)]
-    args = (1,)
-    result = exp(-1)
-    # weighted squared distance = 1 in each case
-    k1 = ARD(SquaredExponentialKernel(map(x->convert(T,x), args)...), d)
-    k2 = ARD(SquaredExponentialKernel(map(x->convert(T,x), args)...), w2)
-    for (k, x, y) in ((k1, x1, y1), (k2, x2, y2))
-        @test_approx_eq kernel(k, x, y) convert(T, result)
-    end
-end
-println("Done")
-

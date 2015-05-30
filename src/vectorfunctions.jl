@@ -15,6 +15,7 @@ function scprod{T<:FloatingPoint}(x::Array{T}, y::Array{T})
     end
     z
 end
+scprod{T<:FloatingPoint}(x::T, y::T) =x*y
 
 # In-place scalar product calculation
 function scprod{T<:FloatingPoint}(d::Int64, X::Array{T}, x_pos::Int64, Y::Array{T}, y_pos::Int64, is_trans::Bool)
@@ -58,6 +59,7 @@ function scprod{T<:FloatingPoint}(x::Array{T}, y::Array{T}, w::Array{T})
     end
     z
 end
+scprod{T<:FloatingPoint}(x::T, y::T, w::T) = x*y*w^2
 
 # In-place weighted scalar product calculation
 function scprod{T<:FloatingPoint}(d::Int64, X::Array{T}, x_pos::Int64, Y::Array{T}, y_pos::Int64, w::Array{T}, is_trans::Bool)
@@ -120,6 +122,10 @@ function sqdist{T<:FloatingPoint}(x::Array{T}, y::Array{T})
     end
     z
 end
+function sqdist{T<:FloatingPoint}(x::T, y::T)
+    v = x - y
+    v*v
+end
 
 # In-place squared distance calculation
 function sqdist{T<:FloatingPoint}(d::Int64, X::Array{T}, x_pos::Int64, Y::Array{T}, y_pos::Int64, is_trans::Bool)
@@ -181,6 +187,10 @@ function sqdist{T<:FloatingPoint}(x::Array{T}, y::Array{T}, w::Array{T})
         z += v*v
     end
     z
+end
+function sqdist{T<:FloatingPoint}(x::T, y::T, w::T)
+    v = w*(x - y)
+    v*v
 end
 
 # In-place weighted squared distance calculation

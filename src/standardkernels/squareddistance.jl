@@ -20,7 +20,7 @@ immutable ExponentialKernel{T<:FloatingPoint,CASE} <: SquaredDistanceKernel{T}
 end
 ExponentialKernel{T<:FloatingPoint}(α::T = 1.0, γ::T = one(T)) = ExponentialKernel{T, γ == 1 ? :γ1 : :Ø}(α, γ)
 
-isposdef(::ExponentialKernel) = true
+ismercer(::ExponentialKernel) = true
 
 function description_string{T<:FloatingPoint}(κ::ExponentialKernel{T}, eltype::Bool = true)
     "ExponentialKernel" * (eltype ? "{$(T)}" : "") * "(α=$(κ.alpha),γ=$(κ.gamma))"
@@ -81,7 +81,7 @@ end
 
 
 #==========================================================================
-  Rational Kernel
+  Rational Quadratic Kernel
 ==========================================================================#
 
 immutable RationalQuadraticKernel{T<:FloatingPoint,CASE} <: SquaredDistanceKernel{T}
@@ -117,7 +117,7 @@ function RationalQuadraticKernel{T<:FloatingPoint}(α::T = 1.0, β::T = one(T), 
     RationalQuadraticKernel{T,CASE}(α, β, γ)
 end
 
-isposdef(::RationalQuadraticKernel) = true
+ismercer(::RationalQuadraticKernel) = true
 
 function description_string{T<:FloatingPoint}(κ::RationalQuadraticKernel{T}, eltype::Bool = true)
     "RationalQuadraticKernel" * (eltype ? "{$(T)}" : "") * "(α=$(κ.alpha),β=$(κ.beta),γ=$(κ.gamma))"
@@ -205,7 +205,7 @@ immutable PowerKernel{T<:FloatingPoint,CASE} <: SquaredDistanceKernel{T}
 end
 PowerKernel{T<:FloatingPoint}(γ::T = 1.0) = PowerKernel{T, γ == 1 ? :γ1 : :Ø}(γ)
 
-iscondposdef(::PowerKernel) = true
+ismercer(::PowerKernel) = false
 
 function description_string{T<:FloatingPoint}(κ::PowerKernel{T}, eltype::Bool = true)
     "PowerKernel" * (eltype ? "{$(T)}" : "") * "(γ=$(κ.gamma))"
@@ -262,7 +262,7 @@ immutable LogKernel{T<:FloatingPoint,CASE} <: SquaredDistanceKernel{T}
 end
 LogKernel{T<:FloatingPoint}(α::T = 1.0, γ::T = one(T)) = LogKernel{T, γ == 1 ? :γ1 : :Ø}(α, γ)
 
-iscondposdef(::LogKernel) = true
+ismercer(::LogKernel) = false
 
 function description_string{T<:FloatingPoint}(κ::LogKernel{T}, eltype::Bool = true)
     "LogKernel" * (eltype ? "{$(T)}" : "") * "(α=$(κ.alpha),γ=$(κ.gamma))"
