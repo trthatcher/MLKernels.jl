@@ -10,6 +10,14 @@ function check_fields(kernelobject::StandardKernel, field_values)
     end
 end
 
+# Compare the values of two kernels of the same type
+function check_fields{T<:StandardKernel}(kernel1::T, kernel2::T)
+    fields = names(kernel1)
+    for i = 1:length(fields)
+        @test getfield(kernel1, fields[i]) == getfield(kernel2, fields[i])
+    end
+end
+
 # Iterate through constructor cases 
 function test_constructor_case(kernelobject, default_args, test_args)
     check_fields((kernelobject)(), default_args)
@@ -33,177 +41,207 @@ end
 
 # Test Standard Kernels
 
-include("test_standardkernels.jl")
+println("- Testing StandardKernel show():")
+for kernelobject in (
+        ExponentialKernel,
+        RationalQuadraticKernel,
+        PowerKernel,
+        LogKernel,
+        PolynomialKernel,
+        SigmoidKernel
+    )
+    print(STDOUT, "    - Testing ")
+    show(STDOUT, (kernelobject)())
+    println(" ... Done")
+end
+
+println("- Testing StandardKernel constructors:")
+for (kernelobject, default_args, test_args) in (
+        (ExponentialKernel, [1, 1], [2, 0.5]),
+        (RationalQuadraticKernel, [1, 1, 1], [2, 2, 0.5]),
+        (PowerKernel, [1], [0.5]),
+        (LogKernel, [1,1], [2,0.5]),
+        (PolynomialKernel, [1,1,2], [2,2,3]),
+        (SigmoidKernel, [1,1], [2,2])
+    )
+    print("    - Testing ", kernelobject, " ... ")
+    test_constructor_case(kernelobject, default_args, test_args)
+    println("Done")
+end
+
+println("- Testing ARD constructors:")
+for (kernelobject, test_args) in (
+        (ExponentialKernel, [2, 0.5]),
+        (RationalQuadraticKernel, [2, 2, 0.5]),
+        (PowerKernel, [0.5]),
+        (LogKernel, [2,0.5]),
+        (PolynomialKernel, [2,2,3]),
+        (SigmoidKernel, [2,2])
+    )
+    print("    - Testing ARD ", kernelobject, " ... ")
+    for T in (Float32, Float64)
+        w = [convert(T,2)]
+        case_args = T[test_args...]
+        K = ARD((kernelobject)(case_args...),w)
+        @test K.weights == w
+        check_fields(K.k, case_args)
+        d = 3
+        K = ARD((kernelobject)(case_args...),d)
+        @test K.weights == ones(T,d)
+        check_fields(K.k, case_args)
+    end
+    println("Done")
+end
 
 
-# Test Scaled Kernel
-print("- Testing ScaledKernel constructors ... ")
-for T in (Float32, Float64)
-    x, y = [one(T)], [one(T)]
+println("- Testing StandardKernel error cases:")
+for (kernelobject, error_cases) in (
+        (ExponentialKernel, ([0], [0, 1], [1, 0], [1, 2])),
+        (RationalQuadraticKernel, ([0], [1, 0], [1, 1, 0], [1,1,1.01])),
+        (PowerKernel, ([0],[1.0001])),
+        (LogKernel, ([0],[1,0], [1,1.0001])),
+        (PolynomialKernel, ([0,1,2], [1,-0.0001,3], [1,1,0], [1,1,1.5])),
+        (SigmoidKernel, ([0,1], [1,-0.00001]))
+    )
+    print("    - Testing ", kernelobject, " error cases ... ")
+    for error_case in error_cases
+        print(" ", error_case)
+        test_error_case(kernelobject, error_case)
+    end
+    println(" ... Done")
+end
 
-    kernel = LinearKernel(one(T))
-    skernel = ScaledKernel{T}(convert(T, 2),kernel)
+println("- Testing ismercer() property:")
+for (kernelobject, mercer) in (
+        (ExponentialKernel, true),
+        (RationalQuadraticKernel, true),
+        (PowerKernel, false),
+        (LogKernel, false),
+        (PolynomialKernel, true),
+        (SigmoidKernel, false)
+    )
+    print("    - Testing ", kernelobject, "... ")
+    @test ismercer((kernelobject)()) == mercer
+    println("Done")
+end
 
-    @test skernel.a == convert(T,2)
-    @test skernel.k == kernel
-    for S in (Float32, Float64, Int32, Int64)
-        @test ScaledKernel(convert(S,2), kernel).a == convert(T, 2)
-        @test *(convert(S,2), kernel).a == convert(T, 2)
-        @test *(kernel, convert(S,2)).a == convert(T, 2)
-        @test *(convert(S,2), skernel).a == convert(T, 4)
-        @test *(skernel, convert(S,2)).a == convert(T, 4)
+println("- Testing ScalarProductKernel kernel() function:")
+for (kernelobject, test_args, test_function) in (
+        (PolynomialKernel, [1,1,2], (z,a,c,d) -> (a * z + c )^d),
+        (SigmoidKernel, [1,1], (z,a,c) -> tanh(a*z + c))
+    )
+    for is_ARD in (false, true)
+        for T in (Float32, Float64)
+            case_args = T[test_args...]
+            x, y, w = T[1], T[2], T[2]
+            K = is_ARD ? ARD((kernelobject)(case_args...),w) : (kernelobject)(case_args...)
+            xy = is_ARD ? sum(x .* y .* w.^2) : sum(x .* y)
+            test_value = test_function(xy, case_args...)
+            print("    - Testing ", K, "... ")
+            kernel_value = is_ARD ? MLKernels.kappa(K.k, dot(w .*x, w.*y)) : MLKernels.kappa(K, dot(x,y))
+            @test_approx_eq kernel_value test_value
+            @test isa(kernel_value,T)
+            kernel_value = kernel(K,x,y)
+            @test_approx_eq kernel_value test_value
+            @test isa(kernel_value,T)
+            kernel_value = kernel(K,x[1],y[1])
+            @test_approx_eq kernel_value test_value
+            @test isa(kernel_value,T)
+            println("Done")
+        end
     end
 end
-println("Done")
 
-print("- Testing ScaledKernel miscellaneous functions ... ")
-for T in (Float32, Float64)
-    x, y = [one(T)], [one(T)]
-    skernel = ScaledKernel{T}(convert(T, 2),LinearKernel(one(T)))
-    @test kernel(skernel, x ,y) == convert(T, 4)
-    @test isposdef(skernel) == true
-    @test eltype(skernel) == T
-    @test typeof(MLKernels.description_string(skernel)) <: String
-end
-println("Done")
-
-print("- Testing ScaledKernel conversions ... ")
-for T in (Float32, Float64)
-    skernel = ScaledKernel{T}(convert(T, 2),LinearKernel(one(T)))
-    for S in (Float32, Float64)
-        @test convert(ScaledKernel{S}, skernel).k == LinearKernel(one(S))
-        @test convert(SimpleKernel{S}, skernel).k == LinearKernel(one(S))
-        @test convert(Kernel{S}, skernel).k == LinearKernel(one(S))
+println("- Testing SquaredDistanceKernel kernel() function:")
+for (kernelobject, test_args, test_function) in (
+        (ExponentialKernel, [2,0.5], (z,a,t) -> exp(-a * z^t)),
+        (RationalQuadraticKernel, [2,2,0.5], (z,a,b,t) -> (1 + a*z^t)^(-b)),
+        (PowerKernel, [0.5], (z,t) -> -z^t),
+        (LogKernel, [2,0.5], (z,a,t) -> -log(a*z^t + 1))
+    )
+    for is_ARD in (false,true)
+        for T in (Float32, Float64)
+            case_args = T[test_args...]
+            x, y, w = T[1], T[2], T[2]
+            K = is_ARD ? ARD((kernelobject)(case_args...), w) : (kernelobject)(case_args...)
+            lag = is_ARD ? w .* (x - y) : x - y
+            test_value = test_function(dot(lag,lag), case_args...)
+            print("    - Testing ", K, "... ")
+            kernel_value = MLKernels.kappa(is_ARD ? K.k : K,dot(lag,lag))
+            @test_approx_eq kernel_value test_value
+            @test isa(kernel_value,T)
+            kernel_value = kernel(K,x,y)
+            @test_approx_eq kernel_value test_value
+            @test isa(kernel_value,T)
+            kernel_value = kernel(K,x[1],y[1])
+            @test_approx_eq kernel_value test_value
+            @test isa(kernel_value,T)
+            println("Done")
+        end
     end
 end
-println("Done")
-
 
 # Test KernelProduct
 print("- Testing KernelProduct constructors ... ")
 for T in (Float32, Float64)
-    x, y = [one(T)], [one(T)]
-    kernel = LinearKernel(one(T))
-    skernel = ScaledKernel(convert(T,2), kernel)
-    kernelprod = KernelProduct{T}(convert(T, 2),kernel, LinearKernel(zero(T)))
+    x, y, a = ([one(T)], [one(T)], convert(T,2))
 
-    @test kernelprod.a == convert(T,2)
-    @test kernelprod.k1 == kernel
-    @test kernelprod.k2 == LinearKernel(zero(T))
-    
-    @test *(kernel, LinearKernel(1.0)).a == 1.0
+    K1 = ExponentialKernel(one(T))
+    K2 = RationalQuadraticKernel(one(T))
+    K3 = PolynomialKernel(one(T))
 
-    for S in (Float32, Float64, Int32, Int64)
-        @test *(kernel, kernel).a == one(T)
+    K1K2 = KernelProduct(a, K1, K2)
 
-        @test *(skernel, kernel).a == convert(T, 2)
-        @test *(kernel, skernel).a == convert(T, 2)
+    @test K1K2.a == a
+    @test typeof(K1K2.a) == T
 
-        @test *(skernel, skernel).a == convert(T, 4)
+    check_fields(K1K2.k[1], K1)
+    check_fields(K1K2.k[2], K2)
 
-        @test *(kernelprod, convert(S,2)).a == convert(T, 4)
-        @test *(convert(S,2), kernelprod).a == convert(T, 4)
-    end
+    K1K2 = a*K1*K2
+
+    @test K1K2.a == a
+    @test typeof(K1K2.a) == T
+
+    check_fields(K1K2.k[1], K1)
+    check_fields(K1K2.k[2], K2)
+
+    K1K2 = a*K1*K2*K3
+
+    @test K1K2.a == a
+    @test typeof(K1K2.a) == T
+
+    check_fields(K1K2.k[1], K1)
+    check_fields(K1K2.k[2], K2)
+    check_fields(K1K2.k[3], K3)
+
 end
-println("Done")
-
-print("- Testing KernelProduct miscellaneous functions ...")
-for T in (Float32, Float64)
-    x, y = [one(T)], [one(T)]
-    kernelprod = KernelProduct{T}(convert(T, 2),LinearKernel(one(T)), LinearKernel(zero(T)))
-
-    @test kernel(kernelprod, x ,y) == convert(T, 4)
-    @test isposdef(kernelprod) == true
-    @test eltype(kernelprod) == T
-    @test typeof(MLKernels.description_string(kernelprod)) <: String
-end
-println("Done")
-
-print("- Testing KernelProduct conversions ... ")
-for T in (Float32, Float64)
-    kernelprod = KernelProduct{T}(convert(T, 2), LinearKernel(one(T)), LinearKernel(zero(T)))
-    for S in (Float32, Float64)
-        @test convert(KernelProduct{S}, kernelprod).k1 == LinearKernel(one(S))
-        @test convert(CompositeKernel{S}, kernelprod).k1 == LinearKernel(one(S))
-        @test convert(Kernel{S}, kernelprod).k1 == LinearKernel(one(S))
-    end
-end
-println("Done")
+println(" Done")
 
 # Test KernelSum
 print("- Testing KernelSum constructors ... ")
 for T in (Float32, Float64)
-    x, y = [one(T)], [one(T)]
-    kernel = LinearKernel(one(T))
-    skernel = ScaledKernel(convert(T,2), kernel)
-    kernelsum = KernelSum{T}(one(T),kernel, convert(T,2), LinearKernel(zero(T)))
+    x, y = ([one(T)], [one(T)])
 
-    @test kernelsum.a1 == one(T)
-    @test kernelsum.k1 == kernel
-    @test kernelsum.a2 == convert(T,2)
-    @test kernelsum.k2 == LinearKernel(zero(T))
+    K1 = ExponentialKernel(one(T))
+    K2 = RationalQuadraticKernel(one(T))
+    K3 = PolynomialKernel(one(T))
 
-    @test (+(kernel, kernel)).a1 == one(T)
-    @test (+(kernel, kernel)).a2 == one(T)
-        
-    @test (+(skernel, kernel)).a1 == convert(T, 2)
-    @test (+(skernel, kernel)).a2 == one(T)
+    K1K2 = KernelSum(K1, K2)
 
-    @test (+(kernel, skernel)).a1 == one(T)
-    @test (+(kernel, skernel)).a2 == convert(T, 2)
+    check_fields(K1K2.k[1], K1)
+    check_fields(K1K2.k[2], K2)
 
-    @test (+(skernel, skernel)).a1 == convert(T, 2)
-    @test (+(skernel, skernel)).a2 == convert(T, 2)
+    K1K2 = K1 + K2
 
-    for S in (Float32, Float64, Int32, Int64)
+    check_fields(K1K2.k[1], K1)
+    check_fields(K1K2.k[2], K2)
 
-        @test (*(convert(S,2), kernelsum)).a1 == convert(T,2)
-        @test (*(convert(S,2), kernelsum)).k1 == LinearKernel(one(promote_type(T,S)))
-        @test (*(convert(S,2), kernelsum)).a2 == convert(T,4)
-        @test (*(convert(S,2), kernelsum)).k2 == LinearKernel(zero(promote_type(T,S)))
+    K1K2 = K1 + K2 + K3
 
-        @test (*(kernelsum, convert(S,2))).a1 == convert(T,2)
-        @test (*(kernelsum, convert(S,2))).k1 == LinearKernel(one(promote_type(T,S)))
-        @test (*(kernelsum, convert(S,2))).a2 == convert(T,4)
-        @test (*(kernelsum, convert(S,2))).k2 == LinearKernel(zero(promote_type(T,S)))
+    check_fields(K1K2.k[1], K1)
+    check_fields(K1K2.k[2], K2)
+    check_fields(K1K2.k[3], K3)
 
-    end
 end
-println("Done")
-
-print("- Testing KernelSum miscellaneous functions ...")
-for T in (Float32, Float64)
-    x, y = [one(T)], [one(T)]
-    kernelsum = KernelSum{T}(one(T),LinearKernel(one(T)), convert(T,2), LinearKernel(zero(T)))
-    @test kernel(kernelsum, x ,y) == convert(T, 4)
-    @test isposdef(kernelsum) == true
-    @test eltype(kernelsum) == T
-end
-println("Done")
-
-print("- Testing KernelSum conversions ... ")
-for T in (Float32, Float64)
-    kernelsum = KernelSum{T}(one(T),LinearKernel(one(T)), convert(T,2), LinearKernel(zero(T)))
-    for S in (Float32, Float64)
-        @test convert(KernelSum{S}, kernelsum).k1 == LinearKernel(one(S))
-        @test convert(CompositeKernel{S}, kernelsum).k1 == LinearKernel(one(S))
-        @test convert(Kernel{S}, kernelsum).k1 == LinearKernel(one(S))
-    end
-end
-println("Done")
-
-# Show output
-println("- Testing composite kernel output: ")
-
-    print("    - Testing ")
-    show(STDOUT, 2*LinearKernel())
-    println(" ... Done")
- 
-    print("    - Testing ")
-    show(STDOUT, 2*LinearKernel()*LinearKernel())
-    println(" ... Done")
-
-    print("    - Testing ")
-    show(STDOUT, 2*LinearKernel() + 1*LinearKernel())
-    println(" ... Done")
-
+println(" Done")

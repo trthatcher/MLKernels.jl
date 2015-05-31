@@ -117,22 +117,9 @@ function kernel_dxdy!{T<:FloatingPoint}(κ::SquaredDistanceKernel{T}, d::Int64, 
 end
 
 
-
 #==========================================================================
   Kernel Derivative Matrices for Composite Kernels
 ==========================================================================#
-
-function kernelmatrix_dx{T<:FloatingPoint}(k::ScaledKernel{T}, X::Matrix{T}, Y::Matrix{T}, trans::Char = 'N')
-    k.a * kernelmatrix_dx(k.k, X, Y, trans)
-end
-
-function kernelmatrix_dy{T<:FloatingPoint}(k::ScaledKernel{T}, X::Matrix{T}, Y::Matrix{T}, trans::Char = 'N')
-    k.a * kernelmatrix_dy(k.k, X, Y, trans)
-end
-
-function kernelmatrix_dxdy{T<:FloatingPoint}(k::ScaledKernel{T}, X::Matrix{T}, Y::Matrix{T}, trans::Char = 'N')
-    k.a * kernelmatrix_dxdy(k.k, X, Y, trans)
-end
 
 function kernelmatrix_dx{T<:FloatingPoint}(k::KernelSum{T}, X::Matrix{T}, Y::Matrix{T}, trans::Char = 'N')
     k.a1 * kernelmatrix_dx(k.k1, X, Y, trans) + k.a2 * kernelmatrix_dx(k.k2, X, Y, trans)

@@ -132,57 +132,35 @@ function kernel{T<:FloatingPoint,U<:ScalarProductKernel}(κ::ARD{T,U}, x::T, y::
 end
 
 
-#===================================================================================================
-  Composite Kernels
-===================================================================================================#
-
 #===========================================================================
-  Scaled Kernel
+  Kernel Conversions
 ===========================================================================#
 
-immutable ScaledKernel{T<:FloatingPoint} <: SimpleKernel{T}
-    a::T
-    k::StandardKernel{T}
-    function ScaledKernel(a::T, κ::StandardKernel{T})
-        a > 0 || error("a = $(a) must be greater than zero.")
-        new(a, κ)
-    end
-end
-ScaledKernel{T<:FloatingPoint}(a::T, κ::StandardKernel{T}) = ScaledKernel{T}(a, κ)
+for kernelobject in concretesubtypes(StandardKernel)
+    kernelobjectname = kernelobject.name.name # symbol for concrete kernel type
 
-function ScaledKernel{T}(a::Real, κ::StandardKernel{T})
-    U = promote_type(typeof(a), T)
-    ScaledKernel(convert(U, a), convert(Kernel{U}, κ))
-end
+    fieldconversions = [:(convert(T, κ.$field)) for field in names(kernelobject)]
+    constructorcall = Expr(:call, kernelobjectname, fieldconversions...)
 
-for kernel_type in (:ScaledKernel, :SimpleKernel, :Kernel)
     @eval begin
-        function convert{T<:FloatingPoint}(::Type{$kernel_type{T}}, ψ::ScaledKernel) 
-            ScaledKernel(convert(T, ψ.a), convert(Kernel{T}, ψ.k))
+        convert{T<:FloatingPoint}(::Type{$kernelobjectname{T}}, κ::$kernelobjectname) = $constructorcall
+    end
+
+    for kerneltype in supertypes(kernelobject)
+        kerneltypename = kerneltype.name.name # symbol for abstract supertype
+
+        @eval begin
+            function convert{T<:FloatingPoint}(::Type{$kerneltypename{T}}, κ::$kernelobjectname)
+                convert($kernelobjectname{T}, κ)
+            end
         end
     end
 end
 
-kernel{T<:FloatingPoint}(ψ::ScaledKernel{T}, x::Vector{T}, y::Vector{T}) = ψ.a * kernel(ψ.k, x, y)
 
-kernelparameters(κ::ScaledKernel) = vcat([:a], [symbol("k.$(param)") for param in kernelparameters(κ.k)])
-
-function description_string{T<:FloatingPoint}(ψ::ScaledKernel{T})
-    "ScaledKernel{$(T)}($(ψ.a)," * description_string(ψ.k, false) * ")"
-end
-
-ismercer(ψ::ScaledKernel) = ismercer(ψ.k)
-
-function show(io::IO, ψ::ScaledKernel)
-    print(io, description_string(ψ))
-end
-
-*(a::Real, κ::StandardKernel) = ScaledKernel(a, deepcopy(κ))
-*(κ::StandardKernel, a::Real) = *(a, κ)
-
-*(a::Real, ψ::ScaledKernel) = ScaledKernel(a * ψ.a, deepcopy(ψ.k))
-*(ψ::ScaledKernel, a::Real) = *(a, ψ)
-
+#===================================================================================================
+  Composite Kernels
+===================================================================================================#
 
 #===========================================================================
   Product Kernel
@@ -190,57 +168,58 @@ end
 
 immutable KernelProduct{T<:FloatingPoint} <: CompositeKernel{T}
     a::T
-    k1::Kernel{T}
-    k2::Kernel{T}
-    function KernelProduct(a::T, κ₁::Kernel{T}, κ₂::Kernel{T})
+    k::Vector{Kernel{T}}
+    function KernelProduct(a::T, κ::Vector{Kernel{T}})
         a > 0 || error("a = $(a) must be greater than zero.")
-        new(a, κ₁, κ₂)
+        new(a, κ)
     end
 end
-function KernelProduct{T<:FloatingPoint}(a::T, κ₁::Kernel{T}, κ₂::Kernel{T})
-    KernelProduct{T}(a, κ₁, κ₂)
-end
+KernelProduct{T<:FloatingPoint}(a::T, κ::Vector{Kernel{T}}) = KernelProduct{T}(a, κ)
 
-function KernelProduct{T,S}(a::Real, κ₁::Kernel{T}, κ₂::Kernel{S})
-    U = promote_type(typeof(a), T, S)
-    KernelProduct(convert(U, a), convert(Kernel{U}, κ₁), convert(Kernel{U}, κ₂))
+function KernelProduct(a::Real, κ::Kernel...)
+    U = promote_type(typeof(a), map(eltype, κ)...)
+    KernelProduct{U}(convert(U, a), Kernel{U}[κ...])
 end
 
 for kernel_type in (:KernelProduct, :CompositeKernel, :Kernel)
     @eval begin
         function convert{T<:FloatingPoint}(::Type{$kernel_type{T}}, ψ::KernelProduct) 
-            KernelProduct(convert(T, ψ.a), convert(Kernel{T}, ψ.k1), convert(Kernel{T}, ψ.k2))
+            KernelProduct(convert(T, ψ.a), Kernel{T}[ψ.k...])
         end
     end
 end
 
-function kernel{T<:FloatingPoint}(ψ::KernelProduct{T}, x::Vector{T}, y::Vector{T})
-    ψ.a * kernel(ψ.k1, x, y) * kernel(ψ.k2, x, y)
+kernel{T<:FloatingPoint}(ψ::KernelProduct{T}, x::Vector{T}, y::Vector{T}) = ψ.a * prod(map(κ -> kernel(κ,x,y), ψ.k)) 
+
+function kernelparameters(ψ::KernelProduct)
+    parameter_list = [:a]
+    for i = 1:length(ψ.k)
+        parameter_list = vcat(parameter_list, [symbol("k[$(i)].$(θ)") for θ in kernelparameters(ψ.k[i])])
+    end
+    parameter_list
 end
 
-kernelparameters(κ::KernelProduct) = vcat([:a], [symbol("k1.$(param)") for param in kernelparameters(κ.k1)], [symbol("k2.$(param)") for param in kernelparameters(κ.k2)])
-
-ismercer(ψ::KernelProduct) = ismercer(ψ.k1) & ismercer(ψ.k2)
+ismercer(ψ::KernelProduct) = all(ismercer, ψ.k)
 
 function description_string{T<:FloatingPoint}(ψ::KernelProduct{T}) 
-    "KernelProduct{$(T)}($(ψ.a)," * description_string(ψ.k1, false) * "," * description_string(ψ.k2, false) * ")"
+    "KernelProduct{$(T)}($(ψ.a), ...)"
 end
 
-function show(io::IO, ψ::KernelProduct)
-    print(io, description_string(ψ))
-end
+#function show(io::IO, ψ::KernelProduct)
+#    print(io, description_string(ψ))
+#end
 
-function *{T,S}(κ₁::StandardKernel{T}, κ₂::StandardKernel{S})
-    KernelProduct(one(promote_type(T, S)), deepcopy(κ₁), deepcopy(κ₂))
-end
+*(a::Real, κ::Kernel) = KernelProduct(a, κ)
+*(κ::Kernel, a::Real) = *(a, ψ)
 
-*(κ::StandardKernel, ψ::ScaledKernel) = KernelProduct(ψ.a, deepcopy(κ), deepcopy(ψ.k))
-*(ψ::ScaledKernel, κ::StandardKernel) = KernelProduct(ψ.a, deepcopy(ψ.k), deepcopy(κ))
+*(a::Real, ψ::KernelProduct) = KernelProduct(a * ψ.a, ψ.k...)
 
-*(ψ₁::ScaledKernel, ψ₂::ScaledKernel) = KernelProduct(ψ₁.a*ψ₂.a, deepcopy(ψ₁.k), deepcopy(ψ₂.k))
+*(κ1::KernelProduct, κ2::KernelProduct) = KernelProduct(κ1.a * κ2.a, κ1.k..., κ2.k...)
 
-*(a::Real, ψ::KernelProduct) = KernelProduct(a * ψ.a, deepcopy(ψ.k1), deepcopy(ψ.k2))
-*(ψ::KernelProduct, a::Real) = *(a, ψ)
+*(κ::Kernel, ψ::KernelProduct) = KernelProduct(ψ.a, κ, ψ.k...)
+*(ψ::KernelProduct, κ::Kernel) = KernelProduct(ψ.a, ψ.k..., κ)
+
+*(κ1::Kernel, κ2::Kernel) = KernelProduct(1, κ1, κ2)
 
 
 #===========================================================================
@@ -248,56 +227,45 @@ end
 ===========================================================================#
 
 immutable KernelSum{T<:FloatingPoint} <: CompositeKernel{T}
-    a1::T
-    k1::Kernel{T}
-    a2::T
-    k2::Kernel{T}
-    function KernelSum(a₁::T, κ₁::Kernel{T}, a₂::T, κ₂::Kernel{T})
-        a₁ > 0 || error("a₁ = $(a₁) must be greater than zero.")
-        a₂ > 0 || error("a₂ = $(a₂) must be greater than zero.")
-        new(a₁, κ₁, a₂, κ₂)
-    end
-end
-function KernelSum{T<:FloatingPoint}(a₁::T, κ₁::Kernel{T}, a₂::T, κ₂::Kernel{T})
-    KernelSum{T}(a₁, κ₁, a₂, κ₂)
+    k::Vector{Kernel{T}}
 end
 
-function KernelSum{T,S}(a₁::Real, κ₁::Kernel{T}, a₂::Real, κ₂::Kernel{S})
-    U = promote_type(typeof(a₁), typeof(a₂), T, S)
-    KernelSum{U}(convert(U, a₁), convert(Kernel{U}, κ₁), convert(U, a₂), convert(Kernel{U}, κ₂))
+function KernelSum(κ::Kernel...)
+    U = promote_type(map(eltype, κ)...)
+    KernelSum{U}(Kernel{U}[κ...])
 end
 
 for kernel_type in (:KernelSum, :CompositeKernel, :Kernel)
     @eval begin
         function convert{T<:FloatingPoint}(::Type{$kernel_type{T}}, ψ::KernelSum) 
-            KernelSum(convert(T, ψ.a1), convert(Kernel{T}, ψ.k1), convert(T, ψ.a2), 
-                          convert(Kernel{T}, ψ.k2))
+            KernelSum(Kernel{T}[ψ.k...])
         end
     end
 end
 
-function kernel{T<:FloatingPoint}(ψ::KernelSum{T}, x::Vector{T}, y::Vector{T})
-    ψ.a1*kernel(ψ.k1, x, y) + ψ.a2*kernel(ψ.k2, x, y)
+kernel{T<:FloatingPoint}(ψ::KernelSum{T}, x::Vector{T}, y::Vector{T}) = sum(map(κ -> kernel(κ,x,y), ψ.k))
+
+function kernelparameters(ψ::KernelSum)
+    parameter_list = []
+    for i = 1:length(ψ.k)
+        parameter_list = vcat(parameter_list, [symbol("k[$(i)].$(θ)") for θ in kernelparameters(ψ.k[i])])
+    end
+    parameter_list
 end
 
-kernelparameters(κ::KernelSum) = vcat([:a1], [symbol("k1.$(param)") for param in kernelparameters(κ.k1)], [:a2], [symbol("k2.$(param)") for param in kernelparameters(κ.k2)])
-
-ismercer(ψ::KernelSum) = ismercer(ψ.k1) & ismercer(ψ.k2)
+ismercer(ψ::KernelSum) = all(ismercer, ψ.k)
 
 function description_string{T<:FloatingPoint}(ψ::KernelSum{T}) 
-    "KernelSum{$(T)}($(ψ.a1)," * description_string(ψ.k1, false) * "," * "$(ψ.a2)," * description_string(ψ.k2, false) * ")"
+    "KernelSum{$(T)}($(ψ.a1), ...)"
 end
 
-function show(io::IO, ψ::KernelSum)
-    print(io, description_string(ψ))
-end
+#function show(io::IO, ψ::KernelSum)
+#    print(io, description_string(ψ))
+#end
 
-+(κ₁::StandardKernel, κ₂::StandardKernel) = KernelSum(1, deepcopy(κ₁), 1, deepcopy(κ₂))
++(ψ1::KernelSum, ψ2::KernelSum) = KernelSum(ψ1.k..., ψ2.k...)
 
-+(κ::StandardKernel, ψ::ScaledKernel) = KernelSum(1, deepcopy(κ), ψ.a, deepcopy(ψ.k))
-+(ψ::ScaledKernel, κ::StandardKernel) = KernelSum(ψ.a, deepcopy(ψ.k), 1, deepcopy(κ))
++(κ::Kernel, ψ::KernelSum) = KernelSum(κ, ψ.k...)
++(ψ::KernelSum, κ::Kernel) = KernelSum(ψ.k..., κ)
 
-+(ψ₁::ScaledKernel, ψ₂::ScaledKernel) = KernelSum(ψ₁.a, deepcopy(ψ₁.k), ψ₂.a, deepcopy(ψ₂.k))
-
-*(a::Real, ψ::KernelSum) = KernelSum(a*ψ.a1, deepcopy(ψ.k1), a*ψ.a2, deepcopy(ψ.k2))
-*(ψ::KernelSum, a::Real) = *(a, ψ)
++(κ1::Kernel, κ2::Kernel) = KernelSum(κ1, κ2)

@@ -138,15 +138,11 @@ for T in (Float64,)
     z = convert(T, 1.5)
 
     for (ktype, param, derivs) in (
-            (SquaredExponentialKernel, T[0.3], (:alpha,)),
-            (GammaExponentialKernel, T[1.3, 0.45], (:alpha, :gamma)),
-            (InverseQuadraticKernel, T[1.3], (:alpha,)),
-            (RationalQuadraticKernel, T[1.3, 2.1], (:alpha, :beta)),
-            (GammaRationalQuadraticKernel, T[1.3, 2.1, 0.6], (:alpha, :beta, :gamma)),
-            (GammaPowerKernel, T[0.8], (:gamma,)),
+            (ExponentialKernel, T[1.3, 0.45], (:alpha, :gamma)),
+            (RationalQuadraticKernel, T[1.3, 2.1, 0.6], (:alpha, :beta, :gamma)),
+            (PowerKernel, T[0.8], (:gamma,)),
             (LogKernel, T[1, 0.5], (:alpha, :gamma)),
             (PeriodicKernel, T[1.1, 1.3], (:p, :ell)),
-            (LinearKernel, T[1.2], (:c,)),
             (PolynomialKernel, T[1.1, 1.3, 2.2], (:alpha, :c, :d)),
             (SigmoidKernel, T[1.1, 1.3], (:alpha, :c)),
             (MercerSigmoidKernel, T[1.1, 1.3], (:d, :b)),

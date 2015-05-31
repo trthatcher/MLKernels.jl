@@ -42,7 +42,6 @@ export
                     MercerSigmoidKernel,
                 PeriodicKernel,
             ARD,
-            ScaledKernel,
         CompositeKernel,
             KernelProduct,
             KernelSum
@@ -51,10 +50,9 @@ include("meta.jl")
 include("vectorfunctions.jl")
 include("matrixfunctions.jl")
 include("kernels.jl")
-include("kernelconvert.jl")
 include("kernelderiv.jl")
-include("kernelmatrix.jl")
+#include("kernelmatrix.jl")
 include("kernelmatrixderiv.jl")
-include("kernelmatrixapprox.jl")
+#include("kernelmatrixapprox.jl")
 
 end # MLKernels

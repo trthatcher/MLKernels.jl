@@ -253,38 +253,6 @@ end
 ===================================================================================================#
 
 #===========================================================================
-  Scaled Kernel Derivatives
-===========================================================================#
-
-kernel_dx{T<:FloatingPoint}(ψ::ScaledKernel{T}, x::Vector{T}, y::Vector{T}) = ψ.a * kernel_dx(ψ.k, x, y)
-kernel_dy{T<:FloatingPoint}(ψ::ScaledKernel{T}, x::Vector{T}, y::Vector{T}) = ψ.a * kernel_dy(ψ.k, x, y)
-kernel_dxdy{T<:FloatingPoint}(ψ::ScaledKernel{T}, x::Vector{T}, y::Vector{T}) = ψ.a * kernel_dxdy(ψ.k, x, y)
-
-function kernel_dp{T<:FloatingPoint}(ψ::ScaledKernel{T}, param::Symbol, x::Vector{T}, y::Vector{T})
-    if param == :a
-        kernel(ψ.k, x, y)
-    elseif (sparam = string(param); beginswith(sparam, "k."))
-        subparam = symbol(sparam[3:end])
-        ψ.a * kernel_dp(ψ.k, subparam, x, y)
-    else
-        warn("derivative with respect to unrecognized symbol")
-        zero(T)
-    end
-end
-
-function kernel_dp{T<:FloatingPoint}(ψ::ScaledKernel{T}, param::Integer, x::Vector{T}, y::Vector{T})
-    N = length(kernelparameters(ψ.k))
-    if param == 1
-        kernel_dp(ψ, :a, x, y)
-    elseif 2 <= param <= N + 1
-        ψ.a * kernel_dp(ψ.k, param-1, x, y)
-    else
-        throw(ArgumentError("param must be between 1 and $(N+1)"))
-    end
-end
-
-
-#===========================================================================
   Product Kernel Derivatives
 ===========================================================================#
 
