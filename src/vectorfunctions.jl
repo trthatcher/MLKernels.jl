@@ -2,6 +2,16 @@
   Vector Operations
 ===================================================================================================#
 
+function init_gramian{T<:FloatingPoint}(X::Matrix{T}, is_trans::Bool = false)
+    n = size(X, is_trans ? 2 : 1)
+    Array(T,n,n)
+end
+
+function init_gramian{T<:FloatingPoint}(X::Matrix{T}, Y::Matrix{T}, is_trans::Bool = false)
+    n, m = is_trans ? (size(X,2), size(Y,2)) : (size(X,1), size(Y,1))
+    Array(T,n,m)
+end
+
 #==========================================================================
   Scalar Product Function (unweighted)
 ==========================================================================#
@@ -33,16 +43,24 @@ scprod_dy{T<:FloatingPoint}(x::Array{T}, y::Array{T}) = copy(x)
 # Calculate the scalar product matrix (matrix of scalar products)
 #    trans == 'N' -> Z = XXᵀ (X is a design matrix)
 #             'T' -> Z = XᵀX (X is a transposed design matrix)
-function scprodmatrix{T<:FloatingPoint}(X::Matrix{T}, trans::Char = 'N', uplo::Char = 'U', sym::Bool = true)
-    Z = BLAS.syrk(uplo, trans, one(T), X)
-    sym ? (uplo == 'U' ? syml!(Z) : symu!(Z)) : Z
+function scprodmatrix!{T<:FloatingPoint}(Z::Matrix{T}, X::Matrix{T}, is_trans::Bool = false, is_upper::Bool = true, sym::Bool = true)
+    BLAS.syrk!(is_upper ? 'U' : 'L', is_trans ? 'T' : 'N', one(T), X, zero(T), Z)
+    sym ? (is_upper ? syml!(Z) : symu!(Z)) : Z
+end
+
+function scprodmatrix{T<:FloatingPoint}(X::Matrix{T}, is_trans::Bool = false, is_upper::Bool = true, sym::Bool = true)
+    scprodmatrix!(init_gramian(X, is_trans), X, is_trans, is_upper, sym)    
 end
 
 # Returns the upper right corner of the scalar product matrix of [Xᵀ Yᵀ]ᵀ or [X Y]
 #   trans == 'N' -> Z = XYᵀ (X and Y are design matrices)
 #            'T' -> Z = XᵀY (X and Y are transposed design matrices)
-function scprodmatrix{T<:FloatingPoint}(X::Matrix{T}, Y::Matrix{T}, trans::Char = 'N')
-    BLAS.gemm(trans, trans == 'N' ? 'T' : 'N', X, Y)
+function scprodmatrix!{T<:FloatingPoint}(Z::Matrix{T}, X::Matrix{T}, Y::Matrix{T}, is_trans::Bool = false)
+    is_trans ? BLAS.gemm!('N', 'T', one(T), X, Y, zero(T), Z) : BLAS.gemm!('T', 'N', one(T), X, Y, zero(T), Z)
+end
+
+function scprodmatrix{T<:FloatingPoint}(X::Matrix{T}, Y::Matrix{T}, is_trans::Bool = false)
+    scprodmatrix!(init_gramian(X, Y, is_trans), X, Y, is_trans)
 end
 
 
@@ -96,17 +114,25 @@ scprod_dw{T<:FloatingPoint}(x::Array{T}, y::Array{T}, w::Array{T}) = scprod_dw!(
 # Calculate the weighted scalar product matrix 
 #    trans == 'N' -> Z = XDXᵀ (X is a design matrix and D = diag(w))
 #             'T' -> Z = XᵀDX (X is a transposed design matrix and D = diag(w))
-function scprodmatrix{T<:FloatingPoint}(X::Matrix{T}, w::Array{T}, trans::Char = 'N', uplo::Char = 'U', sym::Bool = true)
-    Z = BLAS.syrk(uplo, trans, one(T), trans == 'T' ? scale(vec(w), X) : scale(X, vec(w)))
-    sym ? (uplo == 'U' ? syml!(Z) : symu!(Z)) : Z
+function scprodmatrix!{T<:FloatingPoint}(Z::Matrix{T}, X::Matrix{T}, w::Vector{T}, is_trans::Bool = false, is_upper::Bool = true, sym::Bool = true)
+    scprodmatrix!(Z, is_trans ? scale(w, X) : scale(X, w), is_trans, is_upper, sym)
+end
+
+function scprodmatrix{T<:FloatingPoint}(X::Matrix{T}, w::Vector{T}, is_trans::Bool = false, is_upper::Bool = true, sym::Bool = true)
+    scprodmatrix!(init_gramian(X, is_trans), X, w, is_trans, is_upper, sym)
 end
 
 # Returns the upper right corner of the scalar product matrix of [Xᵀ Yᵀ]ᵀ or [X Y]
 #   trans == 'N' -> Z = XDYᵀ (X and Y are design matrices)
-#            'T' -> Z = XᵀDY (X and Y are transposed design matrices)
-function scprodmatrix{T<:FloatingPoint}(X::Matrix{T}, Y::Matrix{T}, w::Array{T}, trans::Char = 'N')
-    trans == 'T' ? BLAS.gemm('T', 'N', X, scale(vec(w.^2), Y)) : BLAS.gemm('N', 'T', X, scale(Y, vec(w.^2)))
+#            'T' -> Z = XᵀYD (X and Y are transposed design matrices)
+function scprodmatrix!{T<:FloatingPoint}(Z::Matrix{T}, X::Matrix{T}, Y::Matrix{T}, w::Vector{T}, is_trans::Bool = false)
+    scprodmatrix!(Z, X, is_trans ? scale(Y, w.^2) : scale(w.^2, Y), is_trans)
 end
+
+function scprodmatrix{T<:FloatingPoint}(X::Matrix{T}, Y::Matrix{T}, w::Vector{T}, is_trans::Bool = false)
+    scprodmatrix!(init_gramian(X, Y, is_trans), X, Y, w, is_trans)
+end
+
 
 #==========================================================================
   Squared Distance Function (unweighted)
@@ -143,17 +169,22 @@ sqdist_dy{T<:FloatingPoint}(x::Array{T}, y::Array{T}) = scale!(2, y - x)
 # Calculates Z such that Zij is the dot product of the difference of row i and j of matrix X
 #    trans == 'N' -> X is a design matrix
 #             'T' -> X is a transposed design matrix
-function sqdistmatrix{T<:FloatingPoint}(X::Matrix{T}, trans::Char = 'N', uplo::Char = 'U', sym::Bool = true)
-    Z = BLAS.syrk(uplo, trans, one(T), X)
-    n = size(X, trans == 'N' ? 1 : 2)
-    xᵀx = copy(vec(diag(Z)))
+function sqdistmatrix!{T<:FloatingPoint}(Z::Matrix{T}, X::Matrix{T}, is_trans::Bool = false, is_upper::Bool = true, sym::Bool = true)
+    scprodmatrix!(Z, X, is_trans, is_upper, false)  # Don't symmetrize yet
+    n = size(X, is_trans ? 1 : 2)
+    xᵀx = diag(Z)
     @inbounds for j = 1:n
-        for i = uplo == 'U' ? (1:j) : (j:n)
+        for i = is_upper ? (1:j) : (j:n)
             Z[i,j] = xᵀx[i] - 2Z[i,j] + xᵀx[j]
         end
     end
-    sym ? (uplo == 'U' ? syml!(Z) : symu!(Z)) : Z
+    sym ? (is_upper ? syml!(Z) : symu!(Z)) : Z
 end
+
+function sqdistmatrix{T<:FloatingPoint}(X::Matrix{T}, is_trans::Bool = false, is_upper::Bool = true, sym::Bool = true)
+    sqdistmatrix!(init_gramian(X, is_trans), X, is_trans, is_upper, sym)
+end
+
 
 # Calculates the upper right corner, Z, of the squared distance matrix of matrix [Xᵀ Yᵀ]ᵀ
 #   trans == 'N' -> X and Y are design matrices
