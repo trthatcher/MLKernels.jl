@@ -150,11 +150,18 @@ for T in (Float64,)
 
     for (ktype, param, derivs) in (
             (ExponentialKernel, T[1.3, 0.45], (:alpha, :gamma)),
+            (ExponentialKernel, T[1.3, 1], (:alpha, :gamma)),
             (RationalQuadraticKernel, T[1.3, 2.1, 0.6], (:alpha, :beta, :gamma)),
+            (RationalQuadraticKernel, T[1.3, 1, 0.6], (:alpha, :beta, :gamma)),
+            (RationalQuadraticKernel, T[1.3, 2.1, 1], (:alpha, :beta, :gamma)),
+            (RationalQuadraticKernel, T[1.3, 1, 1], (:alpha, :beta, :gamma)),
             (PowerKernel, T[0.8], (:gamma,)),
-            (LogKernel, T[1, 0.5], (:alpha, :gamma)),
+            (PowerKernel, T[1], (:gamma,)),
+            (LogKernel, T[1.1, 0.5], (:alpha, :gamma)),
+            (LogKernel, T[1.1, 1], (:alpha, :gamma)),
             (PeriodicKernel, T[1.1, 1.3], (:period, :ell)),
             (PolynomialKernel, T[1.1, 1.3, 2.2], (:alpha, :c, :d)),
+            (PolynomialKernel, T[1.1, 1.3, 1], (:alpha, :c, :d)),
             (SigmoidKernel, T[1.1, 1.3], (:alpha, :c)),
             (MercerSigmoidKernel, T[1.1, 1.3], (:d, :b)),
         )

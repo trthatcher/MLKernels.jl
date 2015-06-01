@@ -13,7 +13,7 @@ immutable PolynomialKernel{T<:FloatingPoint,CASE} <: ScalarProductKernel{T}
         c >= 0 || throw(ArgumentError("c = $(c) must be a non-negative number."))
         d > 0 || throw(ArgumentError("d = $(d) must be greater than zero."))
         if CASE == :d1 && d != 1
-            warn("Special case d = 1 flagged but d = $(d)")
+            error("Special case d = 1 flagged but d = $(d)")
         end
         new(α, c, d)
     end
