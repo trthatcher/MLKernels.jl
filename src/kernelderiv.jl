@@ -257,21 +257,30 @@ end
 ===========================================================================#
 
 function kernel_dx{T<:FloatingPoint}(ψ::KernelProduct{T}, x::Vector{T}, y::Vector{T})
-    ks = [kernel(ψ.k[i], x, y) for i=1:length(ψ.k)]
-    ψ.a * prod(ks) * sum([kernel_dx(ψ.k[i], x, y)/ks[i] for i=1:length(ψ.k)])
+    ks = T[kernel(ψ.k[i], x, y) for i=1:length(ψ.k)]
+    ψ.a * prod(ks) * sum([kernel_dx(ψ.k[i], x, y) / ks[i] for i=1:length(ψ.k)])
 end
 
 function kernel_dy{T<:FloatingPoint}(ψ::KernelProduct{T}, x::Vector{T}, y::Vector{T})
-    ks = [kernel(ψ.k[i], x, y) for i=1:length(ψ.k)]
-    ψ.a * prod(ks) * sum([kernel_dy(ψ.k[i], x, y)/ks[i] for i=1:length(ψ.k)])
+    ks = T[kernel(ψ.k[i], x, y) for i=1:length(ψ.k)]
+    ψ.a * prod(ks) * sum([kernel_dy(ψ.k[i], x, y) / ks[i] for i=1:length(ψ.k)])
 end
 
-#function kernel_dxdy{T<:FloatingPoint}(ψ::KernelProduct{T}, x::Vector{T}, y::Vector{T})
-#    ψ.a * (kernel_dxdy(ψ.k1, x, y)*kernel(ψ.k2, x, y)
-#            + kernel_dy(ψ.k1, x, y)*kernel_dx(ψ.k2, x, y)'
-#            + kernel_dx(ψ.k1, x, y)*kernel_dy(ψ.k2, x, y)'
-#            + kernel(ψ.k1, x, y)*kernel_dxdy(ψ.k2, x, y))
-#end
+function kernel_dxdy{T<:FloatingPoint}(ψ::KernelProduct{T}, x::Vector{T}, y::Vector{T})
+    n = length(ψ.k)
+    ks = T[kernel(ψ.k[i], x, y) for i=1:n]
+    k_dx = [kernel_dx(ψ.k[i], x, y) for i=1:n]
+    k_dy = [kernel_dy(ψ.k[i], x, y) for i=1:n]
+    dxdy = zeros(T, length(x), length(y))
+    for i = 1:n
+        dxdy += prod(ks[1:i-1]) * kernel_dxdy(ψ.k[i], x, y) * prod(ks[i+1:end])
+        for j = i+1:n
+            dxdy += prod(ks[1:i-1]) * k_dy[i] * prod(ks[i+1:j-1]) * k_dx[j]' * prod(ks[j+1:end])
+            dxdy += prod(ks[1:i-1]) * k_dx[i] * prod(ks[i+1:j-1]) * k_dy[j]' * prod(ks[j+1:end])
+        end
+    end
+    ψ.a * dxdy
+end
 
 #function kernel_dp{T<:FloatingPoint}(ψ::KernelProduct{T}, param::Symbol, x::Vector{T}, y::Vector{T})
 #    if param == :a

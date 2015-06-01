@@ -121,37 +121,58 @@ end
   Kernel Derivative Matrices for Composite Kernels
 ==========================================================================#
 
-function kernelmatrix_dx{T<:FloatingPoint}(k::KernelSum{T}, X::Matrix{T}, Y::Matrix{T}, trans::Char = 'N')
-    k.a1 * kernelmatrix_dx(k.k1, X, Y, trans) + k.a2 * kernelmatrix_dx(k.k2, X, Y, trans)
+function kernelmatrix_dx{T<:FloatingPoint}(κ::KernelSum{T}, X::Matrix{T}, Y::Matrix{T}, trans::Char = 'N')
+    c = length(κ.k)
+    K = kernelmatrix_dx(κ.k[1], X, Y, trans)
+    if c > 1
+        for i = 2:c
+            BLAS.axpy!(one(T), kernelmatrix_dx(κ.k[i], X, Y, trans), K)
+        end
+    end
+    K
 end
 
-function kernelmatrix_dy{T<:FloatingPoint}(k::KernelSum{T}, X::Matrix{T}, Y::Matrix{T}, trans::Char = 'N')
-    k.a1 * kernelmatrix_dy(k.k1, X, Y, trans) + k.a2 * kernelmatrix_dy(k.k2, X, Y, trans)
+function kernelmatrix_dy{T<:FloatingPoint}(κ::KernelSum{T}, X::Matrix{T}, Y::Matrix{T}, trans::Char = 'N')
+    c = length(κ.k)
+    K = kernelmatrix_dy(κ.k[1], X, Y, trans)
+    if c > 1
+        for i = 2:c
+            BLAS.axpy!(one(T), kernelmatrix_dy(κ.k[i], X, Y, trans), K)
+        end
+    end
+    K
 end
 
-function kernelmatrix_dxdy{T<:FloatingPoint}(k::KernelSum{T}, X::Matrix{T}, Y::Matrix{T}, trans::Char = 'N')
-    k.a1 * kernelmatrix_dxdy(k.k1, X, Y, trans) + k.a2 * kernelmatrix_dxdy(k.k2, X, Y, trans)
+function kernelmatrix_dxdy{T<:FloatingPoint}(κ::KernelSum{T}, X::Matrix{T}, Y::Matrix{T}, trans::Char = 'N')
+    c = length(κ.k)
+    K = kernelmatrix_dxdy(κ.k[1], X, Y, trans)
+    if c > 1
+        for i = 2:c
+            BLAS.axpy!(one(T), kernelmatrix_dxdy(κ.k[i], X, Y, trans), K)
+        end
+    end
+    K
 end
 
-function kernelmatrix_dx{T<:FloatingPoint}(k::KernelProduct{T}, X::Matrix{T}, Y::Matrix{T}, trans::Char = 'N')
+function kernelmatrix_dx{T<:FloatingPoint}(κ::KernelProduct{T}, X::Matrix{T}, Y::Matrix{T}, trans::Char = 'N')
     #M1 = kernelmatrix(k.k1, X, Y, trans)
     #D1 = kernelmatrix_dx(k.k1, X, Y, trans)
     #M2 = kernelmatrix(k.k2, X, Y, trans)
     #D2 = kernelmatrix_dx(k.k2, X, Y, trans)
     #k.a * (D1 .* M2 + D2 .* M1) # D? and M? have different shapes...
-    generic_kernelmatrix_dx(k, X, Y, trans)
+    generic_kernelmatrix_dx(κ, X, Y, trans)
 end
 
-function kernelmatrix_dy{T<:FloatingPoint}(k::KernelProduct{T}, X::Matrix{T}, Y::Matrix{T}, trans::Char = 'N')
+function kernelmatrix_dy{T<:FloatingPoint}(κ::KernelProduct{T}, X::Matrix{T}, Y::Matrix{T}, trans::Char = 'N')
     #M1 = kernelmatrix(k.k1, X, Y, trans)
     #D1 = kernelmatrix_dy(k.k1, X, Y, trans)
     #M2 = kernelmatrix(k.k2, X, Y, trans)
     #D2 = kernelmatrix_dy(k.k2, X, Y, trans)
     #k.a * (D1 .* M2 + D2 .* M1)
-    generic_kernelmatrix_dy(k, X, Y, trans)
+    generic_kernelmatrix_dy(κ, X, Y, trans)
 end
 
-function kernelmatrix_dxdy{T<:FloatingPoint}(k::KernelProduct{T}, X::Matrix{T}, Y::Matrix{T}, trans::Char = 'N')
+function kernelmatrix_dxdy{T<:FloatingPoint}(κ::KernelProduct{T}, X::Matrix{T}, Y::Matrix{T}, trans::Char = 'N')
     #M1 = kernelmatrix(k.k1, X, Y, trans)
     #Dx1 = kernelmatrix_dx(k.k1, X, Y, trans)
     #Dy1 = kernelmatrix_dy(k.k1, X, Y, trans)
@@ -166,7 +187,7 @@ function kernelmatrix_dxdy{T<:FloatingPoint}(k::KernelProduct{T}, X::Matrix{T}, 
     #        + kernel_dy(ψ.k1, x, y)*kernel_dx(ψ.k2, x, y)'
     #        + kernel_dx(ψ.k1, x, y)*kernel_dy(ψ.k2, x, y)'
     #        + kernel(ψ.k1, x, y)*kernel_dxdy(ψ.k2, x, y))
-    generic_kernelmatrix_dxdy(k, X, Y, trans)
+    generic_kernelmatrix_dxdy(κ, X, Y, trans)
 end
 
 kernelmatrix_dx(k::ARD, X::Matrix, Y::Matrix, trans::Char = 'N') = generic_kernelmatrix_dx(k, X, Y, trans)

@@ -61,11 +61,6 @@ function test_kernel_dxdy(k::Kernel, x::Vector, y::Vector, epsilon)
         return
     end
 
-    if isa(k, CompositeKernel)
-        warn("dxdy and d(parameters) not implemented for Composite kernels")
-        return
-    end
-
     print("dxdy ")
     for i=1:length(x), j=1:length(y)
         @test_approx_eq_eps checkderiv(
@@ -106,8 +101,13 @@ end
 
 function test_kernel_dp(ktype, param, derivs, x, y, epsilon)
     @assert length(param) == length(derivs)
-    print("d")
     k = ktype(param...)
+    if isa(k, CompositeKernel)
+        warn("d(parameters) not implemented for Composite kernels")
+        return
+    end
+
+    print("d")
     for (i, deriv) in enumerate(derivs)
         print(":$deriv")
         @test_approx_eq_eps checkderiv(
@@ -213,7 +213,7 @@ for T in (Float64,)
         k = kconst(param...)
         print("    - Testing $k ... ")
         test_kernel_dxdy(k, x, y, 1e-9)
-        #test_kernel_dp(kconst, param, derivs, x, y, 1e-7)
+        test_kernel_dp(kconst, param, derivs, x, y, 1e-7)
         println("Done")
     end
 end
