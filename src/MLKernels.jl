@@ -4,7 +4,7 @@
 
 module MLKernels
 
-import Base: show, exp, eltype, isposdef, convert, promote #, call
+import Base: show, eltype, convert, promote #, call
 
 export
     # Functions
