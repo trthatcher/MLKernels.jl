@@ -79,7 +79,7 @@ function kernel{T<:FloatingPoint}(κ::SeparableKernel{T}, x::Array{T}, y::Array{
     z = kappa_array!(κ, copy(y))
     BLAS.dot(length(v), v, 1, z, 1)
 end
-kernel{T<:FloatingPoint}(κ::SeparableKernel{T}, x::T, y::T) = kappa(κ, x) * kappa(κ, y) 
+kernel{T<:FloatingPoint}(κ::SeparableKernel{T}, x::T, y::T) = kappa(κ, x) * kappa(κ, y)
 
 # Separable Kernel definitions
 include("standardkernels/separable.jl")
@@ -183,13 +183,13 @@ end
 
 for kernel_type in (:KernelProduct, :CompositeKernel, :Kernel)
     @eval begin
-        function convert{T<:FloatingPoint}(::Type{$kernel_type{T}}, ψ::KernelProduct) 
+        function convert{T<:FloatingPoint}(::Type{$kernel_type{T}}, ψ::KernelProduct)
             KernelProduct(convert(T, ψ.a), Kernel{T}[ψ.k...])
         end
     end
 end
 
-kernel{T<:FloatingPoint}(ψ::KernelProduct{T}, x::Vector{T}, y::Vector{T}) = ψ.a * prod(map(κ -> kernel(κ,x,y), ψ.k)) 
+kernel{T<:FloatingPoint}(ψ::KernelProduct{T}, x::Vector{T}, y::Vector{T}) = ψ.a * prod(map(κ -> kernel(κ,x,y), ψ.k))
 
 function kernelparameters(ψ::KernelProduct)
     parameter_list = [:a]
@@ -201,7 +201,7 @@ end
 
 ismercer(ψ::KernelProduct) = all(ismercer, ψ.k)
 
-function description_string{T<:FloatingPoint}(ψ::KernelProduct{T}) 
+function description_string{T<:FloatingPoint}(ψ::KernelProduct{T})
     "KernelProduct{$(T)}($(ψ.a), ...)"
 end
 
@@ -237,7 +237,7 @@ end
 
 for kernel_type in (:KernelSum, :CompositeKernel, :Kernel)
     @eval begin
-        function convert{T<:FloatingPoint}(::Type{$kernel_type{T}}, ψ::KernelSum) 
+        function convert{T<:FloatingPoint}(::Type{$kernel_type{T}}, ψ::KernelSum)
             KernelSum(Kernel{T}[ψ.k...])
         end
     end
@@ -246,7 +246,7 @@ end
 kernel{T<:FloatingPoint}(ψ::KernelSum{T}, x::Vector{T}, y::Vector{T}) = sum(map(κ -> kernel(κ,x,y), ψ.k))
 
 function kernelparameters(ψ::KernelSum)
-    parameter_list = []
+    parameter_list = Symbol[]
     for i = 1:length(ψ.k)
         append!(parameter_list, [symbol("k[$(i)].$(θ)") for θ in kernelparameters(ψ.k[i])])
     end
@@ -255,7 +255,7 @@ end
 
 ismercer(ψ::KernelSum) = all(ismercer, ψ.k)
 
-function description_string{T<:FloatingPoint}(ψ::KernelSum{T}) 
+function description_string{T<:FloatingPoint}(ψ::KernelSum{T})
     "KernelSum{$(T)}($(ψ.a1), ...)"
 end
 

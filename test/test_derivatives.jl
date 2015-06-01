@@ -102,10 +102,6 @@ end
 function test_kernel_dp(ktype, param, derivs, x, y, epsilon)
     @assert length(param) == length(derivs)
     k = ktype(param...)
-    if isa(k, CompositeKernel)
-        warn("d(parameters) not implemented for Composite kernels")
-        return
-    end
 
     print("d")
     for (i, deriv) in enumerate(derivs)
@@ -202,14 +198,15 @@ for T in (Float64,)
     x = T[1, 2, 7, 3]
     y = T[5, 2, 1, 6]
 
-    kproductconstructor(param...) = param[1] * ExponentialKernel(param[2]) * ExponentialKernel(param[3])
-    ksumconstructor(param...) = param[1]*ExponentialKernel(param[2]) + param[3]*ExponentialKernel(param[4])
-    kscaledconstructor(param...) = param[1]*ExponentialKernel(param[2])
+    kproductconstructor(param...) = param[1] * ExponentialKernel(param[2], param[3]) * ExponentialKernel(param[4], param[5])
+    ksumconstructor(param...) = ExponentialKernel(param[1], param[2]) + ExponentialKernel(param[3], param[4])
+    kscaledconstructor(param...) = param[1]*ExponentialKernel(param[2], param[3])
 
     for (kconst, param, derivs) in (
-            (kproductconstructor, T[3.2, 1.5, 1.8], (:a, symbol("k1.alpha"), symbol("k2.alpha"))),
-            (ksumconstructor, T[0.4, 3.2, 1.5, 1.8], (:a1, symbol("k1.alpha"), :a2, symbol("k2.alpha"))),
-            (kscaledconstructor, T[0.4, 3.2], (:a, symbol("k.alpha"))))
+            (kproductconstructor, T[3.2, 1.5, 0.9, 1.8, 0.9], (:a, symbol("k[1].alpha"), symbol("k[1].gamma"), symbol("k[2].alpha"), symbol("k[2].gamma"))),
+            (ksumconstructor, T[3.2, 0.9, 1.8, 0.9], (symbol("k[1].alpha"), symbol("k[1].gamma"), symbol("k[2].alpha"), symbol("k[2].gamma"))),
+            (kscaledconstructor, T[0.4, 3.2, 0.9], (:a, symbol("k[1].alpha"), symbol("k[1].gamma")))
+        )
         k = kconst(param...)
         print("    - Testing $k ... ")
         test_kernel_dxdy(k, x, y, 1e-9)
