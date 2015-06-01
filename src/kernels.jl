@@ -210,9 +210,10 @@ end
 #end
 
 *(a::Real, κ::Kernel) = KernelProduct(a, κ)
-*(κ::Kernel, a::Real) = *(a, ψ)
+*(κ::Kernel, a::Real) = *(a, κ)
 
 *(a::Real, ψ::KernelProduct) = KernelProduct(a * ψ.a, ψ.k...)
+*(ψ::KernelProduct, a::Real) = *(a, ψ)
 
 *(κ1::KernelProduct, κ2::KernelProduct) = KernelProduct(κ1.a * κ2.a, κ1.k..., κ2.k...)
 

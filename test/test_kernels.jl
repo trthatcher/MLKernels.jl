@@ -184,7 +184,7 @@ end
 # Test KernelProduct
 print("- Testing KernelProduct constructors ... ")
 for T in (Float32, Float64)
-    x, y, a = ([one(T)], [one(T)], convert(T,2))
+    x, y, a, b = ([one(T)], [one(T)], convert(T,2), convert(T,3))
 
     K1 = ExponentialKernel(one(T))
     K2 = RationalQuadraticKernel(one(T))
@@ -198,7 +198,29 @@ for T in (Float32, Float64)
     check_fields(K1K2.k[1], K1)
     check_fields(K1K2.k[2], K2)
 
-    K1K2 = a*K1*K2
+    K1K2 = K1*K2
+
+    @test K1K2.a == one(T)
+    @test typeof(K1K2.a) == T
+
+    check_fields(K1K2.k[1], K1)
+    check_fields(K1K2.k[2], K2)
+
+    K1K2 = a*K1
+
+    @test K1K2.a == a
+    @test typeof(K1K2.a) == T
+
+    check_fields(K1K2.k[1], K1)
+
+    K1K2 = K1*a
+
+    @test K1K2.a == a
+    @test typeof(K1K2.a) == T
+
+    check_fields(K1K2.k[1], K1)
+
+    K1K2 = (a*K1)*K2
 
     @test K1K2.a == a
     @test typeof(K1K2.a) == T
@@ -206,9 +228,31 @@ for T in (Float32, Float64)
     check_fields(K1K2.k[1], K1)
     check_fields(K1K2.k[2], K2)
 
-    K1K2 = a*K1*K2*K3
+    K1K2 = (K1*K2)*a
 
     @test K1K2.a == a
+    @test typeof(K1K2.a) == T
+
+    check_fields(K1K2.k[1], K1)
+    check_fields(K1K2.k[2], K2)
+
+    K1K2 = a*(K1*K2*K3)
+
+    @test K1K2.a == a
+    @test typeof(K1K2.a) == T
+
+    K1K2 = a*K1*K2*K3*b
+
+    @test K1K2.a == a*b
+    @test typeof(K1K2.a) == T
+
+    check_fields(K1K2.k[1], K1)
+    check_fields(K1K2.k[2], K2)
+    check_fields(K1K2.k[3], K3)
+
+    K1K2 = (a*K1)*(K2*K3*b)
+
+    @test K1K2.a == a*b
     @test typeof(K1K2.a) == T
 
     check_fields(K1K2.k[1], K1)
@@ -226,6 +270,7 @@ for T in (Float32, Float64)
     K1 = ExponentialKernel(one(T))
     K2 = RationalQuadraticKernel(one(T))
     K3 = PolynomialKernel(one(T))
+    K4 = SigmoidKernel(one(T))
 
     K1K2 = KernelSum(K1, K2)
 
@@ -237,11 +282,24 @@ for T in (Float32, Float64)
     check_fields(K1K2.k[1], K1)
     check_fields(K1K2.k[2], K2)
 
-    K1K2 = K1 + K2 + K3
+    K1K2 = (K1 + K2) + K3
 
     check_fields(K1K2.k[1], K1)
     check_fields(K1K2.k[2], K2)
     check_fields(K1K2.k[3], K3)
+
+    K1K2 = K1 + (K2 + K3)
+
+    check_fields(K1K2.k[1], K1)
+    check_fields(K1K2.k[2], K2)
+    check_fields(K1K2.k[3], K3)
+
+    K1K2 = (K1 + K2) + (K3 + K4)
+
+    check_fields(K1K2.k[1], K1)
+    check_fields(K1K2.k[2], K2)
+    check_fields(K1K2.k[3], K3)
+    check_fields(K1K2.k[4], K4)
 
 end
 println(" Done")
