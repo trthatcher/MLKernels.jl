@@ -8,29 +8,35 @@ importall MLKernels
 #####
 
 # compares numerical derivative (f(p+ϵ)-f(p-ϵ))/2ϵ with symbolic derivative to ensure correctness
-function checkderiv(f, fprime, p, i; eps=1e-6)
-    pplus = copy(p); pplus[i] += eps
-    pminus = copy(p); pminus[i] -= eps
-    delta = (fprime(p,i) - (f(pplus)-f(pminus))/2eps)
-    return (delta)
-end
 
-checkderiv(f, fprime, p::Number; eps=1e-6) = (fprime(p) - (f(p+eps)-f(p-eps))/2eps)
+function checkderiv(f, fprime, p::Vector, idx; doprint=false)
+    doprint && println("epsilon   df-f'    f'/df")
 
-checkderiv(f, fprime, p::Vector; eps=1e-6) = eltype(p)[checkderiv(f, fprime, p, i; eps=eps) for i=1:length(p)]
+    fp = fprime(p, idx)
 
-checkderivvec(f, fprime, x; eps=1e-6) = abs(checkderiv(f, (p,i)->fprime(p)[i], x; eps=eps))
-
-function icheckderiv(f, fprime, p::Number)
-    println("epsilon   df-f'    f'/df")
-    fp = fprime(p)
+    deltas = zeros(eltype(p), 9)
     epsilon = 1e-2
-    for i=2:10
-        df = (f(p+epsilon) - f(p-epsilon))/2epsilon
-        @printf "%10s %20.15f %20.15f\n" "10^(-$i)" df-fp fp/df
+    for i=1:length(deltas)
+        pplus = copy(p); pplus[idx] += epsilon
+        pminus = copy(p); pminus[idx] -= epsilon
+        df = (f(pplus) - f(pminus))/2epsilon
+
+        doprint && @printf("%10s %20.15f %20.15f\n", "10^(-$(i+1))", df-fp, fp/df)
+        deltas[i] = abs(df-fp)
+
         epsilon /= 10
     end
+
+    minimum(deltas)
 end
+
+function checkderiv(f, fprime, p::Number; doprint=false)
+    checkderiv(x->f(x[1]), (x,i)->fprime(x[1]), [p], 1; doprint=doprint)
+end
+
+checkderiv(f, fprime, p::Vector) = eltype(p)[checkderiv(f, fprime, p, i) for i=1:length(p)]
+
+checkderivvec(f, fprime, x) = abs(checkderiv(f, (p,i)->fprime(p)[i], x))
 
 function test_kappa_dz(k, z, epsilon)
     print("dz ")
@@ -131,13 +137,13 @@ for T in (Float64,)
             @eval $(symbol("fun_d$(d)")) = MLKernels.$(symbol("$(s_fun)_d$(d)"))
         end
 
-        @test_approx_eq_eps checkderivvec(p->fun(p,y), p->fun_dx(p,y), x) zeros(x) 1e-7
-        @test_approx_eq_eps checkderivvec(p->fun(x,p), p->fun_dy(x,p), y) zeros(y) 1e-7
+        @test_approx_eq_eps checkderivvec(p->fun(p,y), p->fun_dx(p,y), x) zeros(x) 1e-9
+        @test_approx_eq_eps checkderivvec(p->fun(x,p), p->fun_dy(x,p), y) zeros(y) 1e-9
 
-        @test_approx_eq_eps checkderivvec(p->fun(p,y,w), p->fun_dx(p,y,w), x) zeros(x) 1e-7
-        @test_approx_eq_eps checkderivvec(p->fun(x,p,w), p->fun_dy(x,p,w), y) zeros(y) 1e-7
+        @test_approx_eq_eps checkderivvec(p->fun(p,y,w), p->fun_dx(p,y,w), x) zeros(x) 1e-9
+        @test_approx_eq_eps checkderivvec(p->fun(x,p,w), p->fun_dy(x,p,w), y) zeros(y) 1e-9
 
-        @test_approx_eq_eps checkderivvec(p->fun(x,y,p), p->fun_dw(x,y,p), w) zeros(w) 1e-7
+        @test_approx_eq_eps checkderivvec(p->fun(x,y,p), p->fun_dw(x,y,p), w) zeros(w) 1e-9
         println("Done")
     end
 end
@@ -159,20 +165,29 @@ for T in (Float64,)
             (PowerKernel, T[1], (:gamma,)),
             (LogKernel, T[1.1, 0.5], (:alpha, :gamma)),
             (LogKernel, T[1.1, 1], (:alpha, :gamma)),
-            (PeriodicKernel, T[1.1, 1.3], (:period, :ell)),
             (PolynomialKernel, T[1.1, 1.3, 2.2], (:alpha, :c, :d)),
             (PolynomialKernel, T[1.1, 1.3, 1], (:alpha, :c, :d)),
             (SigmoidKernel, T[1.1, 1.3], (:alpha, :c)),
             (MercerSigmoidKernel, T[1.1, 1.3], (:d, :b)),
+            (PeriodicKernel, T[1.1, 1.3], (:period, :ell)),
         )
         print("    - Testing $(ktype) ... ")
         k = ktype(param...)
-        test_kappa_dz(k, z, 5e-7)
-        test_kernel_dxdy(k, x[1], y[1], 1e-7)
-        test_kernel_dxdy(k, x, y, 1e-5)
-        test_kappa_dp(ktype, param, derivs, z, 6e-5)
-        test_kernel_dp(ktype, param, derivs, x, y, 6e-5)
-        test_kernel_dp(ktype, param, derivs, x[1], y[1], 1e-7)
+        if ktype <: PeriodicKernel
+            epsilon = 6e-6
+        elseif ktype <: PolynomialKernel
+            epsilon = 5e-7
+        elseif ktype <: PowerKernel
+            epsilon = 2e-8
+        else
+            epsilon = 1e-9
+        end
+        test_kappa_dz(k, z, epsilon)
+        test_kernel_dxdy(k, x[1], y[1], epsilon)
+        test_kernel_dxdy(k, x, y, epsilon)
+        test_kappa_dp(ktype, param, derivs, z, epsilon)
+        test_kernel_dp(ktype, param, derivs, x, y, epsilon)
+        test_kernel_dp(ktype, param, derivs, x[1], y[1], epsilon)
         println("Done")
     end
 end
@@ -188,14 +203,14 @@ for T in (Float64,)
             (RationalQuadraticKernel, T[1.3, 2.1, 0.6], (:alpha, :beta, :gamma)),
             (PowerKernel, T[0.8], (:gamma,)),
             #(LogKernel, T[1], (:d,)),
-            (PeriodicKernel, T[1.1, 1.3], (:p, :ell)),
+            #(PeriodicKernel, T[1.1, 1.3], (:period, :ell)),
             (PolynomialKernel, T[1.1, 1.3, 2.2], (:alpha, :c, :d)),
             (SigmoidKernel, T[1.1, 1.3], (:alpha, :c)),
         )
         print("    - Testing ARD{$(ktype)} ... ")
-        test_kernel_dxdy(ARD(ktype(param...), w), x, y, 2e-6)
-        test_kernel_dxdy(ARD(ktype(param...), length(x)), x, y, 1e-6)
-        #test_kernel_dp(ktype, param, derivs, x, y, 6e-5)
+        test_kernel_dxdy(ARD(ktype(param...), w), x, y, 1e-7)
+        test_kernel_dxdy(ARD(ktype(param...), length(x)), x, y, 1e-7)
+        #test_kernel_dp(ktype, param, derivs, x, y, 1e-7)
         println("Done")
     end
 end
@@ -217,7 +232,7 @@ for T in (Float64,)
         k = kconst(param...)
         print("    - Testing $k ... ")
         test_kernel_dxdy(k, x, y, 1e-9)
-        test_kernel_dp(kconst, param, derivs, x, y, 1e-7)
+        test_kernel_dp(kconst, param, derivs, x, y, 1e-9)
         println("Done")
     end
 end

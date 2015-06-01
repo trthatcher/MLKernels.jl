@@ -200,8 +200,9 @@ for T in (Float32, Float64)
             ((a*K1)*(K2*K3*b), a*b, 3), # KernelProduct,KernelProduct
             (K1*(a*K2*K3), a, 3), # Kernel,KernelProduct
             ((a*K1*K2)*K3, a, 3), # KernelProduct,Kernel
+        )
 
-        @test K1K2.a == a
+        @test K1K2.a == m
         @test typeof(K1K2.a) == T
 
         check_fields(K1K2.k[1], K1)
