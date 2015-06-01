@@ -10,7 +10,7 @@ eltype{T}(κ::Kernel{T}) = T
 #call{T<:FloatingPoint}(κ::Kernel{T}, X::Matrix{T}) = kernel_matrix(κ, X)
 #call{T<:FloatingPoint}(κ::Kernel{T}, X::Matrix{T}, Y::Matrix{T}) = kernel_matrix(κ, X, Y)
 
-is_mercer(::Kernel) = false
+ismercer(::Kernel) = false
 
 abstract SimpleKernel{T<:FloatingPoint} <: Kernel{T}
 abstract CompositeKernel{T<:FloatingPoint} <: Kernel{T}
@@ -194,7 +194,7 @@ kernel{T<:FloatingPoint}(ψ::KernelProduct{T}, x::Vector{T}, y::Vector{T}) = ψ.
 function kernelparameters(ψ::KernelProduct)
     parameter_list = [:a]
     for i = 1:length(ψ.k)
-        parameter_list = vcat(parameter_list, [symbol("k[$(i)].$(θ)") for θ in kernelparameters(ψ.k[i])])
+        append!(parameter_list, [symbol("k[$(i)].$(θ)") for θ in kernelparameters(ψ.k[i])])
     end
     parameter_list
 end
@@ -248,7 +248,7 @@ kernel{T<:FloatingPoint}(ψ::KernelSum{T}, x::Vector{T}, y::Vector{T}) = sum(map
 function kernelparameters(ψ::KernelSum)
     parameter_list = []
     for i = 1:length(ψ.k)
-        parameter_list = vcat(parameter_list, [symbol("k[$(i)].$(θ)") for θ in kernelparameters(ψ.k[i])])
+        append!(parameter_list, [symbol("k[$(i)].$(θ)") for θ in kernelparameters(ψ.k[i])])
     end
     parameter_list
 end
