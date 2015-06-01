@@ -190,74 +190,24 @@ for T in (Float32, Float64)
     K2 = RationalQuadraticKernel(one(T))
     K3 = PolynomialKernel(one(T))
 
-    K1K2 = KernelProduct(a, K1, K2)
+    for (K1K2, m, n) in (
+            (KernelProduct(a, K1, K2), a, 2),
+            (K1*K2, one(T), 2), # Kernel,Kernel
+            (a*K1, a, 1), # Real,Kernel
+            (K1*a, a, 1), # Kernel,Real
+            (a*(K1*K2*b), a*b, 2), # Real,KernelProduct
+            ((K1*K2*b)*a, a*b, 2), # KernelProduct,Real
+            ((a*K1)*(K2*K3*b), a*b, 3), # KernelProduct,KernelProduct
+            (K1*(a*K2*K3), a, 3), # Kernel,KernelProduct
+            ((a*K1*K2)*K3, a, 3), # KernelProduct,Kernel
 
-    @test K1K2.a == a
-    @test typeof(K1K2.a) == T
+        @test K1K2.a == a
+        @test typeof(K1K2.a) == T
 
-    check_fields(K1K2.k[1], K1)
-    check_fields(K1K2.k[2], K2)
-
-    K1K2 = K1*K2
-
-    @test K1K2.a == one(T)
-    @test typeof(K1K2.a) == T
-
-    check_fields(K1K2.k[1], K1)
-    check_fields(K1K2.k[2], K2)
-
-    K1K2 = a*K1
-
-    @test K1K2.a == a
-    @test typeof(K1K2.a) == T
-
-    check_fields(K1K2.k[1], K1)
-
-    K1K2 = K1*a
-
-    @test K1K2.a == a
-    @test typeof(K1K2.a) == T
-
-    check_fields(K1K2.k[1], K1)
-
-    K1K2 = (a*K1)*K2
-
-    @test K1K2.a == a
-    @test typeof(K1K2.a) == T
-
-    check_fields(K1K2.k[1], K1)
-    check_fields(K1K2.k[2], K2)
-
-    K1K2 = (K1*K2)*a
-
-    @test K1K2.a == a
-    @test typeof(K1K2.a) == T
-
-    check_fields(K1K2.k[1], K1)
-    check_fields(K1K2.k[2], K2)
-
-    K1K2 = a*(K1*K2*K3)
-
-    @test K1K2.a == a
-    @test typeof(K1K2.a) == T
-
-    K1K2 = a*K1*K2*K3*b
-
-    @test K1K2.a == a*b
-    @test typeof(K1K2.a) == T
-
-    check_fields(K1K2.k[1], K1)
-    check_fields(K1K2.k[2], K2)
-    check_fields(K1K2.k[3], K3)
-
-    K1K2 = (a*K1)*(K2*K3*b)
-
-    @test K1K2.a == a*b
-    @test typeof(K1K2.a) == T
-
-    check_fields(K1K2.k[1], K1)
-    check_fields(K1K2.k[2], K2)
-    check_fields(K1K2.k[3], K3)
+        check_fields(K1K2.k[1], K1)
+        n >= 2 && check_fields(K1K2.k[2], K2)
+        n >= 3 && check_fields(K1K2.k[3], K3)
+    end
 
 end
 println(" Done")
