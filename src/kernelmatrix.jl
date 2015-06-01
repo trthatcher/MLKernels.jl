@@ -2,37 +2,6 @@
   Kernel Matrices
 ===================================================================================================#
 
-macro check_KXX_dims(is_trans, K, X, n)
-    quote
-        $n = size($X, is_trans ? 2 : 1)
-        if size($K) != ($n, $n)
-            desc = string(" but K is ", size($K,1), "×", size($K,2), "; K must be ", $n, "×", $n, ".")
-            if $is_trans
-                throw(ArgumentError(string("X is ", size($X,1), "×", $n, desc)))
-            else
-                throw(ArgumentError(string("X is ", $n, "×", size($X,1), desc)))
-            end
-        end
-    end
-end
-
-macro check_KXY_dims(is_trans, K, X, n, Y, m, d)
-    quote
-        $n, $m = $is_trans ? (size($X, 2), size($Y,2)) : (size($X, 1), size($Y,1))    
-        if ($d = size($X, is_trans ? 1 : 2)) != size($Y, $is_trans ? 1 : 2)
-            throw(ArgumentError("X and Y do not have the same number of " * (is_trans ? "rows." : "columns.")))
-        end
-        if size($K) != ($n,$m)
-            desc = string(" but K is ", size($K,1), "×", size($K,2), "; K must be ", $n, "×", $m, ".")
-            if $is_trans
-                throw(ArgumentError(string("X is ", $d, "×", $n, " and Y is ", $d, "×", $m, desc)))
-            else
-                throw(ArgumentError(string("X is ", $n, "×", $d, " and Y is ", $m, "×", $d, desc)))
-            end
-        end
-    end
-end
-
 #==========================================================================
   Kernel Matrix Transformation
 ==========================================================================#
@@ -49,6 +18,21 @@ center_kernelmatrix{T<:FloatingPoint}(K::Matrix{T}) = center_kernelmatrix!(copy(
 
 
 #==========================================================================
+  Generic Kernel Matrix Functions
+==========================================================================#
+
+function kernelmatrix{T<:FloatingPoint}(κ::Kernel{T}, X::Matrix{T}, trans::Char = 'N', uplo::Char = 'U', sym::Bool = true)
+    is_trans = trans == 'T'
+    kernelmatrix!(init_gramian(X, is_trans), κ, X, is_trans, uplo == 'U', true)
+end
+
+function kernelmatrix{T<:FloatingPoint}(κ::Kernel{T}, X::Matrix{T}, Y::Matrix{T}, trans::Char = 'N')
+    is_trans = trans == 'T'
+    kernelmatrix!(init_gramian(X, Y, is_trans), κ, X, Y, is_trans)
+end
+
+
+#==========================================================================
   Generic Simple Kernel Matrix Functions
 ==========================================================================#
 
@@ -56,7 +40,15 @@ center_kernelmatrix{T<:FloatingPoint}(K::Matrix{T}) = center_kernelmatrix!(copy(
 #   If trans == 'N' -> gramian(X) = XXᵀ (X is a design matrix IE rows are coordinates)
 #            == 'T' -> gramian(X) = XᵀX (X is a transposed design matrix IE columns are coordinates)
 function kernelmatrix!{T<:FloatingPoint}(K::Matrix{T}, κ::SimpleKernel{T}, X::Matrix{T}, is_trans::Bool = false, is_upper::Bool = true, sym::Bool = true)
-    @check_KXX_dims(is_trans, K, X, n)
+    n = size(X, is_trans ? 2 : 1)
+    if size(K) != (n, n)
+        desc = string(" but K is ", size(K,1), "×", size(K,2), "; K must be $n×$n.")
+        if is_trans
+            throw(ArgumentError(string("X is ", size(X,1), "×", n, desc)))
+        else
+            throw(ArgumentError(string("X is ", n, "×", size(X,1), desc)))
+        end
+    end
     @transpose_access is_trans (X,) @inbounds for j = 1:n
         for i = is_upper ? (1:j) : (j:n)
             K[i,j] = kernel(κ, X[i,:], X[j,:])
@@ -65,17 +57,24 @@ function kernelmatrix!{T<:FloatingPoint}(K::Matrix{T}, κ::SimpleKernel{T}, X::M
     sym ? (is_upper ? syml!(K) : symu!(K)) : K
 end
 
-function kernelmatrix{T<:FloatingPoint}(κ::SimpleKernel{T}, X::Matrix{T}, trans::Char = 'N', uplo::Char = 'U', sym::Bool = true)
-    is_trans = trans == 'T'
-    n = size(X, is_trans ? 2 : 1)
-    kernelmatrix!(Array(T, n, n), κ, X, is_trans, uplo == 'U', true)
-end
 
 # Returns the upper right corner of the kernel matrix of [Xᵀ Yᵀ]ᵀ or [X Y]
 #   If trans == 'N' -> gramian(X) = XXᵀ (X is a design matrix IE rows are coordinates)
 #            == 'T' -> gramian(X) = XᵀX (X is a transposed design matrix IE columns are coordinates)
 function kernelmatrix!{T<:FloatingPoint}(K::Matrix{T}, κ::SimpleKernel{T}, X::Matrix{T}, Y::Matrix{T}, is_trans::Bool = false)
-    @check_kernelmatrix_dims(is_trans, K, X, n, Y, m, d)
+    n = size(X, is_trans ? 2 : 1)
+    m = size(Y, is_trans ? 2 : 1)
+    if (d = size(X, is_trans ? 1 : 2)) != size(Y, is_trans ? 1 : 2)
+        throw(ArgumentError("X and Y do not have the same number of " * (is_trans ? "rows." : "columns.")))
+    end
+    if size(K) != (n, m)
+        desc = string(" but K is ", size(K,1), "×", size(K,2), "; K must be $n×$m.")
+        if is_trans
+            throw(ArgumentError(string("X is $d×$n and Y is $d×$m", desc)))
+        else
+            throw(ArgumentError(string("X is $n×$d and Y is $m×$d", desc)))
+        end
+    end
     @transpose_access is_trans (X,Y) @inbounds for j = 1:m 
         for i = 1:n
             K[i,j] = kernel(κ, X[i,:], Y[j,:])
@@ -84,23 +83,16 @@ function kernelmatrix!{T<:FloatingPoint}(K::Matrix{T}, κ::SimpleKernel{T}, X::M
     K
 end
 
-function kernelmatrix{T<:FloatingPoint}(κ::SimpleKernel{T}, X::Matrix{T}, Y::Matrix{T}, trans::Char = 'N')
-    is_trans = trans == 'T'  # True if columns are observations
-    n, m = is_trans ? (size(X, 2), size(Y,2)) : (size(X, 1), size(Y,1))
-    kernelmatrix!(Array(T, n, m), κ, X, Y, is_trans)
-end
-
 
 #==========================================================================
   Generic Kernel Matrix Product Functions
 ==========================================================================#
 
 function kernelmatrix!{T<:FloatingPoint}(K::Matrix{T}, κ::KernelProduct{T}, X::Matrix{T}, is_trans::Bool = false, is_upper::Bool = true, sym::Bool = true)
-    @check_KXX_dims(is_trans, K, X, n)
     c = length(κ.k)
     kernelmatrix!(K, κ.k[1], X, is_trans, is_upper, false)
     if c > 1
-        K_factor = Array(T, n, n)
+        K_factor = similar(K)
         for i = 2:c
             hadamard!(K, kernelmatrix!(K_factor, κ.k[i], X, is_trans, is_upper, false))
         end
@@ -110,11 +102,10 @@ function kernelmatrix!{T<:FloatingPoint}(K::Matrix{T}, κ::KernelProduct{T}, X::
 end
 
 function kernelmatrix!{T<:FloatingPoint}(K::Matrix{T}, κ::KernelProduct{T}, X::Matrix{T}, Y::Matrix{T}, is_trans::Bool = false)
-    @check_kernelmatrix_dims(is_trans, K, X, n, Y, m, d)
     c = length(κ.k)
     kernelmatrix!(K, κ.k[1], X, Y, is_trans)
     if c > 1
-        K_factor = Array(T, n, m)
+        K_factor = similar(K)
         for i = 2:c
             hadamard!(K, kernelmatrix!(K_factor, κ.k[i], X, Y, is_trans))
         end
@@ -122,16 +113,16 @@ function kernelmatrix!{T<:FloatingPoint}(K::Matrix{T}, κ::KernelProduct{T}, X::
     κ.a == 1 ? K : scale!(a, K)
 end
 
+
 #==========================================================================
   Generic Kernel Matrix Sum Functions
 ==========================================================================#
 
 function kernelmatrix!{T<:FloatingPoint}(K::Matrix{T}, κ::KernelSum{T}, X::Matrix{T}, is_trans::Bool = false, is_upper::Bool = true, sym::Bool = true)
-    @check_KXX_dims(is_trans, K, X, n)
     c = length(κ.k)
     kernelmatrix!(K, κ.k[1], X, is_trans, is_upper, false)
     if c > 1
-        K_factor = Array(T, n, n)
+        K_factor = similar(K)
         for i = 2:c
             axpy!(one(T), kernelmatrix!(K_factor, κ.k[i], X, is_trans, is_upper, false), K)
         end
@@ -140,11 +131,10 @@ function kernelmatrix!{T<:FloatingPoint}(K::Matrix{T}, κ::KernelSum{T}, X::Matr
 end
 
 function kernelmatrix!{T<:FloatingPoint}(K::Matrix{T}, κ::KernelSum{T}, X::Matrix{T}, Y::Matrix{T}, is_trans::Bool = false)
-    @check_kernelmatrix_dims(is_trans, K, X, n, Y, m, d)
     c = length(κ.k)
     kernelmatrix!(K, κ.k[1], X, Y, is_trans)
     if c > 1
-        K_factor = Array(T, n, m)
+        K_factor = similar(K)
         for i = 2:c
             axpy!(one(T), kernelmatrix!(K_factor, κ.k[i], X, Y, is_trans), K)
         end
