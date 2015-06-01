@@ -151,24 +151,24 @@ kappa{T<:FloatingPoint}(κ::RationalQuadraticKernel{T,:β1}, z::T) = 1/(1 + κ.a
 kappa{T<:FloatingPoint}(κ::RationalQuadraticKernel{T,:γ1}, z::T) = (1 + κ.alpha*z)^(-κ.beta)
 
 function kappa_dz{T<:FloatingPoint}(κ::RationalQuadraticKernel{T}, z::T)
-    v1 = κ.alpha * z^κ.gamma + 1
-    -κ.alpha * κ.beta * κ.gamma * z^(κ.gamma - 1) * (v1^(-κ.beta - 1))
+    azg1 = 1 + κ.alpha * z^κ.gamma
+    -κ.alpha * κ.beta * κ.gamma * z^(κ.gamma - 1) * (azg1^(-κ.beta - 1))
 end
 
 function kappa_dz2{T<:FloatingPoint}(κ::RationalQuadraticKernel{T}, z::T)
-    v1 = κ.alpha * z^κ.gamma
-    v2 = κ.beta * κ.gamma
-    κ.alpha * v2 * (z^(κ.gamma - 2)) * ((1 + v1)^(-κ.beta - 2)) * (v2*v1 + v1 - γ + 1)
+    azg = κ.alpha * z^κ.gamma
+    bg = κ.beta * κ.gamma
+    bg * azg * (z^(-2)) * ((1 + azg)^(-κ.beta - 2)) * (azg * (1 + bg) - κ.gamma + 1)
 end
 
 function kappa_dalpha{T<:FloatingPoint}(κ::RationalQuadraticKernel{T}, z::T)
-    v1 = 1 + κ.alpha*f1
-    v2 = -κ.beta
-    v2 * z^κ.gamma * v1^(v2 - 1)
+    zg = z^κ.gamma
+    azg1 = 1 + κ.alpha * zg
+    -κ.beta * (azg1^(-κ.beta - 1)) * zg
 end
 function kappa_dbeta{T<:FloatingPoint}(κ::RationalQuadraticKernel{T}, z::T)
-    v1 = κ.alpha * z^κ.gamma + 1
-    -log(v1) * v1^(-κ.beta)
+    azg1 = 1 + κ.alpha * z^κ.gamma
+    -log(azg1) * azg1^(-κ.beta)
 end
 function kappa_dgamma{T<:FloatingPoint}(κ::RationalQuadraticKernel{T}, z::T)
     v1 = κ.alpha*z^κ.gamma

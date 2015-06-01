@@ -51,7 +51,7 @@ include("vectorfunctions.jl")
 include("matrixfunctions.jl")
 include("kernels.jl")
 include("kernelderiv.jl")
-#include("kernelmatrix.jl")
+include("kernelmatrix.jl")
 include("kernelmatrixderiv.jl")
 #include("kernelmatrixapprox.jl")
 

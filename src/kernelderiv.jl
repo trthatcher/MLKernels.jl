@@ -257,48 +257,50 @@ end
 ===========================================================================#
 
 function kernel_dx{T<:FloatingPoint}(ψ::KernelProduct{T}, x::Vector{T}, y::Vector{T})
-    ψ.a * (kernel_dx(ψ.k1, x, y)*kernel(ψ.k2, x, y) + kernel(ψ.k1, x, y)*kernel_dx(ψ.k2, x, y))
+    ks = [kernel(ψ.k[i], x, y) for i=1:length(ψ.k)]
+    ψ.a * prod(ks) * sum([kernel_dx(ψ.k[i], x, y)/ks[i] for i=1:length(ψ.k)])
 end
 
 function kernel_dy{T<:FloatingPoint}(ψ::KernelProduct{T}, x::Vector{T}, y::Vector{T})
-    ψ.a * (kernel_dy(ψ.k1, x, y)*kernel(ψ.k2, x, y) + kernel(ψ.k1, x, y)*kernel_dy(ψ.k2, x, y))
+    ks = [kernel(ψ.k[i], x, y) for i=1:length(ψ.k)]
+    ψ.a * prod(ks) * sum([kernel_dy(ψ.k[i], x, y)/ks[i] for i=1:length(ψ.k)])
 end
 
-function kernel_dxdy{T<:FloatingPoint}(ψ::KernelProduct{T}, x::Vector{T}, y::Vector{T})
-    ψ.a * (kernel_dxdy(ψ.k1, x, y)*kernel(ψ.k2, x, y)
-            + kernel_dy(ψ.k1, x, y)*kernel_dx(ψ.k2, x, y)'
-            + kernel_dx(ψ.k1, x, y)*kernel_dy(ψ.k2, x, y)'
-            + kernel(ψ.k1, x, y)*kernel_dxdy(ψ.k2, x, y))
-end
+#function kernel_dxdy{T<:FloatingPoint}(ψ::KernelProduct{T}, x::Vector{T}, y::Vector{T})
+#    ψ.a * (kernel_dxdy(ψ.k1, x, y)*kernel(ψ.k2, x, y)
+#            + kernel_dy(ψ.k1, x, y)*kernel_dx(ψ.k2, x, y)'
+#            + kernel_dx(ψ.k1, x, y)*kernel_dy(ψ.k2, x, y)'
+#            + kernel(ψ.k1, x, y)*kernel_dxdy(ψ.k2, x, y))
+#end
 
-function kernel_dp{T<:FloatingPoint}(ψ::KernelProduct{T}, param::Symbol, x::Vector{T}, y::Vector{T})
-    if param == :a
-        kernel(ψ.k1, x, y) * kernel(ψ.k2, x, y)
-    elseif (sparam = string(param); beginswith(sparam, "k1."))
-        subparam = symbol(sparam[4:end])
-        ψ.a * kernel_dp(ψ.k1, subparam, x, y) * kernel(ψ.k2, x, y)
-    elseif beginswith(sparam, "k2.")
-        subparam = symbol(sparam[4:end])
-        ψ.a * kernel(ψ.k1, x, y) * kernel_dp(ψ.k2, subparam, x, y)
-    else
-        warn("derivative with respect to unrecognized symbol")
-        zero(T)
-    end
-end
-
-function kernel_dp{T<:FloatingPoint}(ψ::KernelProduct{T}, param::Integer, x::Vector{T}, y::Vector{T})
-    N1 = length(kernelparameters(ψ.k1))
-    N2 = length(kernelparameters(ψ.k2))
-    if param == 1
-        kernel_dp(ψ, :a, x, y)
-    elseif 2 <= param <= N1 + 1
-        ψ.a * kernel_dp(ψ.k1, param-1, x, y) * kernel(ψ.k2, x, y)
-    elseif N1 + 2 <= param <= N1 + N2 + 1
-        ψ.a * kernel(ψ.k1, x, y) * kernel_dp(ψ.k2, param-N1-1, x, y)
-    else
-        throw(ArgumentError("param must be between 1 and $(N1+N2+1)"))
-    end
-end
+#function kernel_dp{T<:FloatingPoint}(ψ::KernelProduct{T}, param::Symbol, x::Vector{T}, y::Vector{T})
+#    if param == :a
+#        kernel(ψ.k1, x, y) * kernel(ψ.k2, x, y)
+#    elseif (sparam = string(param); beginswith(sparam, "k1."))
+#        subparam = symbol(sparam[4:end])
+#        ψ.a * kernel_dp(ψ.k1, subparam, x, y) * kernel(ψ.k2, x, y)
+#    elseif beginswith(sparam, "k2.")
+#        subparam = symbol(sparam[4:end])
+#        ψ.a * kernel(ψ.k1, x, y) * kernel_dp(ψ.k2, subparam, x, y)
+#    else
+#        warn("derivative with respect to unrecognized symbol")
+#        zero(T)
+#    end
+#end
+#
+#function kernel_dp{T<:FloatingPoint}(ψ::KernelProduct{T}, param::Integer, x::Vector{T}, y::Vector{T})
+#    N1 = length(kernelparameters(ψ.k1))
+#    N2 = length(kernelparameters(ψ.k2))
+#    if param == 1
+#        kernel_dp(ψ, :a, x, y)
+#    elseif 2 <= param <= N1 + 1
+#        ψ.a * kernel_dp(ψ.k1, param-1, x, y) * kernel(ψ.k2, x, y)
+#    elseif N1 + 2 <= param <= N1 + N2 + 1
+#        ψ.a * kernel(ψ.k1, x, y) * kernel_dp(ψ.k2, param-N1-1, x, y)
+#    else
+#        throw(ArgumentError("param must be between 1 and $(N1+N2+1)"))
+#    end
+#end
 
 
 #===========================================================================
@@ -306,46 +308,46 @@ end
 ===========================================================================#
 
 function kernel_dx{T<:FloatingPoint}(ψ::KernelSum{T}, x::Vector{T}, y::Vector{T})
-    ψ.a1*kernel_dx(ψ.k1, x, y) + ψ.a2*kernel_dx(ψ.k2, x, y)
+    sum([kernel_dx(ψ.k[i], x, y) for i=1:length(ψ.k)])
 end
 
 function kernel_dy{T<:FloatingPoint}(ψ::KernelSum{T}, x::Vector{T}, y::Vector{T})
-    ψ.a1*kernel_dy(ψ.k1, x, y) + ψ.a2*kernel_dy(ψ.k2, x, y)
+    sum([kernel_dy(ψ.k[i], x, y) for i=1:length(ψ.k)])
 end
 
 function kernel_dxdy{T<:FloatingPoint}(ψ::KernelSum{T}, x::Vector{T}, y::Vector{T})
-    ψ.a1*kernel_dxdy(ψ.k1, x, y) + ψ.a2*kernel_dxdy(ψ.k2, x, y)
+    sum([kernel_dxdy(ψ.k[i], x, y) for i=1:length(ψ.k)])
 end
 
-function kernel_dp{T<:FloatingPoint}(ψ::KernelSum{T}, param::Symbol, x::Vector{T}, y::Vector{T})
-    if param == :a1
-        kernel(ψ.k1, x, y)
-    elseif param == :a2
-        kernel(ψ.k2, x, y)
-    elseif (sparam = string(param); beginswith(sparam, "k1."))
-        subparam = symbol(sparam[4:end])
-        ψ.a1 * kernel_dp(ψ.k1, subparam, x, y)
-    elseif beginswith(sparam, "k2.")
-        subparam = symbol(sparam[4:end])
-        ψ.a2 * kernel_dp(ψ.k2, subparam, x, y)
-    else
-        warn("derivative with respect to unrecognized symbol")
-        zero(T)
-    end
-end
-
-function kernel_dp{T<:FloatingPoint}(ψ::KernelSum{T}, param::Integer, x::Vector{T}, y::Vector{T})
-    N1 = length(kernelparameters(ψ.k1))
-    N2 = length(kernelparameters(ψ.k2))
-    if param == 1
-        kernel_dp(ψ, :a1, x, y)
-    elseif 2 <= param <= N1 + 1
-        ψ.a1 * kernel_dp(ψ.k1, param-1, x, y)
-    elseif param == N1 + 2
-        kernel_dp(ψ, :a2, x, y)
-    elseif N1 + 3 <= param <= N1 + N2 + 2
-        ψ.a2 * kernel_dp(ψ.k2, param-N1-2, x, y)
-    else
-        throw(ArgumentError("param must be between 1 and $(N1+N2+2)"))
-    end
-end
+#function kernel_dp{T<:FloatingPoint}(ψ::KernelSum{T}, param::Symbol, x::Vector{T}, y::Vector{T})
+#    if param == :a1
+#        kernel(ψ.k1, x, y)
+#    elseif param == :a2
+#        kernel(ψ.k2, x, y)
+#    elseif (sparam = string(param); beginswith(sparam, "k1."))
+#        subparam = symbol(sparam[4:end])
+#        ψ.a1 * kernel_dp(ψ.k1, subparam, x, y)
+#    elseif beginswith(sparam, "k2.")
+#        subparam = symbol(sparam[4:end])
+#        ψ.a2 * kernel_dp(ψ.k2, subparam, x, y)
+#    else
+#        warn("derivative with respect to unrecognized symbol")
+#        zero(T)
+#    end
+#end
+#
+#function kernel_dp{T<:FloatingPoint}(ψ::KernelSum{T}, param::Integer, x::Vector{T}, y::Vector{T})
+#    N1 = length(kernelparameters(ψ.k1))
+#    N2 = length(kernelparameters(ψ.k2))
+#    if param == 1
+#        kernel_dp(ψ, :a1, x, y)
+#    elseif 2 <= param <= N1 + 1
+#        ψ.a1 * kernel_dp(ψ.k1, param-1, x, y)
+#    elseif param == N1 + 2
+#        kernel_dp(ψ, :a2, x, y)
+#    elseif N1 + 3 <= param <= N1 + N2 + 2
+#        ψ.a2 * kernel_dp(ψ.k2, param-N1-2, x, y)
+#    else
+#        throw(ArgumentError("param must be between 1 and $(N1+N2+2)"))
+#    end
+#end

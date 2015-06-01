@@ -6,6 +6,8 @@
   Auxiliary Functions
 ==========================================================================#
 
+description_matrix_size(A::Matrix) = string(size(A,1), "×", size(A,2))
+
 # Symmetrize the lower half of matrix S using the upper half of S
 function syml!(S::Matrix)
     p = size(S, 1)
