@@ -205,7 +205,11 @@ ismercer(ψ::KernelProduct) = all(ismercer, ψ.k)
 
 function description_string{T<:FloatingPoint}(ψ::KernelProduct{T}, eltype::Bool = true)
     descs = map(κ -> description_string(κ, false), ψ.k)
-    "KernelProduct" * (eltype ? "{$(T)}" : "") * "($(ψ.a), $(join(descs, ", ")))"
+    if eltype
+        "KernelProduct" * (eltype ? "{$(T)}" : "") * "($(ψ.a), $(join(descs, ", ")))"
+    else
+        (ψ.a == 1 ? "" : "$(ψ.a)") * "($(join(descs, " * ")))"
+    end
 end
 
 function show(io::IO, ψ::KernelProduct)
@@ -261,7 +265,11 @@ ismercer(ψ::KernelSum) = all(ismercer, ψ.k)
 
 function description_string{T<:FloatingPoint}(ψ::KernelSum{T}, eltype::Bool = true)
     descs = map(κ -> description_string(κ, false), ψ.k)
-    "KernelSum" * (eltype ? "{$(T)}" : "") * "($(join(descs, ", ")))"
+    if eltype
+        "KernelSum" * (eltype ? "{$(T)}" : "") * "($(join(descs, ", ")))"
+    else
+        "($(join(descs, " + ")))"
+    end
 end
 
 function show(io::IO, ψ::KernelSum)
