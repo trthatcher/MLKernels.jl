@@ -135,6 +135,7 @@ function test_kernel_dp(ktype, param, derivs, x, y, epsilon)
     print(" ")
 end
 
+
 println("- Testing vector function derivatives:")
 for T in (Float64,)
     x = T[1, 2, 7, 3]
@@ -248,4 +249,18 @@ for T in (Float64,)
         test_kernel_dp(kconst, param, derivs, x[1], y[1], 1e-9)
         println("Done")
     end
+
+    K1 = ExponentialKernel(one(T))
+    K2 = RationalQuadraticKernel(one(T))
+    K3 = PolynomialKernel(one(T))
+    K4 = SigmoidKernel(one(T))
+
+    for K1K2 in (K1*K2, K1+K2, K1*K2*K3*K4, K1+K2+K3+K4, K1*K2+K3*K4,
+                 K1*(K2+K3)*K4, (K1+K2)*(K3+K4), K1*K3+K1*K4+K2*K3+K2*K4)
+        print("    - Testing $K1K2 ... ")
+        test_kernel_dxdy(K1K2, x, y, 1e-7)
+        test_kernel_dxdy(K1K2, x[1], y[1], 1e-7)
+        println("Done")
+    end
+      
 end

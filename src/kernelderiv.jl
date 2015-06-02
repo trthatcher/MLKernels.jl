@@ -275,7 +275,7 @@ function kernel_dxdy{T<:FloatingPoint}(ψ::KernelProduct{T}, x::Vector{T}, y::Ve
         prod_ks_1_i1 = prod(ks[1:i-1])
         dxdy += prod_ks_1_i1 * kernel_dxdy(ψ.k[i], x, y) * prod(ks[i+1:end])
         for j = i+1:n
-            dxdy += prod_ks_1_i1 * prod(ks[i+1:j-1]) * prod(ks[j+1:end]) * (k_dy[i]*k_dx[j]' + k_dx[i]*k_dy[j]')
+            dxdy += prod_ks_1_i1 * prod(ks[i+1:j-1]) * prod(ks[j+1:end]) * (k_dx[j]*k_dy[i]' + k_dx[i]*k_dy[j]')
         end
     end
     ψ.a * dxdy
