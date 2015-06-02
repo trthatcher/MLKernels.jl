@@ -10,8 +10,8 @@ immutable ExponentialKernel{T<:FloatingPoint,CASE} <: SquaredDistanceKernel{T}
     alpha::T
     gamma::T
     function ExponentialKernel(α::T, γ::T)
-        α > 0 || throw(ArgumentError("α = $(α) must be in the range (0,∞)."))
-        0 < γ <= 1 || throw(ArgumentError("γ = $(γ) must be in the range (0,1]."))
+        α > 0 || throw(ArgumentError("α = $(α) must be greater than zero."))
+        0 < γ <= 1 || throw(ArgumentError("γ = $(γ) must be in the interval (0,1]."))
         if CASE == :γ1 &&  γ != 1
             error("Special case γ = 1 flagged but γ = $(γ)")
         end
@@ -91,7 +91,7 @@ immutable RationalQuadraticKernel{T<:FloatingPoint,CASE} <: SquaredDistanceKerne
     function RationalQuadraticKernel(α::T, β::T, γ::T)
         α > 0 || throw(ArgumentError("α = $(α) must be greater than zero."))
         β > 0 || throw(ArgumentError("β = $(β) must be greater than zero."))
-        0 < γ <= 1 || throw(ArgumentError("γ = $(γ) must be in the range (0,1]."))      
+        0 < γ <= 1 || throw(ArgumentError("γ = $(γ) must be in the interval (0,1]."))      
         if CASE == :β1γ1 && (β != 1 || γ != 1)
             error("Special case β = 1 and γ = 1 flagged but β = $(β) and γ = $(γ)")
         elseif CASE == :β1 && β != 1

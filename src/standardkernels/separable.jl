@@ -8,7 +8,7 @@ immutable MercerSigmoidKernel{T<:FloatingPoint} <: SeparableKernel{T}
     d::T
     b::T
     function MercerSigmoidKernel(d::T, b::T)
-        b > 0 || throw(ArgumentError("b = $(b) must be a positive number."))
+        b > 0 || throw(ArgumentError("b = $(b) must be greater than zero."))
         new(d, b)
     end
 end
