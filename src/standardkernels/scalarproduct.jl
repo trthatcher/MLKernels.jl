@@ -19,6 +19,7 @@ immutable PolynomialKernel{T<:FloatingPoint,CASE} <: ScalarProductKernel{T}
     end
 end
 PolynomialKernel{T<:FloatingPoint}(α::T = 1.0, c::T = one(T), d::T = convert(T, 2)) = PolynomialKernel{T, d == 1 ? :d1 : :Ø}(α, c, d)
+PolynomialKernel{T<:FloatingPoint}(α::T, c::T, d::Integer) = PolynomialKernel(α, c, convert(T, d))
 
 ismercer(::PolynomialKernel) = true
 
@@ -53,15 +54,13 @@ kappa_dalpha{T<:FloatingPoint}(κ::PolynomialKernel{T}, xᵀy::T) = xᵀy*κ.d*(
 
 kappa_dc{T<:FloatingPoint}(κ::PolynomialKernel{T}, xᵀy::T) = κ.d*(κ.alpha*xᵀy + κ.c)^(κ.d-1)
 
-kappa_dd{T<:FloatingPoint}(κ::PolynomialKernel{T}, xᵀy::T) = log(κ.alpha*xᵀy + κ.c)*(κ.alpha*xᵀy + κ.c)^κ.d
-
 function kappa_dp{T<:FloatingPoint}(κ::PolynomialKernel{T}, param::Symbol, z::T)
     if param == :alpha
         kappa_dalpha(κ, z)
     elseif param == :c
         kappa_dc(κ, z)
     elseif param == :d
-        kappa_dd(κ, z)
+        throw(DomainError("kappa_dd: Cannot differentiate with respect to an integer parameter."))
     else
         zero(T)
     end
