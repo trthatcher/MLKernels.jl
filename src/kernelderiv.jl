@@ -3,8 +3,7 @@
 ===================================================================================================#
 
 # concrete kernel types should provide kernel_dp(::<KernelType>, param::Symbol, x, y)
-kernel_dp{T<:FloatingPoint}(κ::StandardKernel{T}, param::Integer, x::Array{T}, y::Array{T}) = kernel_dp(κ, kernelparameters(κ)[param], x, y)
-kernel_dp{T<:FloatingPoint}(κ::StandardKernel{T}, param::Integer, x::T, y::T) = kernel_dp(κ, kernelparameters(κ)[param], x, y)
+kernel_dp{T<:FloatingPoint}(κ::StandardKernel{T}, param::Integer, x::KernelInput{T}, y::KernelInput{T}) = kernel_dp(κ, kernelparameters(κ)[param], x, y)
 
 
 #===========================================================================
@@ -256,12 +255,12 @@ end
   Product Kernel Derivatives
 ===========================================================================#
 
-function kernel_dx{T<:FloatingPoint}(ψ::KernelProduct{T}, x::Vector{T}, y::Vector{T})
+function kernel_dx{T<:FloatingPoint}(ψ::KernelProduct{T}, x::KernelInput{T}, y::KernelInput{T})
     ks = map(κ -> kernel(κ,x,y), ψ.k)
     ψ.a * prod(ks) * sum([kernel_dx(ψ.k[i], x, y) / ks[i] for i=1:length(ψ.k)])
 end
 
-function kernel_dy{T<:FloatingPoint}(ψ::KernelProduct{T}, x::Vector{T}, y::Vector{T})
+function kernel_dy{T<:FloatingPoint}(ψ::KernelProduct{T}, x::KernelInput{T}, y::KernelInput{T})
     ks = map(κ -> kernel(κ,x,y), ψ.k)
     ψ.a * prod(ks) * sum([kernel_dy(ψ.k[i], x, y) / ks[i] for i=1:length(ψ.k)])
 end
@@ -273,16 +272,32 @@ function kernel_dxdy{T<:FloatingPoint}(ψ::KernelProduct{T}, x::Vector{T}, y::Ve
     k_dy = [kernel_dy(ψ.k[i], x, y) for i=1:n]
     dxdy = zeros(T, length(x), length(y))
     for i = 1:n
-        dxdy += prod(ks[1:i-1]) * kernel_dxdy(ψ.k[i], x, y) * prod(ks[i+1:end])
+        prod_ks_1_i1 = prod(ks[1:i-1])
+        dxdy += prod_ks_1_i1 * kernel_dxdy(ψ.k[i], x, y) * prod(ks[i+1:end])
         for j = i+1:n
-            dxdy += prod(ks[1:i-1]) * k_dy[i] * prod(ks[i+1:j-1]) * k_dx[j]' * prod(ks[j+1:end])
-            dxdy += prod(ks[1:i-1]) * k_dx[i] * prod(ks[i+1:j-1]) * k_dy[j]' * prod(ks[j+1:end])
+            dxdy += prod_ks_1_i1 * prod(ks[i+1:j-1]) * prod(ks[j+1:end]) * (k_dy[i]*k_dx[j]' + k_dx[i]*k_dy[j]')
         end
     end
     ψ.a * dxdy
 end
 
-function kernel_dp{T<:FloatingPoint}(ψ::KernelProduct{T}, param::Symbol, x::Vector{T}, y::Vector{T})
+function kernel_dxdy{T<:FloatingPoint}(ψ::KernelProduct{T}, x::T, y::T)
+    n = length(ψ.k)
+    ks = map(κ -> kernel(κ,x,y), ψ.k)
+    k_dx = map(κ -> kernel_dx(κ,x,y), ψ.k)
+    k_dy = map(κ -> kernel_dy(κ,x,y), ψ.k)
+    dxdy = zero(T)
+    for i = 1:n
+        prod_ks_1_i1 = prod(ks[1:i-1])
+        dxdy += prod_ks_1_i1 * kernel_dxdy(ψ.k[i], x, y) * prod(ks[i+1:end])
+        for j = i+1:n
+            dxdy += prod_ks_1_i1 * prod(ks[i+1:j-1]) * prod(ks[j+1:end]) * (k_dy[i]*k_dx[j] + k_dx[i]*k_dy[j])
+        end
+    end
+    ψ.a * dxdy
+end
+
+function kernel_dp{T<:FloatingPoint}(ψ::KernelProduct{T}, param::Symbol, x::KernelInput{T}, y::KernelInput{T})
     if param == :a
         prod(map(κ -> kernel(κ,x,y), ψ.k))
     elseif (idx = indexin([param], kernelparameters(ψ))[1]) != 0
@@ -293,7 +308,7 @@ function kernel_dp{T<:FloatingPoint}(ψ::KernelProduct{T}, param::Symbol, x::Vec
     end
 end
 
-function kernel_dp{T<:FloatingPoint}(ψ::KernelProduct{T}, param::Integer, x::Vector{T}, y::Vector{T})
+function kernel_dp{T<:FloatingPoint}(ψ::KernelProduct{T}, param::Integer, x::KernelInput{T}, y::KernelInput{T})
     n = length(ψ.k)
     nps = map(κ -> length(kernelparameters(κ)), ψ.k)
     totN = 1 + sum(nps)
@@ -319,19 +334,19 @@ end
   Kernel Sum
 ===========================================================================#
 
-function kernel_dx{T<:FloatingPoint}(ψ::KernelSum{T}, x::Vector{T}, y::Vector{T})
+function kernel_dx{T<:FloatingPoint}(ψ::KernelSum{T}, x::KernelInput{T}, y::KernelInput{T})
     sum(map(κ -> kernel_dx(κ, x, y), ψ.k))
 end
 
-function kernel_dy{T<:FloatingPoint}(ψ::KernelSum{T}, x::Vector{T}, y::Vector{T})
+function kernel_dy{T<:FloatingPoint}(ψ::KernelSum{T}, x::KernelInput{T}, y::KernelInput{T})
     sum(map(κ -> kernel_dy(κ, x, y), ψ.k))
 end
 
-function kernel_dxdy{T<:FloatingPoint}(ψ::KernelSum{T}, x::Vector{T}, y::Vector{T})
+function kernel_dxdy{T<:FloatingPoint}(ψ::KernelSum{T}, x::KernelInput{T}, y::KernelInput{T})
     sum(map(κ -> kernel_dxdy(κ, x, y), ψ.k))
 end
 
-function kernel_dp{T<:FloatingPoint}(ψ::KernelSum{T}, param::Symbol, x::Vector{T}, y::Vector{T})
+function kernel_dp{T<:FloatingPoint}(ψ::KernelSum{T}, param::Symbol, x::KernelInput{T}, y::KernelInput{T})
     if (idx = indexin([param], kernelparameters(ψ))[1]) != 0
         kernel_dp(ψ, idx, x, y)
     else
@@ -340,7 +355,7 @@ function kernel_dp{T<:FloatingPoint}(ψ::KernelSum{T}, param::Symbol, x::Vector{
     end
 end
 
-function kernel_dp{T<:FloatingPoint}(ψ::KernelSum{T}, param::Integer, x::Vector{T}, y::Vector{T})
+function kernel_dp{T<:FloatingPoint}(ψ::KernelSum{T}, param::Integer, x::KernelInput{T}, y::KernelInput{T})
     n = length(ψ.k)
     nps = map(κ -> length(kernelparameters(κ)), ψ.k)
     totN = sum(nps)

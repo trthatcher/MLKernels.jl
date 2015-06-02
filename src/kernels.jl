@@ -2,6 +2,8 @@
   Generic Kernels
 ===================================================================================================#
 
+typealias KernelInput{T} Union(T,Vector{T})
+
 abstract Kernel{T<:FloatingPoint}
 
 eltype{T}(κ::Kernel{T}) = T
@@ -189,7 +191,7 @@ for kernel_type in (:KernelProduct, :CompositeKernel, :Kernel)
     end
 end
 
-kernel{T<:FloatingPoint}(ψ::KernelProduct{T}, x::Vector{T}, y::Vector{T}) = ψ.a * prod(map(κ -> kernel(κ,x,y), ψ.k))
+kernel{T<:FloatingPoint}(ψ::KernelProduct{T}, x::KernelInput{T}, y::KernelInput{T}) = ψ.a * prod(map(κ -> kernel(κ,x,y), ψ.k))
 
 function kernelparameters(ψ::KernelProduct)
     parameter_list = [:a]
@@ -244,7 +246,7 @@ for kernel_type in (:KernelSum, :CompositeKernel, :Kernel)
     end
 end
 
-kernel{T<:FloatingPoint}(ψ::KernelSum{T}, x::Vector{T}, y::Vector{T}) = sum(map(κ -> kernel(κ,x,y), ψ.k))
+kernel{T<:FloatingPoint}(ψ::KernelSum{T}, x::KernelInput{T}, y::KernelInput{T}) = sum(map(κ -> kernel(κ,x,y), ψ.k))
 
 function kernelparameters(ψ::KernelSum)
     parameter_list = Symbol[]

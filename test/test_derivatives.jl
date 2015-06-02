@@ -94,13 +94,18 @@ function test_kappa_dp(ktype, param, derivs, z, epsilon)
     k = ktype(param...)
     @test MLKernels.kappa_dp(k, :undefined, z) == zero(eltype(z))
     for (i, deriv) in enumerate(derivs)
+        deriv == nothing && continue
         print(":$deriv")
-        @test_approx_eq_eps checkderiv(
-            p -> MLKernels.kappa(ktype(p...), z),
-            (p,i_) -> MLKernels.kappa_dp(ktype(p...), deriv, z),
-            param, i) zero(eltype(z)) epsilon
-        @eval kappa_deriv = MLKernels.$(symbol("kappa_d$(deriv)"))
-        @test MLKernels.kappa_dp(k, deriv, z) == kappa_deriv(k, z)
+        if isa(deriv, Tuple)
+            @test_throws deriv[2] MLKernels.kappa_dp(k, deriv[1], z)
+        else
+            @test_approx_eq_eps checkderiv(
+                p -> MLKernels.kappa(ktype(p...), z),
+                (p,i_) -> MLKernels.kappa_dp(ktype(p...), deriv, z),
+                param, i) zero(eltype(z)) epsilon
+            @eval kappa_deriv = MLKernels.$(symbol("kappa_d$(deriv)"))
+            @test MLKernels.kappa_dp(k, deriv, z) == kappa_deriv(k, z)
+        end
     end
     print(" ")
 end
@@ -111,16 +116,22 @@ function test_kernel_dp(ktype, param, derivs, x, y, epsilon)
 
     print("d")
     for (i, deriv) in enumerate(derivs)
+        deriv == nothing && continue
         print(":$deriv")
-        @test_approx_eq_eps checkderiv(
-            p -> kernel(ktype(p...), x, y),
-            (p,i_) -> kernel_dp(ktype(p...), i_, x, y),
-            param, i) 0.0 epsilon
-        @test kernel_dp(k, deriv, x, y) == kernel_dp(k, i, x, y)
+        if isa(deriv, Tuple)
+            @test_throws deriv[2] MLKernels.kernel_dp(k, deriv[1], x, y)
+            @test_throws deriv[2] MLKernels.kernel_dp(k, i, x, y)
+        else
+            @test_approx_eq_eps checkderiv(
+                p -> kernel(ktype(p...), x, y),
+                (p,i_) -> kernel_dp(ktype(p...), i_, x, y),
+                param, i) 0.0 epsilon
+            @test kernel_dp(k, deriv, x, y) == kernel_dp(k, i, x, y)
+        end
     end
     @test kernel_dp(k, :undefined, x, y) == 0.0
-    @test_throws Exception kernel_dp(k, 0, x, y)
-    @test_throws Exception kernel_dp(k, length(derivs)+1, x, y)
+    @test_throws Union(BoundsError,ArgumentError) kernel_dp(k, 0, x, y)
+    @test_throws Union(BoundsError,ArgumentError) kernel_dp(k, length(derivs)+1, x, y)
     print(" ")
 end
 
@@ -151,22 +162,22 @@ end
 println("- Testing standard kernel derivatives")
 for T in (Float64,)
     x = T[1, 2, -7, 3]
-    y = T[5, 2, 1, 6]
+    y = T[3, 2, 1, 6]
     z = convert(T, 1.5)
 
     for (ktype, param, derivs) in (
             (ExponentialKernel, T[1.3, 0.45], (:alpha, :gamma)),
-            (ExponentialKernel, T[1.3, 1], (:alpha, :gamma)),
+            (ExponentialKernel, T[1.3, 1], (:alpha, nothing)),
             (RationalQuadraticKernel, T[1.3, 2.1, 0.6], (:alpha, :beta, :gamma)),
             (RationalQuadraticKernel, T[1.3, 1, 0.6], (:alpha, :beta, :gamma)),
-            (RationalQuadraticKernel, T[1.3, 2.1, 1], (:alpha, :beta, :gamma)),
-            (RationalQuadraticKernel, T[1.3, 1, 1], (:alpha, :beta, :gamma)),
+            (RationalQuadraticKernel, T[1.3, 2.1, 1], (:alpha, :beta, nothing)),
+            (RationalQuadraticKernel, T[1.3, 1, 1], (:alpha, :beta, nothing)),
             (PowerKernel, T[0.8], (:gamma,)),
-            (PowerKernel, T[1], (:gamma,)),
+            (PowerKernel, T[1], (nothing,)),
             (LogKernel, T[1.1, 0.5], (:alpha, :gamma)),
-            (LogKernel, T[1.1, 1], (:alpha, :gamma)),
-            (PolynomialKernel, T[1.1, 1.3, 2.2], (:alpha, :c, :d)),
-            (PolynomialKernel, T[1.1, 1.3, 1], (:alpha, :c, :d)),
+            (LogKernel, T[1.1, 1], (:alpha, nothing)),
+            (PolynomialKernel, T[1.1, 1.3, 2], (:alpha, :c, (:d,ArgumentError))),
+            (PolynomialKernel, T[1.1, 1.3, 1], (:alpha, :c, (:d,ArgumentError))),
             (SigmoidKernel, T[1.1, 1.3], (:alpha, :c)),
             (MercerSigmoidKernel, T[1.1, 1.3], (:d, :b)),
             (PeriodicKernel, T[1.1, 1.3], (:period, :ell)),
@@ -174,7 +185,7 @@ for T in (Float64,)
         print("    - Testing $(ktype) ... ")
         k = ktype(param...)
         if ktype <: PeriodicKernel
-            epsilon = 6e-6
+            epsilon = 1e-4
         elseif ktype <: PolynomialKernel
             epsilon = 5e-7
         elseif ktype <: PowerKernel
@@ -204,7 +215,7 @@ for T in (Float64,)
             (PowerKernel, T[0.8], (:gamma,)),
             #(LogKernel, T[1], (:d,)),
             #(PeriodicKernel, T[1.1, 1.3], (:period, :ell)),
-            (PolynomialKernel, T[1.1, 1.3, 2.2], (:alpha, :c, :d)),
+            (PolynomialKernel, T[1.1, 1.3, 2], (:alpha, :c, (:d,ArgumentError))),
             (SigmoidKernel, T[1.1, 1.3], (:alpha, :c)),
         )
         print("    - Testing ARD{$(ktype)} ... ")
@@ -217,8 +228,8 @@ end
 
 println("- Testing simple composite kernel derivatives:")
 for T in (Float64,)
-    x = T[1, 2, 7, 3]
-    y = T[5, 2, 1, 6]
+    x = T[1, 2, 5, 3]
+    y = T[2, 2, 1, 6]
 
     kproductconstructor(param...) = param[1] * ExponentialKernel(param[2], param[3]) * ExponentialKernel(param[4], param[5])
     ksumconstructor(param...) = ExponentialKernel(param[1], param[2]) + ExponentialKernel(param[3], param[4])
@@ -232,7 +243,9 @@ for T in (Float64,)
         k = kconst(param...)
         print("    - Testing $k ... ")
         test_kernel_dxdy(k, x, y, 1e-9)
+        test_kernel_dxdy(k, x[1], y[1], 1e-9)
         test_kernel_dp(kconst, param, derivs, x, y, 1e-9)
+        test_kernel_dp(kconst, param, derivs, x[1], y[1], 1e-9)
         println("Done")
     end
 end
