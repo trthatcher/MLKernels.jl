@@ -189,6 +189,7 @@ for T in (Float32, Float64)
     K1 = ExponentialKernel(one(T))
     K2 = RationalQuadraticKernel(one(T))
     K3 = PolynomialKernel(one(T))
+    K4 = SigmoidKernel(one(T))
 
     for (K1K2, m, n) in (
             (KernelProduct(a, K1, K2), a, 2),
@@ -209,6 +210,9 @@ for T in (Float32, Float64)
         n >= 2 && check_fields(K1K2.k[2], K2)
         n >= 3 && check_fields(K1K2.k[3], K3)
     end
+
+    @test ismercer(K1*K2*K3) == true
+    @test ismercer(K1*K2*K3*K4) == false
 
 end
 println(" Done")
@@ -251,6 +255,9 @@ for T in (Float32, Float64)
     check_fields(K1K2.k[2], K2)
     check_fields(K1K2.k[3], K3)
     check_fields(K1K2.k[4], K4)
+
+    @test ismercer(K1+K2+K3) == true
+    @test ismercer(K1+K2+K3+K4) == false
 
 end
 println(" Done")
