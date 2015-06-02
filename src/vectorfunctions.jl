@@ -189,19 +189,22 @@ end
 # Calculates the upper right corner, Z, of the squared distance matrix of matrix [Xᵀ Yᵀ]ᵀ
 #   trans == 'N' -> X and Y are design matrices
 #            'T' -> X and Y are transposed design matrices
-function sqdistmatrix{T<:FloatingPoint}(X::Matrix{T}, Y::Matrix{T}, trans::Char = 'N')
-    is_trans = trans == 'T'  # True if X and Y are transposed design matrices
+function sqdistmatrix!{T<:FloatingPoint}(Z::Matrix{T}, X::Matrix{T}, Y::Matrix{T}, is_trans::Bool = true)
     n = size(X, is_trans ? 2 : 1)
     m = size(Y, is_trans ? 2 : 1)
     xᵀx = is_trans ? dot_columns(X) : dot_rows(X)
     yᵀy = is_trans ? dot_columns(Y) : dot_rows(Y)
-    Z = BLAS.gemm(trans, is_trans ? 'N' : 'T', X, Y)
+    scprodmatrix!(Z, X, Y, is_trans)
     @inbounds for j = 1:m
         for i = 1:n
             Z[i,j] = xᵀx[i] - 2Z[i,j] + yᵀy[j]
         end
     end
     Z
+end
+
+function sqdistmatrix{T<:FloatingPoint}(X::Matrix{T}, Y::Matrix{T}, is_trans::Bool = false)
+    sqdistmatrix!(init_gramian(X, Y, is_trans), X, Y, is_trans)
 end
 
 
@@ -259,34 +262,40 @@ sqdist_dw{T<:FloatingPoint}(x::Array{T}, y::Array{T}, w::Array{T}) = sqdist_dw!(
 # Calculates Z such that Zij is the dot product of the difference of row i and j of matrix X
 #    trans == 'N' -> X is a design matrix
 #             'T' -> X is a transposed design matrix
-function sqdistmatrix{T<:FloatingPoint}(X::Matrix{T}, w::Array{T}, trans::Char = 'N', uplo::Char = 'U', sym::Bool = true)
-    is_trans = trans == 'T'  # True if X and Y are transposed design matrices
-    Z = BLAS.syrk(uplo, trans, one(T), is_trans ? scale(vec(w), X) : scale(X, vec(w)))
+function sqdistmatrix!{T<:FloatingPoint}(Z::Matrix{T}, X::Matrix{T}, w::Vector{T}, is_trans::Bool = false, is_upper::Bool = true, sym::Bool = true)
+    scprodmatrix!(Z, X, w, is_trans, is_upper, false)
     n = size(X, is_trans ? 2 : 1)
-    xᵀDx = copy(vec(diag(Z)))
+    xᵀDx = diag(Z)
     @inbounds for j = 1:n
-        for i = uplo == 'U' ? (1:j) : (j:n)
+        for i = is_upper ? (1:j) : (j:n)
             Z[i,j] = xᵀDx[i] - 2Z[i,j] + xᵀDx[j]
         end
     end
-    sym ? (uplo == 'U' ? syml!(Z) : symu!(Z)) : Z
+    sym ? (is_upper ? syml!(Z) : symu!(Z)) : Z
+end
+
+function sqdistmatrix{T<:FloatingPoint}(X::Matrix{T}, w::Vector{T}, is_trans::Bool = false, is_upper::Bool = true, sym::Bool = true)
+    sqdistmatrix!(init_gramian(X, is_trans), X, w, is_trans, is_upper, sym)
 end
 
 # Calculates the upper right corner, Z, of the squared distance matrix of matrix [Xᵀ Yᵀ]ᵀ
 #   trans == 'N' -> X and Y are design matrices
 #            'T' -> X and Y are transposed design matrices
-function sqdistmatrix{T<:FloatingPoint}(X::Matrix{T}, Y::Matrix{T}, w::Array{T}, trans::Char = 'N')
-    is_trans = trans == 'T'  # True if X and Y are transposed design matrices
+function sqdistmatrix!{T<:FloatingPoint}(Z::Matrix{T}, X::Matrix{T}, Y::Matrix{T}, w::Vector{T}, is_trans::Bool = false)
     n = size(X, is_trans ? 2 : 1)
     m = size(Y, is_trans ? 2 : 1)
     w² = vec(w.^2)
     xᵀDx = is_trans ? dot_columns(X, w²) : dot_rows(X, w²)
     yᵀDy = is_trans ? dot_columns(Y, w²) : dot_rows(Y, w²)
-    Z = is_trans ? BLAS.gemm('T', 'N', X, scale(w², Y)) : BLAS.gemm('N', 'T', X, scale(Y, w²))
+    scprodmatrix!(Z, X, !is_trans ? scale(w², Y) : scale(Y, w²), is_trans)
     @inbounds for j = 1:m
         for i = 1:n
             Z[i,j] = xᵀDx[i] - 2Z[i,j] + yᵀDy[j]
         end
     end
     Z
+end
+
+function sqdistmatrix{T<:FloatingPoint}(X::Matrix{T}, Y::Matrix{T}, w::Vector{T}, is_trans::Bool = false)
+    sqdistmatrix!(init_gramian(X, Y, is_trans), X, Y, w, is_trans)
 end

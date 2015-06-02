@@ -158,27 +158,31 @@ function kappa_gramian!{T<:FloatingPoint}(κ::Union(SquaredDistanceKernel{T}, Sc
     sym ? (is_upper ? syml!(G) : symu!(G)) : G
 end
 
-for (kernelobject, gramian) in ((:SquaredDistanceKernel, :sqdistmatrix), 
-                                (:ScalarProductKernel, :scprodmatrix))
+for (kernelobject, gramian) in ((:SquaredDistanceKernel, :sqdistmatrix!), 
+                                (:ScalarProductKernel, :scprodmatrix!))
     @eval begin
-    function kernelmatrix!{T<:FloatingPoint}(K::Matrix{T}, κ::$kernelobject{T}, X::Matrix{T}, trans::Char = 'N', uplo::Char = 'U', sym::Bool = true)
-        fill!(K, zero(T))
-        G = $gramian(X, trans, uplo, false)
-        K = kappa_gramian!(κ, G, uplo, sym)
-        sym ? (uplo == 'U' ? syml!(K) : symu!(K)) : K
+    function kernelmatrix!{T<:FloatingPoint}(K::Matrix{T}, κ::$kernelobject{T}, X::Matrix{T}, is_trans::Bool = false, is_upper::Bool = true, sym::Bool = true)
+        $gramian(K, X, is_trans, is_upper, false)
+        kappa_gramian!(κ, K, is_upper, sym)
+        sym ? (is_upper ? syml!(K) : symu!(K)) : K
     end
 
-    function kernelmatrix!{T<:FloatingPoint,U<:$kernelobject}(K::Matrix{T}, κ::ARD{T,U}, X::Matrix{T}, is_trans::Bool = false, is_upper::Bool = false, sym::Bool = true)
-        fill!(K, zero(T))
-        G = $gramian(X, trans, uplo, false)
-        K = kappa_gramian!(κ, G, uplo, sym)
-        sym ? (uplo == 'U' ? syml!(K) : symu!(K)) : K
+    function kernelmatrix!{T<:FloatingPoint,U<:$kernelobject}(K::Matrix{T}, κ::ARD{T,U}, X::Matrix{T}, is_trans::Bool = false, is_upper::Bool = true, sym::Bool = true)
+        $gramian(K, X, κ.weights, is_trans, is_upper, false)
+        kappa_gramian!(κ.k, K, is_upper, sym)
+        sym ? (is_upper ? syml!(K) : symu!(K)) : K
     end
 
-    function kernelmatrix{T<:FloatingPoint}(κ::$kernelobject{T}, X::Matrix{T}, Y::Matrix{T}, trans::Char = 'N')
-        G = $gramian(X, Y, trans)
-        kappa_gramian!(κ, G)
+    function kernelmatrix!{T<:FloatingPoint}(K::Matrix{T}, κ::$kernelobject{T}, X::Matrix{T}, Y::Matrix{T}, is_trans::Bool = false)
+        $gramian(K, X, Y, is_trans)
+        kappa_gramian!(κ, K)
     end
+
+    function kernelmatrix!{T<:FloatingPoint,U<:$kernelobject}(K::Matrix{T}, κ::ARD{T,U}, X::Matrix{T}, Y::Matrix{T}, is_trans::Bool = false)
+        $gramian(K, X, Y, κ.weights, is_trans)
+        kappa_gramian!(κ.k, K)
+    end
+
 
     end
 end
