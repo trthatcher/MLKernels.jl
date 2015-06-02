@@ -101,8 +101,8 @@ for (kernelobject, error_cases) in (
         (PowerKernel, ([0],[1.0001])),
         (LogKernel, ([0],[1,0], [1,1.0001])),
         (PolynomialKernel, ([0,1,2], [1,-0.0001,3], [1,1,0])),
-        (SigmoidKernel, ([0,1], [1,-0.00001]))
-        (MercerSigmoidKernel, ([0,0],))
+        (SigmoidKernel, ([0,1], [1,-0.00001])),
+        (MercerSigmoidKernel, ([0,0],)),
     )
     print("    - Testing ", kernelobject, " error cases ... ")
     for error_case in error_cases
@@ -195,14 +195,14 @@ for T in (Float32, Float64)
 
     for (K1K2, m, n) in (
             (KernelProduct(a, K1, K2), a, 2),
-            (K1*K2, one(T), 2), # Kernel,Kernel
-            (a*K1, a, 1), # Real,Kernel
-            (K1*a, a, 1), # Kernel,Real
-            (a*(K1*K2*b), a*b, 2), # Real,KernelProduct
-            ((K1*K2*b)*a, a*b, 2), # KernelProduct,Real
-            ((a*K1)*(K2*K3*b), a*b, 3), # KernelProduct,KernelProduct
-            (K1*(a*K2*K3), a, 3), # Kernel,KernelProduct
-            ((a*K1*K2)*K3, a, 3), # KernelProduct,Kernel
+            (K1 * K2,                  one(T), 2), # Kernel,Kernel
+            (a * K1,                   a,      1), # Real,Kernel
+            (K1 * a,                   a,      1), # Kernel,Real
+            (a * (K1*K2*b),            a*b,    2), # Real,KernelProduct
+            ((K1*K2*b) * a,            a*b,    2), # KernelProduct,Real
+            ((a*K1) * (K2*K3*b),       a*b,    3), # KernelProduct,KernelProduct
+            (K1 * (a*K2*K3),           a,      3), # Kernel,KernelProduct
+            ((a*K1*K2) * K3,           a,      3), # KernelProduct,Kernel
         )
 
         @test K1K2.a == m
@@ -229,34 +229,18 @@ for T in (Float32, Float64)
     K3 = PolynomialKernel(one(T))
     K4 = SigmoidKernel(one(T))
 
-    K1K2 = KernelSum(K1, K2)
-
-    check_fields(K1K2.k[1], K1)
-    check_fields(K1K2.k[2], K2)
-
-    K1K2 = K1 + K2
-
-    check_fields(K1K2.k[1], K1)
-    check_fields(K1K2.k[2], K2)
-
-    K1K2 = (K1 + K2) + K3
-
-    check_fields(K1K2.k[1], K1)
-    check_fields(K1K2.k[2], K2)
-    check_fields(K1K2.k[3], K3)
-
-    K1K2 = K1 + (K2 + K3)
-
-    check_fields(K1K2.k[1], K1)
-    check_fields(K1K2.k[2], K2)
-    check_fields(K1K2.k[3], K3)
-
-    K1K2 = (K1 + K2) + (K3 + K4)
-
-    check_fields(K1K2.k[1], K1)
-    check_fields(K1K2.k[2], K2)
-    check_fields(K1K2.k[3], K3)
-    check_fields(K1K2.k[4], K4)
+    for (K1K2, n) in (
+            (KernelSum(K1, K2),     2),
+            (K1 + K2,               2),
+            (K1 + (K2 + K3),        3),
+            ((K1 + K2) + K3,        3),
+            ((K1 + K2) + (K3 + K4), 4),
+        )
+        n >= 1 && check_fields(K1K2.k[1], K1)
+        n >= 2 && check_fields(K1K2.k[2], K2)
+        n >= 3 && check_fields(K1K2.k[3], K3)
+        n >= 4 && check_fields(K1K2.k[4], K4)
+    end
 
     @test ismercer(K1+K2+K3) == true
     @test ismercer(K1+K2+K3+K4) == false

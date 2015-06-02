@@ -11,7 +11,7 @@ function basenystrom(kernel::Kernel, X::Matrix, xs::Vector)
 end
 
 print("- Testing kernel matrix approximation ... ")
-k = SquaredExponentialKernel()
+k = ExponentialKernel()
 X = rand(5,3)
 @test_approx_eq nystrom(k, X, [1,3,5]) basenystrom(k, X, [1,3,5])
 @test_approx_eq nystrom(k, X, [1:5]) kernelmatrix(k, X)
