@@ -203,13 +203,14 @@ end
 
 ismercer(ψ::KernelProduct) = all(ismercer, ψ.k)
 
-function description_string{T<:FloatingPoint}(ψ::KernelProduct{T})
-    "KernelProduct{$(T)}($(ψ.a), ...)"
+function description_string{T<:FloatingPoint}(ψ::KernelProduct{T}, eltype::Bool = true)
+    descs = map(κ -> description_string(κ, false), ψ.k)
+    "KernelProduct" * (eltype ? "{$(T)}" : "") * "($(ψ.a), $(join(descs, ", ")))"
 end
 
-#function show(io::IO, ψ::KernelProduct)
-#    print(io, description_string(ψ))
-#end
+function show(io::IO, ψ::KernelProduct)
+    print(io, description_string(ψ))
+end
 
 *(a::Real, κ::Kernel) = KernelProduct(a, κ)
 *(κ::Kernel, a::Real) = *(a, κ)
@@ -258,13 +259,14 @@ end
 
 ismercer(ψ::KernelSum) = all(ismercer, ψ.k)
 
-function description_string{T<:FloatingPoint}(ψ::KernelSum{T})
-    "KernelSum{$(T)}($(ψ.a1), ...)"
+function description_string{T<:FloatingPoint}(ψ::KernelSum{T}, eltype::Bool = true)
+    descs = map(κ -> description_string(κ, false), ψ.k)
+    "KernelSum" * (eltype ? "{$(T)}" : "") * "($(join(descs, ", ")))"
 end
 
-#function show(io::IO, ψ::KernelSum)
-#    print(io, description_string(ψ))
-#end
+function show(io::IO, ψ::KernelSum)
+    print(io, description_string(ψ))
+end
 
 +(ψ1::KernelSum, ψ2::KernelSum) = KernelSum(ψ1.k..., ψ2.k...)
 
