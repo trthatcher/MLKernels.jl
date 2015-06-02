@@ -96,10 +96,10 @@ end
 
 println("- Testing StandardKernel error cases:")
 for (kernelobject, error_cases) in (
-        (ExponentialKernel, ([0], [0, 1], [1, 0])),
-        (RationalQuadraticKernel, ([0], [1, 0], [1, 1, 0], [1, 0, 1], [0, 1, 1])),
-        (PowerKernel, ([0],)),
-        (LogKernel, ([0],[1,0],[0,1])),
+        (ExponentialKernel, ([0], [0, 1], [1, 0], [1, 2])),
+        (RationalQuadraticKernel, ([0], [1, 0], [1, 1, 0], [1,1,1.01])),
+        (PowerKernel, ([0],[1.0001])),
+        (LogKernel, ([0],[1,0], [1,1.0001])),
         (PolynomialKernel, ([0,1,2], [1,-0.0001,3], [1,1,0])),
         (SigmoidKernel, ([0,1], [1,-0.00001]))
     )
