@@ -102,6 +102,7 @@ for (kernelobject, error_cases) in (
         (LogKernel, ([0],[1,0], [1,1.0001])),
         (PolynomialKernel, ([0,1,2], [1,-0.0001,3], [1,1,0])),
         (SigmoidKernel, ([0,1], [1,-0.00001]))
+        (MercerSigmoidKernel, ([0,0],))
     )
     print("    - Testing ", kernelobject, " error cases ... ")
     for error_case in error_cases
@@ -118,7 +119,8 @@ for (kernelobject, mercer) in (
         (PowerKernel, false),
         (LogKernel, false),
         (PolynomialKernel, true),
-        (SigmoidKernel, false)
+        (SigmoidKernel, false),
+        (MercerSigmoidKernel, true),
     )
     print("    - Testing ", kernelobject, "... ")
     @test ismercer((kernelobject)()) == mercer
