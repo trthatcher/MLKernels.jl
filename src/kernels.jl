@@ -24,7 +24,7 @@ abstract CompositeKernel{T<:FloatingPoint} <: Kernel{T}
 
 abstract StandardKernel{T<:FloatingPoint} <: SimpleKernel{T}
 
-function show(io::IO, κ::StandardKernel)
+function show(io::IO, κ::Kernel)
     print(io, description_string(κ))
 end
 
@@ -220,10 +220,6 @@ function description_string{T<:FloatingPoint}(ψ::KernelProduct{T}, eltype::Bool
     end
 end
 
-function show(io::IO, ψ::KernelProduct)
-    print(io, description_string(ψ))
-end
-
 *(a::Real, κ::Kernel) = KernelProduct(a, κ)
 *(κ::Kernel, a::Real) = *(a, κ)
 
@@ -278,10 +274,6 @@ function description_string{T<:FloatingPoint}(ψ::KernelSum{T}, eltype::Bool = t
     else
         "($(join(descs, " + ")))"
     end
-end
-
-function show(io::IO, ψ::KernelSum)
-    print(io, description_string(ψ))
 end
 
 +(ψ1::KernelSum, ψ2::KernelSum) = KernelSum(ψ1.k..., ψ2.k...)
