@@ -10,27 +10,25 @@ description_matrix_size(A::Matrix) = string(size(A,1), "×", size(A,2))
 
 # Symmetrize the lower half of matrix S using the upper half of S
 function syml!(S::Matrix)
-    p = size(S, 1)
-    p == size(S, 2) || throw(ArgumentError("S ∈ ℝ$(p)×$(size(S, 2)) must be square"))
+    (p = size(S, 1)) == size(S, 2) || throw(ArgumentError("S ∈ ℝ$(p)×$(size(S, 2)) must be square"))
     if p > 1 
-        @inbounds for j = 1:(p - 1), i = (j + 1):p 
-                S[i, j] = S[j, i]
+        for j = 1:(p - 1), i = (j + 1):p 
+            S[i, j] = S[j, i]
         end
     end
-    return S
+    S
 end
 syml(S::Matrix) = syml!(copy(S))
 
 # Symmetrize the upper off-diagonal of matrix S using the lower half of S
 function symu!(S::Matrix)
-    p = size(S,1)
-    p == size(S,2) || throw(ArgumentError("S ∈ ℝ$(p)×$(size(S, 2)) must be square"))
+    (p = size(S,1)) == size(S,2) || throw(ArgumentError("S ∈ ℝ$(p)×$(size(S, 2)) must be square"))
     if p > 1 
-        @inbounds for j = 2:p, i = 1:j-1
-                S[i,j] = S[j,i]
+        for j = 2:p, i = 1:(j-1)
+            S[i,j] = S[j,i]
         end
     end
-    return S
+    S
 end
 symu(S::Matrix) = symu!(copy(S))
 

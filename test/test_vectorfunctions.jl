@@ -20,30 +20,46 @@ println("Done")
 
 x1 = [1.0; 2]
 x2 = [2.0; 0]
-X = [x1'; x2']
+x3 = [3.0; 2]
+X = [x1'; x2'; x3']
 y1 = [1.0; 1]
 y2 = [1.0; 1]
 Y = [y1'; y2']
 w = [2.0; 1]
 
-print("- Testing scprodmatrix ... ")
-Z = [MLKernels.scprod(x,y) for x in (x1,x2), y in (x1,x2)]; matrix_test_approx_eq(MLKernels.scprodmatrix(X), Z)
-Z = [MLKernels.scprod(x,y) for x in (x1,x2), y in (y1,y2)]; matrix_test_approx_eq(MLKernels.scprodmatrix(X, Y), Z)
+Sx = (x1,x2,x3)
+Sy = (y1,y2)
+
+print("- Testing square scprodmatrix ... ")
+Z = [MLKernels.scprod(x,y) for x in Sx, y in Sx]; matrix_test_approx_eq(MLKernels.scprodmatrix(X), Z)
 println("Done")
 
-print("- Testing weighted scprodmatrix ... ")
-Z = [MLKernels.scprod(x,y,w) for x in (x1,x2), y in (x1,x2)]; matrix_test_approx_eq(MLKernels.scprodmatrix(X, w), Z)
-Z = [MLKernels.scprod(x,y,w) for x in (x1,x2), y in (y1,y2)]; matrix_test_approx_eq(MLKernels.scprodmatrix(X, Y, w), Z)
+print("- Testing rectangular scprodmatrix ... ")
+Z = [MLKernels.scprod(x,y) for x in Sx, y in Sy]; matrix_test_approx_eq(MLKernels.scprodmatrix(X, Y), Z)
 println("Done")
 
-print("- Testing sqdistmatrix ... ")
-Z = [MLKernels.sqdist(x,y) for x in (x1,x2), y in (x1,x2)]; matrix_test_approx_eq(MLKernels.sqdistmatrix(X), Z)
-Z = [MLKernels.sqdist(x,y) for x in (x1,x2), y in (y1,y2)]; matrix_test_approx_eq(MLKernels.sqdistmatrix(X, Y), Z)
+print("- Testing weighted square scprodmatrix ... ")
+Z = [MLKernels.scprod(x,y,w) for x in Sx, y in Sx]; matrix_test_approx_eq(MLKernels.scprodmatrix(X, w), Z)
 println("Done")
 
-print("- Testing weighted sqdistmatrix ... ")
-Z = [MLKernels.sqdist(x,y,w) for x in (x1,x2), y in (x1,x2)]; matrix_test_approx_eq(MLKernels.sqdistmatrix(X, w), Z)
-Z = [MLKernels.sqdist(x,y,w) for x in (x1,x2), y in (y1,y2)]; matrix_test_approx_eq(MLKernels.sqdistmatrix(X, Y, w), Z)
+print("- Testing weighted  rectangular scprodmatrix ... ")
+Z = [MLKernels.scprod(x,y,w) for x in Sx, y in Sy]; matrix_test_approx_eq(MLKernels.scprodmatrix(X, Y, w), Z)
+println("Done")
+
+print("- Testing square sqdistmatrix ... ")
+Z = [MLKernels.sqdist(x,y) for x in Sx, y in Sx]; matrix_test_approx_eq(MLKernels.sqdistmatrix(X), Z)
+println("Done")
+
+print("- Testing rectangular sqdistmatrix ... ")
+Z = [MLKernels.sqdist(x,y) for x in Sx, y in Sy]; matrix_test_approx_eq(MLKernels.sqdistmatrix(X, Y), Z)
+println("Done")
+
+print("- Testing weighted square sqdistmatrix ... ")
+Z = [MLKernels.sqdist(x,y,w) for x in Sx, y in Sx]; matrix_test_approx_eq(MLKernels.sqdistmatrix(X, w), Z)
+println("Done")
+
+print("- Testing weighted rectangular sqdistmatrix ... ")
+Z = [MLKernels.sqdist(x,y,w) for x in Sx, y in Sy]; matrix_test_approx_eq(MLKernels.sqdistmatrix(X, Y, w), Z)
 println("Done")
 
 print("- Testing in-place scprod ... ")
