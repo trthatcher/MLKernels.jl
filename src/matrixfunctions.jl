@@ -150,29 +150,3 @@ function hadamard!{T<:FloatingPoint}(A::Matrix{T}, B::Matrix{T}, is_upper::Bool,
     sym ? (is_upper ? syml!(A) : symu!(A)) : A
 end
 
-# Regularize a square matrix S, overwrites S with (1-α)*S + α*β*I
-function regularize!{T<:FloatingPoint}(S::Matrix{T}, α::T, β::T=trace(S)/size(S,1))
-    (p = size(S,1)) == size(S,2) || throw(ArgumentError("S ∈ ℝ$(p)×$(size(S, 2)) must be square"))
-    0 <= α <= 1 || throw(ArgumentError("α=$(α) must be in the interval [0,1]"))
-    @inbounds for j = 1:p
-        for i = 1:p
-            S[i,j] *= one(T) - α
-        end
-        S[j,j] += α*β
-    end
-    S
-end
-regularize{T<:FloatingPoint}(S::Matrix{T}, α::T) = regularize!(copy(S), α)
-regularize{T<:FloatingPoint}(S::Matrix{T}, α::T, β::T) = regularize!(copy(S), α, β)
-
-# Perturb a symmetric matrix S, overwrites S with S + ϵ*I
-function perturb!{T<:FloatingPoint}(S::Matrix{T}, ϵ::T = 100*eps(T)*size(S,1))
-    (p = size(S,1)) == size(S,2) || throw(ArgumentError("S ∈ ℝ$(p)×$(size(S, 2)) must be square"))
-    #0 <= ϵ || throw(ArgumentError("ϵ = $(ϵ) must be in [0,∞)"))
-    @inbounds for i = 1:p
-        S[i,i] += ϵ
-    end
-    S
-end
-perturb{T<:FloatingPoint}(S::Matrix{T}, ϵ::T) = perturb!(copy(S),ϵ)
-perturb{T<:FloatingPoint}(S::Matrix{T}) = perturb!(copy(S))
