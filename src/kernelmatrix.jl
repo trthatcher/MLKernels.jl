@@ -85,7 +85,7 @@ function kernelmatrix!{T<:FloatingPoint}(K::Matrix{T}, κ::KernelProduct{T}, X::
     if c > 1
         K_factor = similar(K)
         for i = 2:c
-            hadamard!(K, kernelmatrix!(K_factor, κ.k[i], X, is_trans, is_upper, false))
+            hadamard!(K, kernelmatrix!(K_factor, κ.k[i], X, is_trans, is_upper, false), is_upper, false)
         end
     end
     κ.a == 1 ? K : scale!(κ.a, K)

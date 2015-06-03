@@ -137,17 +137,17 @@ function hadamard!{T<:FloatingPoint}(A::Array{T}, B::Array{T})
 end
 
 # Overwrite A with the hadamard product of A and B. Returns A
-function hadamard!{T<:FloatingPoint}(A::Matrix{T}, B::Matrix{T}, uplo::Char, sym::Bool = true)
+function hadamard!{T<:FloatingPoint}(A::Matrix{T}, B::Matrix{T}, is_upper::Bool, sym::Bool = true)
     n = size(A,1)
     if !(n == size(A,2) == size(B,1) == size(B,2))
         throw(ArgumentError("A and B must be square and of same order."))
     end
     @inbounds for j = 1:n
-        for i = uplo == 'U' ? (1:j) : (j:n)
+        for i = is_upper ? (1:j) : (j:n)
             A[i,j] *= B[i,j]
         end 
     end
-    sym ? (uplo == 'U' ? syml!(A) : symu!(A)) : A
+    sym ? (is_upper ? syml!(A) : symu!(A)) : A
 end
 
 # Regularize a square matrix S, overwrites S with (1-α)*S + α*β*I
