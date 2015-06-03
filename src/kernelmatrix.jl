@@ -141,7 +141,7 @@ end
 
 # Kernelize a gramian matrix by transforming each element using the scalar kernel function
 function kappa_gramian!{T<:FloatingPoint}(κ::Union(SquaredDistanceKernel{T}, ScalarProductKernel{T}), G::Array{T})
-    for i = 1:length(G)
+    @inbounds for i = 1:length(G)
         G[i] = kappa(κ, G[i])
     end
     G
@@ -150,7 +150,7 @@ end
 # Kernelize a square gramian by only transforming the upper or lower triangle
 function kappa_gramian!{T<:FloatingPoint}(κ::Union(SquaredDistanceKernel{T}, ScalarProductKernel{T}), G::Array{T}, is_upper::Bool, sym::Bool = true)
     (n = size(G, 1)) == size(G, 2) || throw(ArgumentError("Gramian matrix must be square."))
-    for j = 1:n
+    @inbounds for j = 1:n
         for i = is_upper ? (1:j) : (j:n)
             G[i,j] = kappa(κ, G[i,j])
         end 
