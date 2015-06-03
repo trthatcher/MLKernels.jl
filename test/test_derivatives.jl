@@ -135,6 +135,36 @@ function test_kernel_dp(ktype, param, derivs, x, y, epsilon)
     print(" ")
 end
 
+function test_kernel_ard_dp(ktype, weights, param, derivs, x, y, epsilon)
+    @assert length(param) == length(derivs)
+    k = ARD(ktype(param...), weights)
+
+    print("d")
+    for (i, deriv) in enumerate(derivs)
+        deriv == nothing && continue
+        print(":$deriv")
+        if isa(deriv, Tuple)
+            @test_throws deriv[2] MLKernels.kernel_dp(k, deriv[1], x, y)
+            @test_throws deriv[2] MLKernels.kernel_dp(k, i+1, x, y)
+        else
+            @test_approx_eq_eps checkderiv(
+                p -> kernel(ARD(ktype(p...), weights), x, y),
+                (p,i_) -> kernel_dp(ARD(ktype(p...), weights), i_+1, x, y),
+                param, i) 0.0 epsilon
+            @test kernel_dp(k, deriv, x, y) == kernel_dp(k, i+1, x, y)
+        end
+    end
+    @test_approx_eq_eps checkderiv(
+        w -> kernel(ARD(ktype(param...), w), x, y),
+        (w,i_) -> kernel_dp(ARD(ktype(param...), w), :weights, x, y)[i_],
+        weights) zeros(weights) epsilon
+    @test kernel_dp(k, :weights, x, y) == kernel_dp(k, 1, x, y)
+    @test kernel_dp(k, :undefined, x, y) == 0.0
+    @test_throws Union(BoundsError,ArgumentError) kernel_dp(k, 0, x, y)
+    @test_throws Union(BoundsError,ArgumentError) kernel_dp(k, length(derivs)+2, x, y)
+    print(" ")
+end
+
 
 println("- Testing vector function derivatives:")
 for T in (Float64,)
@@ -177,8 +207,8 @@ for T in (Float64,)
             (PowerKernel, T[1], (nothing,)),
             (LogKernel, T[1.1, 0.5], (:alpha, :gamma)),
             (LogKernel, T[1.1, 1], (:alpha, nothing)),
-            (PolynomialKernel, T[1.1, 1.3, 2], (:alpha, :c, (:d,ArgumentError))),
-            (PolynomialKernel, T[1.1, 1.3, 1], (:alpha, :c, (:d,ArgumentError))),
+            (PolynomialKernel, T[1.1, 1.3, 2], (:alpha, :c, (:d,Exception))),
+            (PolynomialKernel, T[1.1, 1.3, 1], (:alpha, :c, (:d,Exception))),
             (SigmoidKernel, T[1.1, 1.3], (:alpha, :c)),
             (MercerSigmoidKernel, T[1.1, 1.3], (:d, :b)),
             (PeriodicKernel, T[1.1, 1.3], (:period, :ell)),
@@ -209,6 +239,7 @@ for T in (Float64,)
     x = T[1, 2, -7, 3]
     y = T[5, 2, 1, 6]
     w = T[0.0, 0.5, 1.5, 1.0]
+    w2 = T[0.1, 0.5, 1.5, 1.0] # finite difference only possible for non-zero weight
 
     for (ktype, param, derivs) in (
             (ExponentialKernel, T[1.3, 0.45], (:alpha, :gamma)),
@@ -216,13 +247,13 @@ for T in (Float64,)
             (PowerKernel, T[0.8], (:gamma,)),
             #(LogKernel, T[1], (:d,)),
             #(PeriodicKernel, T[1.1, 1.3], (:period, :ell)),
-            (PolynomialKernel, T[1.1, 1.3, 2], (:alpha, :c, (:d,ArgumentError))),
+            (PolynomialKernel, T[1.1, 1.3, 2], (:alpha, :c, (:d,Exception))),
             (SigmoidKernel, T[1.1, 1.3], (:alpha, :c)),
         )
         print("    - Testing ARD{$(ktype)} ... ")
         test_kernel_dxdy(ARD(ktype(param...), w), x, y, 1e-7)
         test_kernel_dxdy(ARD(ktype(param...), length(x)), x, y, 1e-7)
-        #test_kernel_dp(ktype, param, derivs, x, y, 1e-7)
+        test_kernel_ard_dp(ktype, w2, param, derivs, x, y, 1e-7)
         println("Done")
     end
 end

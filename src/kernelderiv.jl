@@ -3,7 +3,7 @@
 ===================================================================================================#
 
 # concrete kernel types should provide kernel_dp(::<KernelType>, param::Symbol, x, y)
-kernel_dp{T<:FloatingPoint}(κ::StandardKernel{T}, param::Integer, x::KernelInput{T}, y::KernelInput{T}) = kernel_dp(κ, kernelparameters(κ)[param], x, y)
+kernel_dp{T<:FloatingPoint}(κ::SimpleKernel{T}, param::Integer, x::KernelInput{T}, y::KernelInput{T}) = kernel_dp(κ, kernelparameters(κ)[param], x, y)
 
 
 #===========================================================================

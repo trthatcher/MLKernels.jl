@@ -60,7 +60,7 @@ function kappa_dp{T<:FloatingPoint}(κ::PolynomialKernel{T}, param::Symbol, z::T
     elseif param == :c
         kappa_dc(κ, z)
     elseif param == :d
-        throw(ArgumentError("kappa_dd: Cannot differentiate with respect to an integer parameter."))
+        error("kappa_dd: Cannot differentiate with respect to an integer parameter.")
     else
         zero(T)
     end

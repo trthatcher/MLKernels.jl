@@ -115,6 +115,14 @@ function description_string{T<:FloatingPoint,K<:StandardKernel}(κ::ARD{T,K}, el
     "ARD" * (eltype ? "{$(T)}" : "") * "(kernel=$(description_string(κ.k, false)), weights=$(κ.weights))"
 end
 
+function kernelparameters(κ::ARD)
+    inner = kernelparameters(κ.k)
+    if :weights in inner
+        error("The inner kernel of ARD must not contain a 'weights' field.")
+    end
+    insert!(inner, 1, :weights)
+end
+
 kernel{T<:FloatingPoint,U<:SquaredDistanceKernel}(κ::ARD{T,U}, x::Array{T}, y::Array{T}) = kappa(κ.k, sqdist(x, y, κ.weights))
 kernel{T<:FloatingPoint,U<:ScalarProductKernel}(κ::ARD{T,U}, x::Array{T}, y::Array{T}) = kappa(κ.k, scprod(x, y, κ.weights))
 
