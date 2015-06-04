@@ -5,19 +5,20 @@
 
 MLKernels.jl is a Julia package for Mercer and non-Mercer kernels that are used in the kernel methods of machine learning. The goal is to provide a Julia datatype for machine learning kernels and an efficient set of methods to calculate or approximate kernel matrices. The package has no dependencies beyond base Julia.
 
-The package currently supports ten pre-defined kernels:
+The package currently supports eight pre-defined kernels:
 
-- Gaussian Kernel (radial basis kernel)
-- Laplacian Kernel
-- Rational Quadratic Kernel
-- Multi-Quadratic Kernel
-- Inverse Multi-Quadratic Kernel
+- Exponential Kernel (including Gaussian Kernel/radial basis kernel and Laplacian Kernel)
+- Rational Quadratic Kernel (including Multi-Quadratic and Inverse Multi-Quadratic Kernels)
 - Power Kernel
 - Log Kernel
-- Linear Kernel
-- Polynomial Kernel
+- Polynomial Kernel (including Linear Kernel)
 - Sigmoid Kernel
 - Mercer Sigmoid Kernel
+- Periodic Kernel
+
+The first six are available as ARD (Automatic Relevance Determination) Kernels with a different scaling for each dimension of input. The Periodic Kernel also offers a different scale for each dimension of input.
+
+Kernels can be added, multiplied and scaled arbitrarily.
 
 
 ## Creating Basic Kernels
@@ -50,13 +51,13 @@ julia> description(κ)
  d is increasingly large and αxᵗy + c approaches zero.
 ```
 
-To utilise the kernel function for the associated kernel, one simply uses the `kernel_function` method with the first argument being the kernel of choice:
+To evaluate a kernel for two values, one simply uses the `kernel` method with the first argument being the kernel of choice:
 
 ```julia
 julia> x, y = ([1.0, 2.0], [1.0, 1.0])
 ([1.0,2.0],[1.0,1.0])
 
-julia> kernel_function(κ, x, y)
+julia> kernel(κ, x, y)
 16.0
 ```
 
@@ -70,16 +71,16 @@ julia> κ(x, y)
 16.0
 ```
 
-Not all of the provided kernels are positive-definite. The function `isposdef_kernel` will return `true` if the kernel is positive definite, and `false` otherwise.
+Not all of the provided kernels are Mercer kernels (a kernel is Mercer if its kernel matrices are positive semi-definite. The function `ismercer` will return `true` if the kernel is a Mercer kernel, and `false` otherwise.
 
 ```julia
-julia> isposdef_kernel(κ)
+julia> ismercer(κ)
 true
 ```
 
 ## Calculating Kernel Matrices
 
-Given a data matrix with one observation per row, the kernel matrix for kernel `κ` can be calculated using the `kernel_matrix` method:
+Given a data matrix with one observation per row, the kernel matrix for kernel `κ` can be calculated using the `kernelmatrix` method:
 
 ```julia
 julia> X = rand(10, 5)
@@ -95,7 +96,7 @@ julia> X = rand(10, 5)
  0.953466  0.286904    0.386647  0.150966   0.863391 
  0.736272  0.497723    0.910921  0.58754    0.666643 
 
-julia> kernel_matrix(κ, X)
+julia> kernelmatrix(κ, X)
 10x10 Array{Float64,2}:
  3.02444  3.17932  2.8184   3.05077  …  4.36464  1.90285  3.83462   4.81293
  3.17932  4.12283  2.88572  2.95797     5.00105  2.20544  4.32404   5.55788
@@ -108,11 +109,11 @@ julia> kernel_matrix(κ, X)
  3.83462  4.32404  7.2233   4.61591     6.17847  2.49881  8.46311   8.18696
  4.81293  5.55788  6.875    6.10857     9.75201  4.22714  8.18696  11.6228 
 
-julia> kernel_function(κ, vec(X[1,:]), vec(X[1,:]))
+julia> kernel(κ, vec(X[1,:]), vec(X[1,:]))
 3.02443612827351
 ```
 
-Optimised `kernel_matrix` methods have been defined for the kernels listed earlier, in addition to a generic fall-back method. Therefore, it is preferable to use the `kernel_matrix` method where possible rather than explicitly calculating each entry in the kernel matrix.
+Optimised `kernelmatrix` methods have been defined for the kernels listed earlier, in addition to a generic fall-back method. Therefore, it is preferable to use the `kernelmatrix` method where possible rather than explicitly calculating each entry in the kernel matrix.
 
 ## Convex Cone of Kernels
 
@@ -131,7 +132,7 @@ julia> 3*PolynomialKernel() + 4*SigmoidKernel()
 KernelSum{Float64}(3.0,PolynomialKernel(α=1.0,c=1.0,d=2.0),4.0,SigmoidKernel(α=1.0,c=1.0))
 ```
 
-Optimised methods for `kernel_matrix` have also been defined for `ScaledKernel` and `KernelSum`.
+Optimised methods for `kernelmatrix` have also been defined for `ScaledKernel` and `KernelSum`.
 
 
 ## Kernel Product
@@ -147,6 +148,11 @@ julia> 3*PolynomialKernel()*SigmoidKernel()
 KernelProduct{Float64}(3.0,SigmoidKernel(α=1.0,c=1.0),PolynomialKernel(α=1.0,c=1.0,d=2.0))
 ```
 
+## Derivatives
+
+This package implements the derivatives of kernels both with respect to arguments (`kernel_dx`, `kernel_dy` and `kernel_dxdy`) and with respect to kernel parameters (`kernel_dp`). (There are also equivalent kernel matrix methods: `kernelmatrix_dx`, `kernelmatrix_dy`, `kernelmatrix_dxdy` and `kernelmatrix_dp`.)
+
+`kernel_dp` and `kernelmatrix_dp` have as their second argument the parameter with respect to which the derivative should be taken. This can be given either as a Symbol, e.g. :alpha, or by the index. The index corresponds to the list given by `kernelparameters`.
 
 ## Approximating Kernel Matrices
 
@@ -161,7 +167,7 @@ julia> X = rand(5,3)
  0.215628  0.167303  0.256735 
  0.932313  0.592807  0.782866 
 
-julia> kernel_matrix(GaussianKernel(), X)
+julia> kernelmatrix(GaussianKernel(), X)
 5x5 Array{Float64,2}:
  1.0       0.357191  0.900218  0.353     0.960988
  0.357191  1.0       0.365081  0.748502  0.384099
