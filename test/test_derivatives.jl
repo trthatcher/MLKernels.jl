@@ -127,6 +127,11 @@ function test_kernel_dp(ktype, param, derivs, x, y, epsilon)
                 (p,i_) -> kernel_dp(ktype(p...), i_, x, y),
                 param, i) 0.0 epsilon
             @test kernel_dp(k, deriv, x, y) == kernel_dp(k, i, x, y)
+            if isa(x, Array)
+                @test kernelmatrix_dp(k, deriv, x', y') == kernelmatrix_dp(k, i, x', y')
+                @test_approx_eq kernel_dp(k, deriv, x, y) kernelmatrix_dp(k, i, x'', y'', 'T')
+                @test_approx_eq kernel_dp(k, deriv, x, y) kernelmatrix_dp(k, i, x', y')
+            end
         end
     end
     @test kernel_dp(k, :undefined, x, y) == 0.0

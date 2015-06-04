@@ -265,7 +265,7 @@ function kernel_dy{T<:FloatingPoint}(ψ::KernelProduct{T}, x::KernelInput{T}, y:
     ψ.a * prod(ks) * sum([kernel_dy(ψ.k[i], x, y) / ks[i] for i=1:length(ψ.k)])
 end
 
-function kernel_dxdy{T<:FloatingPoint}(ψ::KernelProduct{T}, x::Vector{T}, y::Vector{T})
+function kernel_dxdy{T<:FloatingPoint}(ψ::KernelProduct{T}, x::Array{T}, y::Array{T})
     n = length(ψ.k)
     ks = map(κ -> kernel(κ,x,y), ψ.k)
     k_dx = [kernel_dx(ψ.k[i], x, y) for i=1:n]

@@ -6,6 +6,16 @@
   Generic Kernel Derivative Matrices
 ==========================================================================#
 
+immutable Derivative{T<:FloatingPoint} <: SimpleKernel{T}
+    kernel::Kernel{T}
+    deriv::Union(Symbol,Integer)
+end
+
+kernel{T<:FloatingPoint}(κ::Derivative{T}, x::KernelInput{T}, y::KernelInput{T}) = kernel_dp(κ.kernel, κ.deriv, x, y)
+
+kernelmatrix_dp{T<:FloatingPoint}(κ::Kernel{T}, deriv::Union(Symbol,Integer), X::Matrix{T}, trans::Char = 'N', uplo::Char = 'U', sym::Bool = true) = kernelmatrix(Derivative(κ, deriv), X, trans, uplo, sym)
+kernelmatrix_dp{T<:FloatingPoint}(κ::Kernel{T}, deriv::Union(Symbol,Integer), X::Matrix{T}, Y::Matrix{T}, trans::Char = 'N') = kernelmatrix(Derivative(κ, deriv), X, Y, trans)
+
 function kernel_dx!{T<:FloatingPoint}(κ::Kernel{T}, d::Int64, K::Array{T}, X::Array{T}, x_pos::Int64, Y::Array{T}, y_pos::Int64, is_trans::Bool)
     if is_trans
         K[1:d,x_pos,y_pos] = kernel_dx(κ, vec(X[1:d,x_pos]), vec(Y[1:d,y_pos]))

@@ -2,7 +2,7 @@
   Generic Kernels
 ===================================================================================================#
 
-typealias KernelInput{T} Union(T,Vector{T})
+typealias KernelInput{T} Union(T,Array{T})
 
 abstract Kernel{T<:FloatingPoint}
 
