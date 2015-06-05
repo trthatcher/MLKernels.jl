@@ -21,6 +21,8 @@ end
 PolynomialKernel{T<:FloatingPoint}(α::T = 1.0, c::T = one(T), d::T = convert(T, 2)) = PolynomialKernel{T, d == 1 ? :d1 : :Ø}(α, c, d)
 PolynomialKernel{T<:FloatingPoint}(α::T, c::T, d::Integer) = PolynomialKernel(α, c, convert(T, d))
 
+LinearKernel{T<:FloatingPoint}(α::T, c::T) = PolynomialKernel(α, c, 1)
+
 ismercer(::PolynomialKernel) = true
 
 function description_string{T<:FloatingPoint}(κ::PolynomialKernel{T}, eltype::Bool = true) 

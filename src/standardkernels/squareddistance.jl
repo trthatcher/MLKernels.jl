@@ -20,6 +20,9 @@ immutable ExponentialKernel{T<:FloatingPoint,CASE} <: SquaredDistanceKernel{T}
 end
 ExponentialKernel{T<:FloatingPoint}(α::T = 1.0, γ::T = one(T)) = ExponentialKernel{T, γ == 1 ? :γ1 : :Ø}(α, γ)
 
+GaussianKernel{T<:FloatingPoint}(α::T = 1.0) = ExponentialKernel(α)
+LaplacianKernel{T<:FloatingPoint}(α::T = 1.0) = ExponentialKernel(α, 0.5)
+
 ismercer(::ExponentialKernel) = true
 
 function description_string{T<:FloatingPoint}(κ::ExponentialKernel{T}, eltype::Bool = true)
