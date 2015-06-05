@@ -131,6 +131,8 @@ function test_kernel_dp(ktype, param, derivs, x, y, epsilon)
                 @test kernelmatrix_dp(k, deriv, x', y') == kernelmatrix_dp(k, i, x', y')
                 @test_approx_eq kernel_dp(k, deriv, x, y) kernelmatrix_dp(k, i, x'', y'', 'T')
                 @test_approx_eq kernel_dp(k, deriv, x, y) kernelmatrix_dp(k, i, x', y')
+                @test_approx_eq kernel_dp(k, deriv, x, x) kernelmatrix_dp(k, i, x')
+                @test_approx_eq kernel_dp(k, deriv, x, x) kernelmatrix_dp(k, i, x'', 'T')
             end
         end
     end

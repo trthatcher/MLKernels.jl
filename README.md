@@ -7,16 +7,16 @@ MLKernels.jl is a Julia package for Mercer and non-Mercer kernels that are used 
 
 The package currently supports eight pre-defined kernels:
 
-- Exponential Kernel (including Gaussian Kernel/radial basis kernel and Laplacian Kernel)
-- Rational Quadratic Kernel (including Multi-Quadratic and Inverse Multi-Quadratic Kernels)
+- Exponential Kernel (includes Gaussian Kernel/radial basis kernel and Laplacian Kernel)
+- Rational Quadratic Kernel (includes Inverse Multi-Quadratic Kernel)
 - Power Kernel
 - Log Kernel
-- Polynomial Kernel (including Linear Kernel)
+- Polynomial Kernel (includes Linear Kernel)
 - Sigmoid Kernel
 - Mercer Sigmoid Kernel
 - Periodic Kernel
 
-The first six are available as ARD (Automatic Relevance Determination) Kernels with a different scaling for each dimension of input. The Periodic Kernel also offers a different scale for each dimension of input.
+The first six are also available as ARD (Automatic Relevance Determination) Kernels with a different weight for each dimension of input. The Periodic Kernel also offers a different scale for each dimension of input.
 
 Kernels can be added, multiplied and scaled arbitrarily.
 
@@ -27,10 +27,10 @@ A number of standard kernels have been pre-defined. For example, to create a Pol
 
 ```julia
 julia> κ = PolynomialKernel()
-PolynomialKernel{Float64}(α=1.0,c=1.0,d=2.0)
+PolynomialKernel{Float64}(α=1.0,c=1.0,d=2)
 
 julia> κ = PolynomialKernel(1.0f0)
-PolynomialKernel{Float32}(α=1.0,c=1.0,d=2.0)
+PolynomialKernel{Float32}(α=1.0,c=1.0,d=2)
 ```
 
 The `Kernel` data type is parametric - either `Float32` or `Float64` depending on the input arguments. 
@@ -54,7 +54,7 @@ julia> description(κ)
 To evaluate a kernel for two values, one simply uses the `kernel` method with the first argument being the kernel of choice:
 
 ```julia
-julia> x, y = ([1.0, 2.0], [1.0, 1.0])
+julia> x, y = [1.0, 2.0], [1.0, 1.0]
 ([1.0,2.0],[1.0,1.0])
 
 julia> kernel(κ, x, y)
@@ -71,7 +71,7 @@ julia> κ(x, y)
 16.0
 ```
 
-Not all of the provided kernels are Mercer kernels (a kernel is Mercer if its kernel matrices are positive semi-definite. The function `ismercer` will return `true` if the kernel is a Mercer kernel, and `false` otherwise.
+Not all of the provided kernels are Mercer kernels (a kernel is Mercer if its kernel matrices are positive semi-definite). The function `ismercer` will return `true` if the kernel is a Mercer kernel, and `false` otherwise.
 
 ```julia
 julia> ismercer(κ)
@@ -122,17 +122,17 @@ According to the properties of Mercer kernels:
 - If κ is a kernel and a > 0, then aκ is also a kernel
 - If κ₁ is a kernel and κ₂ is a kernel, then κ₁ + κ₂ is a kernel
 
-In other words, Mercer Kernels form a convex cone. This package implements two wrapper types to accommodate this: `ScaledKernel` and `KernelSum`. They can be constructed by multiplying a kernel by a real number and adding two kernels respectively:
+In other words, Mercer Kernels form a convex cone. This package supports addition and multiplication of Kernel objects:
 
 ```julia
-julia> 5 * LinearKernel()
-ScaledKernel{Float64}(5.0,LinearKernel(c=1.0))
+julia> 5 * ExponentialKernel()
+KernelProduct{Float64}(5.0, ExponentialKernel(α=1.0,γ=1.0))
 
-julia> 3*PolynomialKernel() + 4*SigmoidKernel()
-KernelSum{Float64}(3.0,PolynomialKernel(α=1.0,c=1.0,d=2.0),4.0,SigmoidKernel(α=1.0,c=1.0))
+julia> PolynomialKernel() + SigmoidKernel()
+KernelSum{Float64}(PolynomialKernel(α=1.0,c=1.0,d=2), SigmoidKernel(α=1.0,c=1.0))
 ```
 
-Optimised methods for `kernelmatrix` have also been defined for `ScaledKernel` and `KernelSum`.
+Optimised methods for `kernelmatrix` have also been defined for `KernelProduct` and `KernelSum`.
 
 
 ## Kernel Product
@@ -141,11 +141,11 @@ Mercer Kernels have the additional property:
 
 - If κ₁ is a kernel and κ₂ is a kernel, then κ₁κ₂ is a kernel
 
-This package allows for a scaled point-wise product of kernels to be defined using a `KernelProduct` type:
+This package allows for a scaled point-wise product of kernels to be defined using the `KernelProduct` type:
 
 ```julia
 julia> 3*PolynomialKernel()*SigmoidKernel()
-KernelProduct{Float64}(3.0,SigmoidKernel(α=1.0,c=1.0),PolynomialKernel(α=1.0,c=1.0,d=2.0))
+KernelProduct{Float64}(3.0, PolynomialKernel(α=1.0,c=1.0,d=2), SigmoidKernel(α=1.0,c=1.0))
 ```
 
 ## Derivatives
@@ -167,7 +167,7 @@ julia> X = rand(5,3)
  0.215628  0.167303  0.256735 
  0.932313  0.592807  0.782866 
 
-julia> kernelmatrix(GaussianKernel(), X)
+julia> kernelmatrix(ExponentialKernel(), X)
 5x5 Array{Float64,2}:
  1.0       0.357191  0.900218  0.353     0.960988
  0.357191  1.0       0.365081  0.748502  0.384099
@@ -175,7 +175,7 @@ julia> kernelmatrix(GaussianKernel(), X)
  0.353     0.748502  0.269655  1.0       0.378513
  0.960988  0.384099  0.926928  0.378513  1.0     
 
-julia> nystrom(GaussianKernel(), X, [1, 3, 5])
+julia> nystrom(ExponentialKernel(), X, [1, 3, 5])
 5x5 Array{Float64,2}:
  1.0       0.357191  0.900218  0.353     0.960988
  0.357191  0.150183  0.365081  0.141043  0.384099

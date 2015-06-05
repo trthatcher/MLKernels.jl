@@ -216,7 +216,7 @@ function description_string{T<:FloatingPoint}(ψ::KernelProduct{T}, eltype::Bool
     if eltype
         "KernelProduct" * (eltype ? "{$(T)}" : "") * "($(ψ.a), $(join(descs, ", ")))"
     else
-        (ψ.a == 1 ? "" : "$(ψ.a)") * "($(join(descs, " * ")))"
+        (ψ.a == 1 ? "" : "$(ψ.a)") * (length(descs)==1 ? descs[1] : "($(join(descs, " * ")))")
     end
 end
 
