@@ -218,10 +218,9 @@ function description_string_long(::PowerKernel)
     """
     Power Kernel:
     
-    The power kernel (also known as the unrectified triangular kernel)
-    is a positive semidefinite kernel. An important feature of the
-    power kernel is that it is scale invariant. The function is given
-    by:
+    The power kernel (also known as the unrectified triangular kernel) is
+    a conditionally positive definite kernel. An important feature of the
+    power kernel is that it is scale invariant. The function is given by:
     
         k(x,y) = -‖x-y‖²ᵞ   x ∈ ℝⁿ, y ∈ ℝⁿ, γ ∈ (0,1]
     
@@ -275,8 +274,8 @@ function description_string_long(::LogKernel)
     """
     Log Kernel:
     
-    The log kernel is a positive semidefinite kernel. The function is
-    given by:
+    The log kernel is a conditionally positive definite kernel. The function
+    is given by:
     
         k(x,y) = -log(α‖x-y‖²ᵞ + 1)    x ∈ ℝⁿ, y ∈ ℝⁿ, α > 0, γ ∈ (0,1]
 
