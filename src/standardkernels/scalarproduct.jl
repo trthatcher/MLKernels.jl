@@ -23,7 +23,7 @@ PolynomialKernel{T<:FloatingPoint}(α::T, c::T, d::Integer) = PolynomialKernel(�
 
 LinearKernel{T<:FloatingPoint}(α::T, c::T) = PolynomialKernel(α, c, 1)
 
-ismercer(::PolynomialKernel) = true
+isposdef_kernel(::PolynomialKernel) = true
 
 function description_string{T<:FloatingPoint}(κ::PolynomialKernel{T}, eltype::Bool = true) 
     "PolynomialKernel" * (eltype ? "{$(T)}" : "") * "(α=$(κ.alpha),c=$(κ.c),d=$(convert(Int64,κ.d)))"
@@ -81,8 +81,6 @@ immutable SigmoidKernel{T<:FloatingPoint} <: ScalarProductKernel{T}
     end
 end
 SigmoidKernel{T<:FloatingPoint}(α::T = 1.0, c::T = one(T)) = SigmoidKernel{T}(α, c)
-
-ismercer(::SigmoidKernel) = false
 
 function description_string{T<:FloatingPoint}(κ::SigmoidKernel{T}, eltype::Bool = true)
     "SigmoidKernel" * (eltype ? "{$(T)}" : "") * "(α=$(κ.alpha),c=$(κ.c))"

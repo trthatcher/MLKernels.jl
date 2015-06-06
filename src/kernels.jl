@@ -12,7 +12,8 @@ eltype{T}(κ::Kernel{T}) = T
 #call{T<:FloatingPoint}(κ::Kernel{T}, X::Matrix{T}) = kernel_matrix(κ, X)
 #call{T<:FloatingPoint}(κ::Kernel{T}, X::Matrix{T}, Y::Matrix{T}) = kernel_matrix(κ, X, Y)
 
-ismercer(::Kernel) = false
+isposdef_kernel(::Kernel) = false
+iscondposdef_kernel(κ::Kernel) = isposdef_kernel(κ)
 
 abstract SimpleKernel{T<:FloatingPoint} <: Kernel{T}
 abstract CompositeKernel{T<:FloatingPoint} <: Kernel{T}
@@ -231,7 +232,7 @@ for (kernel_object, kernel_op, kernel_array_op) in ((:KernelProduct, :*, :prod),
         kernel{T<:FloatingPoint}(ψ::$kernel_object{T}, x::Vector{T}, y::Vector{T}) = $kernel_op(ψ.a, $kernel_array_op(map(κ -> kernel(κ,x,y), ψ.k)))
         kernel{T<:FloatingPoint}(ψ::$kernel_object{T}, x::T, y::T) = $kernel_op(ψ.a, $kernel_array_op(map(κ -> kernel(κ,x,y), ψ.k)))
 
-        ismercer(ψ::$kernel_object) = all(ismercer, ψ.k)
+        isposdef_kernel(ψ::$kernel_object) = all(isposdef_kernel, ψ.k)
 
         function description_string{T<:FloatingPoint}(ψ::$kernel_object{T}, eltype::Bool = true)
             descs = map(κ -> description_string(κ, false), ψ.k)

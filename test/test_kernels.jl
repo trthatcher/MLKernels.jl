@@ -112,8 +112,8 @@ for (kernelobject, error_cases) in (
     println(" ... Done")
 end
 
-println("- Testing ismercer() property:")
-for (kernelobject, mercer) in (
+println("- Testing isposdef_kernel() property:")
+for (kernelobject, posdef) in (
         (ExponentialKernel, true),
         (RationalQuadraticKernel, true),
         (PowerKernel, false),
@@ -123,9 +123,25 @@ for (kernelobject, mercer) in (
         (MercerSigmoidKernel, true),
     )
     print("    - Testing ", kernelobject, "... ")
-    @test ismercer((kernelobject)()) == mercer
+    @test isposdef_kernel((kernelobject)()) == posdef
     println("Done")
 end
+
+println("- Testing iscondposdef_kernel() property:")
+for (kernelobject, posdef) in (
+        (ExponentialKernel, true),
+        (RationalQuadraticKernel, true),
+        (PowerKernel, true),
+        (LogKernel, true),
+        (PolynomialKernel, true),
+        (SigmoidKernel, false),
+        (MercerSigmoidKernel, true),
+    )
+    print("    - Testing ", kernelobject, "... ")
+    @test iscondposdef_kernel((kernelobject)()) == posdef
+    println("Done")
+end
+
 
 println("- Testing ScalarProductKernel kernel() function:")
 for (kernelobject, test_args, test_function) in (
@@ -213,8 +229,8 @@ for T in (Float32, Float64)
         n >= 3 && check_fields(K1K2.k[3], K3)
     end
 
-    @test ismercer(K1*K2*K3) == true
-    @test ismercer(K1*K2*K3*K4) == false
+    @test isposdef_kernel(K1*K2*K3) == true
+    @test iscondposdef_kernel(K1*K2*K3*K4) == false
 
 end
 println(" Done")
@@ -242,8 +258,8 @@ for T in (Float32, Float64)
         n >= 4 && check_fields(K1K2.k[4], K4)
     end
 
-    @test ismercer(K1+K2+K3) == true
-    @test ismercer(K1+K2+K3+K4) == false
+    @test isposdef_kernel(K1+K2+K3) == true
+    @test iscondposdef_kernel(K1+K2+K3+K4) == false
 
 end
 println(" Done")

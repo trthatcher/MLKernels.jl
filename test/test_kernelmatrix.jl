@@ -80,6 +80,25 @@ matrix_test_approx_eq(MLKernels.kernelmatrix(2.0 * K + 1.0 * K, X), [0.0 -6; -6 
 matrix_test_approx_eq(MLKernels.kernelmatrix(2.0 * K + 1.0 * K, X, X), [0.0 -6; -6 0])
 println("Done")
 
+for (kernelobject, mercer) in (
+        (ExponentialKernel, true),
+        (RationalQuadraticKernel, true),
+        (PowerKernel, false),
+        (LogKernel, false),
+        (PolynomialKernel, true),
+    )
+    print("- Testing ", kernelobject, " for", (mercer ? "" : "conditional "), " positive definity... ")
+    for i = 1:10
+        X = rand(10,5)
+        c = 2*rand(10) .- 1
+        c = mercer ? c : c .- mean(c)
+        K = kernelmatrix((kernelobject)(), X)
+        @test dot(c, K*c) >= 0
+    end
+    println("Done")
+end
+
+
 #=
 X = [1.0 0; 0 1]
 

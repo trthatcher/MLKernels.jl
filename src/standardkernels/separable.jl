@@ -25,7 +25,7 @@ function kappa_dp{T<:FloatingPoint}(κ::MercerSigmoidKernel{T}, param::Symbol, z
                   zero(T)
 end
 
-ismercer(::MercerSigmoidKernel) = true
+isposdef_kernel(::MercerSigmoidKernel) = true
 
 function description_string{T<:FloatingPoint}(κ::MercerSigmoidKernel{T}, eltype::Bool = true)
     "MercerSigmoidKernel" * (eltype ? "{$(T)}" : "") * "(d=$(κ.d),b=$(κ.b))"

@@ -9,7 +9,8 @@ import Base: show, eltype, convert, promote #, call
 export
     # Functions
     description,
-    ismercer,
+    isposdef_kernel,
+    iscondposdef_kernel,
     kernel,
     kernelparameters,
     kernel_dx,
@@ -32,6 +33,7 @@ export
     BaseVariable,
     SubVariable,
 
+    # Kernel Types
     Kernel,
         SimpleKernel,
             StandardKernel,

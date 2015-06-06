@@ -23,7 +23,7 @@ ExponentialKernel{T<:FloatingPoint}(α::T = 1.0, γ::T = one(T)) = ExponentialKe
 GaussianKernel{T<:FloatingPoint}(α::T = 1.0) = ExponentialKernel(α)
 LaplacianKernel{T<:FloatingPoint}(α::T = 1.0) = ExponentialKernel(α, 0.5)
 
-ismercer(::ExponentialKernel) = true
+isposdef_kernel(::ExponentialKernel) = true
 
 function description_string{T<:FloatingPoint}(κ::ExponentialKernel{T}, eltype::Bool = true)
     "ExponentialKernel" * (eltype ? "{$(T)}" : "") * "(α=$(κ.alpha),γ=$(κ.gamma))"
@@ -120,7 +120,7 @@ function RationalQuadraticKernel{T<:FloatingPoint}(α::T = 1.0, β::T = one(T), 
     RationalQuadraticKernel{T,CASE}(α, β, γ)
 end
 
-ismercer(::RationalQuadraticKernel) = true
+isposdef_kernel(::RationalQuadraticKernel) = true
 
 function description_string{T<:FloatingPoint}(κ::RationalQuadraticKernel{T}, eltype::Bool = true)
     "RationalQuadraticKernel" * (eltype ? "{$(T)}" : "") * "(α=$(κ.alpha),β=$(κ.beta),γ=$(κ.gamma))"
@@ -208,7 +208,7 @@ immutable PowerKernel{T<:FloatingPoint,CASE} <: SquaredDistanceKernel{T}
 end
 PowerKernel{T<:FloatingPoint}(γ::T = 1.0) = PowerKernel{T, γ == 1 ? :γ1 : :Ø}(γ)
 
-ismercer(::PowerKernel) = false
+iscondposdef_kernel(::PowerKernel) = true
 
 function description_string{T<:FloatingPoint}(κ::PowerKernel{T}, eltype::Bool = true)
     "PowerKernel" * (eltype ? "{$(T)}" : "") * "(γ=$(κ.gamma))"
@@ -264,7 +264,7 @@ immutable LogKernel{T<:FloatingPoint,CASE} <: SquaredDistanceKernel{T}
 end
 LogKernel{T<:FloatingPoint}(α::T = 1.0, γ::T = one(T)) = LogKernel{T, γ == 1 ? :γ1 : :Ø}(α, γ)
 
-ismercer(::LogKernel) = false
+iscondposdef_kernel(::LogKernel) = true
 
 function description_string{T<:FloatingPoint}(κ::LogKernel{T}, eltype::Bool = true)
     "LogKernel" * (eltype ? "{$(T)}" : "") * "(α=$(κ.alpha),γ=$(κ.gamma))"
