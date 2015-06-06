@@ -206,109 +206,54 @@ function kernelparameters(ψ::CompositeKernel)
     KernelVariable[length(path) == 0 ? BaseVariable(θ) : SubVariable(path, θ) for (path, θ) in parameter_paths]
 end
 
-
-#===========================================================================
-  Product Kernel
-===========================================================================#
-
-immutable KernelProduct{T<:FloatingPoint} <: CompositeKernel{T}
-    a::T
-    k::Vector{Kernel{T}}
-    function KernelProduct(a::T, κ::Vector{Kernel{T}})
-        a > 0 || error("a = $(a) must be greater than zero.")
-        new(a, κ)
-    end
-end
-KernelProduct{T<:FloatingPoint}(a::T, κ::Vector{Kernel{T}}) = KernelProduct{T}(a, κ)
-
-function KernelProduct(a::Real, κ::Kernel...)
-    U = promote_type(typeof(a), map(eltype, κ)...)
-    KernelProduct{U}(convert(U, a), Kernel{U}[κ...])
-end
-
-for kernel_type in (:KernelProduct, :CompositeKernel, :Kernel)
+for (kernel_object, kernel_op, kernel_array_op) in ((:KernelProduct, :*, :prod), (:KernelSum, :+, :sum))
     @eval begin
-        function convert{T<:FloatingPoint}(::Type{$kernel_type{T}}, ψ::KernelProduct)
-            KernelProduct(convert(T, ψ.a), Kernel{T}[ψ.k...])
+
+        immutable $kernel_object{T<:FloatingPoint} <: CompositeKernel{T}
+            a::T
+            k::Vector{Kernel{T}}
+            function $kernel_object(a::T, κ::Vector{Kernel{T}})
+                a > 0 || error("a = $(a) must be greater than zero.")
+                new(a, κ)
+            end
         end
-    end
-end
+        $kernel_object{T<:FloatingPoint}(a::T, κ::Vector{Kernel{T}}) = $kernel_object{T}(a, κ)
 
-kernel{T<:FloatingPoint}(ψ::KernelProduct{T}, x::KernelInput{T}, y::KernelInput{T}) = ψ.a * prod(map(κ -> kernel(κ,x,y), ψ.k))
-
-ismercer(ψ::KernelProduct) = all(ismercer, ψ.k)
-
-function description_string{T<:FloatingPoint}(ψ::KernelProduct{T}, eltype::Bool = true)
-    descs = map(κ -> description_string(κ, false), ψ.k)
-    if eltype
-        "KernelProduct" * (eltype ? "{$(T)}" : "") * "($(ψ.a), $(join(descs, ", ")))"
-    else
-        (ψ.a == 1 ? "" : "$(ψ.a)") * (length(descs)==1 ? descs[1] : "($(join(descs, " * ")))")
-    end
-end
-
-*(a::Real, κ::Kernel) = KernelProduct(a, κ)
-*(κ::Kernel, a::Real) = *(a, κ)
-
-*(a::Real, ψ::KernelProduct) = KernelProduct(a * ψ.a, ψ.k...)
-*(ψ::KernelProduct, a::Real) = *(a, ψ)
-
-*(κ1::KernelProduct, κ2::KernelProduct) = KernelProduct(κ1.a * κ2.a, κ1.k..., κ2.k...)
-
-*(κ::Kernel, ψ::KernelProduct) = KernelProduct(ψ.a, κ, ψ.k...)
-*(ψ::KernelProduct, κ::Kernel) = KernelProduct(ψ.a, ψ.k..., κ)
-
-*(κ1::Kernel, κ2::Kernel) = KernelProduct(1, κ1, κ2)
-
-
-#===========================================================================
-  Kernel Sum
-===========================================================================#
-
-immutable KernelSum{T<:FloatingPoint} <: CompositeKernel{T}
-    a::T
-    k::Vector{Kernel{T}}
-    function KernelSum(a::T, κ::Vector{Kernel{T}})
-        a > 0 || error("a = $(a) must be greater than zero.")
-        new(a, κ)
-    end
-end
-
-function KernelSum(a::Real, κ::Kernel...)
-    U = promote_type(typeof(a), map(eltype, κ)...)
-    KernelSum{U}(convert(U, a), Kernel{U}[κ...])
-end
-
-for kernel_type in (:KernelSum, :CompositeKernel, :Kernel)
-    @eval begin
-        function convert{T<:FloatingPoint}(::Type{$kernel_type{T}}, ψ::KernelSum)
-            KernelSum(convert(T, ψ.a), Kernel{T}[ψ.k...])
+        function $kernel_object(a::Real, κ::Kernel...)
+            U = promote_type(typeof(a), map(eltype, κ)...)
+            $kernel_object{U}(convert(U, a), Kernel{U}[κ...])
         end
+
+        convert{T<:FloatingPoint}(::Type{$kernel_object{T}}, ψ::$kernel_object) = $kernel_object(convert(T, ψ.a), Kernel{T}[ψ.k...])
+        convert{T<:FloatingPoint}(::Type{CompositeKernel{T}}, ψ::$kernel_object) = $kernel_object(convert(T, ψ.a), Kernel{T}[ψ.k...])
+        convert{T<:FloatingPoint}(::Type{Kernel{T}}, ψ::$kernel_object) = $kernel_object(convert(T, ψ.a), Kernel{T}[ψ.k...])
+
+        kernel{T<:FloatingPoint}(ψ::$kernel_object{T}, x::Vector{T}, y::Vector{T}) = ψ.a * $kernel_array_op(map(κ -> kernel(κ,x,y), ψ.k))
+        kernel{T<:FloatingPoint}(ψ::$kernel_object{T}, x::T, y::T) = ψ.a * $kernel_array_op(map(κ -> kernel(κ,x,y), ψ.k))
+
+        ismercer(ψ::$kernel_object) = all(ismercer, ψ.k)
+
+        function description_string{T<:FloatingPoint}(ψ::$kernel_object{T}, eltype::Bool = true)
+            descs = map(κ -> description_string(κ, false), ψ.k)
+            if eltype
+                "$kernel_object" * (eltype ? "{$(T)}" : "") * "($(ψ.a), $(join(descs, ", ")))"
+            else
+                (ψ.a == 1 ? "" : "$(ψ.a)") * (length(descs)==1 ? descs[1] : "($(join(descs, " $kernel_op ")))")
+            end
+        end
+
+        $kernel_op(a::Real, κ::Kernel) = $kernel_object(a, κ)
+        $kernel_op(κ::Kernel, a::Real) = $kernel_op(a, κ)
+
+        $kernel_op(a::Real, ψ::$kernel_object) = $kernel_object($kernel_op(a, ψ.a), ψ.k...)
+        $kernel_op(ψ::$kernel_object, a::Real) = $kernel_op(a, ψ)
+
+        $kernel_op(κ1::$kernel_object, κ2::$kernel_object) = $kernel_object($kernel_op(κ1.a, κ2.a), κ1.k..., κ2.k...)
+
+        $kernel_op(κ::Kernel, ψ::$kernel_object) = $kernel_object(ψ.a, κ, ψ.k...)
+        $kernel_op(ψ::$kernel_object, κ::Kernel) = $kernel_object(ψ.a, ψ.k..., κ)
+
+        $kernel_op(κ1::Kernel, κ2::Kernel) = $kernel_object(1, κ1, κ2)
+
     end
 end
-
-kernel{T<:FloatingPoint}(ψ::KernelSum{T}, x::KernelInput{T}, y::KernelInput{T}) = sum(map(κ -> kernel(κ,x,y), ψ.k))
-
-ismercer(ψ::KernelSum) = all(ismercer, ψ.k)
-
-function description_string{T<:FloatingPoint}(ψ::KernelSum{T}, eltype::Bool = true)
-    descs = map(κ -> description_string(κ, false), ψ.k)
-    if eltype
-        "KernelSum" * (eltype ? "{$(T)}" : "") * "($(join(descs, ", ")))"
-    else
-        "($(join(descs, " + ")))"
-    end
-end
-
-+(a::Real, κ::Kernel) = KernelSum(a, κ)
-+(κ::Kernel, a::Real) = +(a, κ)
-
-+(a::Real, ψ::KernelSum) = KernelSum(a + ψ.a, ψ.k...)
-+(ψ::KernelSum, a::Real) = +(a, ψ)
-
-+(ψ1::KernelSum, ψ2::KernelSum) = KernelSum(ψ1.a + ψ2.a, ψ1.k..., ψ2.k...)
-
-+(κ::Kernel, ψ::KernelSum) = KernelSum(ψ.a, κ, ψ.k...)
-+(ψ::KernelSum, κ::Kernel) = KernelSum(ψ.a, ψ.k..., κ)
-
-+(κ1::Kernel, κ2::Kernel) = KernelSum(1, κ1, κ2)
