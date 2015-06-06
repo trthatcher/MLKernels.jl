@@ -236,9 +236,9 @@ for (kernel_object, kernel_op, kernel_array_op) in ((:KernelProduct, :*, :prod),
         function description_string{T<:FloatingPoint}(ψ::$kernel_object{T}, eltype::Bool = true)
             descs = map(κ -> description_string(κ, false), ψ.k)
             if eltype
-                "$kernel_object" * (eltype ? "{$(T)}" : "") * "($(ψ.a), $(join(descs, ", ")))"
+                $(string(kernel_object)) * (eltype ? "{$(T)}" : "") * "($(ψ.a), $(join(descs, ", ")))"
             else
-                (ψ.a == 1 ? "" : "$(ψ.a)") * (length(descs)==1 ? descs[1] : "($(join(descs, " $kernel_op ")))")
+                (ψ.a == 1 ? "" : "$(ψ.a)") * (length(descs)==1 ? descs[1] : "($(join(descs, " " * $(string(kernel_op)) * " ")))")
             end
         end
 

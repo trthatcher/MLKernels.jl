@@ -88,6 +88,7 @@ function test_kernel_dxdy(k::Kernel, x::Vector, y::Vector, epsilon)
     @test_approx_eq kernel_dxdy(k,x,y) kernelmatrix_dxdy(k, x', y')
 end
 
+#=
 function test_kappa_dp(ktype, param, derivs, z, epsilon)
     @assert length(param) == length(derivs)
     print("d")
@@ -171,31 +172,7 @@ function test_kernel_ard_dp(ktype, weights, param, derivs, x, y, epsilon)
     @test_throws Union(BoundsError,ArgumentError) kernel_dp(k, length(derivs)+2, x, y)
     print(" ")
 end
-
-
-println("- Testing vector function derivatives:")
-for T in (Float64,)
-    x = T[1, 2, 7, 3]
-    y = T[5, 2, 1, 6]
-    w = T[4, 1, 6, 0]
-
-    for s_fun in (:sqdist, :scprod)
-        print("- Testing $(s_fun) ... ")
-        fun = @eval(MLKernels.$s_fun)
-        for d in (:x, :y, :w)
-            @eval $(symbol("fun_d$(d)")) = MLKernels.$(symbol("$(s_fun)_d$(d)"))
-        end
-
-        @test_approx_eq_eps checkderivvec(p->fun(p,y), p->fun_dx(p,y), x) zeros(x) 1e-9
-        @test_approx_eq_eps checkderivvec(p->fun(x,p), p->fun_dy(x,p), y) zeros(y) 1e-9
-
-        @test_approx_eq_eps checkderivvec(p->fun(p,y,w), p->fun_dx(p,y,w), x) zeros(x) 1e-9
-        @test_approx_eq_eps checkderivvec(p->fun(x,p,w), p->fun_dy(x,p,w), y) zeros(y) 1e-9
-
-        @test_approx_eq_eps checkderivvec(p->fun(x,y,p), p->fun_dw(x,y,p), w) zeros(w) 1e-9
-        println("Done")
-    end
-end
+=#
 
 println("- Testing standard kernel derivatives")
 for T in (Float64,)
@@ -217,7 +194,7 @@ for T in (Float64,)
             (PolynomialKernel, T[1.1, 1.3, 2], (:alpha, :c, (:d,Exception))),
             (PolynomialKernel, T[1.1, 1.3, 1], (:alpha, :c, (:d,Exception))),
             (SigmoidKernel, T[1.1, 1.3], (:alpha, :c)),
-            (MercerSigmoidKernel, T[1.1, 1.3], (:d, :b)),
+            #(MercerSigmoidKernel, T[1.1, 1.3], (:d, :b)),
             (PeriodicKernel, T[1.1, 1.3], (:period, :ell)),
         )
         print("    - Testing $(ktype) ... ")
@@ -234,9 +211,9 @@ for T in (Float64,)
         test_kappa_dz(k, z, epsilon)
         test_kernel_dxdy(k, x[1], y[1], epsilon)
         test_kernel_dxdy(k, x, y, epsilon)
-        test_kappa_dp(ktype, param, derivs, z, epsilon)
-        test_kernel_dp(ktype, param, derivs, x, y, epsilon)
-        test_kernel_dp(ktype, param, derivs, x[1], y[1], epsilon)
+        #test_kappa_dp(ktype, param, derivs, z, epsilon)
+        #test_kernel_dp(ktype, param, derivs, x, y, epsilon)
+        #test_kernel_dp(ktype, param, derivs, x[1], y[1], epsilon)
         println("Done")
     end
 end
@@ -260,7 +237,7 @@ for T in (Float64,)
         print("    - Testing ARD{$(ktype)} ... ")
         test_kernel_dxdy(ARD(ktype(param...), w), x, y, 1e-7)
         test_kernel_dxdy(ARD(ktype(param...), length(x)), x, y, 1e-7)
-        test_kernel_ard_dp(ktype, w2, param, derivs, x, y, 1e-7)
+        #test_kernel_ard_dp(ktype, w2, param, derivs, x, y, 1e-7)
         println("Done")
     end
 end
@@ -283,8 +260,8 @@ for T in (Float64,)
         print("    - Testing $k ... ")
         test_kernel_dxdy(k, x, y, 1e-9)
         test_kernel_dxdy(k, x[1], y[1], 1e-9)
-        test_kernel_dp(kconst, param, derivs, x, y, 1e-9)
-        test_kernel_dp(kconst, param, derivs, x[1], y[1], 1e-9)
+        #test_kernel_dp(kconst, param, derivs, x, y, 1e-9)
+        #test_kernel_dp(kconst, param, derivs, x[1], y[1], 1e-9)
         println("Done")
     end
 

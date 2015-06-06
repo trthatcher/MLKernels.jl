@@ -38,10 +38,6 @@ function scprod{T<:FloatingPoint}(d::Int64, X::Array{T}, x_pos::Int64, Y::Array{
     z
 end
 
-# Partial derivative of the scalar product of vectors x and y
-scprod_dx{T<:FloatingPoint}(x::Array{T}, y::Array{T}) = copy(y)
-scprod_dy{T<:FloatingPoint}(x::Array{T}, y::Array{T}) = copy(x)
-
 # Calculate the scalar product matrix (matrix of scalar products)
 #    trans == 'N' -> Z = XXᵀ (X is a design matrix)
 #             'T' -> Z = XᵀX (X is a transposed design matrix)
@@ -107,29 +103,6 @@ function scprod{T<:FloatingPoint}(d::Int64, X::Array{T}, x_pos::Int64, Y::Array{
     z
 end
 
-function scprod_dx!{T<:FloatingPoint}(x::Array{T}, y::Array{T}, w::Array{T})
-    (n = length(x)) == length(y) == length(w) || throw(ArgumentError("Dimensions do not conform."))
-    @inbounds @simd for i = 1:n
-        x[i] = y[i]*w[i]^2
-    end
-    x
-end
-
-function scprod_dw!{T<:FloatingPoint}(x::Array{T}, y::Array{T}, w::Array{T})
-    (n = length(x)) == length(y) == length(w) || throw(ArgumentError("Dimensions do not conform."))
-    @inbounds @simd for i = 1:n
-        w[i] = 2x[i]*y[i]*w[i]
-    end
-    w
-end
-
-
-scprod_dy!{T<:FloatingPoint}(x::Array{T}, y::Array{T}, w::Array{T}) = scprod_dx!(y, x, w)
-
-scprod_dx{T<:FloatingPoint}(x::Array{T}, y::Array{T}, w::Array{T}) = scprod_dx!(similar(x), y, w)
-scprod_dy{T<:FloatingPoint}(x::Array{T}, y::Array{T}, w::Array{T}) = scprod_dy!(x, similar(y), w)
-scprod_dw{T<:FloatingPoint}(x::Array{T}, y::Array{T}, w::Array{T}) = scprod_dw!(x, y, copy(w))
-
 # Calculate the weighted scalar product matrix 
 #    trans == 'N' -> Z = XDXᵀ (X is a design matrix and D = diag(w))
 #             'T' -> Z = XᵀDX (X is a transposed design matrix and D = diag(w))
@@ -181,9 +154,6 @@ function sqdist{T<:FloatingPoint}(d::Int64, X::Array{T}, x_pos::Int64, Y::Array{
     end
     z
 end
-
-sqdist_dx{T<:FloatingPoint}(x::Array{T}, y::Array{T}) = scale!(2, x - y)
-sqdist_dy{T<:FloatingPoint}(x::Array{T}, y::Array{T}) = scale!(2, y - x)
 
 # Calculates Z such that Zij is the dot product of the difference of row i and j of matrix X
 #    trans == 'N' -> X is a design matrix
@@ -259,28 +229,6 @@ function sqdist{T<:FloatingPoint}(d::Int64, X::Array{T}, x_pos::Int64, Y::Array{
     end
     z
 end
-
-function sqdist_dx!{T<:FloatingPoint}(x::Array{T}, y::Array{T}, w::Array{T})
-    (n = length(x)) == length(y) == length(w) || throw(ArgumentError("Dimensions do not conform."))
-    @inbounds @simd for i = 1:n
-        x[i] = 2(x[i] - y[i]) * w[i]^2
-    end
-    x
-end
-
-sqdist_dy!{T<:FloatingPoint}(x::Array{T}, y::Array{T}, w::Array{T}) = sqdist_dx!(y, x, w)
-
-function sqdist_dw!{T<:FloatingPoint}(x::Array{T}, y::Array{T}, w::Array{T})
-    (n = length(x)) == length(y) == length(w) || throw(ArgumentError("Dimensions do not conform."))
-    @inbounds @simd for i = 1:n
-        w[i] = 2(x[i] - y[i])^2 * w[i]
-    end
-    w
-end
-
-sqdist_dx{T<:FloatingPoint}(x::Array{T}, y::Array{T}, w::Array{T}) = sqdist_dx!(copy(x), y, w)
-sqdist_dy{T<:FloatingPoint}(x::Array{T}, y::Array{T}, w::Array{T}) = sqdist_dy!(x, copy(y), w)
-sqdist_dw{T<:FloatingPoint}(x::Array{T}, y::Array{T}, w::Array{T}) = sqdist_dw!(x, y, copy(w))
 
 # Calculates Z such that Zij is the dot product of the difference of row i and j of matrix X
 #    trans == 'N' -> X is a design matrix

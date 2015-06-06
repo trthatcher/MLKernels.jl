@@ -143,7 +143,7 @@ kernel_dp{T<:FloatingPoint}(κ::SeparableKernel{T}, param::Symbol, x::T, y::T) =
 #=== ARD Squared Distance ===#
 
 function kernel_dx{T<:FloatingPoint,U<:SquaredDistanceKernel}(κ::ARD{T,U}, x::Array{T}, y::Array{T})
-    w = κ.weights
+    w = κ.w
     ∂κ_∂z = kappa_dz(κ.k, sqdist(x, y, w))
     d = length(x)
     ∂k_∂x = Array(T, d)
@@ -154,8 +154,8 @@ function kernel_dx{T<:FloatingPoint,U<:SquaredDistanceKernel}(κ::ARD{T,U}, x::A
 end
 kernel_dy{T<:FloatingPoint,U<:SquaredDistanceKernel}(κ::ARD{T,U}, x::Array{T}, y::Array{T}) = kernel_dx(κ, y, x)
 
-function kernel_dweights{T<:FloatingPoint,U<:SquaredDistanceKernel}(κ::ARD{T,U}, x::Array{T}, y::Array{T})
-    w = κ.weights
+function kernel_dw{T<:FloatingPoint,U<:SquaredDistanceKernel}(κ::ARD{T,U}, x::Array{T}, y::Array{T})
+    w = κ.w
     ∂κ_∂z = kappa_dz(κ.k, sqdist(x, y, w))
     d = length(x)
     ∂k_∂w = Array(T, d)
@@ -166,7 +166,7 @@ function kernel_dweights{T<:FloatingPoint,U<:SquaredDistanceKernel}(κ::ARD{T,U}
 end
 
 function kernel_dxdy{T<:FloatingPoint,U<:SquaredDistanceKernel}(κ::ARD{T,U}, x::Array{T}, y::Array{T})
-    w = κ.weights
+    w = κ.w
     ϵᵀW²ϵ = sqdist(x, y, w)
     ∂κ_∂z = kappa_dz(κ.k, ϵᵀW²ϵ)
     ∂κ²_∂z² = kappa_dz2(κ.k, ϵᵀW²ϵ)
@@ -185,17 +185,17 @@ function kernel_dxdy{T<:FloatingPoint,U<:SquaredDistanceKernel}(κ::ARD{T,U}, x:
 end
 
 function kernel_dp{T<:FloatingPoint,U<:SquaredDistanceKernel}(κ::ARD{T,U}, param::Symbol, x::Array{T}, y::Array{T})
-    if param == :weights
-        return kernel_dweights(κ, x, y)
+    if param == :w
+        return kernel_dw(κ, x, y)
     else
-        return kappa_dp(κ.k, param, sqdist(x, y, κ.weights))
+        return kappa_dp(κ.k, param, sqdist(x, y, κ.w))
     end
 end
 
 #=== ARD Scalar Product ===#
 
 function kernel_dx{T<:FloatingPoint,U<:ScalarProductKernel}(κ::ARD{T,U}, x::Array{T}, y::Array{T})
-    w = κ.weights
+    w = κ.w
     ∂κ_∂z = kappa_dz(κ.k, scprod(x, y, w))
     d = length(x)
     ∂k_∂x = Array(T, d)
@@ -206,8 +206,8 @@ function kernel_dx{T<:FloatingPoint,U<:ScalarProductKernel}(κ::ARD{T,U}, x::Arr
 end
 kernel_dy{T<:FloatingPoint,U<:ScalarProductKernel}(κ::ARD{T,U}, x::Array{T}, y::Array{T}) = kernel_dx(κ, y, x)
 
-function kernel_dweights{T<:FloatingPoint,U<:ScalarProductKernel}(κ::ARD{T,U}, x::Array{T}, y::Array{T})
-    w = κ.weights
+function kernel_dw{T<:FloatingPoint,U<:ScalarProductKernel}(κ::ARD{T,U}, x::Array{T}, y::Array{T})
+    w = κ.w
     ∂κ_∂z = kappa_dz(κ.k, scprod(x, y, w))
     d = length(x)
     ∂k_∂w = Array(T, d)
@@ -218,17 +218,15 @@ function kernel_dweights{T<:FloatingPoint,U<:ScalarProductKernel}(κ::ARD{T,U}, 
 end
 
 function kernel_dp{T<:FloatingPoint,U<:ScalarProductKernel}(κ::ARD{T,U}, param::Symbol, x::Array{T}, y::Array{T})
-    if param == :weights
-        return kernel_dweights(κ, x, y)
+    if param == :w
+        return kernel_dw(κ, x, y)
     else
-        return kappa_dp(κ.k, param, scprod(x, y, κ.weights))
+        return kappa_dp(κ.k, param, scprod(x, y, κ.w))
     end
 end
 
-
-
 function kernel_dxdy{T<:FloatingPoint,U<:ScalarProductKernel}(κ::ARD{T,U}, x::Array{T}, y::Array{T})
-    w = κ.weights
+    w = κ.w
     xᵀW²y = scprod(x, y, w)
     ∂κ_∂z = kappa_dz(κ.k, xᵀW²y)
     ∂κ²_∂z² = kappa_dz2(κ.k, xᵀW²y)
