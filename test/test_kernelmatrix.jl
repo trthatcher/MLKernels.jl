@@ -80,6 +80,7 @@ matrix_test_approx_eq(MLKernels.kernelmatrix(2.0 * K + 1.0 * K, X), [0.0 -6; -6 
 matrix_test_approx_eq(MLKernels.kernelmatrix(2.0 * K + 1.0 * K, X, X), [0.0 -6; -6 0])
 println("Done")
 
+#=
 X = [1.0 0; 0 1]
 
 print("- Testing optimized separable kernel kernelmatrix ... ")
@@ -91,4 +92,4 @@ print("- Testing optimized separable kernel kernelmatrix_scaled ... ")
 matrix_test_approx_eq(MLKernels.kernelmatrix(2.0 * MercerSigmoidKernel(0.0, 1.0), X), 2*[tanh(1.0)^2 0; 0 tanh(1.0)^2])
 matrix_test_approx_eq(MLKernels.kernelmatrix(2.0 * MercerSigmoidKernel(0.0, 1.0), X, X), 2*[tanh(1.0)^2 0; 0 tanh(1.0)^2])
 println("Done")
-
+=#

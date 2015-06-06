@@ -17,6 +17,30 @@ ismercer(::Kernel) = false
 abstract SimpleKernel{T<:FloatingPoint} <: Kernel{T}
 abstract CompositeKernel{T<:FloatingPoint} <: Kernel{T}
 
+KernelNode = Union(Expr, Symbol)
+
+abstract KernelVariable{θ}
+
+immutable BaseVariable{θ} <: KernelVariable{θ} end
+BaseVariable(θ::Symbol) = BaseVariable{θ}()
+
+function show{θ}(io::IO, variable::BaseVariable{θ})
+    print(io, θ)
+end
+
+immutable SubVariable{θ} <: KernelVariable{θ}
+    path::Vector{KernelNode}
+end
+SubVariable(path::Vector{KernelNode}, θ::Symbol) = SubVariable{θ}(path)
+
+function generatepath{θ}(variable::SubVariable{θ})
+    symbol(join([string(ex) for ex in variable.path], ".") * "." * string(θ))
+end
+
+function show(io::IO, θ::SubVariable)
+    print(io, generatepath(θ))
+end
+
 
 #===================================================================================================
   Standard Kernels
@@ -33,8 +57,8 @@ function description(io::IO, κ::StandardKernel)
 end
 description(κ::StandardKernel) = description(STDOUT, κ)
 
-kernelparameters(κ::StandardKernel) = names(κ) # default: all parameters of a kernel are scalars
-# need to provide a more specific method if this doesn't apply
+kernelparameters(κ::StandardKernel) = [BaseVariable(θ) for θ in names(κ)]
+kernelpath(path::Vector{KernelNode}, κ::StandardKernel) = [(path, θ) for θ in names(κ)]
 
 
 #===========================================================================
@@ -76,10 +100,10 @@ function kappa_array!{T<:FloatingPoint}(κ::SeparableKernel{T}, x::Array{T})
     x
 end
 
-function kernel{T<:FloatingPoint}(κ::SeparableKernel{T}, x::Array{T}, y::Array{T})
+function kernel{T<:FloatingPoint}(κ::SeparableKernel{T}, X::Array{T}, Y::Array{T})
     v = kappa_array!(κ, copy(x))
     z = kappa_array!(κ, copy(y))
-    BLAS.dot(length(v), v, 1, z, 1)
+    scprod(v, z)
 end
 kernel{T<:FloatingPoint}(κ::SeparableKernel{T}, x::T, y::T) = kappa(κ, x) * kappa(κ, y)
 
@@ -100,45 +124,39 @@ typealias ARDKernelTypes{T<:FloatingPoint} Union(SquaredDistanceKernel{T}, Scala
 
 immutable ARD{T<:FloatingPoint,K<:StandardKernel{T}} <: SimpleKernel{T} # let's not have an ARD{,ARD{,...{,Kernel}}}...
     k::K
-    weights::Vector{T}
-    function ARD(k::K, weights::Vector{T})
-        isa(k, ARDKernelTypes) || throw(ArgumentError("ARD only implemented for $(join(ARDKernelTypes.body.types, ", ", " and "))"))
-        all(weights .>= 0) || throw(ArgumentError("weights = $(weights) must all be >= 0."))
-        new(k, weights)
+    w::Vector{T}
+    function ARD(κ::K, w::Vector{T})
+        isa(κ, ARDKernelTypes) || throw(ArgumentError("ARD only implemented for $(join(ARDKernelTypes.body.types, ", ", " and "))"))
+        all(w .>= 0) || throw(ArgumentError("weights = $(w) must all be >= 0."))
+        new(κ, w)
     end
 end
 
-ARD{T<:FloatingPoint}(kernel::ARDKernelTypes{T}, weights::Vector{T}) = ARD{T,typeof(kernel)}(kernel, weights)
-ARD{T<:FloatingPoint}(kernel::ARDKernelTypes{T}, dim::Integer) = ARD{T,typeof(kernel)}(kernel, ones(T, dim))
+ARD{T<:FloatingPoint}(κ::ARDKernelTypes{T}, w::Vector{T}) = ARD{T,typeof(κ)}(κ, w)
+ARD{T<:FloatingPoint}(κ::ARDKernelTypes{T}, dim::Integer) = ARD{T,typeof(κ)}(κ, ones(T, dim))
 
 function description_string{T<:FloatingPoint,K<:StandardKernel}(κ::ARD{T,K}, eltype::Bool = true)
-    "ARD" * (eltype ? "{$(T)}" : "") * "(kernel=$(description_string(κ.k, false)), weights=$(κ.weights))"
+    "ARD" * (eltype ? "{$(T)}" : "") * "(κ=$(description_string(κ.k, false)), w=$(κ.w))"
 end
 
-function kernelparameters(κ::ARD)
-    inner = kernelparameters(κ.k)
-    if :weights in inner
-        error("The inner kernel of ARD must not contain a 'weights' field.")
-    end
-    insert!(inner, 1, :weights)
+kernelpath(path::Vector{KernelNode}, ψ::ARD) = append!([(path, :w)], kernelpath(KernelNode[path..., :k], ψ.k))
+
+function kernelparameters(ψ::ARD)
+    parameter_paths = append!([(KernelNode[], :w)], kernelpath(KernelNode[:k], ψ.k))
+    KernelVariable[length(path) == 0 ? BaseVariable(θ) : SubVariable(path, θ) for (path, θ) in parameter_paths]
 end
 
-kernel{T<:FloatingPoint,U<:SquaredDistanceKernel}(κ::ARD{T,U}, x::Array{T}, y::Array{T}) = kappa(κ.k, sqdist(x, y, κ.weights))
-kernel{T<:FloatingPoint,U<:ScalarProductKernel}(κ::ARD{T,U}, x::Array{T}, y::Array{T}) = kappa(κ.k, scprod(x, y, κ.weights))
+kernel{T<:FloatingPoint,U<:SquaredDistanceKernel}(κ::ARD{T,U}, x::Array{T}, y::Array{T}) = kappa(κ.k, sqdist(x, y, κ.w))
+kernel{T<:FloatingPoint,U<:ScalarProductKernel}(κ::ARD{T,U}, x::Array{T}, y::Array{T}) = kappa(κ.k, scprod(x, y, κ.w))
 
 function kernel{T<:FloatingPoint,U<:SquaredDistanceKernel}(κ::ARD{T,U}, x::T, y::T)
-    if length(κ.weights) == 1
-        kappa(κ.k, sqdist(x, y, κ.weights[1]))
-    else
-        throw(ArgumentError("Dimensions do not conform."))
-    end
+    length(κ.w) == 1 || throw(ArgumentError("Dimensions do not conform."))
+    kappa(κ.k, sqdist(x, y, κ.w[1]))
 end
+
 function kernel{T<:FloatingPoint,U<:ScalarProductKernel}(κ::ARD{T,U}, x::T, y::T)
-    if length(κ.weights) == 1
-        kappa(κ.k, scprod(x, y, κ.weights[1]))
-    else
-        throw(ArgumentError("Dimensions do not conform."))
-    end
+    length(κ.w) == 1 || throw(ArgumentError("Dimensions do not conform."))
+    kappa(κ.k, scprod(x, y, κ.w[1]))
 end
 
 
@@ -147,7 +165,7 @@ end
 ===========================================================================#
 
 for kernelobject in concretesubtypes(StandardKernel)
-    kernelobjectname = kernelobject.name.name # symbol for concrete kernel type
+    kernelobjectname = kernelobject.name.name  # symbol for concrete kernel type
 
     fieldconversions = [:(convert(T, κ.$field)) for field in names(kernelobject)]
     constructorcall = Expr(:call, kernelobjectname, fieldconversions...)
@@ -157,7 +175,7 @@ for kernelobject in concretesubtypes(StandardKernel)
     end
 
     for kerneltype in supertypes(kernelobject)
-        kerneltypename = kerneltype.name.name # symbol for abstract supertype
+        kerneltypename = kerneltype.name.name  # symbol for abstract supertype
 
         @eval begin
             function convert{T<:FloatingPoint}(::Type{$kerneltypename{T}}, κ::$kernelobjectname)
@@ -171,6 +189,23 @@ end
 #===================================================================================================
   Composite Kernels
 ===================================================================================================#
+
+function kernelpath(path::Vector{KernelNode}, ψ::CompositeKernel)
+    parameter_list = [(path, :a)]
+    for i = 1:length(ψ.k)
+        append!(parameter_list, kernelpath(KernelNode[path..., :(k[$i])], ψ.k[i]))
+    end
+    parameter_list
+end
+
+function kernelparameters(ψ::CompositeKernel)
+    parameter_paths = Any[(KernelNode[], :a)]
+    for i = 1:length(ψ.k)
+        append!(parameter_paths, kernelpath(KernelNode[:(k[$i])], ψ.k[i]))
+    end
+    KernelVariable[length(path) == 0 ? BaseVariable(θ) : SubVariable(path, θ) for (path, θ) in parameter_paths]
+end
+
 
 #===========================================================================
   Product Kernel
@@ -200,14 +235,6 @@ for kernel_type in (:KernelProduct, :CompositeKernel, :Kernel)
 end
 
 kernel{T<:FloatingPoint}(ψ::KernelProduct{T}, x::KernelInput{T}, y::KernelInput{T}) = ψ.a * prod(map(κ -> kernel(κ,x,y), ψ.k))
-
-function kernelparameters(ψ::KernelProduct)
-    parameter_list = [:a]
-    for i = 1:length(ψ.k)
-        append!(parameter_list, [symbol("k[$(i)].$(θ)") for θ in kernelparameters(ψ.k[i])])
-    end
-    parameter_list
-end
 
 ismercer(ψ::KernelProduct) = all(ismercer, ψ.k)
 
@@ -239,31 +266,28 @@ end
 ===========================================================================#
 
 immutable KernelSum{T<:FloatingPoint} <: CompositeKernel{T}
+    a::T
     k::Vector{Kernel{T}}
+    function KernelSum(a::T, κ::Vector{Kernel{T}})
+        a > 0 || error("a = $(a) must be greater than zero.")
+        new(a, κ)
+    end
 end
 
-function KernelSum(κ::Kernel...)
-    U = promote_type(map(eltype, κ)...)
-    KernelSum{U}(Kernel{U}[κ...])
+function KernelSum(a::Real, κ::Kernel...)
+    U = promote_type(typeof(a), map(eltype, κ)...)
+    KernelSum{U}(convert(U, a), Kernel{U}[κ...])
 end
 
 for kernel_type in (:KernelSum, :CompositeKernel, :Kernel)
     @eval begin
         function convert{T<:FloatingPoint}(::Type{$kernel_type{T}}, ψ::KernelSum)
-            KernelSum(Kernel{T}[ψ.k...])
+            KernelSum(convert(T, ψ.a), Kernel{T}[ψ.k...])
         end
     end
 end
 
 kernel{T<:FloatingPoint}(ψ::KernelSum{T}, x::KernelInput{T}, y::KernelInput{T}) = sum(map(κ -> kernel(κ,x,y), ψ.k))
-
-function kernelparameters(ψ::KernelSum)
-    parameter_list = Symbol[]
-    for i = 1:length(ψ.k)
-        append!(parameter_list, [symbol("k[$(i)].$(θ)") for θ in kernelparameters(ψ.k[i])])
-    end
-    parameter_list
-end
 
 ismercer(ψ::KernelSum) = all(ismercer, ψ.k)
 
@@ -276,9 +300,15 @@ function description_string{T<:FloatingPoint}(ψ::KernelSum{T}, eltype::Bool = t
     end
 end
 
-+(ψ1::KernelSum, ψ2::KernelSum) = KernelSum(ψ1.k..., ψ2.k...)
++(a::Real, κ::Kernel) = KernelSum(a, κ)
++(κ::Kernel, a::Real) = +(a, κ)
 
-+(κ::Kernel, ψ::KernelSum) = KernelSum(κ, ψ.k...)
-+(ψ::KernelSum, κ::Kernel) = KernelSum(ψ.k..., κ)
++(a::Real, ψ::KernelSum) = KernelSum(a + ψ.a, ψ.k...)
++(ψ::KernelSum, a::Real) = +(a, ψ)
 
-+(κ1::Kernel, κ2::Kernel) = KernelSum(κ1, κ2)
++(ψ1::KernelSum, ψ2::KernelSum) = KernelSum(ψ1.a + ψ2.a, ψ1.k..., ψ2.k...)
+
++(κ::Kernel, ψ::KernelSum) = KernelSum(ψ.a, κ, ψ.k...)
++(ψ::KernelSum, κ::Kernel) = KernelSum(ψ.a, ψ.k..., κ)
+
++(κ1::Kernel, κ2::Kernel) = KernelSum(1, κ1, κ2)

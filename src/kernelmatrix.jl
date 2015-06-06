@@ -189,6 +189,7 @@ end
       Optimized kernel matrix functions for Separable kernels
 ==========================================================================#
 
+#=
 function kernelmatrix_scaled{T<:FloatingPoint}(a::T, κ::SeparableKernel{T}, X::Matrix{T}, trans::Char = 'N', uplo::Char = 'U', sym::Bool = true)
     K = BLAS.syrk(uplo, trans, a, kappa_array!(κ, copy(X)))
     sym ? (uplo == 'U' ? syml!(K) : symu!(K)) : K
@@ -205,4 +206,4 @@ end
 function kernelmatrix{T<:FloatingPoint}(κ::SeparableKernel{T}, X::Matrix{T}, Y::Matrix{T}, trans::Char = 'N')
     kernelmatrix_scaled(one(T), κ, X, Y, trans)
 end
-
+=#

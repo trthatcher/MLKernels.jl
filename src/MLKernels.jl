@@ -25,17 +25,23 @@ export
     center_kernelmatrix,
     nystrom,
 
+    kernelpath,
+
     # Types
+    KernelVariable,
+    BaseVariable,
+    SubVariable,
+
     Kernel,
         SimpleKernel,
             StandardKernel,
                 SquaredDistanceKernel,
-                    ExponentialKernel, GaussianKernel, LaplacianKernel,
+                    ExponentialKernel,
                     RationalQuadraticKernel,
                     PowerKernel,
                     LogKernel,
                 ScalarProductKernel,
-                    PolynomialKernel, LinearKernel,
+                    PolynomialKernel,
                     SigmoidKernel,
                 SeparableKernel,
                     MercerSigmoidKernel,

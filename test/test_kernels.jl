@@ -83,11 +83,11 @@ for (kernelobject, test_args) in (
         w = [convert(T,2)]
         case_args = T[test_args...]
         K = ARD((kernelobject)(case_args...),w)
-        @test K.weights == w
+        @test K.w == w
         check_fields(K.k, case_args)
         d = 3
         K = ARD((kernelobject)(case_args...),d)
-        @test K.weights == ones(T,d)
+        @test K.w == ones(T,d)
         check_fields(K.k, case_args)
     end
     println("Done")
@@ -230,7 +230,7 @@ for T in (Float32, Float64)
     K4 = SigmoidKernel(one(T))
 
     for (K1K2, n) in (
-            (KernelSum(K1, K2),     2),
+            (KernelSum(one(T),K1, K2),     2),
             (K1 + K2,               2),
             (K1 + (K2 + K3),        3),
             ((K1 + K2) + K3,        3),
