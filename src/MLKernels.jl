@@ -52,8 +52,7 @@ export
             KernelSum
 
 include("meta.jl")
-include("vectorfunctions.jl")
-include("matrixfunctions.jl")
+include("auxfunctions.jl")
 include("kernels.jl")
 include("kernelderiv.jl")
 include("kernelmatrix.jl")
