@@ -213,7 +213,7 @@ for (kernel_object, kernel_op, kernel_array_op) in ((:KernelProduct, :*, :prod),
             a::T
             k::Vector{Kernel{T}}
             function $kernel_object(a::T, κ::Vector{Kernel{T}})
-                a > 0 || error("a = $(a) must be greater than zero.")
+                $(kernel_op == :+ ? :(>=) : :>)(a, 0) || error("a = $(a) must be greater than zero.")
                 new(a, κ)
             end
         end
@@ -228,8 +228,8 @@ for (kernel_object, kernel_op, kernel_array_op) in ((:KernelProduct, :*, :prod),
         convert{T<:FloatingPoint}(::Type{CompositeKernel{T}}, ψ::$kernel_object) = $kernel_object(convert(T, ψ.a), Kernel{T}[ψ.k...])
         convert{T<:FloatingPoint}(::Type{Kernel{T}}, ψ::$kernel_object) = $kernel_object(convert(T, ψ.a), Kernel{T}[ψ.k...])
 
-        kernel{T<:FloatingPoint}(ψ::$kernel_object{T}, x::Vector{T}, y::Vector{T}) = ψ.a * $kernel_array_op(map(κ -> kernel(κ,x,y), ψ.k))
-        kernel{T<:FloatingPoint}(ψ::$kernel_object{T}, x::T, y::T) = ψ.a * $kernel_array_op(map(κ -> kernel(κ,x,y), ψ.k))
+        kernel{T<:FloatingPoint}(ψ::$kernel_object{T}, x::Vector{T}, y::Vector{T}) = $kernel_op(ψ.a, $kernel_array_op(map(κ -> kernel(κ,x,y), ψ.k)))
+        kernel{T<:FloatingPoint}(ψ::$kernel_object{T}, x::T, y::T) = $kernel_op(ψ.a, $kernel_array_op(map(κ -> kernel(κ,x,y), ψ.k)))
 
         ismercer(ψ::$kernel_object) = all(ismercer, ψ.k)
 
@@ -238,7 +238,7 @@ for (kernel_object, kernel_op, kernel_array_op) in ((:KernelProduct, :*, :prod),
             if eltype
                 $(string(kernel_object)) * (eltype ? "{$(T)}" : "") * "($(ψ.a), $(join(descs, ", ")))"
             else
-                (ψ.a == 1 ? "" : "$(ψ.a)") * (length(descs)==1 ? descs[1] : "($(join(descs, " " * $(string(kernel_op)) * " ")))")
+                (ψ.a == 1 ? "" : "$(ψ.a)") * (length(descs) == 1 ? descs[1] : "($(join(descs, " " * $(string(kernel_op)) * " ")))")
             end
         end
 
@@ -253,7 +253,7 @@ for (kernel_object, kernel_op, kernel_array_op) in ((:KernelProduct, :*, :prod),
         $kernel_op(κ::Kernel, ψ::$kernel_object) = $kernel_object(ψ.a, κ, ψ.k...)
         $kernel_op(ψ::$kernel_object, κ::Kernel) = $kernel_object(ψ.a, ψ.k..., κ)
 
-        $kernel_op(κ1::Kernel, κ2::Kernel) = $kernel_object(1, κ1, κ2)
+        $kernel_op(κ1::Kernel, κ2::Kernel) = $kernel_object($(kernel_op == :+ ? 0 : 1), κ1, κ2)
 
     end
 end

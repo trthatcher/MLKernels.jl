@@ -52,7 +52,8 @@ for T in (Float32,Float64)
     S = T[2 2 2;
           2 2 2;
           2 2 2]
-    @test MLKernels.hadamard!(T[3; 2], T[3; 2]) == T[9; 4]
+    @test MLKernels.matrix_prod!(T[3; 2], T[3; 2]) == T[9; 4]
+    @test MLKernels.matrix_sum!(T[3; 2], T[3; 2]) == T[6; 4]
 
 end
 println("Done")

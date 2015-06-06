@@ -79,31 +79,36 @@ end
   Generic Kernel Matrix Product Functions
 ==========================================================================#
 
-function kernelmatrix!{T<:FloatingPoint}(K::Matrix{T}, κ::KernelProduct{T}, X::Matrix{T}, is_trans::Bool = false, is_upper::Bool = true, sym::Bool = true)
-    c = length(κ.k)
-    kernelmatrix!(K, κ.k[1], X, is_trans, is_upper, false)
-    if c > 1
-        K_factor = similar(K)
-        for i = 2:c
-            hadamard!(K, kernelmatrix!(K_factor, κ.k[i], X, is_trans, is_upper, false), is_upper, false)
-        end
-    end
-    κ.a == 1 ? K : scale!(κ.a, K)
-    sym ? (is_upper ? syml!(K) : symu!(K)) : K
-end
+for (kernel_object, matrix_op, array_op, identity) in ((:KernelProduct, :matrix_prod!, :scale!, :1), (:KernelSum, :matrix_sum!, :translate!, :0))
+    @eval begin
 
-function kernelmatrix!{T<:FloatingPoint}(K::Matrix{T}, κ::KernelProduct{T}, X::Matrix{T}, Y::Matrix{T}, is_trans::Bool = false)
-    c = length(κ.k)
-    kernelmatrix!(K, κ.k[1], X, Y, is_trans)
-    if c > 1
-        K_factor = similar(K)
-        for i = 2:c
-            hadamard!(K, kernelmatrix!(K_factor, κ.k[i], X, Y, is_trans))
+        function kernelmatrix!{T<:FloatingPoint}(K::Matrix{T}, κ::$kernel_object{T}, X::Matrix{T}, is_trans::Bool = false, is_upper::Bool = true, sym::Bool = true)
+            c = length(κ.k)
+            kernelmatrix!(K, κ.k[1], X, is_trans, is_upper, false)
+            if c > 1
+                K_factor = similar(K)
+                for i = 2:c
+                    ($matrix_op)(K, kernelmatrix!(K_factor, κ.k[i], X, is_trans, is_upper, false), is_upper, false)
+                end
+            end
+            sym ? (is_upper ? syml!(K) : symu!(K)) : K
+            κ.a == $identity ? K : ($array_op)(κ.a, K)
         end
-    end
-    κ.a == 1 ? K : scale!(κ.a, K)
-end
 
+        function kernelmatrix!{T<:FloatingPoint}(K::Matrix{T}, κ::$kernel_object{T}, X::Matrix{T}, Y::Matrix{T}, is_trans::Bool = false)
+            c = length(κ.k)
+            kernelmatrix!(K, κ.k[1], X, Y, is_trans)
+            if c > 1
+                K_factor = similar(K)
+                for i = 2:c
+                    ($matrix_op)(K, kernelmatrix!(K_factor, κ.k[i], X, Y, is_trans))
+                end
+            end
+            κ.a == $identity ? K : ($array_op)(κ.a, K)
+        end
+
+    end
+end
 
 #==========================================================================
   Generic Kernel Matrix Sum Functions

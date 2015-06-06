@@ -124,7 +124,7 @@ end
 ==========================================================================#
 
 # Overwrite A with the hadamard product of A and B. Returns A
-function hadamard!{T<:FloatingPoint}(A::Array{T}, B::Array{T})
+function matrix_prod!{T<:FloatingPoint}(A::Array{T}, B::Array{T})
     length(A) == length(B) || error("A and B must be of the same length.")
     @inbounds for i = 1:length(A)
         A[i] *= B[i]
@@ -133,19 +133,51 @@ function hadamard!{T<:FloatingPoint}(A::Array{T}, B::Array{T})
 end
 
 # Overwrite A with the hadamard product of A and B. Returns A
-function hadamard!{T<:FloatingPoint}(A::Matrix{T}, B::Matrix{T}, is_upper::Bool, sym::Bool = true)
-    n = size(A,1)
-    if !(n == size(A,2) == size(B,1) == size(B,2))
-        throw(ArgumentError("A and B must be square and of same order."))
-    end
-    @inbounds for j = 1:n
-        for i = is_upper ? (1:j) : (j:n)
+function matrix_prod!{T<:FloatingPoint}(A::Matrix{T}, B::Matrix{T}, is_upper::Bool, sym::Bool = true)
+    (n = size(A,1)) == size(A,2) == size(B,1) == size(B,2) || throw(DimensionMismatch("A and B must be square and of same order."))
+    if is_upper
+        @inbounds for j = 1:n, i = 1:j
             A[i,j] *= B[i,j]
-        end 
+        end
+        sym ? syml!(A) : A
+    else
+        @inbounds for j = 1:n, i = j:n
+            A[i,j] *= B[i,j]
+        end
+        sym ? symu!(A) : A
     end
-    sym ? (is_upper ? syml!(A) : symu!(A)) : A
 end
 
+# Overwrite A with the matrix sum of A and B. Returns A
+function matrix_sum!{T<:FloatingPoint}(A::Array{T}, B::Array{T})
+    length(A) == length(B) || error("A and B must be of the same length.")
+    @inbounds for i = 1:length(A)
+        A[i] += B[i]
+    end
+    A
+end
+
+# Overwrite A with the matrix sum of A and B. Returns A
+function matrix_sum!{T<:FloatingPoint}(A::Matrix{T}, B::Matrix{T}, is_upper::Bool, sym::Bool = true)
+    (n = size(A,1)) == size(A,2) == size(B,1) == size(B,2) || throw(ArgumentError("A and B must be square and of same order."))
+    if is_upper
+        @inbounds for j = 1:n, i = 1:j
+            A[i,j] += B[i,j]
+        end
+        sym ? syml!(A) : A
+    else
+        @inbounds for j = 1:n, i = j:n
+            A[i,j] += B[i,j]
+        end
+        sym ? symu!(A) : A
+    end
+end
+
+function translate!{T<:FloatingPoint}(A::Array{T}, b::T)
+    @inbounds for i = 1:length(A)
+        A[i] += b
+    end
+end
 
 #==========================================================================
   Vector Functions
