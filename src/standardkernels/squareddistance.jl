@@ -311,3 +311,46 @@ function kappa_dp{T<:FloatingPoint}(κ::LogKernel{T}, param::Symbol, z::T)
         zero(T)
     end
 end
+
+#==========================================================================
+  Matern Kernel
+==========================================================================#
+
+immutable MaternKernel{T<:FloatingPoint,CASE} <: SquaredDistanceKernel{T}
+    nu::T
+    theta::T
+    function MaternKernel(ν::T, θ::T)
+        ν > 0 || throw(ArgumentError("ν = $(ν) must be greater than zero."))
+        θ > 0 || throw(ArgumentError("θ = $(θ) must be greater than zero."))
+        if CASE == :ν1 && ν != 1
+            error("Special case ν = 1 flagged but ν = $(ν)")
+        end
+        new(ν, θ)
+    end
+end
+MaternKernel{T<:FloatingPoint}(ν::T = 1.0, θ::T = one(T)) = MaternKernel{T, ν == 1 ? :ν1 : :Ø}(ν, θ)
+
+isposdef_kernel(::MaternKernel) = true
+
+function description_string{T<:FloatingPoint}(κ::MaternKernel{T}, eltype::Bool = true)
+    "MaternKernel" * (eltype ? "{$(T)}" : "") * "(ν=$(κ.nu),θ=$(κ.theta))"
+end
+
+function description_string_long(::MaternKernel)
+    """
+    Matern Kernel:
+    
+        k(x,y) = ...    x ∈ ℝⁿ, y ∈ ℝⁿ, ν > 0, θ > 0
+
+    """
+end
+
+function kappa{T<:FloatingPoint}(κ::MaternKernel{T}, z::T)
+    v1 = sqrt(2κ.nu * z)/κ.theta
+    2 * (v1/2)^(κ.nu) * besselk(κ.nu, z)/gamma(κ.nu)
+end
+
+function kappa{T<:FloatingPoint}(κ::MaternKernel{T,:ν1}, z::T)
+    v1 = sqrt(2z)/κ.theta
+    v1 * besselk(one(T), z)
+end

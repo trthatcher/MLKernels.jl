@@ -128,7 +128,7 @@ immutable ARD{T<:FloatingPoint,K<:StandardKernel{T}} <: SimpleKernel{T} # let's 
     w::Vector{T}
     function ARD(κ::K, w::Vector{T})
         isa(κ, ARDKernelTypes) || throw(ArgumentError("ARD only implemented for $(join(ARDKernelTypes.body.types, ", ", " and "))"))
-        all(w .>= 0) || throw(ArgumentError("weights = $(w) must all be >= 0."))
+        all(w .>= 0) || throw(ArgumentError("w = $(w) must all be >= 0."))
         new(κ, w)
     end
 end
