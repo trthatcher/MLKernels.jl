@@ -47,27 +47,6 @@ end
 kappa{T<:FloatingPoint}(κ::PolynomialKernel{T}, xᵀy::T) = (κ.alpha*xᵀy + κ.c)^κ.d
 kappa{T<:FloatingPoint}(κ::PolynomialKernel{T,:d1}, xᵀy::T) = κ.alpha*xᵀy + κ.c
 
-kappa_dz{T<:FloatingPoint}(κ::PolynomialKernel{T}, xᵀy::T) = κ.alpha*κ.d*(κ.alpha*xᵀy + κ.c)^(κ.d-1)
-kappa_dz{T<:FloatingPoint}(κ::PolynomialKernel{T,:d1}, xᵀy::T) = κ.alpha
-
-kappa_dz2{T<:FloatingPoint}(κ::PolynomialKernel{T}, xᵀy::T) = κ.alpha^2*κ.d*(κ.d-1)*(κ.alpha*xᵀy + κ.c)^(κ.d-2)
-
-kappa_dalpha{T<:FloatingPoint}(κ::PolynomialKernel{T}, xᵀy::T) = xᵀy*κ.d*(κ.alpha*xᵀy + κ.c)^(κ.d-1)
-
-kappa_dc{T<:FloatingPoint}(κ::PolynomialKernel{T}, xᵀy::T) = κ.d*(κ.alpha*xᵀy + κ.c)^(κ.d-1)
-
-function kappa_dp{T<:FloatingPoint}(κ::PolynomialKernel{T}, param::Symbol, z::T)
-    if param == :alpha
-        kappa_dalpha(κ, z)
-    elseif param == :c
-        kappa_dc(κ, z)
-    elseif param == :d
-        error("kappa_dd: Cannot differentiate with respect to an integer parameter.")
-    else
-        zero(T)
-    end
-end
-
 
 #== Sigmoid Kernel ===============#
 
@@ -99,21 +78,3 @@ function description_string_long(::SigmoidKernel)
 end
 
 kappa{T<:FloatingPoint}(κ::SigmoidKernel{T}, xᵀy::T) = tanh(κ.alpha*xᵀy + κ.c)
-
-kappa_dz{T<:FloatingPoint}(κ::SigmoidKernel{T}, xᵀy::T) = (1 - kappa(κ,xᵀy)^2) * κ.alpha
-
-kappa_dz2{T<:FloatingPoint}(κ::SigmoidKernel{T}, xᵀy::T) = -2κ.alpha^2 * kappa(κ,xᵀy)*(1-kappa(κ,xᵀy)^2)
-
-kappa_dalpha{T<:FloatingPoint}(κ::SigmoidKernel{T}, xᵀy::T) = (1 - kappa(κ,xᵀy)^2) * xᵀy
-
-kappa_dc{T<:FloatingPoint}(κ::SigmoidKernel{T}, xᵀy::T) = (1 - kappa(κ,xᵀy)^2)
-
-function kappa_dp{T<:FloatingPoint}(κ::SigmoidKernel{T}, param::Symbol, z::T)
-    if param == :alpha
-        kappa_dalpha(κ, z)
-    elseif param == :c
-        kappa_dc(κ, z)
-    else
-        zero(T)
-    end
-end

@@ -54,34 +54,6 @@ end
 kappa{T<:FloatingPoint}(κ::ExponentialKernel{T}, z::T) = exp(-κ.alpha * z^κ.gamma)
 kappa{T<:FloatingPoint}(κ::ExponentialKernel{T,:γ1}, z::T) = exp(-κ.alpha * z)
 
-kappa_dz{T<:FloatingPoint}(κ::ExponentialKernel{T}, z::T) = -κ.alpha * κ.gamma * z^(κ.gamma - 1) * exp(-κ.alpha * z^κ.gamma)
-kappa_dz{T<:FloatingPoint}(κ::ExponentialKernel{T,:γ1}, z::T) = -κ.alpha * exp(-κ.alpha * z)
-
-function kappa_dz2{T<:FloatingPoint}(κ::ExponentialKernel{T}, z::T)
-    v1 = κ.alpha*z^(κ.gamma)
-    κ.alpha * κ.gamma * (z^(κ.gamma-2)) * exp(-v1) * (κ.gamma*v1 - κ.gamma + 1)
-end
-
-function kappa_dalpha{T<:FloatingPoint}(κ::ExponentialKernel{T}, z::T)
-    v1 = z^κ.gamma
-    -v1 * exp(-κ.alpha * v1)
-end
-
-function kappa_dgamma{T<:FloatingPoint}(κ::ExponentialKernel{T}, z::T)
-    v1 = -κ.alpha * z^κ.gamma
-    v1 * exp(v1) * log(z)
-end
-
-function kappa_dp{T<:FloatingPoint}(κ::ExponentialKernel{T}, param::Symbol, z::T)
-    if param == :alpha
-        kappa_dalpha(κ, z)
-    elseif param == :gamma
-        kappa_dgamma(κ, z)
-    else
-        zero(T)
-    end
-end
-
 
 #==========================================================================
   Rational Quadratic Kernel
@@ -153,44 +125,6 @@ kappa{T<:FloatingPoint}(κ::RationalQuadraticKernel{T,:β1γ1}, z::T) = 1/(1 + �
 kappa{T<:FloatingPoint}(κ::RationalQuadraticKernel{T,:β1}, z::T) = 1/(1 + κ.alpha*z^κ.gamma)
 kappa{T<:FloatingPoint}(κ::RationalQuadraticKernel{T,:γ1}, z::T) = (1 + κ.alpha*z)^(-κ.beta)
 
-function kappa_dz{T<:FloatingPoint}(κ::RationalQuadraticKernel{T}, z::T)
-    azg1 = 1 + κ.alpha * z^κ.gamma
-    -κ.alpha * κ.beta * κ.gamma * z^(κ.gamma - 1) * (azg1^(-κ.beta - 1))
-end
-
-function kappa_dz2{T<:FloatingPoint}(κ::RationalQuadraticKernel{T}, z::T)
-    azg = κ.alpha * z^κ.gamma
-    bg = κ.beta * κ.gamma
-    bg * azg * (z^(-2)) * ((1 + azg)^(-κ.beta - 2)) * (azg * (1 + bg) - κ.gamma + 1)
-end
-
-function kappa_dalpha{T<:FloatingPoint}(κ::RationalQuadraticKernel{T}, z::T)
-    zg = z^κ.gamma
-    azg1 = 1 + κ.alpha * zg
-    -κ.beta * (azg1^(-κ.beta - 1)) * zg
-end
-function kappa_dbeta{T<:FloatingPoint}(κ::RationalQuadraticKernel{T}, z::T)
-    azg1 = 1 + κ.alpha * z^κ.gamma
-    -log(azg1) * azg1^(-κ.beta)
-end
-function kappa_dgamma{T<:FloatingPoint}(κ::RationalQuadraticKernel{T}, z::T)
-    v1 = κ.alpha*z^κ.gamma
-    v2 = -κ.beta
-    v2 * v1 * ((v1 + 1)^(v2 - 1)) * log(z)
-end
-
-function kappa_dp{T<:FloatingPoint}(κ::RationalQuadraticKernel{T}, param::Symbol, z::T)
-    if param == :alpha
-        kappa_dalpha(κ, z)
-    elseif param == :beta
-        kappa_dbeta(κ, z)
-    elseif param == :gamma
-        kappa_dgamma(κ, z)
-    else
-        zero(T)
-    end
-end
-
 
 #==========================================================================
   Power Kernel
@@ -234,16 +168,6 @@ end
 
 kappa{T<:FloatingPoint}(κ::PowerKernel{T}, z::T) = -z^(κ.gamma)
 kappa{T<:FloatingPoint}(κ::PowerKernel{T,:γ1}, z::T) = -z
-
-kappa_dz{T<:FloatingPoint}(κ::PowerKernel{T}, z::T) = -κ.gamma*(z^(κ.gamma - 1))
-kappa_dz{T<:FloatingPoint}(κ::PowerKernel{T,:γ1}, z::T) = -one(T)
-
-kappa_dz2{T<:FloatingPoint}(κ::PowerKernel{T}, z::T) = (κ.gamma - κ.gamma^2)*(z^(κ.gamma - 2))
-kappa_dz2{T<:FloatingPoint}(κ::PowerKernel{T,:γ1}, z::T) = zero(T)
-
-kappa_dgamma{T<:FloatingPoint}(κ::PowerKernel{T}, z::T) = -log(z)*(z^(κ.gamma))
-
-kappa_dp{T<:FloatingPoint}(κ::PowerKernel{T}, param::Symbol, z::T) = param == :gamma ? kappa_dgamma(κ, z) : zero(T)
 
 
 #==========================================================================
@@ -290,27 +214,6 @@ end
 kappa{T<:FloatingPoint}(κ::LogKernel{T}, z::T) = -log(κ.alpha*z^(κ.gamma) + 1)
 kappa{T<:FloatingPoint}(κ::LogKernel{T,:γ1}, z::T) = -log(κ.alpha*z + 1)
 
-kappa_dz{T<:FloatingPoint}(κ::LogKernel{T}, z::T) = - κ.alpha * κ.gamma * z^(κ.gamma-1) / (κ.alpha*z^(κ.gamma) + 1)
-kappa_dz{T<:FloatingPoint}(κ::LogKernel{T,:γ1}, z::T) = - κ.alpha / (κ.alpha*z + 1)
-
-function kappa_dz2{T<:FloatingPoint}(κ::LogKernel{T}, z::T)
-    v1 = κ.alpha*z^(κ.gamma)
-    -κ.alpha * κ.gamma * (z^(κ.gamma-2)) * (κ.gamma - 1 - v1) / (v1 + 1)^2
-end
-
-kappa_dalpha{T<:FloatingPoint}(κ::LogKernel{T}, z::T) = - z^(κ.gamma) / (κ.alpha*z^(κ.gamma) + 1)
-
-kappa_dgamma{T<:FloatingPoint}(κ::LogKernel{T}, z::T) = - log(z) * κ.alpha * z^(κ.gamma) / (κ.alpha*z^(κ.gamma) + 1)
-
-function kappa_dp{T<:FloatingPoint}(κ::LogKernel{T}, param::Symbol, z::T)
-    if param == :alpha
-        kappa_dalpha(κ, z)
-    elseif param == :gamma
-        kappa_dgamma(κ, z)
-    else
-        zero(T)
-    end
-end
 
 #==========================================================================
   Matern Kernel

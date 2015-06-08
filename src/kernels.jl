@@ -68,7 +68,7 @@ kernelpath(path::Vector{KernelNode}, κ::StandardKernel) = [(path, θ) for θ in
 
 abstract ScalarProductKernel{T<:FloatingPoint} <: StandardKernel{T}
 
-kernel{T<:FloatingPoint}(κ::ScalarProductKernel{T}, x::Array{T}, y::Array{T}) = kappa(κ, scprod(x, y))
+kernel{T<:FloatingPoint}(κ::ScalarProductKernel{T}, x::Vector{T}, y::Vector{T}) = kappa(κ, scprod(x, y))
 kernel{T<:FloatingPoint}(κ::ScalarProductKernel{T}, x::T, y::T) = kappa(κ, x*y)
 
 # Scalar Product Kernel definitions
@@ -81,7 +81,7 @@ include("standardkernels/scalarproduct.jl")
 
 abstract SquaredDistanceKernel{T<:FloatingPoint} <: StandardKernel{T}
 
-kernel{T<:FloatingPoint}(κ::SquaredDistanceKernel{T}, x::Array{T}, y::Array{T}) = kappa(κ, sqdist(x, y))
+kernel{T<:FloatingPoint}(κ::SquaredDistanceKernel{T}, x::Vector{T}, y::Vector{T}) = kappa(κ, sqdist(x, y))
 kernel{T<:FloatingPoint}(κ::SquaredDistanceKernel{T}, x::T, y::T) = kappa(κ, (x - y)^2)
 
 # Squared Distance Kernel definitions
@@ -89,33 +89,11 @@ include("standardkernels/squareddistance.jl")
 
 
 #===========================================================================
-  Separable Kernels - kernels of the form k(x,y) = κ(x)ᵀκ(y)
-===========================================================================#
-
-abstract SeparableKernel{T<:FloatingPoint} <: StandardKernel{T}
-
-function kappa_array!{T<:FloatingPoint}(κ::SeparableKernel{T}, x::Array{T})
-    @inbounds for i = 1:length(x)
-        x[i] = kappa(κ, x[i])
-    end
-    x
-end
-
-function kernel{T<:FloatingPoint}(κ::SeparableKernel{T}, X::Array{T}, Y::Array{T})
-    v = kappa_array!(κ, copy(x))
-    z = kappa_array!(κ, copy(y))
-    scprod(v, z)
-end
-kernel{T<:FloatingPoint}(κ::SeparableKernel{T}, x::T, y::T) = kappa(κ, x) * kappa(κ, y)
-
-# Separable Kernel definitions
-include("standardkernels/separable.jl")
-
-#===========================================================================
   Periodic Kernel
 ===========================================================================#
 
 include("standardkernels/periodic.jl")
+
 
 #===========================================================================
   Automatic Relevance Determination (ARD) kernels
@@ -123,11 +101,10 @@ include("standardkernels/periodic.jl")
 
 typealias ARDKernelTypes{T<:FloatingPoint} Union(SquaredDistanceKernel{T}, ScalarProductKernel{T})
 
-immutable ARD{T<:FloatingPoint,K<:StandardKernel{T}} <: SimpleKernel{T} # let's not have an ARD{,ARD{,...{,Kernel}}}...
+immutable ARD{T<:FloatingPoint,K<:StandardKernel{T}} <: SimpleKernel{T}
     k::K
     w::Vector{T}
     function ARD(κ::K, w::Vector{T})
-        isa(κ, ARDKernelTypes) || throw(ArgumentError("ARD only implemented for $(join(ARDKernelTypes.body.types, ", ", " and "))"))
         all(w .>= 0) || throw(ArgumentError("w = $(w) must all be >= 0."))
         new(κ, w)
     end
@@ -147,8 +124,9 @@ function kernelparameters(ψ::ARD)
     KernelVariable[length(path) == 0 ? BaseVariable(θ) : SubVariable(path, θ) for (path, θ) in parameter_paths]
 end
 
-kernel{T<:FloatingPoint,U<:SquaredDistanceKernel}(κ::ARD{T,U}, x::Array{T}, y::Array{T}) = kappa(κ.k, sqdist(x, y, κ.w))
-kernel{T<:FloatingPoint,U<:ScalarProductKernel}(κ::ARD{T,U}, x::Array{T}, y::Array{T}) = kappa(κ.k, scprod(x, y, κ.w))
+kernel{T<:FloatingPoint,U<:StandardKernel}(κ::ARD{T,U}, x::Vector{T}, y::Vector{T}) = kernel(κ.k, x .* κ.w, y .* κ.w)  # Default scaling
+kernel{T<:FloatingPoint,U<:SquaredDistanceKernel}(κ::ARD{T,U}, x::Vector{T}, y::Vector{T}) = kappa(κ.k, sqdist(x, y, κ.w))
+kernel{T<:FloatingPoint,U<:ScalarProductKernel}(κ::ARD{T,U}, x::Vector{T}, y::Vector{T}) = kappa(κ.k, scprod(x, y, κ.w))
 
 function kernel{T<:FloatingPoint,U<:SquaredDistanceKernel}(κ::ARD{T,U}, x::T, y::T)
     length(κ.w) == 1 || throw(ArgumentError("Dimensions do not conform."))

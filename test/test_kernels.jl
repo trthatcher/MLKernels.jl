@@ -6,7 +6,7 @@ importall MLKernels
 function check_fields(kernelobject::StandardKernel, field_values)
     fields = names(kernelobject)
     for i = 1:length(fields)
-        @test getfield(kernelobject, fields[i]) == field_values[i]
+        @test getfield(kernelobject, fields[i]) === field_values[i]
     end
 end
 
@@ -14,13 +14,13 @@ end
 function check_fields{T<:StandardKernel}(kernel1::T, kernel2::T)
     fields = names(kernel1)
     for i = 1:length(fields)
-        @test getfield(kernel1, fields[i]) == getfield(kernel2, fields[i])
+        @test getfield(kernel1, fields[i]) === getfield(kernel2, fields[i])
     end
 end
 
 # Iterate through constructor cases 
 function test_constructor_case(kernelobject, default_args, test_args)
-    check_fields((kernelobject)(), default_args)
+    check_fields((kernelobject)(), Float64[default_args...])
     n = length(names(kernelobject))
     for T in (Float32, Float64)
         for i = 1:n
@@ -102,7 +102,6 @@ for (kernelobject, error_cases) in (
         (LogKernel, ([0],[1,0], [1,1.0001])),
         (PolynomialKernel, ([0,1,2], [1,-0.0001,3], [1,1,0])),
         (SigmoidKernel, ([0,1], [1,-0.00001])),
-        (MercerSigmoidKernel, ([0,0],)),
     )
     print("    - Testing ", kernelobject, " error cases ... ")
     for error_case in error_cases
@@ -120,7 +119,6 @@ for (kernelobject, posdef) in (
         (LogKernel, false),
         (PolynomialKernel, true),
         (SigmoidKernel, false),
-        (MercerSigmoidKernel, true),
     )
     print("    - Testing ", kernelobject, "... ")
     @test isposdef_kernel((kernelobject)()) == posdef
@@ -135,7 +133,6 @@ for (kernelobject, posdef) in (
         (LogKernel, true),
         (PolynomialKernel, true),
         (SigmoidKernel, false),
-        (MercerSigmoidKernel, true),
     )
     print("    - Testing ", kernelobject, "... ")
     @test iscondposdef_kernel((kernelobject)()) == posdef
