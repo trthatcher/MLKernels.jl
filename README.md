@@ -5,21 +5,24 @@
 
 MLKernels.jl is a Julia package for Mercer and non-Mercer kernels that are used in the kernel methods of machine learning. The goal is to provide a Julia datatype for machine learning kernels and an efficient set of methods to calculate or approximate kernel matrices. The package has no dependencies beyond base Julia.
 
-The package currently supports eight pre-defined kernels:
+The package currently supports six pre-defined Mercer (positive definite) kernels:
 
-- Exponential Kernel (includes Gaussian Kernel/radial basis kernel and Laplacian Kernel)
-- Rational Quadratic Kernel (includes Inverse Multi-Quadratic Kernel)
-- Power Kernel
-- Log Kernel
-- Polynomial Kernel (includes Linear Kernel)
-- Sigmoid Kernel
-- Mercer Sigmoid Kernel
+- Exponential Class Kernels (includes the Gaussian/Radial Basis Kernel)
+- Rational Quadratic Class Kernels
+- Matern Kernel
+- Polynomial Kernel
 - Periodic Kernel
 
-The first six are also available as ARD (Automatic Relevance Determination) Kernels with a different weight for each dimension of input. The Periodic Kernel also offers a different scale for each dimension of input.
+A "non-kernel" kernel:
+- Sigmoid Kernel
 
-Kernels can be added, multiplied and scaled arbitrarily.
+Finally, two conditionally positive definite kernels are also included:
+- Power Kernel
+- Log Kernel
 
+All kernels available as Automatic Relevance Determination (ARD) Kernels which act as a scaling constant for each dimension of input.
+
+New Kernels may be constructed by scaling and translating existing kernels by positive real numbers. Further, kernels may be arbitrarily added and multiplied together to create composite kernels.
 
 ## Creating Basic Kernels
 
@@ -147,12 +150,6 @@ This package allows for a scaled point-wise product of kernels to be defined usi
 julia> 3*PolynomialKernel()*SigmoidKernel()
 KernelProduct{Float64}(3.0, PolynomialKernel(α=1.0,c=1.0,d=2), SigmoidKernel(α=1.0,c=1.0))
 ```
-
-## Derivatives
-
-This package implements the derivatives of kernels both with respect to arguments (`kernel_dx`, `kernel_dy` and `kernel_dxdy`) and with respect to kernel parameters (`kernel_dp`). (There are also equivalent kernel matrix methods: `kernelmatrix_dx`, `kernelmatrix_dy`, `kernelmatrix_dxdy` and `kernelmatrix_dp`.)
-
-`kernel_dp` and `kernelmatrix_dp` have as their second argument the parameter with respect to which the derivative should be taken. This can be given either as a Symbol, e.g. :alpha, or by the index. The index corresponds to the list given by `kernelparameters`.
 
 ## Approximating Kernel Matrices
 
