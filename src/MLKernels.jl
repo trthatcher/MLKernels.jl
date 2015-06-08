@@ -4,49 +4,44 @@
 
 module MLKernels
 
-import Base: show, exp, eltype, isposdef, convert, promote #, call
+import Base: show, eltype, convert, promote #, call
 
 export
     # Functions
     description,
+    isposdef_kernel,
+    iscondposdef_kernel,
     kernel,
-    dkernel_dx,
-    dkernel_dy,
-    dkernel_dp,
-    d2kernel_dxdy,
+    kernelparameters,
     kernelmatrix,
-    gramian_matrix,
-    lagged_gramian_matrix,
     center_kernelmatrix!,
     center_kernelmatrix,
+    nystrom,
 
-    # Types
+    # Kernel Types
     Kernel,
         SimpleKernel,
             StandardKernel,
-                EuclideanDistanceKernel,
-	                GaussianKernel, SquaredExponentialKernel,
-	                LaplacianKernel, ExponentialKernel,
-            	    RationalQuadraticKernel,
-            	    MultiQuadraticKernel,
-            	    InverseMultiQuadraticKernel,
-            	    PowerKernel,
-            	    LogKernel,
+                SquaredDistanceKernel,
+                    ExponentialKernel,
+                    RationalQuadraticKernel,
+                    PowerKernel,
+                    LogKernel,
                 ScalarProductKernel,
-	                LinearKernel,
-	                PolynomialKernel,
-            	    SigmoidKernel,
+                    PolynomialKernel,
+                    SigmoidKernel,
                 SeparableKernel,
                     MercerSigmoidKernel,
-            ScaledKernel,
+            PeriodicKernel,
+            ARD,
         CompositeKernel,
             KernelProduct,
             KernelSum
 
-include("vectorfunctions.jl")
-include("matrixfunctions.jl")
+include("meta.jl")
+include("auxfunctions.jl")
 include("kernels.jl")
 include("kernelmatrix.jl")
-include("kernelapprox.jl")
+#include("kernelmatrixapprox.jl")
 
 end # MLKernels
