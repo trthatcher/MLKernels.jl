@@ -4,6 +4,7 @@
 
 #==========================================================================
   Exponential Kernel
+  k(x,y) = exp(-α‖x-y‖²ᵞ)    x ∈ ℝⁿ, y ∈ ℝⁿ, α > 0, γ ∈ (0,1]
 ==========================================================================#
 
 immutable ExponentialKernel{T<:FloatingPoint,CASE} <: SquaredDistanceKernel{T}
@@ -21,34 +22,13 @@ end
 ExponentialKernel{T<:FloatingPoint}(α::T = 1.0, γ::T = one(T)) = ExponentialKernel{T, γ == 1 ? :γ1 : :Ø}(α, γ)
 
 GaussianKernel{T<:FloatingPoint}(α::T = 1.0) = ExponentialKernel(α)
+RadialBasisKernel{T<:FloatingPoint}(α::T = 1.0) = ExponentialKernel(α)
 LaplacianKernel{T<:FloatingPoint}(α::T = 1.0) = ExponentialKernel(α, 0.5)
 
-isposdef_kernel(::ExponentialKernel) = true
+ismercer(::ExponentialKernel) = true
 
 function description_string{T<:FloatingPoint}(κ::ExponentialKernel{T}, eltype::Bool = true)
     "ExponentialKernel" * (eltype ? "{$(T)}" : "") * "(α=$(κ.alpha),γ=$(κ.gamma))"
-end
-
-function description_string_long(::ExponentialKernel)
-    """
-    Exponential Kernel:
-    
-    The exponential kernel is a positive definite kernel defined as:
-    
-        k(x,y) = exp(-α‖x-y‖²ᵞ)    x ∈ ℝⁿ, y ∈ ℝⁿ, α > 0, γ ∈ (0,1]
-    
-    Since the value of the function decreases as x and y differ, it can
-    be interpreted as a similarity measure. It is derived by exponentiating
-    the conditionally positive-definite power kernel.
-    
-    When γ = 0.5, it is known as the Laplacian or exponential kernel. When
-    γ = 1, it is known as the Gaussian or squared exponential kernel.
-
-    ---
-    Carl Edward Rasmussen and Christopher K. I. Williams. 2005. Gaussian 
-    Processes for Machine Learning (Adaptive Computation and Machine 
-    Learning). The MIT Press.
-    """
 end
 
 kappa{T<:FloatingPoint}(κ::ExponentialKernel{T}, z::T) = exp(-κ.alpha * z^κ.gamma)
@@ -57,6 +37,7 @@ kappa{T<:FloatingPoint}(κ::ExponentialKernel{T,:γ1}, z::T) = exp(-κ.alpha * z
 
 #==========================================================================
   Rational Quadratic Kernel
+  k(x,y) = (1 + α‖x-y‖²ᵞ)⁻ᵝ    x ∈ ℝⁿ, y ∈ ℝⁿ, α > 0, β > 0, γ ∈ (0,1]
 ==========================================================================#
 
 immutable RationalQuadraticKernel{T<:FloatingPoint,CASE} <: SquaredDistanceKernel{T}
@@ -92,32 +73,10 @@ function RationalQuadraticKernel{T<:FloatingPoint}(α::T = 1.0, β::T = one(T), 
     RationalQuadraticKernel{T,CASE}(α, β, γ)
 end
 
-isposdef_kernel(::RationalQuadraticKernel) = true
+ismercer(::RationalQuadraticKernel) = true
 
 function description_string{T<:FloatingPoint}(κ::RationalQuadraticKernel{T}, eltype::Bool = true)
     "RationalQuadraticKernel" * (eltype ? "{$(T)}" : "") * "(α=$(κ.alpha),β=$(κ.beta),γ=$(κ.gamma))"
-end
-
-function description_string_long(::RationalQuadraticKernel)
-    """
-    Rational Kernel:
-    
-    The rational kernel is a stationary kernel that is similar in shape
-    to the Gaussian kernel:
-    
-        k(x,y) = (1 + α‖x-y‖²ᵞ)⁻ᵝ    x ∈ ℝⁿ, y ∈ ℝⁿ, α > 0, β > 0, γ ∈ (0,1]
-    
-    It is derived by exponentiating the conditionally positive-definite log
-    kernel. Setting α = α'/β, it can be seen that the rational kernel 
-    converges to the gamma exponential kernel as β → +∞.
-
-    When γ = 1, the kernel is referred to as the rational quadratic kernel.
-
-    ---
-    Carl Edward Rasmussen and Christopher K. I. Williams. 2005. Gaussian 
-    Processes for Machine Learning (Adaptive Computation and Machine 
-    Learning). The MIT Press.
-    """
 end
 
 kappa{T<:FloatingPoint}(κ::RationalQuadraticKernel{T}, z::T) = (1 + κ.alpha*z^κ.gamma)^(-κ.beta)
@@ -128,6 +87,7 @@ kappa{T<:FloatingPoint}(κ::RationalQuadraticKernel{T,:γ1}, z::T) = (1 + κ.alp
 
 #==========================================================================
   Power Kernel
+  k(x,y) = -‖x-y‖²ᵞ   x ∈ ℝⁿ, y ∈ ℝⁿ, γ ∈ (0,1]
 ==========================================================================#
 
 immutable PowerKernel{T<:FloatingPoint,CASE} <: SquaredDistanceKernel{T}
@@ -142,28 +102,10 @@ immutable PowerKernel{T<:FloatingPoint,CASE} <: SquaredDistanceKernel{T}
 end
 PowerKernel{T<:FloatingPoint}(γ::T = 1.0) = PowerKernel{T, γ == 1 ? :γ1 : :Ø}(γ)
 
-iscondposdef_kernel(::PowerKernel) = true
+iscondposdef(::PowerKernel) = true
 
 function description_string{T<:FloatingPoint}(κ::PowerKernel{T}, eltype::Bool = true)
     "PowerKernel" * (eltype ? "{$(T)}" : "") * "(γ=$(κ.gamma))"
-end
-
-function description_string_long(::PowerKernel)
-    """
-    Power Kernel:
-    
-    The power kernel (also known as the unrectified triangular kernel) is
-    a conditionally positive definite kernel. An important feature of the
-    power kernel is that it is scale invariant. The function is given by:
-    
-        k(x,y) = -‖x-y‖²ᵞ   x ∈ ℝⁿ, y ∈ ℝⁿ, γ ∈ (0,1]
-    
-    ---
-    Boughorbel, S.; Tarel, J.-P.; Nozha Boujemaa, Conditionally 
-    Positive Definite Kernels for SVM Based Image Recognition, 
-    Multimedia and Expo, 2005. ICME 2005. IEEE International Conference 
-    on , vol., no., pp.113,116, 6-6 July 2005
-    """
 end
 
 kappa{T<:FloatingPoint}(κ::PowerKernel{T}, z::T) = -z^(κ.gamma)
@@ -172,6 +114,7 @@ kappa{T<:FloatingPoint}(κ::PowerKernel{T,:γ1}, z::T) = -z
 
 #==========================================================================
   Log Kernel
+  k(x,y) = -log(α‖x-y‖²ᵞ + 1)    x ∈ ℝⁿ, y ∈ ℝⁿ, α > 0, γ ∈ (0,1]
 ==========================================================================#
 
 immutable LogKernel{T<:FloatingPoint,CASE} <: SquaredDistanceKernel{T}
@@ -188,27 +131,10 @@ immutable LogKernel{T<:FloatingPoint,CASE} <: SquaredDistanceKernel{T}
 end
 LogKernel{T<:FloatingPoint}(α::T = 1.0, γ::T = one(T)) = LogKernel{T, γ == 1 ? :γ1 : :Ø}(α, γ)
 
-iscondposdef_kernel(::LogKernel) = true
+iscondposdef(::LogKernel) = true
 
 function description_string{T<:FloatingPoint}(κ::LogKernel{T}, eltype::Bool = true)
     "LogKernel" * (eltype ? "{$(T)}" : "") * "(α=$(κ.alpha),γ=$(κ.gamma))"
-end
-
-function description_string_long(::LogKernel)
-    """
-    Log Kernel:
-    
-    The log kernel is a conditionally positive definite kernel. The function
-    is given by:
-    
-        k(x,y) = -log(α‖x-y‖²ᵞ + 1)    x ∈ ℝⁿ, y ∈ ℝⁿ, α > 0, γ ∈ (0,1]
-
-    ---
-    Boughorbel, S.; Tarel, J.-P.; Nozha Boujemaa, Conditionally 
-    Positive Definite Kernels for SVM Based Image Recognition,
-    Multimedia and Expo, 2005. ICME 2005. IEEE International Conference 
-    on , vol., no., pp.113,116, 6-6 July 2005
-    """
 end
 
 kappa{T<:FloatingPoint}(κ::LogKernel{T}, z::T) = -log(κ.alpha*z^(κ.gamma) + 1)
@@ -217,6 +143,7 @@ kappa{T<:FloatingPoint}(κ::LogKernel{T,:γ1}, z::T) = -log(κ.alpha*z + 1)
 
 #==========================================================================
   Matern Kernel
+  k(x,y) = ...    x ∈ ℝⁿ, y ∈ ℝⁿ, ν > 0, θ > 0
 ==========================================================================#
 
 immutable MaternKernel{T<:FloatingPoint,CASE} <: SquaredDistanceKernel{T}
@@ -233,19 +160,10 @@ immutable MaternKernel{T<:FloatingPoint,CASE} <: SquaredDistanceKernel{T}
 end
 MaternKernel{T<:FloatingPoint}(ν::T = 1.0, θ::T = one(T)) = MaternKernel{T, ν == 1 ? :ν1 : :Ø}(ν, θ)
 
-isposdef_kernel(::MaternKernel) = true
+ismercer(::MaternKernel) = true
 
 function description_string{T<:FloatingPoint}(κ::MaternKernel{T}, eltype::Bool = true)
     "MaternKernel" * (eltype ? "{$(T)}" : "") * "(ν=$(κ.nu),θ=$(κ.theta))"
-end
-
-function description_string_long(::MaternKernel)
-    """
-    Matern Kernel:
-    
-        k(x,y) = ...    x ∈ ℝⁿ, y ∈ ℝⁿ, ν > 0, θ > 0
-
-    """
 end
 
 function kappa{T<:FloatingPoint}(κ::MaternKernel{T}, z::T)

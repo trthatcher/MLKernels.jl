@@ -8,11 +8,9 @@ import Base: show, eltype, convert, promote #, call
 
 export
     # Functions
-    description,
-    isposdef_kernel,
-    iscondposdef_kernel,
+    ismercer,
+    iscondposdef,
     kernel,
-    kernelparameters,
     kernelmatrix,
     center_kernelmatrix!,
     center_kernelmatrix,
@@ -27,12 +25,10 @@ export
                     RationalQuadraticKernel,
                     PowerKernel,
                     LogKernel,
+                    MaternKernel,
                 ScalarProductKernel,
                     PolynomialKernel,
                     SigmoidKernel,
-                SeparableKernel,
-                    MercerSigmoidKernel,
-            PeriodicKernel,
             ARD,
         CompositeKernel,
             KernelProduct,

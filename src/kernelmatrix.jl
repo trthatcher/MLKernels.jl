@@ -144,7 +144,7 @@ for (kernelobject, gramian) in ((:SquaredDistanceKernel, :sqdistmatrix!),
     end
 
     function kernelmatrix!{T<:FloatingPoint,U<:$kernelobject}(K::Matrix{T}, κ::ARD{T,U}, X::Matrix{T}, is_trans::Bool = false, is_upper::Bool = true, sym::Bool = true)
-        $gramian(K, X, κ.weights, is_trans, is_upper, false)
+        $gramian(K, X, κ.w, is_trans, is_upper, false)
         kappa_gramian!(κ.k, K, is_upper, sym)
     end
 
@@ -154,33 +154,9 @@ for (kernelobject, gramian) in ((:SquaredDistanceKernel, :sqdistmatrix!),
     end
 
     function kernelmatrix!{T<:FloatingPoint,U<:$kernelobject}(K::Matrix{T}, κ::ARD{T,U}, X::Matrix{T}, Y::Matrix{T}, is_trans::Bool = false)
-        $gramian(K, X, Y, κ.weights, is_trans)
+        $gramian(K, X, Y, κ.w, is_trans)
         kappa_gramian!(κ.k, K)
     end
 
     end
 end
-
-
-#==========================================================================
-      Optimized kernel matrix functions for Separable kernels
-==========================================================================#
-
-#=
-function kernelmatrix_scaled{T<:FloatingPoint}(a::T, κ::SeparableKernel{T}, X::Matrix{T}, trans::Char = 'N', uplo::Char = 'U', sym::Bool = true)
-    K = BLAS.syrk(uplo, trans, a, kappa_array!(κ, copy(X)))
-    sym ? (uplo == 'U' ? syml!(K) : symu!(K)) : K
-end
-
-function kernelmatrix{T<:FloatingPoint}(κ::SeparableKernel{T}, X::Matrix{T}, trans::Char = 'N', uplo::Char = 'U', sym::Bool = true)
-    kernelmatrix_scaled(one(T), κ, X, )
-end
-
-function kernelmatrix_scaled{T<:FloatingPoint}(a::T, κ::SeparableKernel{T}, X::Matrix{T}, Y::Matrix{T}, trans::Char = 'N')
-    BLAS.gemm(trans, trans == 'N' ? 'T' : 'N', a, kappa_array!(κ, copy(X)), kappa_array!(κ, copy(Y)))
-end
-
-function kernelmatrix{T<:FloatingPoint}(κ::SeparableKernel{T}, X::Matrix{T}, Y::Matrix{T}, trans::Char = 'N')
-    kernelmatrix_scaled(one(T), κ, X, Y, trans)
-end
-=#

@@ -2,7 +2,10 @@
   Scalar Product Kernel Definitions
 ===================================================================================================#
 
-#== Polynomial Kernel ===============#
+#==========================================================================
+  Polynomial Kernel
+  k(x,y) = (αxᵀy + c)ᵈ    x ∈ ℝⁿ, y ∈ ℝⁿ, α > 0, c ≥ 0, d > 0
+==========================================================================#
 
 immutable PolynomialKernel{T<:FloatingPoint,CASE} <: ScalarProductKernel{T}
     alpha::T
@@ -23,32 +26,20 @@ PolynomialKernel{T<:FloatingPoint}(α::T, c::T, d::Integer) = PolynomialKernel(�
 
 LinearKernel{T<:FloatingPoint}(α::T, c::T) = PolynomialKernel(α, c, 1)
 
-isposdef_kernel(::PolynomialKernel) = true
+ismercer(::PolynomialKernel) = true
 
 function description_string{T<:FloatingPoint}(κ::PolynomialKernel{T}, eltype::Bool = true) 
     "PolynomialKernel" * (eltype ? "{$(T)}" : "") * "(α=$(κ.alpha),c=$(κ.c),d=$(convert(Int64,κ.d)))"
-end
-
-function description_string_long(::PolynomialKernel)
-    """ 
-    Polynomial Kernel:
-     
-    The polynomial kernel is a non-stationary kernel which represents
-    the original features as in a feature space over polynomials up to 
-    degree d of the original variables:
-
-        k(x,y) = (αxᵀy + c)ᵈ    x ∈ ℝⁿ, y ∈ ℝⁿ, α > 0, c ≥ 0, d > 0
-
-    This kernel is sensitive to numerical instability in the case that
-    d is increasingly large and αxᵀy + c approaches zero.
-    """
 end
 
 kappa{T<:FloatingPoint}(κ::PolynomialKernel{T}, xᵀy::T) = (κ.alpha*xᵀy + κ.c)^κ.d
 kappa{T<:FloatingPoint}(κ::PolynomialKernel{T,:d1}, xᵀy::T) = κ.alpha*xᵀy + κ.c
 
 
-#== Sigmoid Kernel ===============#
+#==========================================================================
+  Sigmoid Kernel
+  k(x,y) = tanh(αxᵀy + c)    x ∈ ℝⁿ, y ∈ ℝⁿ, α > 0, c ≥ 0
+==========================================================================#
 
 immutable SigmoidKernel{T<:FloatingPoint} <: ScalarProductKernel{T}
     alpha::T
@@ -63,18 +54,6 @@ SigmoidKernel{T<:FloatingPoint}(α::T = 1.0, c::T = one(T)) = SigmoidKernel{T}(�
 
 function description_string{T<:FloatingPoint}(κ::SigmoidKernel{T}, eltype::Bool = true)
     "SigmoidKernel" * (eltype ? "{$(T)}" : "") * "(α=$(κ.alpha),c=$(κ.c))"
-end
-
-function description_string_long(::SigmoidKernel)
-    """ 
-    Sigmoid Kernel:
-     
-    The sigmoid kernel is only positive semidefinite. It is used in the
-    field of neural networks where it is often used as the activation
-    function for artificial neurons.
-
-        k(x,y) = tanh(αxᵀy + c)    x ∈ ℝⁿ, y ∈ ℝⁿ, α > 0, c ≥ 0
-    """
 end
 
 kappa{T<:FloatingPoint}(κ::SigmoidKernel{T}, xᵀy::T) = tanh(κ.alpha*xᵀy + κ.c)
