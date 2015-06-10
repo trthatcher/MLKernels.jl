@@ -47,8 +47,9 @@ for kernelobject in (
         RationalQuadraticKernel,
         PowerKernel,
         LogKernel,
+        MaternKernel,
         PolynomialKernel,
-        SigmoidKernel
+        SigmoidKernel,
     )
     print(STDOUT, "    - Testing ")
     show(STDOUT, (kernelobject)())
@@ -62,7 +63,8 @@ for (kernelobject, default_args, test_args) in (
         (PowerKernel, [1], [0.5]),
         (LogKernel, [1,1], [2,0.5]),
         (PolynomialKernel, [1,1,2], [2,2,3]),
-        (SigmoidKernel, [1,1], [2,2])
+        (MaternKernel, [1,1], [2,2]),
+        (SigmoidKernel, [1,1], [2,2]),
     )
     print("    - Testing ", kernelobject, " ... ")
     test_constructor_case(kernelobject, default_args, test_args)
@@ -75,8 +77,9 @@ for (kernelobject, test_args) in (
         (RationalQuadraticKernel, [2, 2, 0.5]),
         (PowerKernel, [0.5]),
         (LogKernel, [2,0.5]),
+        (MaternKernel, [2,2]),
         (PolynomialKernel, [2,2,3]),
-        (SigmoidKernel, [2,2])
+        (SigmoidKernel, [2,2]),
     )
     print("    - Testing ARD ", kernelobject, " ... ")
     for T in (Float32, Float64)
@@ -100,6 +103,7 @@ for (kernelobject, error_cases) in (
         (RationalQuadraticKernel, ([0], [1, 0], [1, 1, 0], [1,1,1.01])),
         (PowerKernel, ([0],[1.0001])),
         (LogKernel, ([0],[1,0], [1,1.0001])),
+        (MaternKernel, ([0], [1,0])),
         (PolynomialKernel, ([0,1,2], [1,-0.0001,3], [1,1,0])),
         (SigmoidKernel, ([0,1], [1,-0.00001])),
     )
@@ -117,6 +121,7 @@ for (kernelobject, posdef) in (
         (RationalQuadraticKernel, true),
         (PowerKernel, false),
         (LogKernel, false),
+        (MaternKernel, true),
         (PolynomialKernel, true),
         (SigmoidKernel, false),
     )
@@ -131,6 +136,7 @@ for (kernelobject, posdef) in (
         (RationalQuadraticKernel, true),
         (PowerKernel, true),
         (LogKernel, true),
+        (MaternKernel, true),
         (PolynomialKernel, true),
         (SigmoidKernel, false),
     )
@@ -172,7 +178,8 @@ for (kernelobject, test_args, test_function) in (
         (ExponentialKernel, [2,0.5], (z,a,t) -> exp(-a * z^t)),
         (RationalQuadraticKernel, [2,2,0.5], (z,a,b,t) -> (1 + a*z^t)^(-b)),
         (PowerKernel, [0.5], (z,t) -> -z^t),
-        (LogKernel, [2,0.5], (z,a,t) -> -log(a*z^t + 1))
+        (LogKernel, [2,0.5], (z,a,t) -> -log(a*z^t + 1)),
+        (MaternKernel, [2,2], (z,a,t) -> 2(sqrt(2a*z)/2t)^a * besselk(a,z)/gamma(a)),
     )
     for is_ARD in (false,true)
         for T in (Float32, Float64)
