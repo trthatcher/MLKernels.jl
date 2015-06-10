@@ -216,6 +216,25 @@ for (kernelobject, test_args_set, test_function) in (
     end
 end
 
+println("- Testing special case error cases:")
+for (kernelobject, case, test_args) in (
+        (ExponentialKernel, :γ1, [1,0.5]),
+        (RationalQuadraticKernel, :β1, [2,2,1]),
+        (RationalQuadraticKernel, :γ1, [2,1,0.5]),
+        (RationalQuadraticKernel, :β1γ1, [2,2,0.5]),
+        (PowerKernel, :γ1, [0.5]),
+        (LogKernel, :γ1, [2,0.5]),
+        (MaternKernel, :ν1, [0.5,1]),
+        (PolynomialKernel, :d1, [1,1,2]),
+    )
+    for T in (Float32, Float64)
+        case_args = T[test_args...]
+        print("    - Testing ", kernelobject{T,case}, "... ")
+        @test_throws ErrorException kernelobject{T,case}(case_args...)
+        println("Done")
+    end
+end
+
 # Test KernelProduct
 print("- Testing KernelProduct constructors ... ")
 for T in (Float32, Float64)
