@@ -45,10 +45,6 @@ for T in (Float32,Float64)
     @test MLKernels.dot_columns(S1) == dc
     @test MLKernels.dot_rows(S1,w) == wdr
     @test MLKernels.dot_columns(S1,w) == wdc
-    @test MLKernels.row_add!(copy(S1), row) == RA
-    @test MLKernels.col_add!(copy(S1), col) == CA
-    @test MLKernels.row_sub!(copy(S1), row) == RS
-    @test MLKernels.col_sub!(copy(S1), col) == CS
     S = T[2 2 2;
           2 2 2;
           2 2 2]

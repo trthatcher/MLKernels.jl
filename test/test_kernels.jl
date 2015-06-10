@@ -200,20 +200,18 @@ for (kernelobject, test_args_set, test_function) in (
         (MaternKernel, ([1,1],), (z,a,t) -> 2(sqrt(2a*z)/2t)^a * besselk(a,z)/gamma(a)),
         (PolynomialKernel, ([1,1,1],), (z,a,c,d) -> (a * z + c )^d),
     )
-    for is_ARD in (false,true)
-        for T in (Float32, Float64)
-            for test_args in test_args_set
-                case_args = T[test_args...]
-                Knil = kernelobject{T,:nil}(case_args...)
-                Kcase = (kernelobject)(case_args...)
-                print("    - Testing ", typeof(Kcase), "... ")
-                for z = T[0, 0.1, 0.5, 1.0, 2.0]
-                    test_value = test_function(z, case_args...)
-                    @test_approx_eq_type MLKernels.kappa(Kcase, z) test_value T
-                    @test_approx_eq_type MLKernels.kappa(Knil, z) test_value T
-                end
-                println("Done")
+    for T in (Float32, Float64)
+        for test_args in test_args_set
+            case_args = T[test_args...]
+            Knil = kernelobject{T,:nil}(case_args...)
+            Kcase = (kernelobject)(case_args...)
+            print("    - Testing ", typeof(Kcase), "... ")
+            for z = T[0, 0.1, 0.5, 1.0, 2.0]
+                test_value = test_function(z, case_args...)
+                @test_approx_eq_type MLKernels.kappa(Kcase, z) test_value T
+                @test_approx_eq_type MLKernels.kappa(Knil, z) test_value T
             end
+            println("Done")
         end
     end
 end
