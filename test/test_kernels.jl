@@ -139,6 +139,12 @@ for (kernelobject, posdef) in (
     println("Done")
 end
 
+macro test_approx_eq_type(value, reference, typ)
+    quote
+        @test_approx_eq $value $reference
+        @test isa($value, $typ)
+    end
+end
 
 println("- Testing ScalarProductKernel kernel() function:")
 for (kernelobject, test_args, test_function) in (
@@ -150,18 +156,12 @@ for (kernelobject, test_args, test_function) in (
             case_args = T[test_args...]
             x, y, w = T[1], T[2], T[2]
             K = is_ARD ? ARD((kernelobject)(case_args...),w) : (kernelobject)(case_args...)
-            xy = is_ARD ? sum(x .* y .* w.^2) : sum(x .* y)
-            test_value = test_function(xy, case_args...)
+            z = is_ARD ? sum(x .* y .* w.^2) : sum(x .* y)
+            test_value = test_function(z, case_args...)
             print("    - Testing ", K, "... ")
-            kernel_value = is_ARD ? MLKernels.kappa(K.k, dot(w .*x, w.*y)) : MLKernels.kappa(K, dot(x,y))
-            @test_approx_eq kernel_value test_value
-            @test isa(kernel_value,T)
-            kernel_value = kernel(K,x,y)
-            @test_approx_eq kernel_value test_value
-            @test isa(kernel_value,T)
-            kernel_value = kernel(K,x[1],y[1])
-            @test_approx_eq kernel_value test_value
-            @test isa(kernel_value,T)
+            @test_approx_eq_type MLKernels.kappa((is_ARD ? K.k : K), z) test_value T
+            @test_approx_eq_type kernel(K,x,y) test_value T
+            @test_approx_eq_type kernel(K,x[1],y[1]) test_value T
             println("Done")
         end
     end
@@ -180,18 +180,40 @@ for (kernelobject, test_args, test_function) in (
             x, y, w = T[1], T[2], T[2]
             K = is_ARD ? ARD((kernelobject)(case_args...), w) : (kernelobject)(case_args...)
             lag = is_ARD ? w .* (x - y) : x - y
-            test_value = test_function(dot(lag,lag), case_args...)
+            z = dot(lag,lag)
+            test_value = test_function(z, case_args...)
             print("    - Testing ", K, "... ")
-            kernel_value = MLKernels.kappa(is_ARD ? K.k : K,dot(lag,lag))
-            @test_approx_eq kernel_value test_value
-            @test isa(kernel_value,T)
-            kernel_value = kernel(K,x,y)
-            @test_approx_eq kernel_value test_value
-            @test isa(kernel_value,T)
-            kernel_value = kernel(K,x[1],y[1])
-            @test_approx_eq kernel_value test_value
-            @test isa(kernel_value,T)
+            @test_approx_eq_type MLKernels.kappa((is_ARD ? K.k : K), z) test_value T
+            @test_approx_eq_type kernel(K,x,y) test_value T
+            @test_approx_eq_type kernel(K,x[1],y[1]) test_value T
             println("Done")
+        end
+    end
+end
+
+println("- Testing special case kappa() function:")
+for (kernelobject, test_args_set, test_function) in (
+        (ExponentialKernel, ([1,1],), (z,a,t) -> exp(-a * z^t)),
+        (RationalQuadraticKernel, ([2,1,0.5],[2,2,1],[2,1,1],), (z,a,b,t) -> (1 + a*z^t)^(-b)),
+        (PowerKernel, ([1],), (z,t) -> -z^t),
+        (LogKernel, ([2,1],), (z,a,t) -> -log(a*z^t + 1)),
+        (MaternKernel, ([1,1],), (z,a,t) -> 2(sqrt(2a*z)/2t)^a * besselk(a,z)/gamma(a)),
+        (PolynomialKernel, ([1,1,1],), (z,a,c,d) -> (a * z + c )^d),
+    )
+    for is_ARD in (false,true)
+        for T in (Float32, Float64)
+            for test_args in test_args_set
+                case_args = T[test_args...]
+                Knil = kernelobject{T,:nil}(case_args...)
+                Kcase = (kernelobject)(case_args...)
+                print("    - Testing ", typeof(Kcase), "... ")
+                for z = T[0, 0.1, 0.5, 1.0, 2.0]
+                    test_value = test_function(z, case_args...)
+                    @test_approx_eq_type MLKernels.kappa(Kcase, z) test_value T
+                    @test_approx_eq_type MLKernels.kappa(Knil, z) test_value T
+                end
+                println("Done")
+            end
         end
     end
 end
