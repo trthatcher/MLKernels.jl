@@ -70,54 +70,6 @@ function dot_columns{T<:FloatingPoint}(A::Matrix{T}, w::Array{T})
     aᵀa
 end
 
-# Add array z to each row in X, overwrites and returns X
-function row_add!{T<:FloatingPoint}(X::Matrix{T}, z::Array{T})
-    n, p = size(X)
-    p == length(z) || throw(ArgumentError("Dimensions do not conform"))
-    @inbounds for j = 1:p
-        for i = 1:n
-            X[i,j] += z[j]
-        end
-    end
-    X
-end
-
-# Add array z to each column in X, overwrites and returns X
-function col_add!{T<:FloatingPoint}(X::Matrix{T}, z::Array{T})
-    n, p = size(X)
-    p == length(z) || throw(ArgumentError("Dimensions do not conform"))
-    @inbounds for j = 1:p
-        for i = 1:n
-            X[i,j] += z[i]
-        end
-    end
-    X
-end
-
-# Subtract array z from each row in X, overwrites and returns X
-function row_sub!{T<:FloatingPoint}(X::Matrix{T}, z::Array{T})
-    n, p = size(X)
-    p == length(z) || throw(ArgumentError("Dimensions do not conform"))
-    @inbounds for j = 1:p
-        for i = 1:n
-            X[i,j] -= z[j]
-        end
-    end
-    X
-end
-
-# Subtract array z from each column in X, overwrites and returns X
-function col_sub!{T<:FloatingPoint}(X::Matrix{T}, z::Array{T})
-    n, p = size(X)
-    p == length(z) || throw(ArgumentError("Dimensions do not conform"))
-    @inbounds for j = 1:p
-        for i = 1:n
-            X[i,j] -= z[i]
-        end
-    end
-    X
-end
-
 
 #==========================================================================
   Matrix Operations

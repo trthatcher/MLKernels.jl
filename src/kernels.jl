@@ -2,36 +2,31 @@
   Generic Kernels
 ===================================================================================================#
 
-typealias KernelInput{T} Union(T,Array{T})
-
+typealias KernelInput{T} Union(T,Vector{T})
 abstract Kernel{T<:FloatingPoint}
 
 eltype{T}(κ::Kernel{T}) = T
 
-#call{T<:FloatingPoint}(κ::Kernel{T}, x::Vector{T}, y::Vector{T}) = kernel_function(κ, x, y)
-#call{T<:FloatingPoint}(κ::Kernel{T}, X::Matrix{T}) = kernel_matrix(κ, X)
-#call{T<:FloatingPoint}(κ::Kernel{T}, X::Matrix{T}, Y::Matrix{T}) = kernel_matrix(κ, X, Y)
+#call{T<:FloatingPoint}(κ::Kernel{T}, x::Vector{T}, y::Vector{T}) = kernel(κ, x, y)
+#call{T<:FloatingPoint}(κ::Kernel{T}, X::Matrix{T}) = kernelmatrix(κ, X)
+#call{T<:FloatingPoint}(κ::Kernel{T}, X::Matrix{T}, Y::Matrix{T}) = kernelmatrix(κ, X, Y)
 
 ismercer(::Kernel) = false
 iscondposdef(κ::Kernel) = ismercer(κ)
+
+function show(io::IO, κ::Kernel)
+    print(io, description_string(κ))
+end
 
 abstract SimpleKernel{T<:FloatingPoint} <: Kernel{T}
 abstract CompositeKernel{T<:FloatingPoint} <: Kernel{T}
 
 
 #===================================================================================================
-  Standard Kernels
+  Simple Kernels
 ===================================================================================================#
 
 abstract StandardKernel{T<:FloatingPoint} <: SimpleKernel{T}
-
-function show(io::IO, κ::Kernel)
-    print(io, description_string(κ))
-end
-
-function description(io::IO, κ::StandardKernel)
-    print(io, description_string_long(κ))
-end
 
 
 #===========================================================================
@@ -40,8 +35,7 @@ end
 
 abstract ScalarProductKernel{T<:FloatingPoint} <: StandardKernel{T}
 
-kernel{T<:FloatingPoint}(κ::ScalarProductKernel{T}, x::Vector{T}, y::Vector{T}) = kappa(κ, scprod(x, y))
-kernel{T<:FloatingPoint}(κ::ScalarProductKernel{T}, x::T, y::T) = kappa(κ, x*y)
+kernel{T<:FloatingPoint}(κ::ScalarProductKernel{T}, x::KernelInput{T}, y::KernelInput{T}) = kappa(κ, scprod(x, y))
 
 # Scalar Product Kernel definitions
 include("standardkernels/scalarproduct.jl")
@@ -53,8 +47,7 @@ include("standardkernels/scalarproduct.jl")
 
 abstract SquaredDistanceKernel{T<:FloatingPoint} <: StandardKernel{T}
 
-kernel{T<:FloatingPoint}(κ::SquaredDistanceKernel{T}, x::Vector{T}, y::Vector{T}) = kappa(κ, sqdist(x, y))
-kernel{T<:FloatingPoint}(κ::SquaredDistanceKernel{T}, x::T, y::T) = kappa(κ, (x - y)^2)
+kernel{T<:FloatingPoint}(κ::SquaredDistanceKernel{T}, x::KernelInput{T}, y::KernelInput{T}) = kappa(κ, sqdist(x, y))
 
 # Squared Distance Kernel definitions
 include("standardkernels/squareddistance.jl")
@@ -70,7 +63,7 @@ immutable ARD{T<:FloatingPoint,K<:StandardKernel{T}} <: SimpleKernel{T}
     k::K
     w::Vector{T}
     function ARD(κ::K, w::Vector{T})
-        all(w .>= 0) || throw(ArgumentError("w = $(w) must all be >= 0."))
+        all(w .>= 0) || throw(ArgumentError("All elements of w = $(w) must be non-negative."))
         new(κ, w)
     end
 end
