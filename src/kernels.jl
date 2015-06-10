@@ -64,7 +64,7 @@ immutable ARD{T<:FloatingPoint,K<:StandardKernel{T}} <: SimpleKernel{T}
     w::Vector{T}
     function ARD(κ::K, w::Vector{T})
         all(w .>= 0) || throw(ArgumentError("All elements of w = $(w) must be non-negative."))
-        new(κ, w)
+        new(κ, copy(w))
     end
 end
 
@@ -103,6 +103,14 @@ for kernelobject in concretesubtypes(StandardKernel)
     @eval begin
         convert{T<:FloatingPoint}(::Type{$kernelobjectname{T}}, κ::$kernelobjectname) = $constructorcall
     end
+end
+
+function convert{T<:FloatingPoint}(::Type{ARD{T}}, κ::ARD)
+    ARD(convert(Kernel{T}, κ.k), T[κ.w...])
+end
+
+for kernelobject in concretesubtypes(Kernel)
+    kernelobjectname = kernelobject.name.name  # symbol for concrete kernel type
 
     for kerneltype in supertypes(kernelobject)
         kerneltypename = kerneltype.name.name  # symbol for abstract supertype
@@ -120,7 +128,10 @@ end
   Composite Kernels
 ===================================================================================================#
 
-for (kernel_object, kernel_op, kernel_array_op, identity) in ((:KernelProduct, :*, :prod, :1), (:KernelSum, :+, :sum, :0))
+for (kernel_object, kernel_op, kernel_array_op, identity) in (
+        (:KernelProduct, :*, :prod, :1),
+        (:KernelSum,     :+, :sum,  :0)
+    )
     @eval begin
 
         immutable $kernel_object{T<:FloatingPoint} <: CompositeKernel{T}
@@ -142,8 +153,7 @@ for (kernel_object, kernel_op, kernel_array_op, identity) in ((:KernelProduct, :
         convert{T<:FloatingPoint}(::Type{CompositeKernel{T}}, ψ::$kernel_object) = $kernel_object(convert(T, ψ.a), Kernel{T}[ψ.k...])
         convert{T<:FloatingPoint}(::Type{Kernel{T}}, ψ::$kernel_object) = $kernel_object(convert(T, ψ.a), Kernel{T}[ψ.k...])
 
-        kernel{T<:FloatingPoint}(ψ::$kernel_object{T}, x::Vector{T}, y::Vector{T}) = $kernel_op(ψ.a, $kernel_array_op(map(κ -> kernel(κ,x,y), ψ.k)))
-        kernel{T<:FloatingPoint}(ψ::$kernel_object{T}, x::T, y::T) = $kernel_op(ψ.a, $kernel_array_op(map(κ -> kernel(κ,x,y), ψ.k)))
+        kernel{T<:FloatingPoint}(ψ::$kernel_object{T}, x::KernelInput{T}, y::KernelInput{T}) = $kernel_op(ψ.a, $kernel_array_op(map(κ -> kernel(κ,x,y), ψ.k)))
 
         ismercer(ψ::$kernel_object) = all(ismercer, ψ.k)
         iscondposdef(ψ::$kernel_object) = all(iscondposdef, ψ.k)
