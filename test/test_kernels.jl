@@ -18,6 +18,25 @@ function check_fields{T<:StandardKernel}(kernel1::T, kernel2::T)
     end
 end
 
+function test_fields_equal(kernel1, kernel2)
+    fields = names(kernel1)
+    @test fields == names(kernel2)
+    for i = 1:length(fields)
+        f1 = getfield(kernel1, fields[i])
+        f2 = getfield(kernel2, fields[i])
+        if isa(f1, Kernel) && isa(f2, Kernel)
+            test_fields_equal(f1, f2)
+        elseif isa(f1, Array) && isa(f2, Array)
+            @test length(f1) == length(f2)
+            for i = 1:length(f1)
+                test_fields_equal(f1[i], f2[i])
+            end
+        else
+            @test f1 == f2
+        end
+    end
+end
+
 # Iterate through constructor cases 
 function test_constructor_case(kernelobject, default_args, test_args, n = length(names(kernelobject)))
     check_fields((kernelobject)(), Float64[default_args...])
@@ -35,6 +54,19 @@ function test_error_case(kernelobject, error_case)
     for T in (Float32, Float64)
         test_case = T[error_case...]
         @test_throws ArgumentError (kernelobject)(test_case...)
+    end
+end
+
+
+function test_conversion(kernel)
+    kerneltypes = [typeof(kernel), MLKernels.supertypes(typeof(kernel))...]
+    fields = names(kernel)
+    for S in (Float32, Float64)
+        for convtype in kerneltypes
+            converted = convert(convtype.name.primary{S}, kernel)
+            @test eltype(converted) == S
+            test_fields_equal(kernel, converted)
+        end
     end
 end
 
@@ -68,6 +100,34 @@ for (kernelobject, default_args, test_args) in (
     print("    - Testing ", kernelobject, " ... ")
     test_constructor_case(kernelobject, default_args, test_args)
     println("Done")
+end
+
+println("- Testing StandardKernel and ARD type conversions:")
+for (kernelobject, default_args, test_args) in (
+        (ExponentialKernel, [1, 1], [2, 0.5]),
+        (RationalQuadraticKernel, [1, 1, 1], [2, 2, 0.5]),
+        (PowerKernel, [1], [0.5]),
+        (LogKernel, [1,1], [2,0.5]),
+        (PolynomialKernel, [1,1,2], [2,2,3]),
+        (MaternKernel, [1,1], [2,2]),
+        (SigmoidKernel, [1,1], [2,2]),
+    )
+    print("    - Testing ", kernelobject, " ... ")
+    for T in (Float32, Float64)
+        args = T[test_args...]
+        k = (kernelobject)(args...)
+        test_conversion(k)
+        test_conversion(ARD(k, T[1,2,3]))
+    end
+    println("Done")
+end
+println("- Testing CompositeKernel type conversions:")
+for T in (Float32, Float64)
+    k1 = ExponentialKernel(one(T))
+    k2 = PolynomialKernel(one(T))
+    a = convert(T, 3)
+    test_conversion(a*k1*k2)
+    test_conversion(a+k1+k2)
 end
 
 println("- Testing StandardKernel aliases:")
