@@ -157,9 +157,11 @@ for (kernelobject, posdef) in (
 end
 
 macro test_approx_eq_type(value, reference, typ)
+    x = gensym()
     quote
-        @test_approx_eq $value $reference
-        @test isa($value, $typ)
+        $x = $value
+        @test_approx_eq $x $reference
+        @test isa($x, $typ)
     end
 end
 
@@ -321,7 +323,8 @@ println(" Done")
 
 print("- Testing CompositeKernel kernel function ... ")
 for T in (Float32, Float64)
-    x, y, a = T[1], T[2], T[3]
+    x, y = T[1], T[2]
+    a = convert(T, 3)
 
     K1 = ExponentialKernel(one(T))
     K2 = RationalQuadraticKernel(one(T))
@@ -331,8 +334,13 @@ for T in (Float32, Float64)
     kernels = [a, K1, K2, K3, K4]
     values = [a, map(k -> kernel(k, x, y), kernels[2:end])...]
     for op in (prod, sum)
-        @test_approx_eq kernel(op(kernels), x, y) op(values)
-        @test_approx_eq kernel(op(kernels), x[1], y[1]) op(values)
+        @test_approx_eq_type kernel(op(kernels), x, y) op(values) T
+        @test_approx_eq_type kernel(op(kernels), x[1], y[1]) op(values) T
     end
+    K = a * (K1 + K2) * (K3 + K4 + a)
+    v = a * (kernel(K1, x, y) + kernel(K2, x, y)) * (kernel(K3, x, y) + kernel(K4, x, y) + a)
+    show(STDOUT, K)
+    @test_approx_eq_type kernel(K, x, y) v T
+    @test_approx_eq_type kernel(K, x[1], y[1]) v T
 end
 println(" Done")
