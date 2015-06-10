@@ -310,6 +310,7 @@ for T in (Float32, Float64)
         n >= 2 && check_fields(K1K2.k[2], K2)
         n >= 3 && check_fields(K1K2.k[3], K3)
         n >= 4 && check_fields(K1K2.k[4], K4)
+        show(STDOUT, K1K2)
     end
 
     @test ismercer(K1+K2+K3) == true
@@ -331,6 +332,7 @@ for T in (Float32, Float64)
     values = [a, map(k -> kernel(k, x, y), kernels[2:end])...]
     for op in (prod, sum)
         @test_approx_eq kernel(op(kernels), x, y) op(values)
+        @test_approx_eq kernel(op(kernels), x[1], y[1]) op(values)
     end
 end
 println(" Done")
