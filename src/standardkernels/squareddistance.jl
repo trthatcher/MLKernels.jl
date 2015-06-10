@@ -23,7 +23,7 @@ ExponentialKernel{T<:FloatingPoint}(α::T = 1.0, γ::T = one(T)) = ExponentialKe
 
 GaussianKernel{T<:FloatingPoint}(α::T = 1.0) = ExponentialKernel(α)
 RadialBasisKernel{T<:FloatingPoint}(α::T = 1.0) = ExponentialKernel(α)
-LaplacianKernel{T<:FloatingPoint}(α::T = 1.0) = ExponentialKernel(α, 0.5)
+LaplacianKernel{T<:FloatingPoint}(α::T = 1.0) = ExponentialKernel(α, convert(T, 0.5))
 
 ismercer(::ExponentialKernel) = true
 

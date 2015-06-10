@@ -19,12 +19,11 @@ function check_fields{T<:StandardKernel}(kernel1::T, kernel2::T)
 end
 
 # Iterate through constructor cases 
-function test_constructor_case(kernelobject, default_args, test_args)
+function test_constructor_case(kernelobject, default_args, test_args, n = length(names(kernelobject)))
     check_fields((kernelobject)(), Float64[default_args...])
-    n = length(names(kernelobject))
     for T in (Float32, Float64)
         for i = 1:n
-            case_args = T[test_args[1:i]..., default_args[(i+1):n]...]
+            case_args = T[test_args[1:i]..., default_args[(i+1):end]...]
             κ = (kernelobject)(case_args[1:i]...)
             check_fields(κ, case_args)
         end
@@ -68,6 +67,18 @@ for (kernelobject, default_args, test_args) in (
     )
     print("    - Testing ", kernelobject, " ... ")
     test_constructor_case(kernelobject, default_args, test_args)
+    println("Done")
+end
+
+println("- Testing StandardKernel aliases:")
+for (kernelobject, default_args, test_args) in (
+        (GaussianKernel, [1, 1], [2]),
+        (RadialBasisKernel, [1, 1], [2]),
+        (LaplacianKernel, [1, 0.5], [2]),
+        (LinearKernel, [1, 1, 1], [2, 2]),
+    )
+    print("    - Testing ", kernelobject, " ... ")
+    test_constructor_case(kernelobject, default_args, test_args, length(test_args))
     println("Done")
 end
 
@@ -304,5 +315,22 @@ for T in (Float32, Float64)
     @test ismercer(K1+K2+K3) == true
     @test iscondposdef(K1+K2+K3+K4) == false
 
+end
+println(" Done")
+
+print("- Testing CompositeKernel kernel function ... ")
+for T in (Float32, Float64)
+    x, y, a = T[1], T[2], T[3]
+
+    K1 = ExponentialKernel(one(T))
+    K2 = RationalQuadraticKernel(one(T))
+    K3 = PolynomialKernel(one(T))
+    K4 = SigmoidKernel(one(T))
+
+    kernels = [a, K1, K2, K3, K4]
+    values = [a, map(k -> kernel(k, x, y), kernels[2:end])...]
+    for op in (prod, sum)
+        @test_approx_eq kernel(op(kernels), x, y) op(values)
+    end
 end
 println(" Done")
