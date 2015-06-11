@@ -163,7 +163,15 @@ for (kernel_object, kernel_op, kernel_array_op, identity) in (
             if eltype
                 $(string(kernel_object)) * (eltype ? "{$(T)}" : "") * "($(ψ.a), $(join(descs, ", ")))"
             else
-                (ψ.a == $identity ? "" : "$(ψ.a)") * (length(descs) == 1 ? descs[1] : "($(join(descs, " " * $(string(kernel_op)) * " ")))")
+                if $kernel_op !== (*) && ψ.a != $identity
+                    insert!(descs, 1, "$(ψ.a)")
+                end
+                desc_str = length(descs) == 1 ? descs[1] : "($(join(descs, " " * $(string(kernel_op)) * " ")))"
+                if $kernel_op === (*)
+                    (ψ.a == $identity ? "" : "$(ψ.a)") * desc_str
+                else
+                    desc_str
+                end
             end
         end
 
