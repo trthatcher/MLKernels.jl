@@ -381,9 +381,26 @@ for T in (Float32, Float64)
 end
 println(" Done")
 
+function test_kernel_function{T<:FloatingPoint}(K::Kernel, x::T, y::T, value::T)
+    @test_approx_eq_type kernel(K, x, y)                       value T # scalar
+    @test_approx_eq_type kernel(K, [x], [y])                   value T # vector
+    @test_approx_eq_type kernelmatrix(K, [x y]')[1,2]          value T # matrix X
+    @test_approx_eq_type kernelmatrix(K, [x y], 'T')[1,2]      value T # matrix X'
+    @test_approx_eq_type kernelmatrix(K, [x]', [y]')[1,1]      value T # matrix X,Y
+    @test_approx_eq_type kernelmatrix(K, [x]', [y]', 'T')[1,1] value T # matrix X',Y'
+end
+function test_kernel_function{T<:FloatingPoint}(K::Kernel, x::Vector{T}, y::Vector{T}, value::T)
+    @test_approx_eq_type kernel(K, x, y)                       value T # vector
+    @test_approx_eq_type kernelmatrix(K, [x y]')[1,2]          value T # matrix X
+    @test_approx_eq_type kernelmatrix(K, [x y], 'T')[1,2]      value T # matrix X'
+    @test_approx_eq_type kernelmatrix(K, x', y')[1,1]          value T # matrix X,Y
+    @test_approx_eq_type kernelmatrix(K, x'', y'', 'T')[1,1]   value T # matrix X',Y'
+end
+
 print("- Testing CompositeKernel kernel function ... ")
 for T in (Float32, Float64)
-    x, y = T[1], T[2]
+    x, y = T[1, 1], T[2, 3]
+    x1, y1 = T[1], T[2]
     a = convert(T, 3)
 
     K1 = ExponentialKernel(one(T))
@@ -393,14 +410,16 @@ for T in (Float32, Float64)
 
     kernels = [a, K1, K2, K3, K4]
     values = [a, map(k -> kernel(k, x, y), kernels[2:end])...]
+    val1 = [a, map(k -> kernel(k, x1, y1), kernels[2:end])...]
     for op in (prod, sum)
-        @test_approx_eq_type kernel(op(kernels), x, y) op(values) T
-        @test_approx_eq_type kernel(op(kernels), x[1], y[1]) op(values) T
+        test_kernel_function(op(kernels), x, y, op(values))
+        test_kernel_function(op(kernels), x1, y1, op(val1))
     end
     K = a * (K1 + K2) * (K3 + K4 + a)
     v = a * (kernel(K1, x, y) + kernel(K2, x, y)) * (kernel(K3, x, y) + kernel(K4, x, y) + a)
+    v1 = a * (kernel(K1, x1, y1) + kernel(K2, x1, y1)) * (kernel(K3, x1, y1) + kernel(K4, x1, y1) + a)
     show(STDOUT, K)
-    @test_approx_eq_type kernel(K, x, y) v T
-    @test_approx_eq_type kernel(K, x[1], y[1]) v T
+    test_kernel_function(K, x, y, v)
+    test_kernel_function(K, x1, y1, v1)
 end
 println(" Done")
