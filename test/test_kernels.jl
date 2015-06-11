@@ -2,6 +2,15 @@ using Base.Test
 
 importall MLKernels
 
+macro test_approx_eq_type(value, reference, typ)
+    x = gensym()
+    quote
+        $x = $value
+        @test_approx_eq $x $reference
+        @test isa($x, $typ)
+    end
+end
+
 # Check each field for equality with args (assumed same order)
 function check_fields(kernelobject::StandardKernel, field_values)
     fields = names(kernelobject)
@@ -57,7 +66,6 @@ function test_error_case(kernelobject, error_case)
     end
 end
 
-
 function test_conversion(kernel)
     kerneltypes = [typeof(kernel), MLKernels.supertypes(typeof(kernel))...]
     fields = names(kernel)
@@ -69,6 +77,21 @@ function test_conversion(kernel)
         end
     end
 end
+
+function test_kernel_function{T<:FloatingPoint}(K::Kernel, x::T, y::T, value::T)
+    @test_approx_eq_type kernel(K, x, y)                       value T # scalar
+    test_kernel_function(K, [x], [y], value)
+end
+function test_kernel_function{T<:FloatingPoint}(K::Kernel, x::Vector{T}, y::Vector{T}, value::T)
+    @test_approx_eq_type kernel(K, x, y)                       value T # vector
+    @test_approx_eq_type kernelmatrix(K, [x y]')[1,2]          value T # matrix X
+    @test_approx_eq_type kernelmatrix(K, [x y], 'T')[1,2]      value T # matrix X'
+    @test_approx_eq_type kernelmatrix(K, [x y]', 'N', 'L')[1,2] value T # matrix X'
+    @test_approx_eq_type kernelmatrix(K, [x y], 'T', 'L')[1,2] value T # matrix X'
+    @test_approx_eq_type kernelmatrix(K, x', y')[1,1]          value T # matrix X,Y
+    @test_approx_eq_type kernelmatrix(K, x'', y'', 'T')[1,1]   value T # matrix X',Y'
+end
+
 
 # Test Standard Kernels
 
@@ -216,15 +239,6 @@ for (kernelobject, posdef) in (
     println("Done")
 end
 
-macro test_approx_eq_type(value, reference, typ)
-    x = gensym()
-    quote
-        $x = $value
-        @test_approx_eq $x $reference
-        @test isa($x, $typ)
-    end
-end
-
 println("- Testing ScalarProductKernel kernel() function:")
 for (kernelobject, test_args, test_function) in (
         (PolynomialKernel, [1,1,2], (z,a,c,d) -> (a * z + c )^d),
@@ -239,8 +253,8 @@ for (kernelobject, test_args, test_function) in (
             test_value = test_function(z, case_args...)
             print("    - Testing ", K, "... ")
             @test_approx_eq_type MLKernels.kappa((is_ARD ? K.k : K), z) test_value T
-            @test_approx_eq_type kernel(K,x,y) test_value T
-            @test_approx_eq_type kernel(K,x[1],y[1]) test_value T
+            test_kernel_function(K, x, y, test_value)
+            test_kernel_function(K, x[1], y[1], test_value)
             println("Done")
         end
     end
@@ -264,8 +278,8 @@ for (kernelobject, test_args, test_function) in (
             test_value = test_function(z, case_args...)
             print("    - Testing ", K, "... ")
             @test_approx_eq_type MLKernels.kappa((is_ARD ? K.k : K), z) test_value T
-            @test_approx_eq_type kernel(K,x,y) test_value T
-            @test_approx_eq_type kernel(K,x[1],y[1]) test_value T
+            test_kernel_function(K, x, y, test_value)
+            test_kernel_function(K, x[1], y[1], test_value)
             println("Done")
         end
     end
@@ -380,22 +394,6 @@ for T in (Float32, Float64)
 
 end
 println(" Done")
-
-function test_kernel_function{T<:FloatingPoint}(K::Kernel, x::T, y::T, value::T)
-    @test_approx_eq_type kernel(K, x, y)                       value T # scalar
-    @test_approx_eq_type kernel(K, [x], [y])                   value T # vector
-    @test_approx_eq_type kernelmatrix(K, [x y]')[1,2]          value T # matrix X
-    @test_approx_eq_type kernelmatrix(K, [x y], 'T')[1,2]      value T # matrix X'
-    @test_approx_eq_type kernelmatrix(K, [x]', [y]')[1,1]      value T # matrix X,Y
-    @test_approx_eq_type kernelmatrix(K, [x]', [y]', 'T')[1,1] value T # matrix X',Y'
-end
-function test_kernel_function{T<:FloatingPoint}(K::Kernel, x::Vector{T}, y::Vector{T}, value::T)
-    @test_approx_eq_type kernel(K, x, y)                       value T # vector
-    @test_approx_eq_type kernelmatrix(K, [x y]')[1,2]          value T # matrix X
-    @test_approx_eq_type kernelmatrix(K, [x y], 'T')[1,2]      value T # matrix X'
-    @test_approx_eq_type kernelmatrix(K, x', y')[1,1]          value T # matrix X,Y
-    @test_approx_eq_type kernelmatrix(K, x'', y'', 'T')[1,1]   value T # matrix X',Y'
-end
 
 print("- Testing CompositeKernel kernel function ... ")
 for T in (Float32, Float64)
