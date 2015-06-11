@@ -91,7 +91,7 @@ for (kernel_object, matrix_op, array_op, identity) in ((:KernelProduct, :matrix_
                     ($matrix_op)(K, kernelmatrix!(K_factor, κ.k[i], X, is_trans, is_upper, false), is_upper, false)
                 end
             end
-            sym ? (is_upper ? syml!(K) : symu!(K)) : K
+            K = sym ? (is_upper ? syml!(K) : symu!(K)) : K
             κ.a == $identity ? K : ($array_op)(κ.a, K)
         end
 
