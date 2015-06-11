@@ -9,7 +9,7 @@ function matrix_test_approx_eq(A::Array, B::Array)
 end
 
 print("- Testing matrix functions ... ")
-for T in (Float32,Float64)
+for T in (Float32,Float64,BigFloat)
     S1 = T[1 2 3;
            4 5 6;
            7 8 9]
@@ -54,12 +54,12 @@ for T in (Float32,Float64)
 end
 println("Done")
 
-print("- Testing sqdist ...")
+print("- Testing sqdist ... ")
 @test MLKernels.sqdist([1,2.0], [1 3.0]) == 1
 @test MLKernels.sqdist([1,2.0], [1,3.0], [1,2.0]) == 4
 println("Done")
 
-print("- Testing scprod ...")
+print("- Testing scprod ... ")
 @test MLKernels.scprod([1,2.0], [1 3.0]) == 7
 @test MLKernels.scprod([1,2.0], [1,3.0], [1,2.0]) == 25
 println("Done")

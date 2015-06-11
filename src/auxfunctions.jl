@@ -244,7 +244,10 @@ function init_gramian{T<:FloatingPoint}(X::Matrix{T}, Y::Matrix{T}, is_trans::Bo
     Array(T, n, m)
 end
 
-# Calculate the scalar product matrix (matrix of scalar products)
+safe_similar(X::Matrix) = similar(X)
+safe_similar(X::Matrix{BigFloat}) = zeros(X)
+
+## Calculate the scalar product matrix (matrix of scalar products)
 #    is_trans == false -> Z = XXᵀ (X is a design matrix)
 #                true  -> Z = XᵀX (X is a transposed design matrix)
 function scprodmatrix!{T<:FloatingPoint}(Z::Matrix{T}, X::Matrix{T}, is_trans::Bool = false, is_upper::Bool = true, sym::Bool = true)
@@ -255,6 +258,26 @@ function scprodmatrix!{T<:FloatingPoint}(Z::Matrix{T}, X::Matrix{T}, is_trans::B
     else
         n == size(X, 1) || throw(DimensionMismatch("Supplied kernel matrix must be square with the same number of rows as X."))
         BLAS.syrk!(is_upper ? 'U' : 'L', 'N', one(T), X, zero(T), Z)
+    end
+    sym ? (is_upper ? syml!(Z) : symu!(Z)) : Z
+end
+function scprodmatrix!(Z::Matrix{BigFloat}, X::Matrix{BigFloat}, is_trans::Bool = false, is_upper::Bool = true, sym::Bool = true)
+    (n = size(Z, 1)) == size(Z, 2) || throw(DimensionMismatch("Kernel matrix must be square."))
+    if is_trans
+        n == size(X, 2) || throw(DimensionMismatch("Supplied kernel matrix must be square with the same number of columns as X."))
+        m = size(X, 1)
+    else
+        n == size(X, 1) || throw(DimensionMismatch("Supplied kernel matrix must be square with the same number of rows as X."))
+        m = size(X, 2)
+    end
+    @transpose_access is_trans (X,) @inbounds for j = 1:n
+        for i = is_upper ? (1:j) : (j:n)
+            v = zero(BigFloat)
+            for k = 1:m
+                v += X[i,k] * X[j,k]
+            end
+            Z[i,j] = v
+        end
     end
     sym ? (is_upper ? syml!(Z) : symu!(Z)) : Z
 end
@@ -277,6 +300,27 @@ function scprodmatrix!{T<:FloatingPoint}(Z::Matrix{T}, X::Matrix{T}, Y::Matrix{T
         size(Y, 1) == size(Z, 2) || throw(DimensionMismatch("Supplied kernel matrix must have as many columns as Y has rows."))
         BLAS.gemm!('N', 'T', one(T), X, Y, zero(T), Z)
     end
+end
+function scprodmatrix!(Z::Matrix{BigFloat}, X::Matrix{BigFloat}, Y::Matrix{BigFloat}, is_trans::Bool = false)
+    if is_trans
+        (m  = size(X, 1)) == size(Y, 1) || throw(DimensionMismatch("X must have as many rows as Y."))
+        (nx = size(X, 2)) == size(Z, 1) || throw(DimensionMismatch("Supplied kernel matrix must have as many rows as X has columns."))
+        (ny = size(Y, 2)) == size(Z, 2) || throw(DimensionMismatch("Supplied kernel matrix must have as many columns as Y has columns."))
+    else
+        (m  = size(X, 2)) == size(Y, 2) || throw(DimensionMismatch("X must have as many columns as Y."))
+        (nx = size(X, 1)) == size(Z, 1) || throw(DimensionMismatch("Supplied kernel matrix must have as many rows as X has rows."))
+        (ny = size(Y, 1)) == size(Z, 2) || throw(DimensionMismatch("Supplied kernel matrix must have as many columns as Y has rows."))
+    end
+    @transpose_access is_trans (X,Y) @inbounds for j = 1:ny
+        for i = 1:nx
+            v = zero(BigFloat)
+            for k = 1:m
+                v += X[i,k] * Y[j,k]
+            end
+            Z[i,j] = v
+        end
+    end
+    Z
 end
 function scprodmatrix{T<:FloatingPoint}(X::Matrix{T}, Y::Matrix{T}, is_trans::Bool = false)
     scprodmatrix!(init_gramian(X, Y, is_trans), X, Y, is_trans)

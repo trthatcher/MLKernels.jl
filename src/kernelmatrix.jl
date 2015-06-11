@@ -86,7 +86,7 @@ for (kernel_object, matrix_op, array_op, identity) in ((:KernelProduct, :matrix_
             c = length(κ.k)
             kernelmatrix!(K, κ.k[1], X, is_trans, is_upper, false)
             if c > 1
-                K_factor = similar(K)
+                K_factor = safe_similar(K)
                 for i = 2:c
                     ($matrix_op)(K, kernelmatrix!(K_factor, κ.k[i], X, is_trans, is_upper, false), is_upper, false)
                 end
@@ -99,7 +99,7 @@ for (kernel_object, matrix_op, array_op, identity) in ((:KernelProduct, :matrix_
             c = length(κ.k)
             kernelmatrix!(K, κ.k[1], X, Y, is_trans)
             if c > 1
-                K_factor = similar(K)
+                K_factor = safe_similar(K)
                 for i = 2:c
                     ($matrix_op)(K, kernelmatrix!(K_factor, κ.k[i], X, Y, is_trans))
                 end

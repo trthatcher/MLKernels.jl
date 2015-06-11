@@ -87,7 +87,7 @@ for (kernelobject, mercer) in (
         (LogKernel, false),
         (PolynomialKernel, true),
     )
-    print("- Testing ", kernelobject, " for", (mercer ? "" : "conditional "), " positive definity... ")
+    print("- Testing ", kernelobject, " for", (mercer ? "" : " conditional"), " positive definity... ")
     for i = 1:10
         X = rand(10,5)
         c = 2*rand(10) .- 1

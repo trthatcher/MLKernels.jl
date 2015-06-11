@@ -2,6 +2,8 @@ using Base.Test
 
 importall MLKernels
 
+const FloatingPointTypes = (Float32, Float64, BigFloat)
+
 macro test_approx_eq_type(value, reference, typ)
     x = gensym()
     quote
@@ -15,7 +17,11 @@ end
 function check_fields(kernelobject::StandardKernel, field_values)
     fields = names(kernelobject)
     for i = 1:length(fields)
-        @test getfield(kernelobject, fields[i]) === field_values[i]
+        if isa(field_values[i], BigFloat) # BigFloat(1.0) !== BigFloat(1.0)...
+            @test getfield(kernelobject, fields[i]) == field_values[i]
+        else
+            @test getfield(kernelobject, fields[i]) === field_values[i]
+        end
     end
 end
 
@@ -35,7 +41,7 @@ function test_fields_equal(kernel1, kernel2)
         f2 = getfield(kernel2, fields[i])
         if isa(f1, Kernel) && isa(f2, Kernel)
             test_fields_equal(f1, f2)
-        elseif isa(f1, Array) && isa(f2, Array)
+        elseif isa(f1, Array) && isa(f2, Array) && (eltype(f1) <: Kernel && eltype(f2) <: Kernel)
             @test length(f1) == length(f2)
             for i = 1:length(f1)
                 test_fields_equal(f1[i], f2[i])
@@ -49,7 +55,7 @@ end
 # Iterate through constructor cases 
 function test_constructor_case(kernelobject, default_args, test_args, n = length(names(kernelobject)))
     check_fields((kernelobject)(), Float64[default_args...])
-    for T in (Float32, Float64)
+    for T in FloatingPointTypes
         for i = 1:n
             case_args = T[test_args[1:i]..., default_args[(i+1):end]...]
             κ = (kernelobject)(case_args[1:i]...)
@@ -60,7 +66,7 @@ end
 
 # Test constructor for argument error
 function test_error_case(kernelobject, error_case)
-    for T in (Float32, Float64)
+    for T in FloatingPointTypes
         test_case = T[error_case...]
         @test_throws ArgumentError (kernelobject)(test_case...)
     end
@@ -69,7 +75,7 @@ end
 function test_conversion(kernel)
     kerneltypes = [typeof(kernel), MLKernels.supertypes(typeof(kernel))...]
     fields = names(kernel)
-    for S in (Float32, Float64)
+    for S in FloatingPointTypes
         for convtype in kerneltypes
             converted = convert(convtype.name.primary{S}, kernel)
             @test eltype(converted) == S
@@ -136,7 +142,7 @@ for (kernelobject, default_args, test_args) in (
         (SigmoidKernel, [1,1], [2,2]),
     )
     print("    - Testing ", kernelobject, " ... ")
-    for T in (Float32, Float64)
+    for T in FloatingPointTypes
         args = T[test_args...]
         k = (kernelobject)(args...)
         test_conversion(k)
@@ -145,7 +151,7 @@ for (kernelobject, default_args, test_args) in (
     println("Done")
 end
 println("- Testing CompositeKernel type conversions:")
-for T in (Float32, Float64)
+for T in FloatingPointTypes
     k1 = ExponentialKernel(one(T))
     k2 = PolynomialKernel(one(T))
     a = convert(T, 3)
@@ -164,6 +170,10 @@ for (kernelobject, default_args, test_args) in (
     test_constructor_case(kernelobject, default_args, test_args, length(test_args))
     println("Done")
 end
+for T in FloatingPointTypes
+    k = PolynomialKernel(convert(T,2), convert(T,2), 2)
+    check_fields(k, T[2, 2, 2])
+end
 
 println("- Testing ARD constructors:")
 for (kernelobject, test_args) in (
@@ -176,7 +186,7 @@ for (kernelobject, test_args) in (
         (SigmoidKernel, [2,2]),
     )
     print("    - Testing ARD ", kernelobject, " ... ")
-    for T in (Float32, Float64)
+    for T in FloatingPointTypes
         w = [convert(T,2)]
         case_args = T[test_args...]
         K = ARD((kernelobject)(case_args...),w)
@@ -245,7 +255,7 @@ for (kernelobject, test_args, test_function) in (
         (SigmoidKernel, [1,1], (z,a,c) -> tanh(a*z + c))
     )
     for is_ARD in (false, true)
-        for T in (Float32, Float64)
+        for T in FloatingPointTypes
             case_args = T[test_args...]
             x, y, w = T[1], T[2], T[2]
             K = is_ARD ? ARD((kernelobject)(case_args...),w) : (kernelobject)(case_args...)
@@ -269,7 +279,7 @@ for (kernelobject, test_args, test_function) in (
         (MaternKernel, [2,2], (z,a,t) -> 2(sqrt(2a*z)/2t)^a * besselk(a,z)/gamma(a)),
     )
     for is_ARD in (false,true)
-        for T in (Float32, Float64)
+        for T in FloatingPointTypes
             case_args = T[test_args...]
             x, y, w = T[1], T[2], T[2]
             K = is_ARD ? ARD((kernelobject)(case_args...), w) : (kernelobject)(case_args...)
@@ -294,7 +304,7 @@ for (kernelobject, test_args_set, test_function) in (
         (MaternKernel, ([1,1],), (z,a,t) -> 2(sqrt(2a*z)/2t)^a * besselk(a,z)/gamma(a)),
         (PolynomialKernel, ([1,1,1],), (z,a,c,d) -> (a * z + c )^d),
     )
-    for T in (Float32, Float64)
+    for T in FloatingPointTypes
         for test_args in test_args_set
             case_args = T[test_args...]
             Knil = kernelobject{T,:nil}(case_args...)
@@ -321,7 +331,7 @@ for (kernelobject, case, test_args) in (
         (MaternKernel, :ν1, [0.5,1]),
         (PolynomialKernel, :d1, [1,1,2]),
     )
-    for T in (Float32, Float64)
+    for T in FloatingPointTypes
         case_args = T[test_args...]
         print("    - Testing ", kernelobject{T,case}, "... ")
         @test_throws ErrorException kernelobject{T,case}(case_args...)
@@ -331,7 +341,7 @@ end
 
 # Test KernelProduct
 print("- Testing KernelProduct constructors ... ")
-for T in (Float32, Float64)
+for T in FloatingPointTypes
     x, y, a, b = ([one(T)], [one(T)], convert(T,2), convert(T,3))
 
     K1 = ExponentialKernel(one(T))
@@ -367,7 +377,7 @@ println(" Done")
 
 # Test KernelSum
 print("- Testing KernelSum constructors ... ")
-for T in (Float32, Float64)
+for T in FloatingPointTypes
     x, y = ([one(T)], [one(T)])
 
     K1 = ExponentialKernel(one(T))
@@ -396,7 +406,7 @@ end
 println(" Done")
 
 print("- Testing CompositeKernel kernel function ... ")
-for T in (Float32, Float64)
+for T in FloatingPointTypes
     x, y = T[1, 1], T[2, 3]
     x1, y1 = T[1], T[2]
     a = convert(T, 3)
