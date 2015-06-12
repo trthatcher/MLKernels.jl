@@ -120,6 +120,7 @@ Z = [MLKernels.sqdist(x,y,w) for x in Sx, y in Sy]; matrix_test_approx_eq(MLKern
 Z = [MLKernels.sqdist(x,y,w) for x in Sx, y in Sy]; matrix_test_approx_eq(MLKernels.sqdistmatrix(X', Y', w, true), Z)
 println("Done")
 
+#=
 print("- Testing in-place scprod ... ")
 Z = MLKernels.scprodmatrix(X,Y)
 @test MLKernels.scprod(2,X,2,Y,1,false) == Z[2,1]
@@ -143,3 +144,4 @@ Z = MLKernels.sqdistmatrix(X',Y',true)
 Z = MLKernels.sqdistmatrix(X',Y',w,true)
 @test MLKernels.sqdist(2,X',2,Y',1,w,true) == Z[2,1]
 println("Done")
+=#

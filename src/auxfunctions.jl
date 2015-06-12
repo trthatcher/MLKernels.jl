@@ -148,14 +148,16 @@ function scprod{T<:FloatingPoint}(x::Array{T}, y::Array{T})
 end
 scprod{T<:FloatingPoint}(x::T, y::T) =x*y
 
+#=
 # In-place scalar product calculation
-function scprod{T<:FloatingPoint}(d::Int64, X::Array{T}, x_pos::Int64, Y::Array{T}, y_pos::Int64, is_trans::Bool)
+function scprod!{T<:FloatingPoint}(d::Int64, X::Array{T}, x_pos::Int64, Y::Array{T}, y_pos::Int64, is_trans::Bool)
     z = zero(T)
     @transpose_access is_trans (X,Y) @inbounds for i = 1:d
         z += X[x_pos,i] * Y[y_pos,i]
     end
     z
 end
+=#
 
 # Weighted scalar product of x and y
 function scprod{T<:FloatingPoint}(x::Array{T}, y::Array{T}, w::Array{T})
@@ -168,14 +170,16 @@ function scprod{T<:FloatingPoint}(x::Array{T}, y::Array{T}, w::Array{T})
 end
 scprod{T<:FloatingPoint}(x::T, y::T, w::T) = x*y*w^2
 
+#=
 # In-place weighted scalar product calculation
-function scprod{T<:FloatingPoint}(d::Int64, X::Array{T}, x_pos::Int64, Y::Array{T}, y_pos::Int64, w::Array{T}, is_trans::Bool)
+function scprod!{T<:FloatingPoint}(d::Int64, X::Array{T}, x_pos::Int64, Y::Array{T}, y_pos::Int64, w::Array{T}, is_trans::Bool)
     z = zero(T)
     @transpose_access is_trans (X,Y) @inbounds for i = 1:d
         z += X[x_pos,i] * Y[y_pos,i] * w[i]^2
     end
     z
 end
+=#
 
 # Squared distance between vectors x and y
 function sqdist{T<:FloatingPoint}(x::Array{T}, y::Array{T})
@@ -192,8 +196,9 @@ function sqdist{T<:FloatingPoint}(x::T, y::T)
     v*v
 end
 
+#=
 # In-place squared distance calculation
-function sqdist{T<:FloatingPoint}(d::Int64, X::Array{T}, x_pos::Int64, Y::Array{T}, y_pos::Int64, is_trans::Bool)
+function sqdist!{T<:FloatingPoint}(d::Int64, X::Array{T}, x_pos::Int64, Y::Array{T}, y_pos::Int64, is_trans::Bool)
     z = zero(T)
     @transpose_access is_trans (X,Y) @inbounds for i = 1:d
         v = X[x_pos,i] - Y[y_pos,i]
@@ -201,6 +206,7 @@ function sqdist{T<:FloatingPoint}(d::Int64, X::Array{T}, x_pos::Int64, Y::Array{
     end
     z
 end
+=#
 
 # Weighted squared distance function between vectors x and y
 function sqdist{T<:FloatingPoint}(x::Array{T}, y::Array{T}, w::Array{T})
@@ -217,8 +223,9 @@ function sqdist{T<:FloatingPoint}(x::T, y::T, w::T)
     v*v
 end
 
+#=
 # In-place weighted squared distance calculation
-function sqdist{T<:FloatingPoint}(d::Int64, X::Array{T}, x_pos::Int64, Y::Array{T}, y_pos::Int64, w::Array{T}, is_trans::Bool)
+function sqdist!{T<:FloatingPoint}(d::Int64, X::Array{T}, x_pos::Int64, Y::Array{T}, y_pos::Int64, w::Array{T}, is_trans::Bool)
     z = zero(T)
     @transpose_access is_trans (X,Y) @inbounds for i = 1:d
         v = (X[x_pos,i] - Y[y_pos,i]) * w[i]
@@ -226,6 +233,7 @@ function sqdist{T<:FloatingPoint}(d::Int64, X::Array{T}, x_pos::Int64, Y::Array{
     end
     z
 end
+=#
 
 
 #==========================================================================
