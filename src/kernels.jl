@@ -166,9 +166,9 @@ for (kernel_object, kernel_op, kernel_array_op, identity) in (
                 if $kernel_op !== (*) && ψ.a != $identity
                     insert!(descs, 1, string(ψ.a))
                 end
-                desc_str = join(descs, $(string(" ", kernel_op, " ")))
+                desc_str = string("(", join(descs, $(string(" ", kernel_op, " "))), ")")
                 if $kernel_op === (*) && ψ.a != $identity
-                    string(ψ.a, "(", desc_str, ")")
+                    string(ψ.a, desc_str)
                 else
                     desc_str
                 end
