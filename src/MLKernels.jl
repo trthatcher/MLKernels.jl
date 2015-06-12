@@ -38,6 +38,6 @@ include("meta.jl")
 include("auxfunctions.jl")
 include("kernels.jl")
 include("kernelmatrix.jl")
-#include("kernelmatrixapprox.jl")
+include("kernelmatrixapprox.jl")
 
 end # MLKernels

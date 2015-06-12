@@ -74,18 +74,18 @@ end
 ===================================================================================================#
 
 # Moore-Penrose pseudo-inverse for positive semidefinite matrices
-function nystrom_decomp!{T<:FloatingPoint}(S::Matrix{T}, uplo::Char = 'U', tol::T = eps(T)*maximum(size(S)))
+function nystrom_decomp!{T<:FloatingPoint}(S::Matrix{T}, tol::T = eps(T)*maximum(size(S)))
     tol > 0 || error("tol = $tol must be a positive number.")
     (n = size(S, 1)) == size(S, 2) || throw(ArgumentError("S must be a square matrix"))
-    D, V = syevd!('V', uplo, S)
-	@inbounds for i = 1:n
-		if D[i] < tol
+    D, V = syevd!('V', 'L', S)
+    @inbounds for i = 1:n
+        if D[i] < tol
             D[i] = zero(T)
         else
             D[i] = 1/sqrt(D[i])
         end
     end
-    scale!(D, V)
+    scale!(V, D)
 end
 
 
@@ -95,7 +95,7 @@ function nystrom{T<:FloatingPoint,S<:Integer}(κ::Kernel{T}, X::Matrix{T}, s::Ar
     n = size(X, 1)
     C = kernelmatrix(κ, X[s,:], X)
     DV = nystrom_decomp!(C[:,s])
-    DVC = BLAS.gemm('N', 'N', DV, C)
-    K = BLAS.syrk('U', 'T', one(T), DVC)
+    DVC = BLAS.gemm('T', 'N', C, DV)
+    K = BLAS.syrk('U', 'N', one(T), DVC)
     syml!(K)
 end
