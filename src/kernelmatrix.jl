@@ -39,10 +39,10 @@ end
 # Returns the kernel matrix of [Xᵀ Xᵀ]ᵀ or [X X]
 #   If trans == 'N' -> gramian(X) = XXᵀ (X is a design matrix IE rows are coordinates)
 #            == 'T' -> gramian(X) = XᵀX (X is a transposed design matrix IE columns are coordinates)
-function kernelmatrix!{T<:FloatingPoint}(K::Matrix{T}, κ::SimpleKernel{T}, X::Matrix{T}, is_trans::Bool = false, is_upper::Bool = true, sym::Bool = true)
+function kernelmatrix!{T<:FloatingPoint}(K::Matrix{T}, κ::StandardKernel{T}, X::Matrix{T}, is_trans::Bool = false, is_upper::Bool = true, sym::Bool = true)
     n = size(X, is_trans ? 2 : 1)
     if size(K) != (n, n)
-        throw(ArgumentError(string("X is ", description_matrix_size(X), " but K is ", description_matrix_size(K), "; K must be $n×$n.")))
+        throw(ArgumentError(string("X is ", description_matrix_size(X), ", but K is ", description_matrix_size(K), "; K must be $n×$n.")))
     end
     @transpose_access is_trans (X,) @inbounds for j = 1:n
         for i = is_upper ? (1:j) : (j:n)
@@ -56,15 +56,15 @@ end
 # Returns the upper right corner of the kernel matrix of [Xᵀ Yᵀ]ᵀ or [X Y]
 #   If trans == 'N' -> gramian(X) = XXᵀ (X is a design matrix IE rows are coordinates)
 #            == 'T' -> gramian(X) = XᵀX (X is a transposed design matrix IE columns are coordinates)
-function kernelmatrix!{T<:FloatingPoint}(K::Matrix{T}, κ::SimpleKernel{T}, X::Matrix{T}, Y::Matrix{T}, is_trans::Bool = false)
+function kernelmatrix!{T<:FloatingPoint}(K::Matrix{T}, κ::StandardKernel{T}, X::Matrix{T}, Y::Matrix{T}, is_trans::Bool = false)
     n = size(X, is_trans ? 2 : 1)
     m = size(Y, is_trans ? 2 : 1)
     if (d = size(X, is_trans ? 1 : 2)) != size(Y, is_trans ? 1 : 2)
-        throw(ArgumentError("X and Y do not have the same number of " * (is_trans ? "rows." : "columns.")))
+        throw(DimensionMismatch("X and Y do not have the same number of " * (is_trans ? "rows." : "columns.")))
     end
     if size(K) != (n, m)
         desc = is_trans ? "X is $d×$n and Y is $d×$m" : "X is $n×$d and Y is $m×$d"
-        throw(ArgumentError(string(desc, " but K is ", description_matrix_size(K), "; K must be $n×$m.")))
+        throw(ArgumentError(string(desc, ", but K is ", description_matrix_size(K), "; K must be $n×$m.")))
     end
     @transpose_access is_trans (X,Y) @inbounds for j = 1:m 
         for i = 1:n
@@ -126,7 +126,7 @@ end
 
 # Kernelize a square gramian by only transforming the upper or lower triangle
 function kappa_gramian!{T<:FloatingPoint}(κ::Union(SquaredDistanceKernel{T}, ScalarProductKernel{T}), G::Array{T}, is_upper::Bool, sym::Bool = true)
-    (n = size(G, 1)) == size(G, 2) || throw(ArgumentError("Gramian matrix must be square."))
+    (n = size(G, 1)) == size(G, 2) || throw(DimensionMismatch("Gramian matrix must be square."))
     @inbounds for j = 1:n
         for i = is_upper ? (1:j) : (j:n)
             G[i,j] = kappa(κ, G[i,j])

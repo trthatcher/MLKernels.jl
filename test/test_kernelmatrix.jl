@@ -25,11 +25,12 @@ println("Done")
 
 module TestKernelModule
 using MLKernels
-import MLKernels.kernel
+import MLKernels.kernel, MLKernels.description_string
 immutable TestKernel{T<:FloatingPoint} <: StandardKernel{T}
     a::T
 end
 kernel{T<:FloatingPoint}(::TestKernel{T}, x::Array{T}, y::Array{T}) = sum(x)*sum(y)
+description_string(::TestKernel) = "TestKernel"
 end
 import TestKernelModule.TestKernel
 
@@ -103,3 +104,36 @@ print("- Testing optimized separable kernel kernelmatrix_scaled ... ")
 test_kernelmatrix(2.0 * MercerSigmoidKernel(0.0, 1.0), X, 2*[tanh(1.0)^2 0; 0 tanh(1.0)^2])
 println("Done")
 =#
+
+print("- Testing kernelmatrix! error cases ... ")
+X = rand(5,3)
+for K in (ExponentialKernel(), PolynomialKernel(), TestKernel(1.0))
+
+    MLKernels.kernelmatrix!(zeros(5,5), K, X) # test this one actually works
+    function test_kernelmatrix_error(A::Matrix, K::Kernel, X::Matrix)
+        the_exception = Union(ArgumentError, DimensionMismatch)
+        @test_throws the_exception MLKernels.kernelmatrix!(A, K, X, false, true)
+        @test_throws the_exception MLKernels.kernelmatrix!(A, K, X, false, false)
+        @test_throws the_exception MLKernels.kernelmatrix!(A, K, X', true, true)
+        @test_throws the_exception MLKernels.kernelmatrix!(A, K, X', true, false)
+        @test_throws the_exception MLKernels.kernelmatrix!(A, K, X, X, false)
+        @test_throws the_exception MLKernels.kernelmatrix!(A, K, X', X', true)
+    end
+    test_kernelmatrix_error(zeros(5,3), K, X)
+    test_kernelmatrix_error(zeros(3,5), K, X)
+    test_kernelmatrix_error(zeros(3,3), K, X)
+
+    MLKernels.kernelmatrix!(zeros(5,8), K, X, rand(8,3))
+    function test_kernelmatrix_error(A::Matrix, K::Kernel, X::Matrix, Y::Matrix)
+        the_exception = Union(ArgumentError, DimensionMismatch)
+        @test_throws the_exception MLKernels.kernelmatrix!(A, K, X, Y, false)
+        @test_throws the_exception MLKernels.kernelmatrix!(A, K, X, Y')
+        @test_throws the_exception MLKernels.kernelmatrix!(A, K, X', Y)
+        @test_throws the_exception MLKernels.kernelmatrix!(A, K, X', Y', true)
+    end
+    test_kernelmatrix_error(zeros(5,8), K, X, rand(8, 4))
+    test_kernelmatrix_error(zeros(5,7), K, X, rand(8, 3))
+    test_kernelmatrix_error(zeros(4,8), K, X, rand(8, 3))
+end
+println("Done.")
+

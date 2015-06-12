@@ -41,7 +41,7 @@ end
 # Return vector of dot products for each row of A
 function dot_rows{T<:FloatingPoint}(A::Matrix{T}, w::Array{T})
     n, m = size(A)
-    length(w) == m || throw(ArgumentError("w must have the same length as A's rows."))
+    length(w) == m || throw(DimensionMismatch("w must have the same length as A's rows."))
     aᵀa = zeros(T, n)
     @inbounds for j = 1:m, i = 1:n
         aᵀa[i] += A[i,j] * A[i,j] * w[j]
@@ -62,7 +62,7 @@ end
 # Return vector of dot products for each column of A
 function dot_columns{T<:FloatingPoint}(A::Matrix{T}, w::Array{T})
     n, m = size(A)
-    length(w) == n || throw(ArgumentError("w must have the same length as A's rows."))
+    length(w) == n || throw(DimensionMismatch("w must have the same length as A's rows."))
     aᵀa = zeros(T, m)
     @inbounds for j = 1:m, i = 1:n
         aᵀa[j] += A[i,j] * A[i,j] * w[i]
@@ -111,7 +111,7 @@ end
 
 # Overwrite A with the matrix sum of A and B. Returns A
 function matrix_sum!{T<:FloatingPoint}(A::Matrix{T}, B::Matrix{T}, is_upper::Bool, sym::Bool = true)
-    (n = size(A,1)) == size(A,2) == size(B,1) == size(B,2) || throw(ArgumentError("A and B must be square and of same order."))
+    (n = size(A,1)) == size(A,2) == size(B,1) == size(B,2) || throw(DimensionMismatch("A and B must be square and of same order."))
     if is_upper
         @inbounds for j = 1:n, i = 1:j
             A[i,j] += B[i,j]
@@ -139,7 +139,7 @@ translate!{T<:FloatingPoint}(b::T, A::Matrix{T}) = translate!(A, b)
 
 # Scalar product of vectors x and y
 function scprod{T<:FloatingPoint}(x::Array{T}, y::Array{T})
-    (n = length(x)) == length(y) || throw(ArgumentError("Dimensions do not conform."))
+    (n = length(x)) == length(y) || throw(DimensionMismatch("x and y must have same length."))
     z = zero(T)
     @inbounds @simd for i = 1:n
         z += x[i]*y[i]
@@ -161,7 +161,7 @@ end
 
 # Weighted scalar product of x and y
 function scprod{T<:FloatingPoint}(x::Array{T}, y::Array{T}, w::Array{T})
-    (n = length(x)) == length(y) == length(w) || throw(ArgumentError("Dimensions do not conform."))
+    (n = length(x)) == length(y) == length(w) || throw(DimensionMismatch("x and y must have same length."))
     z = zero(T)
     @inbounds @simd for i = 1:n
         z += x[i] * y[i] * w[i]^2
@@ -183,7 +183,7 @@ end
 
 # Squared distance between vectors x and y
 function sqdist{T<:FloatingPoint}(x::Array{T}, y::Array{T})
-    (n = length(x)) == length(y) || throw(ArgumentError("Dimensions do not conform."))
+    (n = length(x)) == length(y) || throw(DimensionMismatch("x and y must have same length."))
     z = zero(T)
     @inbounds @simd for i = 1:n
         v = x[i] - y[i]
@@ -210,7 +210,7 @@ end
 
 # Weighted squared distance function between vectors x and y
 function sqdist{T<:FloatingPoint}(x::Array{T}, y::Array{T}, w::Array{T})
-    (n = length(x)) == length(y) == length(w) || throw(ArgumentError("Dimensions do not conform."))
+    (n = length(x)) == length(y) == length(w) || throw(DimensionMismatch("x, y and w must have same length."))
     z = zero(T)
     @inbounds @simd for i = 1:n
         v = (x[i] - y[i]) * w[i]
@@ -361,7 +361,6 @@ function sqdistmatrix!{T<:FloatingPoint}(Z::Matrix{T}, X::Matrix{T}, is_trans::B
     scprodmatrix!(Z, X, is_trans, is_upper, false)  # Don't symmetrize yet
     (n = size(Z, 1)) == size(Z, 2) || throw(DimensionMismatch("Z must be square."))
     xᵀx = diag(Z)
-    length(xᵀx) == n || throw(DimensionMismatch(""))
     if is_upper
         @inbounds for j = 1:n, i = 1:j
             Z[i,j] = xᵀx[i] - 2Z[i,j] + xᵀx[j]
@@ -404,7 +403,6 @@ function sqdistmatrix!{T<:FloatingPoint}(Z::Matrix{T}, X::Matrix{T}, w::Vector{T
     scprodmatrix!(Z, X, w, is_trans, is_upper, false)
     (n = size(Z, 1)) == size(Z, 2) || throw(DimensionMismatch("Z must be square."))
     xᵀDx = diag(Z)
-    n == length(xᵀDx) || throw(DimensionMismatch(""))
     if is_upper
         @inbounds for j = 1:n, i = 1:j
             Z[i,j] = xᵀDx[i] - 2Z[i,j] + xᵀDx[j]
