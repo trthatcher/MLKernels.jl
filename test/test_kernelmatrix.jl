@@ -8,6 +8,15 @@ function matrix_test_approx_eq(A::Array, B::Array)
     end
 end
 
+function test_kernelmatrix(K::Kernel, X::Matrix, reference::Matrix)
+    matrix_test_approx_eq(MLKernels.kernelmatrix(K, X), reference)
+    matrix_test_approx_eq(MLKernels.kernelmatrix(K, X, 'N', 'L'), reference)
+    matrix_test_approx_eq(MLKernels.kernelmatrix(K, X', 'T'), reference)
+    matrix_test_approx_eq(MLKernels.kernelmatrix(K, X', 'T', 'L'), reference)
+    matrix_test_approx_eq(MLKernels.kernelmatrix(K, X, X), reference)
+    matrix_test_approx_eq(MLKernels.kernelmatrix(K, X', X', 'T'), reference)
+end
+
 print("- Testing center_kernelmatrix ... ")
 X = [0.0 0; 2 2]
 Z = X .- mean(X,1)
@@ -28,31 +37,19 @@ import TestKernelModule.TestKernel
 X = [0.0 0; 1 1]
 
 print("- Testing generic kernelmatrix ... ")
-matrix_test_approx_eq(kernelmatrix(TestKernel(1.0), X), [0.0 0; 0 4])
-matrix_test_approx_eq(kernelmatrix(TestKernel(1.0), X, X), [0.0 0; 0 4])
+test_kernelmatrix(TestKernel(1.0), X, [0.0 0; 0 4])
 println("Done")
 
 print("- Testing generic kernelmatrix_scaled ... ")
-matrix_test_approx_eq(MLKernels.kernelmatrix(2.0 * TestKernel(1.0), X), [0.0 0; 0 8])
-matrix_test_approx_eq(MLKernels.kernelmatrix(2.0 * TestKernel(1.0), X, X), [0.0 0; 0 8])
-matrix_test_approx_eq(MLKernels.kernelmatrix(2.0 * TestKernel(1.0), X', 'T'), [0.0 0; 0 8])
-matrix_test_approx_eq(MLKernels.kernelmatrix(2.0 * TestKernel(1.0), X', X', 'T'), [0.0 0; 0 8])
+test_kernelmatrix(2.0 * TestKernel(1.0), X, [0.0 0; 0 8])
 println("Done")
-
 
 print("- Testing generic kernelmatrix_product ... ")
-matrix_test_approx_eq(MLKernels.kernelmatrix(2.0 * TestKernel(1.0) * TestKernel(1.0), X), [0.0 0; 0 32])
-matrix_test_approx_eq(MLKernels.kernelmatrix(2.0 * TestKernel(1.0) * TestKernel(1.0), X), [0.0 0; 0 32])
-matrix_test_approx_eq(MLKernels.kernelmatrix(2.0 * TestKernel(1.0) * TestKernel(1.0), X', 'T'), [0.0 0; 0 32])
-matrix_test_approx_eq(MLKernels.kernelmatrix(2.0 * TestKernel(1.0) * TestKernel(1.0), X', X', 'T'), [0.0 0; 0 32])
+test_kernelmatrix(2.0 * TestKernel(1.0) * TestKernel(1.0), X, [0.0 0; 0 32])
 println("Done")
 
-
 print("- Testing generic kernelmatrix_sum ... ")
-matrix_test_approx_eq(MLKernels.kernelmatrix(2.0 * TestKernel(1.0) + 1.0 * TestKernel(1.0), X), [0.0 0; 0 12])
-matrix_test_approx_eq(MLKernels.kernelmatrix(2.0 * TestKernel(1.0) + 1.0 * TestKernel(1.0), X, X), [0.0 0; 0 12])
-matrix_test_approx_eq(MLKernels.kernelmatrix(2.0 * TestKernel(1.0) + 1.0 * TestKernel(1.0), X', 'T'), [0.0 0; 0 12])
-matrix_test_approx_eq(MLKernels.kernelmatrix(2.0 * TestKernel(1.0) + 1.0 * TestKernel(1.0), X', X', 'T'), [0.0 0; 0 12])
+test_kernelmatrix(2.0 * TestKernel(1.0) + 1.0 * TestKernel(1.0), X, [0.0 0; 0 12])
 println("Done")
 
 
@@ -61,23 +58,19 @@ X = [1.0 0; 0 1]
 K = PowerKernel(1.0)
 
 print("- Testing optimized euclidean distance kernelmatrix ... ")
-matrix_test_approx_eq(kernelmatrix(K, X), [0.0 -2; -2 0])
-matrix_test_approx_eq(kernelmatrix(K, X, X), [0.0 -2; -2 0])
+test_kernelmatrix(K, X, [0.0 -2; -2 0])
 println("Done")
 
 print("- Testing optimized euclidian distance kernelmatrix_scaled ... ")
-matrix_test_approx_eq(MLKernels.kernelmatrix(2.0 * K, X), [0.0 -4; -4 0])
-matrix_test_approx_eq(MLKernels.kernelmatrix(2.0 * K, X, X), [0.0 -4; -4 0])
+test_kernelmatrix(2.0 * K, X, [0.0 -4; -4 0])
 println("Done")
 
 print("- Testing optimized euclidian distance kernelmatrix_product ... ")
-matrix_test_approx_eq(MLKernels.kernelmatrix(2.0 * K * K, X), [0.0 8; 8 0])
-matrix_test_approx_eq(MLKernels.kernelmatrix(2.0 * K * K, X, X), [0.0 8; 8 0])
+test_kernelmatrix(2.0 * K * K, X, [0.0 8; 8 0])
 println("Done")
 
 print("- Testing optimized euclidian distance kernelmatrix_sum ... ")
-matrix_test_approx_eq(MLKernels.kernelmatrix(2.0 * K + 1.0 * K, X), [0.0 -6; -6 0])
-matrix_test_approx_eq(MLKernels.kernelmatrix(2.0 * K + 1.0 * K, X, X), [0.0 -6; -6 0])
+test_kernelmatrix(2.0 * K + 1.0 * K, X, [0.0 -6; -6 0])
 println("Done")
 
 for (kernelobject, mercer) in (
@@ -103,12 +96,10 @@ end
 X = [1.0 0; 0 1]
 
 print("- Testing optimized separable kernel kernelmatrix ... ")
-matrix_test_approx_eq(kernelmatrix(MercerSigmoidKernel(0.0, 1.0), X), [tanh(1.0)^2 0; 0 tanh(1.0)^2])
-matrix_test_approx_eq(kernelmatrix(MercerSigmoidKernel(0.0, 1.0), X, X), [tanh(1.0)^2 0; 0 tanh(1.0)^2])
+test_kernelmatrix(MercerSigmoidKernel(0.0, 1.0), X, [tanh(1.0)^2 0; 0 tanh(1.0)^2])
 println("Done")
 
 print("- Testing optimized separable kernel kernelmatrix_scaled ... ")
-matrix_test_approx_eq(MLKernels.kernelmatrix(2.0 * MercerSigmoidKernel(0.0, 1.0), X), 2*[tanh(1.0)^2 0; 0 tanh(1.0)^2])
-matrix_test_approx_eq(MLKernels.kernelmatrix(2.0 * MercerSigmoidKernel(0.0, 1.0), X, X), 2*[tanh(1.0)^2 0; 0 tanh(1.0)^2])
+test_kernelmatrix(2.0 * MercerSigmoidKernel(0.0, 1.0), X, 2*[tanh(1.0)^2 0; 0 tanh(1.0)^2])
 println("Done")
 =#
