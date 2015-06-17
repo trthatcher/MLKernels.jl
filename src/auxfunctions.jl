@@ -125,13 +125,13 @@ function matrix_sum!{T<:FloatingPoint}(A::Matrix{T}, B::Matrix{T}, is_upper::Boo
     end
 end
 
-function translate!{T<:FloatingPoint}(A::Matrix{T}, b::T)
+function translate!{T<:FloatingPoint}(A::Array{T}, b::T)
     @inbounds for i = 1:length(A)
         A[i] += b
     end
     A
 end
-translate!{T<:FloatingPoint}(b::T, A::Matrix{T}) = translate!(A, b)
+translate!{T<:FloatingPoint}(b::T, A::Array{T}) = translate!(A, b)
 
 #==========================================================================
   Vector Functions
