@@ -8,8 +8,10 @@ function matrix_test_approx_eq(A::Array, B::Array)
     end
 end
 
+@test MLKernels.description_matrix_size(rand(4,5)) == "4×5"
+
 print("- Testing matrix functions ... ")
-for T in (Float32,Float64)
+for T in (Float32,Float64,BigFloat)
     S1 = T[1 2 3;
            4 5 6;
            7 8 9]
@@ -45,25 +47,27 @@ for T in (Float32,Float64)
     @test MLKernels.dot_columns(S1) == dc
     @test MLKernels.dot_rows(S1,w) == wdr
     @test MLKernels.dot_columns(S1,w) == wdc
-    @test MLKernels.row_add!(copy(S1), row) == RA
-    @test MLKernels.col_add!(copy(S1), col) == CA
-    @test MLKernels.row_sub!(copy(S1), row) == RS
-    @test MLKernels.col_sub!(copy(S1), col) == CS
     S = T[2 2 2;
           2 2 2;
           2 2 2]
     @test MLKernels.matrix_prod!(T[3; 2], T[3; 2]) == T[9; 4]
     @test MLKernels.matrix_sum!(T[3; 2], T[3; 2]) == T[6; 4]
+    @test MLKernels.translate!(T[3; 2], one(T)) == T[4; 3]
+    @test MLKernels.translate!(one(T), T[3; 2]) == T[4; 3]
 
 end
 println("Done")
 
-print("- Testing sqdist ...")
+print("- Testing sqdist ... ")
+@test MLKernels.sqdist(2.0, 3.0) == 1
+@test MLKernels.sqdist(2.0, 3.0, 2.0) == 4
 @test MLKernels.sqdist([1,2.0], [1 3.0]) == 1
 @test MLKernels.sqdist([1,2.0], [1,3.0], [1,2.0]) == 4
 println("Done")
 
-print("- Testing scprod ...")
+print("- Testing scprod ... ")
+@test MLKernels.scprod(2.0, 3.0) == 6
+@test MLKernels.scprod(2.0, 3.0, 2.0) == 24
 @test MLKernels.scprod([1,2.0], [1 3.0]) == 7
 @test MLKernels.scprod([1,2.0], [1,3.0], [1,2.0]) == 25
 println("Done")
@@ -124,6 +128,7 @@ Z = [MLKernels.sqdist(x,y,w) for x in Sx, y in Sy]; matrix_test_approx_eq(MLKern
 Z = [MLKernels.sqdist(x,y,w) for x in Sx, y in Sy]; matrix_test_approx_eq(MLKernels.sqdistmatrix(X', Y', w, true), Z)
 println("Done")
 
+#=
 print("- Testing in-place scprod ... ")
 Z = MLKernels.scprodmatrix(X,Y)
 @test MLKernels.scprod(2,X,2,Y,1,false) == Z[2,1]
@@ -147,3 +152,4 @@ Z = MLKernels.sqdistmatrix(X',Y',true)
 Z = MLKernels.sqdistmatrix(X',Y',w,true)
 @test MLKernels.sqdist(2,X',2,Y',1,w,true) == Z[2,1]
 println("Done")
+=#

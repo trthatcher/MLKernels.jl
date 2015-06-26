@@ -8,11 +8,9 @@ import Base: show, eltype, convert, promote #, call
 
 export
     # Functions
-    description,
-    isposdef_kernel,
-    iscondposdef_kernel,
+    ismercer,
+    iscondposdef,
     kernel,
-    kernelparameters,
     kernelmatrix,
     center_kernelmatrix!,
     center_kernelmatrix,
@@ -23,16 +21,14 @@ export
         SimpleKernel,
             StandardKernel,
                 SquaredDistanceKernel,
-                    ExponentialKernel,
+                    ExponentialKernel, GaussianKernel, RadialBasisKernel, LaplacianKernel,
                     RationalQuadraticKernel,
                     PowerKernel,
                     LogKernel,
+                    MaternKernel,
                 ScalarProductKernel,
-                    PolynomialKernel,
+                    PolynomialKernel, LinearKernel,
                     SigmoidKernel,
-                SeparableKernel,
-                    MercerSigmoidKernel,
-            PeriodicKernel,
             ARD,
         CompositeKernel,
             KernelProduct,
@@ -42,6 +38,6 @@ include("meta.jl")
 include("auxfunctions.jl")
 include("kernels.jl")
 include("kernelmatrix.jl")
-#include("kernelmatrixapprox.jl")
+include("kernelmatrixapprox.jl")
 
 end # MLKernels

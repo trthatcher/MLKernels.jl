@@ -2,64 +2,31 @@
   Generic Kernels
 ===================================================================================================#
 
-typealias KernelInput{T} Union(T,Array{T})
-
+typealias KernelInput{T} Union(T,Vector{T})
 abstract Kernel{T<:FloatingPoint}
 
 eltype{T}(κ::Kernel{T}) = T
 
-#call{T<:FloatingPoint}(κ::Kernel{T}, x::Vector{T}, y::Vector{T}) = kernel_function(κ, x, y)
-#call{T<:FloatingPoint}(κ::Kernel{T}, X::Matrix{T}) = kernel_matrix(κ, X)
-#call{T<:FloatingPoint}(κ::Kernel{T}, X::Matrix{T}, Y::Matrix{T}) = kernel_matrix(κ, X, Y)
+#call{T<:FloatingPoint}(κ::Kernel{T}, x::Vector{T}, y::Vector{T}) = kernel(κ, x, y)
+#call{T<:FloatingPoint}(κ::Kernel{T}, X::Matrix{T}) = kernelmatrix(κ, X)
+#call{T<:FloatingPoint}(κ::Kernel{T}, X::Matrix{T}, Y::Matrix{T}) = kernelmatrix(κ, X, Y)
 
-isposdef_kernel(::Kernel) = false
-iscondposdef_kernel(κ::Kernel) = isposdef_kernel(κ)
-
-abstract SimpleKernel{T<:FloatingPoint} <: Kernel{T}
-abstract CompositeKernel{T<:FloatingPoint} <: Kernel{T}
-
-KernelNode = Union(Expr, Symbol)
-
-abstract KernelVariable{θ}
-
-immutable BaseVariable{θ} <: KernelVariable{θ} end
-BaseVariable(θ::Symbol) = BaseVariable{θ}()
-
-function show{θ}(io::IO, variable::BaseVariable{θ})
-    print(io, θ)
-end
-
-immutable SubVariable{θ} <: KernelVariable{θ}
-    path::Vector{KernelNode}
-end
-SubVariable(path::Vector{KernelNode}, θ::Symbol) = SubVariable{θ}(path)
-
-function generatepath{θ}(variable::SubVariable{θ})
-    symbol(join([string(ex) for ex in variable.path], ".") * "." * string(θ))
-end
-
-function show(io::IO, θ::SubVariable)
-    print(io, generatepath(θ))
-end
-
-
-#===================================================================================================
-  Standard Kernels
-===================================================================================================#
-
-abstract StandardKernel{T<:FloatingPoint} <: SimpleKernel{T}
+ismercer(::Kernel) = false
+iscondposdef(κ::Kernel) = ismercer(κ)
 
 function show(io::IO, κ::Kernel)
     print(io, description_string(κ))
 end
 
-function description(io::IO, κ::StandardKernel)
-    print(io, description_string_long(κ))
-end
-description(κ::StandardKernel) = description(STDOUT, κ)
+abstract SimpleKernel{T<:FloatingPoint} <: Kernel{T}
+abstract CompositeKernel{T<:FloatingPoint} <: Kernel{T}
 
-kernelparameters(κ::StandardKernel) = [BaseVariable(θ) for θ in names(κ)]
-kernelpath(path::Vector{KernelNode}, κ::StandardKernel) = [(path, θ) for θ in names(κ)]
+
+#===================================================================================================
+  Simple Kernels
+===================================================================================================#
+
+abstract StandardKernel{T<:FloatingPoint} <: SimpleKernel{T}
 
 
 #===========================================================================
@@ -68,8 +35,7 @@ kernelpath(path::Vector{KernelNode}, κ::StandardKernel) = [(path, θ) for θ in
 
 abstract ScalarProductKernel{T<:FloatingPoint} <: StandardKernel{T}
 
-kernel{T<:FloatingPoint}(κ::ScalarProductKernel{T}, x::Vector{T}, y::Vector{T}) = kappa(κ, scprod(x, y))
-kernel{T<:FloatingPoint}(κ::ScalarProductKernel{T}, x::T, y::T) = kappa(κ, x*y)
+kernel{T<:FloatingPoint}(κ::ScalarProductKernel{T}, x::KernelInput{T}, y::KernelInput{T}) = kappa(κ, scprod(x, y))
 
 # Scalar Product Kernel definitions
 include("standardkernels/scalarproduct.jl")
@@ -81,18 +47,10 @@ include("standardkernels/scalarproduct.jl")
 
 abstract SquaredDistanceKernel{T<:FloatingPoint} <: StandardKernel{T}
 
-kernel{T<:FloatingPoint}(κ::SquaredDistanceKernel{T}, x::Vector{T}, y::Vector{T}) = kappa(κ, sqdist(x, y))
-kernel{T<:FloatingPoint}(κ::SquaredDistanceKernel{T}, x::T, y::T) = kappa(κ, (x - y)^2)
+kernel{T<:FloatingPoint}(κ::SquaredDistanceKernel{T}, x::KernelInput{T}, y::KernelInput{T}) = kappa(κ, sqdist(x, y))
 
 # Squared Distance Kernel definitions
 include("standardkernels/squareddistance.jl")
-
-
-#===========================================================================
-  Periodic Kernel
-===========================================================================#
-
-include("standardkernels/periodic.jl")
 
 
 #===========================================================================
@@ -105,8 +63,8 @@ immutable ARD{T<:FloatingPoint,K<:StandardKernel{T}} <: SimpleKernel{T}
     k::K
     w::Vector{T}
     function ARD(κ::K, w::Vector{T})
-        all(w .>= 0) || throw(ArgumentError("w = $(w) must all be >= 0."))
-        new(κ, w)
+        all(w .>= 0) || throw(ArgumentError("All elements of w = $(w) must be non-negative."))
+        new(κ, copy(w))
     end
 end
 
@@ -115,13 +73,6 @@ ARD{T<:FloatingPoint}(κ::ARDKernelTypes{T}, dim::Integer) = ARD{T,typeof(κ)}(�
 
 function description_string{T<:FloatingPoint,K<:StandardKernel}(κ::ARD{T,K}, eltype::Bool = true)
     "ARD" * (eltype ? "{$(T)}" : "") * "(κ=$(description_string(κ.k, false)), w=$(κ.w))"
-end
-
-kernelpath(path::Vector{KernelNode}, ψ::ARD) = append!([(path, :w)], kernelpath(KernelNode[path..., :k], ψ.k))
-
-function kernelparameters(ψ::ARD)
-    parameter_paths = append!([(KernelNode[], :w)], kernelpath(KernelNode[:k], ψ.k))
-    KernelVariable[length(path) == 0 ? BaseVariable(θ) : SubVariable(path, θ) for (path, θ) in parameter_paths]
 end
 
 kernel{T<:FloatingPoint,U<:StandardKernel}(κ::ARD{T,U}, x::Vector{T}, y::Vector{T}) = kernel(κ.k, x .* κ.w, y .* κ.w)  # Default scaling
@@ -152,6 +103,14 @@ for kernelobject in concretesubtypes(StandardKernel)
     @eval begin
         convert{T<:FloatingPoint}(::Type{$kernelobjectname{T}}, κ::$kernelobjectname) = $constructorcall
     end
+end
+
+function convert{T<:FloatingPoint}(::Type{ARD{T}}, κ::ARD)
+    ARD(convert(Kernel{T}, κ.k), T[κ.w...])
+end
+
+for kernelobject in concretesubtypes(Kernel)
+    kernelobjectname = kernelobject.name.name  # symbol for concrete kernel type
 
     for kerneltype in supertypes(kernelobject)
         kerneltypename = kerneltype.name.name  # symbol for abstract supertype
@@ -169,23 +128,10 @@ end
   Composite Kernels
 ===================================================================================================#
 
-function kernelpath(path::Vector{KernelNode}, ψ::CompositeKernel)
-    parameter_list = [(path, :a)]
-    for i = 1:length(ψ.k)
-        append!(parameter_list, kernelpath(KernelNode[path..., :(k[$i])], ψ.k[i]))
-    end
-    parameter_list
-end
-
-function kernelparameters(ψ::CompositeKernel)
-    parameter_paths = Any[(KernelNode[], :a)]
-    for i = 1:length(ψ.k)
-        append!(parameter_paths, kernelpath(KernelNode[:(k[$i])], ψ.k[i]))
-    end
-    KernelVariable[length(path) == 0 ? BaseVariable(θ) : SubVariable(path, θ) for (path, θ) in parameter_paths]
-end
-
-for (kernel_object, kernel_op, kernel_array_op) in ((:KernelProduct, :*, :prod), (:KernelSum, :+, :sum))
+for (kernel_object, kernel_op, kernel_array_op, identity) in (
+        (:KernelProduct, :*, :prod, :1),
+        (:KernelSum,     :+, :sum,  :0)
+    )
     @eval begin
 
         immutable $kernel_object{T<:FloatingPoint} <: CompositeKernel{T}
@@ -207,17 +153,25 @@ for (kernel_object, kernel_op, kernel_array_op) in ((:KernelProduct, :*, :prod),
         convert{T<:FloatingPoint}(::Type{CompositeKernel{T}}, ψ::$kernel_object) = $kernel_object(convert(T, ψ.a), Kernel{T}[ψ.k...])
         convert{T<:FloatingPoint}(::Type{Kernel{T}}, ψ::$kernel_object) = $kernel_object(convert(T, ψ.a), Kernel{T}[ψ.k...])
 
-        kernel{T<:FloatingPoint}(ψ::$kernel_object{T}, x::Vector{T}, y::Vector{T}) = $kernel_op(ψ.a, $kernel_array_op(map(κ -> kernel(κ,x,y), ψ.k)))
-        kernel{T<:FloatingPoint}(ψ::$kernel_object{T}, x::T, y::T) = $kernel_op(ψ.a, $kernel_array_op(map(κ -> kernel(κ,x,y), ψ.k)))
+        kernel{T<:FloatingPoint}(ψ::$kernel_object{T}, x::KernelInput{T}, y::KernelInput{T}) = $kernel_op(ψ.a, $kernel_array_op(map(κ -> kernel(κ,x,y), ψ.k)))
 
-        isposdef_kernel(ψ::$kernel_object) = all(isposdef_kernel, ψ.k)
+        ismercer(ψ::$kernel_object) = all(ismercer, ψ.k)
+        iscondposdef(ψ::$kernel_object) = all(iscondposdef, ψ.k)
 
         function description_string{T<:FloatingPoint}(ψ::$kernel_object{T}, eltype::Bool = true)
             descs = map(κ -> description_string(κ, false), ψ.k)
             if eltype
                 $(string(kernel_object)) * (eltype ? "{$(T)}" : "") * "($(ψ.a), $(join(descs, ", ")))"
             else
-                (ψ.a == 1 ? "" : "$(ψ.a)") * (length(descs) == 1 ? descs[1] : "($(join(descs, " " * $(string(kernel_op)) * " ")))")
+                if $kernel_op !== (*) && ψ.a != $identity
+                    insert!(descs, 1, string(ψ.a))
+                end
+                desc_str = string("(", join(descs, $(string(" ", kernel_op, " "))), ")")
+                if $kernel_op === (*) && ψ.a != $identity
+                    string(ψ.a, desc_str)
+                else
+                    desc_str
+                end
             end
         end
 
@@ -232,7 +186,7 @@ for (kernel_object, kernel_op, kernel_array_op) in ((:KernelProduct, :*, :prod),
         $kernel_op(κ::Kernel, ψ::$kernel_object) = $kernel_object(ψ.a, κ, ψ.k...)
         $kernel_op(ψ::$kernel_object, κ::Kernel) = $kernel_object(ψ.a, ψ.k..., κ)
 
-        $kernel_op(κ1::Kernel, κ2::Kernel) = $kernel_object($(kernel_op == :+ ? 0 : 1), κ1, κ2)
+        $kernel_op(κ1::Kernel, κ2::Kernel) = $kernel_object($identity, κ1, κ2)
 
     end
 end

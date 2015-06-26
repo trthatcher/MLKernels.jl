@@ -5,22 +5,23 @@
 
 MLKernels.jl is a Julia package for Mercer and non-Mercer kernels that are used in the kernel methods of machine learning. The goal is to provide a Julia datatype for machine learning kernels and an efficient set of methods to calculate or approximate kernel matrices. The package has no dependencies beyond base Julia.
 
-The package currently supports six pre-defined Mercer (positive definite) kernels:
+The package currently supports four pre-defined Mercer (positive definite) kernels:
 
-- Exponential Class Kernels (includes the Gaussian/Radial Basis Kernel)
+- Exponential Class Kernels (includes the Gaussian/Radial Basis Kernel and the Laplacian Kernel)
 - Rational Quadratic Class Kernels
 - Matern Kernel
 - Polynomial Kernel
-- Periodic Kernel
 
-A "non-kernel" kernel:
-- Sigmoid Kernel
+Two conditionally positive definite kernels:
 
-Finally, two conditionally positive definite kernels are also included:
 - Power Kernel
 - Log Kernel
 
-All kernels available as Automatic Relevance Determination (ARD) Kernels which act as a scaling constant for each dimension of input.
+Finally, a "non-kernel" kernel is also included:
+
+- Sigmoid Kernel
+
+All kernels are available as Automatic Relevance Determination (ARD) Kernels which act as a separate scaling constant for each dimension of input.
 
 New Kernels may be constructed by scaling and translating existing kernels by positive real numbers. Further, kernels may be arbitrarily added and multiplied together to create composite kernels.
 
