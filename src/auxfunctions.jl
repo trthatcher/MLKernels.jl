@@ -87,18 +87,18 @@ function matrix_prod!{T<:FloatingPoint}(A::Array{T}, B::Array{T})
 end
 
 # Overwrite A with the Hadamard product of A and B, for symmetric matrices. Returns A
-function matrix_prod!{T<:FloatingPoint}(A::Matrix{T}, B::Matrix{T}, is_upper::Bool, sym::Bool = true)
+function matrix_prod!{T<:FloatingPoint}(A::Matrix{T}, B::Matrix{T}, is_upper::Bool, symmetrize::Bool = true)
     (n = size(A,1)) == size(A,2) == size(B,1) == size(B,2) || throw(DimensionMismatch("A and B must be square and of same order."))
     if is_upper
         @inbounds for j = 1:n, i = 1:j
             A[i,j] *= B[i,j]
         end
-        sym ? syml!(A) : A
+        symmetrize ? syml!(A) : A
     else
         @inbounds for j = 1:n, i = j:n
             A[i,j] *= B[i,j]
         end
-        sym ? symu!(A) : A
+        symmetrize ? symu!(A) : A
     end
 end
 
@@ -112,18 +112,18 @@ function matrix_sum!{T<:FloatingPoint}(A::Array{T}, B::Array{T})
 end
 
 # Overwrite A with the matrix sum of A and B, for symmetric matrices. Returns A
-function matrix_sum!{T<:FloatingPoint}(A::Matrix{T}, B::Matrix{T}, is_upper::Bool, sym::Bool = true)
+function matrix_sum!{T<:FloatingPoint}(A::Matrix{T}, B::Matrix{T}, is_upper::Bool, symmetrize::Bool = true)
     (n = size(A,1)) == size(A,2) == size(B,1) == size(B,2) || throw(DimensionMismatch("A and B must be square and of same order."))
     if is_upper
         @inbounds for j = 1:n, i = 1:j
             A[i,j] += B[i,j]
         end
-        sym ? syml!(A) : A
+        symmetrize ? syml!(A) : A
     else
         @inbounds for j = 1:n, i = j:n
             A[i,j] += B[i,j]
         end
-        sym ? symu!(A) : A
+        symmetrize ? symu!(A) : A
     end
 end
 
@@ -211,7 +211,7 @@ end
 ## Calculate the scalar product matrix (matrix of scalar products)
 #    is_trans == false -> Z = XXᵀ (X is a design matrix)
 #                true  -> Z = XᵀX (X is a transposed design matrix)
-function scprodmatrix!{T<:FloatingPoint}(Z::Matrix{T}, X::Matrix{T}, is_trans::Bool = false, is_upper::Bool = true, sym::Bool = true)
+function scprodmatrix!{T<:FloatingPoint}(Z::Matrix{T}, X::Matrix{T}, is_trans::Bool = false, is_upper::Bool = true, symmetrize::Bool = true)
     (n = size(Z, 1)) == size(Z, 2) || throw(DimensionMismatch("Kernel matrix must be square."))
     if is_trans
         n == size(X, 2) || throw(DimensionMismatch("Supplied kernel matrix must be square with the same number of columns as X."))
@@ -220,9 +220,9 @@ function scprodmatrix!{T<:FloatingPoint}(Z::Matrix{T}, X::Matrix{T}, is_trans::B
         n == size(X, 1) || throw(DimensionMismatch("Supplied kernel matrix must be square with the same number of rows as X."))
         BLAS.syrk!(is_upper ? 'U' : 'L', 'N', one(T), X, zero(T), Z)
     end
-    sym ? (is_upper ? syml!(Z) : symu!(Z)) : Z
+    symmetrize ? (is_upper ? syml!(Z) : symu!(Z)) : Z
 end
-function scprodmatrix!(Z::Matrix{BigFloat}, X::Matrix{BigFloat}, is_trans::Bool = false, is_upper::Bool = true, sym::Bool = true)
+function scprodmatrix!(Z::Matrix{BigFloat}, X::Matrix{BigFloat}, is_trans::Bool = false, is_upper::Bool = true, symmetrize::Bool = true)
     (n = size(Z, 1)) == size(Z, 2) || throw(DimensionMismatch("Kernel matrix must be square."))
     if is_trans
         n == size(X, 2) || throw(DimensionMismatch("Supplied kernel matrix must be square with the same number of columns as X."))
@@ -240,10 +240,10 @@ function scprodmatrix!(Z::Matrix{BigFloat}, X::Matrix{BigFloat}, is_trans::Bool 
             Z[i,j] = v
         end
     end
-    sym ? (is_upper ? syml!(Z) : symu!(Z)) : Z
+    symmetrize ? (is_upper ? syml!(Z) : symu!(Z)) : Z
 end
-function scprodmatrix{T<:FloatingPoint}(X::Matrix{T}, is_trans::Bool = false, is_upper::Bool = true, sym::Bool = true)
-    scprodmatrix!(init_gramian(X, is_trans), X, is_trans, is_upper, sym)    
+function scprodmatrix{T<:FloatingPoint}(X::Matrix{T}, is_trans::Bool = false, is_upper::Bool = true, symmetrize::Bool = true)
+    scprodmatrix!(init_gramian(X, is_trans), X, is_trans, is_upper, symmetrize)    
 end
 
 # Returns the upper right corner of the scalar product matrix of [Xᵀ Yᵀ]ᵀ or [X Y]
@@ -290,11 +290,11 @@ end
 # Calculate the weighted scalar product matrix 
 #    is_trans == false -> Z = XDXᵀ (X is a design matrix and D = diag(w))
 #                true  -> Z = XᵀDX (X is a transposed design matrix and D = diag(w))
-function scprodmatrix!{T<:FloatingPoint}(Z::Matrix{T}, X::Matrix{T}, w::Vector{T}, is_trans::Bool = false, is_upper::Bool = true, sym::Bool = true)
-    scprodmatrix!(Z, is_trans ? scale(w, X) : scale(X, w), is_trans, is_upper, sym)
+function scprodmatrix!{T<:FloatingPoint}(Z::Matrix{T}, X::Matrix{T}, w::Vector{T}, is_trans::Bool = false, is_upper::Bool = true, symmetrize::Bool = true)
+    scprodmatrix!(Z, is_trans ? scale(w, X) : scale(X, w), is_trans, is_upper, symmetrize)
 end
-function scprodmatrix{T<:FloatingPoint}(X::Matrix{T}, w::Vector{T}, is_trans::Bool = false, is_upper::Bool = true, sym::Bool = true)
-    scprodmatrix!(init_gramian(X, is_trans), X, w, is_trans, is_upper, sym)
+function scprodmatrix{T<:FloatingPoint}(X::Matrix{T}, w::Vector{T}, is_trans::Bool = false, is_upper::Bool = true, symmetrize::Bool = true)
+    scprodmatrix!(init_gramian(X, is_trans), X, w, is_trans, is_upper, symmetrize)
 end
 
 # Returns the upper right corner of the scalar product matrix of [Xᵀ Yᵀ]ᵀ or [X Y]
@@ -310,7 +310,7 @@ end
 # Calculates Z such that Zij is the dot product of the difference of row i and j of matrix X
 #    is_trans == false -> X is a design matrix
 #                true  -> X is a transposed design matrix
-function sqdistmatrix!{T<:FloatingPoint}(Z::Matrix{T}, X::Matrix{T}, is_trans::Bool = false, is_upper::Bool = true, sym::Bool = true)
+function sqdistmatrix!{T<:FloatingPoint}(Z::Matrix{T}, X::Matrix{T}, is_trans::Bool = false, is_upper::Bool = true, symmetrize::Bool = true)
     scprodmatrix!(Z, X, is_trans, is_upper, false)  # Don't symmetrize yet
     (n = size(Z, 1)) == size(Z, 2) || throw(DimensionMismatch("Z must be square."))
     xᵀx = diag(Z)
@@ -318,16 +318,16 @@ function sqdistmatrix!{T<:FloatingPoint}(Z::Matrix{T}, X::Matrix{T}, is_trans::B
         @inbounds for j = 1:n, i = 1:j
             Z[i,j] = xᵀx[i] - 2Z[i,j] + xᵀx[j]
         end
-        sym ? syml!(Z) : Z
+        symmetrize ? syml!(Z) : Z
     else
         @inbounds for j = 1:n, i = j:n
             Z[i,j] = xᵀx[i] - 2Z[i,j] + xᵀx[j]
         end
-        sym ? symu!(Z) : Z
+        symmetrize ? symu!(Z) : Z
     end
 end
-function sqdistmatrix{T<:FloatingPoint}(X::Matrix{T}, is_trans::Bool = false, is_upper::Bool = true, sym::Bool = true)
-    sqdistmatrix!(init_gramian(X, is_trans), X, is_trans, is_upper, sym)
+function sqdistmatrix{T<:FloatingPoint}(X::Matrix{T}, is_trans::Bool = false, is_upper::Bool = true, symmetrize::Bool = true)
+    sqdistmatrix!(init_gramian(X, is_trans), X, is_trans, is_upper, symmetrize)
 end
 
 # Calculates the upper right corner, Z, of the squared distance matrix of matrix [Xᵀ Yᵀ]ᵀ
@@ -352,7 +352,7 @@ end
 # Calculates Z such that Zij is the dot product of the difference of row i and j of matrix X
 #    is_trans == false -> X is a design matrix
 #                true  -> X is a transposed design matrix
-function sqdistmatrix!{T<:FloatingPoint}(Z::Matrix{T}, X::Matrix{T}, w::Vector{T}, is_trans::Bool = false, is_upper::Bool = true, sym::Bool = true)
+function sqdistmatrix!{T<:FloatingPoint}(Z::Matrix{T}, X::Matrix{T}, w::Vector{T}, is_trans::Bool = false, is_upper::Bool = true, symmetrize::Bool = true)
     scprodmatrix!(Z, X, w, is_trans, is_upper, false)
     (n = size(Z, 1)) == size(Z, 2) || throw(DimensionMismatch("Z must be square."))
     xᵀDx = diag(Z)
@@ -360,16 +360,16 @@ function sqdistmatrix!{T<:FloatingPoint}(Z::Matrix{T}, X::Matrix{T}, w::Vector{T
         @inbounds for j = 1:n, i = 1:j
             Z[i,j] = xᵀDx[i] - 2Z[i,j] + xᵀDx[j]
         end
-        sym ? syml!(Z) : Z
+        symmetrize ? syml!(Z) : Z
     else
         @inbounds for j = 1:n, i = j:n
             Z[i,j] = xᵀDx[i] - 2Z[i,j] + xᵀDx[j]
         end
-        sym ? symu!(Z) : Z
+        symmetrize ? symu!(Z) : Z
     end
 end
-function sqdistmatrix{T<:FloatingPoint}(X::Matrix{T}, w::Vector{T}, is_trans::Bool = false, is_upper::Bool = true, sym::Bool = true)
-    sqdistmatrix!(init_gramian(X, is_trans), X, w, is_trans, is_upper, sym)
+function sqdistmatrix{T<:FloatingPoint}(X::Matrix{T}, w::Vector{T}, is_trans::Bool = false, is_upper::Bool = true, symmetrize::Bool = true)
+    sqdistmatrix!(init_gramian(X, is_trans), X, w, is_trans, is_upper, symmetrize)
 end
 
 # Calculates the upper right corner, Z, of the squared distance matrix of matrix [Xᵀ Yᵀ]ᵀ
