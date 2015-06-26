@@ -1,5 +1,5 @@
-# For each symbol in symbols, swap the array access
-#     ex. :A in symbols => map A[i,j] -> A[j,i]
+# For each symbol in symbols, swap array access in expression ex
+#     e.g. :A in symbols => map A[i,j] -> A[j,i]
 function transpose_access(symbols, ex)
     if isa(ex, Expr)
         if ex.head == :ref && ex.args[1] in symbols

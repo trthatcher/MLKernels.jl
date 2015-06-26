@@ -4,13 +4,17 @@
 
 description_matrix_size(A::Matrix) = string(size(A,1), "×", size(A,2))
 
+safe_similar(X::Matrix) = similar(X)
+# accessing an uninitialised Float64 is just an arbitrary value
+safe_similar(X::Matrix{BigFloat}) = zeros(X)
+# accessing an uninitialised BigFloat gives an error, hence initialise to zero
+
+
 # Symmetrize the lower half of matrix S using the upper half of S
 function syml!(S::Matrix)
     (p = size(S,1)) == size(S,2) || throw(ArgumentError("S ∈ ℝ$(p)×$(size(S, 2)) must be square"))
-    if p > 1 
-        @inbounds for j = 1:(p - 1), i = (j + 1):p 
-            S[i, j] = S[j, i]
-        end
+    @inbounds for j = 1:(p - 1), i = (j + 1):p 
+        S[i, j] = S[j, i]
     end
     S
 end
@@ -19,10 +23,8 @@ syml(S::Matrix) = syml!(copy(S))
 # Symmetrize the upper off-diagonal of matrix S using the lower half of S
 function symu!(S::Matrix)
     (p = size(S,1)) == size(S,2) || throw(ArgumentError("S ∈ ℝ$(p)×$(size(S, 2)) must be square"))
-    if p > 1 
-        @inbounds for j = 2:p, i = 1:(j-1)
-            S[i,j] = S[j,i]
-        end
+    @inbounds for j = 2:p, i = 1:(j-1)
+        S[i,j] = S[j,i]
     end
     S
 end
@@ -75,7 +77,7 @@ end
   Matrix Operations
 ==========================================================================#
 
-# Overwrite A with the hadamard product of A and B. Returns A
+# Overwrite A with the Hadamard product of A and B. Returns A
 function matrix_prod!{T<:FloatingPoint}(A::Array{T}, B::Array{T})
     length(A) == length(B) || error("A and B must be of the same length.")
     @inbounds for i = 1:length(A)
@@ -84,7 +86,7 @@ function matrix_prod!{T<:FloatingPoint}(A::Array{T}, B::Array{T})
     A
 end
 
-# Overwrite A with the hadamard product of A and B. Returns A
+# Overwrite A with the Hadamard product of A and B, for symmetric matrices. Returns A
 function matrix_prod!{T<:FloatingPoint}(A::Matrix{T}, B::Matrix{T}, is_upper::Bool, sym::Bool = true)
     (n = size(A,1)) == size(A,2) == size(B,1) == size(B,2) || throw(DimensionMismatch("A and B must be square and of same order."))
     if is_upper
@@ -109,7 +111,7 @@ function matrix_sum!{T<:FloatingPoint}(A::Array{T}, B::Array{T})
     A
 end
 
-# Overwrite A with the matrix sum of A and B. Returns A
+# Overwrite A with the matrix sum of A and B, for symmetric matrices. Returns A
 function matrix_sum!{T<:FloatingPoint}(A::Matrix{T}, B::Matrix{T}, is_upper::Bool, sym::Bool = true)
     (n = size(A,1)) == size(A,2) == size(B,1) == size(B,2) || throw(DimensionMismatch("A and B must be square and of same order."))
     if is_upper
@@ -142,44 +144,22 @@ function scprod{T<:FloatingPoint}(x::Array{T}, y::Array{T})
     (n = length(x)) == length(y) || throw(DimensionMismatch("x and y must have same length."))
     z = zero(T)
     @inbounds @simd for i = 1:n
-        z += x[i]*y[i]
+        z += x[i] * y[i]
     end
     z
 end
-scprod{T<:FloatingPoint}(x::T, y::T) =x*y
-
-#=
-# In-place scalar product calculation
-function scprod!{T<:FloatingPoint}(d::Int64, X::Array{T}, x_pos::Int64, Y::Array{T}, y_pos::Int64, is_trans::Bool)
-    z = zero(T)
-    @transpose_access is_trans (X,Y) @inbounds for i = 1:d
-        z += X[x_pos,i] * Y[y_pos,i]
-    end
-    z
-end
-=#
+scprod{T<:FloatingPoint}(x::T, y::T) = x * y
 
 # Weighted scalar product of x and y
 function scprod{T<:FloatingPoint}(x::Array{T}, y::Array{T}, w::Array{T})
-    (n = length(x)) == length(y) == length(w) || throw(DimensionMismatch("x and y must have same length."))
+    (n = length(x)) == length(y) == length(w) || throw(DimensionMismatch("x, y and w must have same length."))
     z = zero(T)
     @inbounds @simd for i = 1:n
         z += x[i] * y[i] * w[i]^2
     end
     z
 end
-scprod{T<:FloatingPoint}(x::T, y::T, w::T) = x*y*w^2
-
-#=
-# In-place weighted scalar product calculation
-function scprod!{T<:FloatingPoint}(d::Int64, X::Array{T}, x_pos::Int64, Y::Array{T}, y_pos::Int64, w::Array{T}, is_trans::Bool)
-    z = zero(T)
-    @transpose_access is_trans (X,Y) @inbounds for i = 1:d
-        z += X[x_pos,i] * Y[y_pos,i] * w[i]^2
-    end
-    z
-end
-=#
+scprod{T<:FloatingPoint}(x::T, y::T, w::T) = x * y * w^2
 
 # Squared distance between vectors x and y
 function sqdist{T<:FloatingPoint}(x::Array{T}, y::Array{T})
@@ -196,19 +176,7 @@ function sqdist{T<:FloatingPoint}(x::T, y::T)
     v*v
 end
 
-#=
-# In-place squared distance calculation
-function sqdist!{T<:FloatingPoint}(d::Int64, X::Array{T}, x_pos::Int64, Y::Array{T}, y_pos::Int64, is_trans::Bool)
-    z = zero(T)
-    @transpose_access is_trans (X,Y) @inbounds for i = 1:d
-        v = X[x_pos,i] - Y[y_pos,i]
-        z += v*v
-    end
-    z
-end
-=#
-
-# Weighted squared distance function between vectors x and y
+# Weighted squared distance between vectors x and y
 function sqdist{T<:FloatingPoint}(x::Array{T}, y::Array{T}, w::Array{T})
     (n = length(x)) == length(y) == length(w) || throw(DimensionMismatch("x, y and w must have same length."))
     z = zero(T)
@@ -219,21 +187,9 @@ function sqdist{T<:FloatingPoint}(x::Array{T}, y::Array{T}, w::Array{T})
     z
 end
 function sqdist{T<:FloatingPoint}(x::T, y::T, w::T)
-    v = w*(x - y)
+    v = w * (x - y)
     v*v
 end
-
-#=
-# In-place weighted squared distance calculation
-function sqdist!{T<:FloatingPoint}(d::Int64, X::Array{T}, x_pos::Int64, Y::Array{T}, y_pos::Int64, w::Array{T}, is_trans::Bool)
-    z = zero(T)
-    @transpose_access is_trans (X,Y) @inbounds for i = 1:d
-        v = (X[x_pos,i] - Y[y_pos,i]) * w[i]
-        z += v*v
-    end
-    z
-end
-=#
 
 
 #==========================================================================
@@ -251,9 +207,6 @@ function init_gramian{T<:FloatingPoint}(X::Matrix{T}, Y::Matrix{T}, is_trans::Bo
     m = size(Y, dim)
     Array(T, n, m)
 end
-
-safe_similar(X::Matrix) = similar(X)
-safe_similar(X::Matrix{BigFloat}) = zeros(X)
 
 ## Calculate the scalar product matrix (matrix of scalar products)
 #    is_trans == false -> Z = XXᵀ (X is a design matrix)
@@ -294,8 +247,8 @@ function scprodmatrix{T<:FloatingPoint}(X::Matrix{T}, is_trans::Bool = false, is
 end
 
 # Returns the upper right corner of the scalar product matrix of [Xᵀ Yᵀ]ᵀ or [X Y]
-#   is_ trans == false -> Z = XYᵀ (X and Y are design matrices)
-#                true  -> Z = XᵀY (X and Y are transposed design matrices)
+#   is_trans == false -> Z = XYᵀ (X and Y are design matrices)
+#               true  -> Z = XᵀY (X and Y are transposed design matrices)
 function scprodmatrix!{T<:FloatingPoint}(Z::Matrix{T}, X::Matrix{T}, Y::Matrix{T}, is_trans::Bool = false)
     if is_trans
         size(X, 1) == size(Y, 1) || throw(DimensionMismatch("X must have as many rows as Y."))

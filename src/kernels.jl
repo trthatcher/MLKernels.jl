@@ -75,7 +75,7 @@ function description_string{T<:FloatingPoint,K<:StandardKernel}(κ::ARD{T,K}, el
     "ARD" * (eltype ? "{$(T)}" : "") * "(κ=$(description_string(κ.k, false)), w=$(κ.w))"
 end
 
-kernel{T<:FloatingPoint,U<:StandardKernel}(κ::ARD{T,U}, x::Vector{T}, y::Vector{T}) = kernel(κ.k, x .* κ.w, y .* κ.w)  # Default scaling
+kernel{T<:FloatingPoint,U<:StandardKernel}(κ::ARD{T,U}, x::Vector{T}, y::Vector{T}) = kernel(κ.k, x.*κ.w, y.*κ.w)  # Default scaling
 kernel{T<:FloatingPoint,U<:SquaredDistanceKernel}(κ::ARD{T,U}, x::Vector{T}, y::Vector{T}) = kappa(κ.k, sqdist(x, y, κ.w))
 kernel{T<:FloatingPoint,U<:ScalarProductKernel}(κ::ARD{T,U}, x::Vector{T}, y::Vector{T}) = kappa(κ.k, scprod(x, y, κ.w))
 
@@ -95,13 +95,13 @@ end
 ===========================================================================#
 
 for kernelobject in concretesubtypes(StandardKernel)
-    kernelobjectname = kernelobject.name.name  # symbol for concrete kernel type
+    kernelobjectsym = kernelobject.name.name  # symbol for concrete kernel type
 
     fieldconversions = [:(convert(T, κ.$field)) for field in names(kernelobject)]
-    constructorcall = Expr(:call, kernelobjectname, fieldconversions...)
+    constructorcall = Expr(:call, kernelobjectsym, fieldconversions...)
 
     @eval begin
-        convert{T<:FloatingPoint}(::Type{$kernelobjectname{T}}, κ::$kernelobjectname) = $constructorcall
+        convert{T<:FloatingPoint}(::Type{$kernelobjectsym{T}}, κ::$kernelobjectsym) = $constructorcall
     end
 end
 
@@ -110,14 +110,14 @@ function convert{T<:FloatingPoint}(::Type{ARD{T}}, κ::ARD)
 end
 
 for kernelobject in concretesubtypes(Kernel)
-    kernelobjectname = kernelobject.name.name  # symbol for concrete kernel type
+    kernelobjectsym = kernelobject.name.name  # symbol for concrete kernel type
 
     for kerneltype in supertypes(kernelobject)
-        kerneltypename = kerneltype.name.name  # symbol for abstract supertype
+        kerneltypesym = kerneltype.name.name  # symbol for abstract supertype
 
         @eval begin
-            function convert{T<:FloatingPoint}(::Type{$kerneltypename{T}}, κ::$kernelobjectname)
-                convert($kernelobjectname{T}, κ)
+            function convert{T<:FloatingPoint}(::Type{$kerneltypesym{T}}, κ::$kernelobjectsym)
+                convert($kernelobjectsym{T}, κ)
             end
         end
     end

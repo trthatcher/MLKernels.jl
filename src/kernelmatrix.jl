@@ -79,7 +79,10 @@ end
   Generic Composite Kernel Matrix Functions
 ==========================================================================#
 
-for (kernel_object, matrix_op, array_op, identity) in ((:KernelProduct, :matrix_prod!, :scale!, :1), (:KernelSum, :matrix_sum!, :translate!, :0))
+for (kernel_object, matrix_op, array_op, identity) in (
+        (:KernelProduct, :matrix_prod!, :scale!,     :1),
+        (:KernelSum,     :matrix_sum!,  :translate!, :0)
+    )
     @eval begin
 
         function kernelmatrix!{T<:FloatingPoint}(K::Matrix{T}, κ::$kernel_object{T}, X::Matrix{T}, is_trans::Bool = false, is_upper::Bool = true, sym::Bool = true)

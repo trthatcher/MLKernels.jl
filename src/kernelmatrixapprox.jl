@@ -75,7 +75,7 @@ end
 
 # Moore-Penrose pseudo-inverse for positive semidefinite matrices
 function nystrom_decomp!{T<:FloatingPoint}(S::Matrix{T}, tol::T = eps(T)*maximum(size(S)))
-    tol > 0 || error("tol = $tol must be a positive number.")
+    tol > 0 || error("tol = $tol must be greater than zero.")
     (n = size(S, 1)) == size(S, 2) || throw(ArgumentError("S must be a square matrix"))
     D, V = syevd!('V', 'L', S)
     @inbounds for i = 1:n
