@@ -39,42 +39,6 @@ PolynomialKernel{Float32}(α=1.0,c=1.0,d=2)
 
 The `Kernel` data type is parametric - either `Float32` or `Float64` depending on the input arguments. 
 
-If one wishes to see more information on the kernel, there is the function `description` which will print out a description of the kernel if it exists:
-
-```julia
-julia> description(κ)
- Polynomial Kernel:
- 
- The polynomial kernel is a non-stationary kernel which represents
- the original features as in a feature space over polynomials up to 
- degree d of the original variables:
-
-     k(x,y) = (αxᵗy + c)ᵈ    x ∈ ℝⁿ, y ∈ ℝⁿ, α > 0, c ≥ 0, d > 0
-
- This kernel is sensitive to numerical instability in the case that
- d is increasingly large and αxᵗy + c approaches zero.
-```
-
-To evaluate a kernel for two values, one simply uses the `kernel` method with the first argument being the kernel of choice:
-
-```julia
-julia> x, y = [1.0, 2.0], [1.0, 1.0]
-([1.0,2.0],[1.0,1.0])
-
-julia> kernel(κ, x, y)
-16.0
-```
-
-Note that the kernels are callable objects ("functors"), so the same as above may be accomplished through:
-
-```julia
-julia> PolynomialKernel()(x, y)
-16.0
-
-julia> κ(x, y)
-16.0
-```
-
 Not all of the provided kernels are Mercer kernels (a kernel is Mercer if its kernel matrices are positive semi-definite). The function `ismercer` will return `true` if the kernel is a Mercer kernel, and `false` otherwise.
 
 ```julia
