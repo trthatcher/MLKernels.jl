@@ -1,7 +1,7 @@
 #===================================================================================================
   Kernel Functions Module
 ===================================================================================================#
-
+#=
 module MLKernels
 
 import Base: show, eltype, convert
@@ -33,11 +33,9 @@ export
         CompositeKernel,
             KernelProduct,
             KernelSum
+=#
+include("common.jl")
+include("basekernels.jl")
+include("pairwise.jl")
 
-include("meta.jl")
-include("auxfunctions.jl")
-include("kernels.jl")
-include("kernelmatrix.jl")
-include("kernelmatrixapprox.jl")
-
-end # MLKernels
+#end # MLKernels
