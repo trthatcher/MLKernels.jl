@@ -52,6 +52,15 @@ function gramian{T<:Base.LinAlg.BlasReal}(X::Matrix{T}, Y::Matrix{T}, is_trans::
     gramian!(init_pairwise(X, Y, is_trans), X, Y, is_trans)
 end
 
+function kappa_array!{T<:FloatingPoint}(κ::Kernel{T}, X::Matrix{T})
+    @inbounds @simd for i = 1:length(X)
+        X[i] = kappa(κ, X)
+    end
+    X
+end
+kappa_array{T<:FloatingPoint}(κ::Kernel{T}, X::Matrix{T}) = kappa_array!(κ, copy(X))
+
+
 
 #===========================================================================
   Pairwise Single Matrix
@@ -191,12 +200,52 @@ pairwise_X!{T<:Base.LinAlg.BlasReal}(K::Matrix{T}, κ::ScalarProductKernel{T}, X
 pairwise_Xt!{T<:Base.LinAlg.BlasReal}(K::Matrix{T}, κ::ScalarProductKernel{T}, X::Matrix{T}, store_upper::Bool) = gramian!(K, X, true, store_upper, false)
 
 pairwise_X!{T<:Base.LinAlg.BlasReal}(K::Matrix{T}, κ::ScalarProductKernel{T}, X::Matrix{T}, w::Vector{T}, store_upper::Bool) = gramian!(K, scale(X, w), false, store_upper, false)
-pairwise_Xt!{T<:Base.LinAlg.BlasReal}(K::Matrix{T}, κ::ScalarProductKernel{T}, X::Matrix{T}, w::Vector{T}, store_upper::Bool) = gramian!(K, scale(X, w), false, store_upper, false)
+pairwise_Xt!{T<:Base.LinAlg.BlasReal}(K::Matrix{T}, κ::ScalarProductKernel{T}, X::Matrix{T}, w::Vector{T}, store_upper::Bool) = gramian!(K, scale(w, X), false, store_upper, false)
 
 pairwise_X!{T<:Base.LinAlg.BlasReal}(K::Matrix{T}, κ::ScalarProductKernel{T}, X::Matrix{T}, Y::Matrix{T}, store_upper::Bool) = gramian!(K, X, Y, false, store_upper, false)
 pairwise_Xt!{T<:Base.LinAlg.BlasReal}(K::Matrix{T}, κ::ScalarProductKernel{T}, X::Matrix{T}, Y::Matrix{T}, store_upper::Bool) = gramian!(K, X, Y, true, store_upper, false)
 
-pairwise_X!{T<:Base.LinAlg.BlasReal}(K::Matrix{T}, κ::ScalarProductKernel{T}, X::Matrix{T}, Y::Matrix{T}, w::Vector{T}, store_upper::Bool) = gramian!(K, scale(X, w), Y, false, store_upper, false)
-pairwise_Xt!{T<:Base.LinAlg.BlasReal}(K::Matrix{T}, κ::ScalarProductKernel{T}, X::Matrix{T}, Y::Matrix{T}, w::Vector{T}, store_upper::Bool) = gramian!(K, scale(X, w), Y, false, store_upper, false)
+pairwise_X!{T<:Base.LinAlg.BlasReal}(K::Matrix{T}, κ::ScalarProductKernel{T}, X::Matrix{T}, Y::Matrix{T}, w::Vector{T}, store_upper::Bool) = gramian!(K, scale(X, w.^2), Y, false, store_upper, false)
+pairwise_Xt!{T<:Base.LinAlg.BlasReal}(K::Matrix{T}, κ::ScalarProductKernel{T}, X::Matrix{T}, Y::Matrix{T}, w::Vector{T}, store_upper::Bool) = gramian!(K, scale(w.^2, X), Y, false, store_upper, false)
 
 # Separable Kernel
+
+function pairwise_X!{T<:Base.LinAlg.BlasReal}(K::Matrix{T}, κ::SeparableKernel{T}, X::Matrix{T}, store_upper::Bool)
+    Z = kappa_array(κ, X)
+    gramian!(K, Z, false, store_upper, false)
+end
+function pairwise_Xt!{T<:Base.LinAlg.BlasReal}(K::Matrix{T}, κ::SeparableKernel{T}, X::Matrix{T}, store_upper::Bool)
+    Z = kappa_array(κ, X)
+    gramian!(K, Z, true, store_upper, false)
+end
+
+function pairwise_X!{T<:Base.LinAlg.BlasReal}(K::Matrix{T}, κ::ScalarProductKernel{T}, X::Matrix{T}, w::Vector{T}, store_upper::Bool)
+    Z = scale!(kappa_array(κ, X), w)
+    gramian!(K, Z, false, store_upper, false)
+end
+function pairwise_Xt!{T<:Base.LinAlg.BlasReal}(K::Matrix{T}, κ::ScalarProductKernel{T}, X::Matrix{T}, w::Vector{T}, store_upper::Bool)
+    Z = scale!(kappa_array(X, κ), w)
+    gramian!(K, Z, false, store_upper, false)
+end
+
+function pairwise_X!{T<:Base.LinAlg.BlasReal}(K::Matrix{T}, κ::SeparableKernel{T}, X::Matrix{T}, Y::Matrix{T})
+    Z = kappa_array(κ, X)
+    V = kappa_array(κ, Y)
+    gramian!(K, Z, V, false)
+end
+function pairwise_Xt!{T<:Base.LinAlg.BlasReal}(K::Matrix{T}, κ::SeparableKernel{T}, X::Matrix{T}, Y::Matrix{T})
+    Z = kappa_array(κ, X)
+    V = kappa_array(κ, Y)
+    gramian!(K, Z, V, true)
+end
+
+function pairwise_X!{T<:Base.LinAlg.BlasReal}(K::Matrix{T}, κ::ScalarProductKernel{T}, X::Matrix{T}, Y::Matrix{T}, w::Vector{T})
+    Z = scale!(kappa_array(κ, X), w)
+    V = scale!(kappa_array(κ, Y), w)
+    gramian!(K, Z, Y, false)
+end
+function pairwise_Xt!{T<:Base.LinAlg.BlasReal}(K::Matrix{T}, κ::ScalarProductKernel{T}, X::Matrix{T}, Y::Matrix{T}, w::Vector{T})
+    Z = scale!(kappa_array(X, κ), w)
+    V = scale!(kappa_array(κ, Y), w)
+    gramian!(K, Z, Y, true)
+end
