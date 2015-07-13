@@ -35,7 +35,7 @@ export
             KernelSum
 =#
 include("common.jl")
-include("basekernels.jl")
+include("kernels.jl")
 include("pairwise.jl")
 
 #end # MLKernels

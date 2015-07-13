@@ -1,25 +1,5 @@
-abstract Kernel{T}
-abstract BaseKernel{T<:FloatingPoint,RANGE} <: Kernel{T}
+abstract BaseKernel{T<:FloatingPoint} <: Kernel{T}
 
-ismercer(::Kernel) = false
-isnegdef(::Kernel) = false
-
-rangemax(::Kernel) = Inf
-rangemin(::Kernel) = -Inf
-attainsrangemax(::Kernel) = true
-attainsrangemin(::Kernel) = true
-
-<=(κ::Kernel, x::Real) = attainsrangemax(κ) ? (rangemax(κ) <= x) : (rangemax(κ) <= x)
-<=(x::Real, κ::Kernel) = attainsrangemin(κ) ? (x <= rangemin(κ)) : (x <  rangemin(κ))
-
-<(κ::Kernel, x::Real)  = attainsrangemax(κ) ? (rangemax(κ) <= x) : (rangemax(κ) <  x)
-<(x::Real, κ::Kernel)  = attainsrangemin(κ) ? (x <  rangemin(κ)) : (x <= rangemax(κ))
-
->=(κ::Kernel, x::Real) = x <= κ
->=(x::Real, κ::Kernel) = κ <= x
-
->(κ::Kernel, x::Real)  = x < κ
->(x::Real, κ::Kernel)  = κ < x
 
 
 #==========================================================================
@@ -48,7 +28,7 @@ function SquaredDistanceKernel{T<:FloatingPoint}(t::T = 1.0)
             elseif t == 0.5
                 :t0p5
             else
-                :ϕ
+                :∅
             end
     SquaredDistanceKernel{Float64,CASE}(t)
 end
@@ -70,19 +50,34 @@ kappa{T<:FloatingPoint}(κ::SquaredDistanceKernel{T}, x::T, y::T) = ((x-y)^2)^κ
   k(x,y) = sin²ᵗ(x-y)    x ∈ ℝ, y ∈ ℝ, t ∈ (0,1]
 ==========================================================================#
 
-immutable SineSquaredKernel{T<:FloatingPoint} <: AdditiveKernel{T}
+immutable SineSquaredKernel{T<:FloatingPoint,CASE} <: AdditiveKernel{T}
     t::T
     function SineSquaredKernel(t::T)
         0 < t <= 1 || error("Bad range")
         new(t)
     end
 end
-SineSquaredKernel{T<:FloatingPoint}(t::T = 1.0) = SineSquaredKernel{Float64, t == 1 ? :t1 : :ϕ}()
+function SineSquaredKernel{T<:FloatingPoint}(t::T = 1.0)
+    CASE =  if t == 1
+                :t1
+            elseif t == 0.5
+                :t0p5
+            else
+                :∅
+            end
+    SineSquaredKernel{Float64,CASE}(t)
+end
 
-
-
-kappa{T<:FloatingPoint}(κ::SineSquaredKernel{T}, x::T, y::T) = sin(x-y)^2
 rangemin(::SineSquaredKernel) = 0
+isnegdef(::SineSquaredKernel) = true
+
+function description_string{T<:FloatingPoint}(κ::SineSquaredKernel{T}, eltype::Bool = true)
+    "SineSquaredKernel" * (eltype ? "{$(T)}" : "") * "(t=$(κ.t)))"
+end
+
+kappa{T<:FloatingPoint}(κ::SineSquaredKernel{T,:t1}, x::T, y::T) = sin(x-y)^2
+kappa{T<:FloatingPoint}(κ::SineSquaredKernel{T,:t0p5}, x::T, y::T) = abs(sin(x-y))
+kappa{T<:FloatingPoint}(κ::SineSquaredKernel{T}, x::T, y::T) = (sin(x-y)^2)^κ.t
 
 
 #==========================================================================
@@ -90,28 +85,63 @@ rangemin(::SineSquaredKernel) = 0
   k(x,y) = (x-y)²ᵗ/(x+y)    x ∈ ℝ⁺, y ∈ ℝ⁺, t ∈ (0,1]
 ==========================================================================#
 
-immutable ChiSquaredKernel{T<:FloatingPoint} <: AdditiveKernel{T} end
-kappa{T<:FloatingPoint}(κ::ChiSquaredKernel{T}, x::T, y::T) = (x - y)^2/(x + y)
+immutable ChiSquaredKernel{T<:FloatingPoint,CASE} <: AdditiveKernel{T}
+    t::T
+    function ChiSquaredKernel(t::T)
+        0 < t <= 1 || error("Bad range")
+        new(t)
+    end
+end
+function ChiSquaredKernel{T<:FloatingPoint}(t::T = 1.0)
+    CASE =  if t == 1
+                :t1
+            else
+                :∅
+            end
+    ChiSquaredKernel{Float64,CASE}(t)
+end
+
 rangemin(::ChiSquaredKernel) = 0
+isnegdef(::ChiSquaredKernel) = true
+
+function description_string{T<:FloatingPoint}(κ::ChiSquaredKernel{T}, eltype::Bool = true)
+    "ChiSquaredKernel" * (eltype ? "{$(T)}" : "") * "(t=$(κ.t)))"
+end
+
+kappa{T<:FloatingPoint}(κ::ChiSquaredKernel{T,:t1}, x::T, y::T) = (x-y)^2/(x+y)
+kappa{T<:FloatingPoint}(κ::ChiSquaredKernel{T}, x::T, y::T) = ((x-y)^2/(x+y))^κ.t
 
 
 #==========================================================================
   Separable Kernel
-  k(x,y) = (x-y)²ᵗ/(x+y)    x ∈ ℝ⁺, y ∈ ℝ⁺, t ∈ (0,1]
+  k(x,y) = k(x)k(y)    x ∈ ℝ, y ∈ ℝ
 ==========================================================================#
 
-abstract SeparableKernel{T<:FloatingPoint,ALGORTHM} <: AdditiveKernel{T}
+abstract SeparableKernel{T<:FloatingPoint} <: AdditiveKernel{T}
 
 kappa{T<:FloatingPoint}(κ::SeparableKernel{T}, x::T, y::T) = kappa(κ,x) * kappa(κ,y)
 
+#==========================================================================
+  Scalar Product Kernel
+==========================================================================#
 
+immutable ScalarProductKernel{T<:FloatingPoint} <: SeparableKernel{T} end
+ScalarProductKernel() = ScalarProductKernel{Float64}()
 
-immutable ScalarProductKernel{T<:FloatingPoint,ALGORITHM} <: SeparableKernel{T,ALGORITHM} end
-ScalarProductKernel() = ScalarProductKernel{Float64,:Fast}()
+ismercer(::ScalarProductKernel) = true
+
+function description_string{T<:FloatingPoint}(κ::ScalarProductKernel{T}, eltype::Bool = true)
+    "ScalarProduct" * (eltype ? "{$(T)}" : "") * "()"
+end
 
 kappa{T<:FloatingPoint}(κ::ScalarProductKernel{T}, x::T) = x
 
-immutable MercerSigmoidKernel{T<:FloatingPoint,ALGORITHM} <: SeparableKernel{T,ALGORITHM}
+
+#==========================================================================
+  Mercer Sigmoid Kernel
+==========================================================================#
+
+immutable MercerSigmoidKernel{T<:FloatingPoint,ALGORITHM} <: SeparableKernel{T}
     d::T
     b::T
     function MercerSigmoidKernel(d::T, b::T)
@@ -119,16 +149,8 @@ immutable MercerSigmoidKernel{T<:FloatingPoint,ALGORITHM} <: SeparableKernel{T,A
         new(d, b)
     end
 end
-MercerSigmoidKernel{T<:FloatingPoint}(d::T = 0.0, b::T = one(T)) = MercerSigmoidKernel{T,:Fast}(d, b)
+MercerSigmoidKernel{T<:FloatingPoint}(d::T = 0.0, b::T = one(T)) = MercerSigmoidKernel{T}(d, b)
 
+ismercer(::MercerSigmoidKernel) = true
 
-#ARD - Weighted additive kernels
-immutable ARD{T<:FloatingPoint} <: BaseKernel{T}
-    k::AdditiveKernel{T}
-    w::Vector{T}
-    function ARD(κ::AdditiveKernel{T}, w::Vector{T})
-        all(w .> 0) || error("Weights must be positive real numbers.")
-        new(κ, w)
-    end
-end
-ARD{T<:FloatingPoint}(κ::Kernel{T}, w::Vector{T}) = ARD{T}(κ, w)
+kappa{T<:FloatingPoint}(κ::MercerSigmoidKernel{T}, x::T) = tanh((x-d)/b)
