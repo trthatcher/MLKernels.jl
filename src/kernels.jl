@@ -43,3 +43,11 @@ ARD{T<:FloatingPoint}(κ::AdditiveKernel{T}, w::Vector{T}) = ARD{T}(κ, w)
 
 ismercer(κ::ARD) = ismercer(κ.k)
 isnegdef(κ::ARD) = isnegdef(κ.k)
+
+#==========================================================================
+  Composite Kernel
+==========================================================================#
+
+abstract CompositeKernel{T<:FloatingPoint} <: Kernel{T}
+
+include("compositekernels.jl")
