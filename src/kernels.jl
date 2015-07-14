@@ -1,5 +1,11 @@
 abstract Kernel{T}
 
+function show(io::IO, κ::Kernel)
+    print(io, description_string(κ))
+end
+
+eltype{T}(κ::Kernel{T}) = T
+
 ismercer(::Kernel) = false
 isnegdef(::Kernel) = false
 
@@ -23,6 +29,8 @@ attainsrangemin(::Kernel) = true
 #==========================================================================
   Base Kernels
 ==========================================================================#
+
+abstract BaseKernel{T<:FloatingPoint} <: Kernel{T}
 
 include("basekernels.jl")
 
@@ -51,3 +59,11 @@ isnegdef(κ::ARD) = isnegdef(κ.k)
 abstract CompositeKernel{T<:FloatingPoint} <: Kernel{T}
 
 include("compositekernels.jl")
+
+GaussianKernel{T<:FloatingPoint}(α::T = 1.0) = ExponentialKernel(SquaredDistanceKernel(one(T)), α)
+RadialBasisKernel{T<:FloatingPoint}(α::T = 1.0) = ExponentialKernel(SquaredDistanceKernel(one(T)),α)
+LaplacianKernel{T<:FloatingPoint}(α::T = 1.0) = ExponentialKernel(SquaredDistanceKernel(one(T)),α, convert(T, 0.5))
+
+LinearKernel{T<:FloatingPoint}(α::T = 1.0, c::T = one(T)) = PolynomialKernel(ScalarProductKernel(), α, c, one(T))
+
+

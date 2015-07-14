@@ -1,7 +1,3 @@
-abstract BaseKernel{T<:FloatingPoint} <: Kernel{T}
-
-
-
 #==========================================================================
   Additive Kernel
   k(x,y) = sum(k(x_i,y_i))    x ∈ ℝⁿ, y ∈ ℝⁿ
@@ -37,7 +33,7 @@ rangemin(::SquaredDistanceKernel) = 0
 isnegdef(::SquaredDistanceKernel) = true
 
 function description_string{T<:FloatingPoint}(κ::SquaredDistanceKernel{T}, eltype::Bool = true)
-    "SquaredDistanceKernel" * (eltype ? "{$(T)}" : "") * "(t=$(κ.t)))"
+    "SquaredDistanceKernel" * (eltype ? "{$(T)}" : "") * "(t=$(κ.t))"
 end
 
 kappa{T<:FloatingPoint}(κ::SquaredDistanceKernel{T,:t1}, x::T, y::T) = (x-y)^2
@@ -72,7 +68,7 @@ rangemin(::SineSquaredKernel) = 0
 isnegdef(::SineSquaredKernel) = true
 
 function description_string{T<:FloatingPoint}(κ::SineSquaredKernel{T}, eltype::Bool = true)
-    "SineSquaredKernel" * (eltype ? "{$(T)}" : "") * "(t=$(κ.t)))"
+    "SineSquaredKernel" * (eltype ? "{$(T)}" : "") * "(t=$(κ.t))"
 end
 
 kappa{T<:FloatingPoint}(κ::SineSquaredKernel{T,:t1}, x::T, y::T) = sin(x-y)^2
@@ -105,7 +101,7 @@ rangemin(::ChiSquaredKernel) = 0
 isnegdef(::ChiSquaredKernel) = true
 
 function description_string{T<:FloatingPoint}(κ::ChiSquaredKernel{T}, eltype::Bool = true)
-    "ChiSquaredKernel" * (eltype ? "{$(T)}" : "") * "(t=$(κ.t)))"
+    "ChiSquaredKernel" * (eltype ? "{$(T)}" : "") * "(t=$(κ.t))"
 end
 
 kappa{T<:FloatingPoint}(κ::ChiSquaredKernel{T,:t1}, x::T, y::T) = (x-y)^2/(x+y)
@@ -141,7 +137,7 @@ kappa{T<:FloatingPoint}(κ::ScalarProductKernel{T}, x::T) = x
   Mercer Sigmoid Kernel
 ==========================================================================#
 
-immutable MercerSigmoidKernel{T<:FloatingPoint,ALGORITHM} <: SeparableKernel{T}
+immutable MercerSigmoidKernel{T<:FloatingPoint} <: SeparableKernel{T}
     d::T
     b::T
     function MercerSigmoidKernel(d::T, b::T)
@@ -152,5 +148,9 @@ end
 MercerSigmoidKernel{T<:FloatingPoint}(d::T = 0.0, b::T = one(T)) = MercerSigmoidKernel{T}(d, b)
 
 ismercer(::MercerSigmoidKernel) = true
+
+function description_string{T<:FloatingPoint}(κ::MercerSigmoidKernel{T}, eltype::Bool = true)
+    "MercerSigmoidProduct" * (eltype ? "{$(T)}" : "") * "(d=$(κ.d),b=$(κ.b))"
+end
 
 kappa{T<:FloatingPoint}(κ::MercerSigmoidKernel{T}, x::T) = tanh((x-d)/b)

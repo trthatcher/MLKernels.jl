@@ -34,6 +34,9 @@ export
             KernelProduct,
             KernelSum
 =#
+
+import Base: show, eltype, convert
+
 include("common.jl")
 include("kernels.jl")
 include("pairwise.jl")
