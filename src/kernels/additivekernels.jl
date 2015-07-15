@@ -26,7 +26,7 @@ function SquaredDistanceKernel{T<:FloatingPoint}(t::T = 1.0)
             else
                 :∅
             end
-    SquaredDistanceKernel{Float64,CASE}(t)
+    SquaredDistanceKernel{T,CASE}(t)
 end
 
 rangemin(::SquaredDistanceKernel) = 0
@@ -35,6 +35,8 @@ isnegdef(::SquaredDistanceKernel) = true
 function description_string{T<:FloatingPoint}(κ::SquaredDistanceKernel{T}, eltype::Bool = true)
     "SquaredDistanceKernel" * (eltype ? "{$(T)}" : "") * "(t=$(κ.t))"
 end
+
+convert{T<:FloatingPoint}(::Type{SquaredDistanceKernel{T}}, κ::SquaredDistanceKernel) = SquaredDistanceKernel(convert(T, κ.t))
 
 kappa{T<:FloatingPoint}(κ::SquaredDistanceKernel{T,:t1}, x::T, y::T) = (x-y)^2
 kappa{T<:FloatingPoint}(κ::SquaredDistanceKernel{T,:t0p5}, x::T, y::T) = abs(x-y)
@@ -61,7 +63,7 @@ function SineSquaredKernel{T<:FloatingPoint}(t::T = 1.0)
             else
                 :∅
             end
-    SineSquaredKernel{Float64,CASE}(t)
+    SineSquaredKernel{T,CASE}(t)
 end
 
 rangemin(::SineSquaredKernel) = 0
@@ -71,6 +73,8 @@ function description_string{T<:FloatingPoint}(κ::SineSquaredKernel{T}, eltype::
     "SineSquaredKernel" * (eltype ? "{$(T)}" : "") * "(t=$(κ.t))"
 end
 
+convert{T<:FloatingPoint}(::Type{SineSquaredKernel{T}}, κ::SineSquaredKernel) = SineSquaredKernel(convert(T, κ.t))
+
 kappa{T<:FloatingPoint}(κ::SineSquaredKernel{T,:t1}, x::T, y::T) = sin(x-y)^2
 kappa{T<:FloatingPoint}(κ::SineSquaredKernel{T,:t0p5}, x::T, y::T) = abs(sin(x-y))
 kappa{T<:FloatingPoint}(κ::SineSquaredKernel{T}, x::T, y::T) = (sin(x-y)^2)^κ.t
@@ -78,7 +82,7 @@ kappa{T<:FloatingPoint}(κ::SineSquaredKernel{T}, x::T, y::T) = (sin(x-y)^2)^κ.
 
 #==========================================================================
   Chi Squared Kernel
-  k(x,y) = (x-y)²ᵗ/(x+y)    x ∈ ℝ⁺, y ∈ ℝ⁺, t ∈ (0,1]
+  k(x,y) = ((x-y)²/(x+y))ᵗ    x ∈ ℝ⁺, y ∈ ℝ⁺, t ∈ (0,1]
 ==========================================================================#
 
 immutable ChiSquaredKernel{T<:FloatingPoint,CASE} <: AdditiveKernel{T}
@@ -94,7 +98,7 @@ function ChiSquaredKernel{T<:FloatingPoint}(t::T = 1.0)
             else
                 :∅
             end
-    ChiSquaredKernel{Float64,CASE}(t)
+    ChiSquaredKernel{T,CASE}(t)
 end
 
 rangemin(::ChiSquaredKernel) = 0
@@ -103,6 +107,8 @@ isnegdef(::ChiSquaredKernel) = true
 function description_string{T<:FloatingPoint}(κ::ChiSquaredKernel{T}, eltype::Bool = true)
     "ChiSquaredKernel" * (eltype ? "{$(T)}" : "") * "(t=$(κ.t))"
 end
+
+convert{T<:FloatingPoint}(::Type{ChiSquaredKernel{T}}, κ::ChiSquaredKernel) = ChiSquaredKernel(convert(T, κ.t))
 
 kappa{T<:FloatingPoint}(κ::ChiSquaredKernel{T,:t1}, x::T, y::T) = (x-y)^2/(x+y)
 kappa{T<:FloatingPoint}(κ::ChiSquaredKernel{T}, x::T, y::T) = ((x-y)^2/(x+y))^κ.t
@@ -130,6 +136,8 @@ function description_string{T<:FloatingPoint}(κ::ScalarProductKernel{T}, eltype
     "ScalarProduct" * (eltype ? "{$(T)}" : "") * "()"
 end
 
+convert{T<:FloatingPoint}(::Type{ScalarProductKernel{T}}, κ::ScalarProductKernel) = ScalarProductKernel{T}()
+
 kappa{T<:FloatingPoint}(κ::ScalarProductKernel{T}, x::T) = x
 
 
@@ -152,5 +160,7 @@ ismercer(::MercerSigmoidKernel) = true
 function description_string{T<:FloatingPoint}(κ::MercerSigmoidKernel{T}, eltype::Bool = true)
     "MercerSigmoidProduct" * (eltype ? "{$(T)}" : "") * "(d=$(κ.d),b=$(κ.b))"
 end
+
+convert{T<:FloatingPoint}(::Type{MercerSigmoidKernel{T}}, κ::MercerSigmoidKernel) = MercerSigmoidKernel{T}(convert(T,κ.d), convert(T,κ.b))
 
 kappa{T<:FloatingPoint}(κ::MercerSigmoidKernel{T}, x::T) = tanh((x-d)/b)

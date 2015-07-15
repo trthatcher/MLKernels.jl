@@ -38,6 +38,7 @@ export
 import Base: show, eltype, convert
 
 include("common.jl")
+include("meta.jl")
 include("kernels.jl")
 include("pairwise.jl")
 
