@@ -101,7 +101,7 @@ end
 
 # Test Base Kernels
 
-println("- Testing BaseKernel show():")
+info("Testing BaseKernel show()")
 for kernelobject in (
         SquaredDistanceKernel,
         SineSquaredKernel,
@@ -109,12 +109,10 @@ for kernelobject in (
         ScalarProductKernel,
         MercerSigmoidKernel
     )
-    print(STDOUT, "    - Testing ")
     show(STDOUT, (kernelobject)())
-    println(" ... Done")
 end
 
-println("- Testing BaseKernel constructors:")
+info("Testing BaseKernel constructors")
 for (kernelobject, default_args, test_args) in (
         (SquaredDistanceKernel, [1.0], [0.5]),
         (SineSquaredKernel, [1.0], [0.5]),
@@ -122,10 +120,17 @@ for (kernelobject, default_args, test_args) in (
         #(ScalarProductKernel,Float64[],Float64[])
         (MercerSigmoidKernel, [0.0, 1.0], [1.0, 2.0])
     )
-    print("    - Testing ", kernelobject, " ... ")
     test_constructor_case(kernelobject, default_args, test_args)
-    println("Done")
 end
+
+info("Testing BaseKernel constructors")
+for (kernelobject, default_args, test_args) in (
+        (ExponentialKernel, [SquaredDistanceKernel(), 1.0, 1.0], [ChiSquaredKernel(), 2.0,0.5]),
+    )
+    test_constructor_case(kernelobject, default_args, test_args)
+end
+
+
 
 #=
 println("- Testing StandardKernel and ARD type conversions:")

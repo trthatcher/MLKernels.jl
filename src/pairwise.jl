@@ -34,7 +34,7 @@ function gramian_XY!{T<:Base.LinAlg.BlasReal}(G::Matrix{T}, X::Matrix{T}, Y::Mat
     BLAS.gemm!('N', 'T', one(T), X, Y, zero(T), G)
 end
 
-function gramian_XY!{T<:Base.LinAlg.BlasReal}(G::Matrix{T}, X::Matrix{T}, Y::Matrix{T}, is_trans::Bool = false)
+function gramian_XtYt!{T<:Base.LinAlg.BlasReal}(G::Matrix{T}, X::Matrix{T}, Y::Matrix{T}, is_trans::Bool = false)
     size(X, 1) == size(Y, 1) || throw(DimensionMismatch("X must have as many rows as Y."))
     size(X, 2) == size(G, 1) || throw(DimensionMismatch("Supplied kernel matrix must have as many rows as X has columns."))
     size(Y, 2) == size(G, 2) || throw(DimensionMismatch("Supplied kernel matrix must have as many columns as Y has columns."))
@@ -227,15 +227,15 @@ function pairwise_Xt!{T<:Base.LinAlg.BlasReal}(K::Matrix{T}, κ::SeparableKernel
     gramian_Xt!(K, Z, V)
 end
 
-function pairwise_X!{T<:Base.LinAlg.BlasReal}(K::Matrix{T}, κ::ScalarProductKernel{T}, X::Matrix{T}, Y::Matrix{T}, w::Vector{T})
+function pairwise_XY!{T<:Base.LinAlg.BlasReal}(K::Matrix{T}, κ::ScalarProductKernel{T}, X::Matrix{T}, Y::Matrix{T}, w::Vector{T})
     Z = scale!(kappa_array(κ, X), w)
     V = scale!(kappa_array(κ, Y), w)
-    gramian_X!(K, Z, Y)
+    gramian_X!(K, Z, V)
 end
-function pairwise_Xt!{T<:Base.LinAlg.BlasReal}(K::Matrix{T}, κ::ScalarProductKernel{T}, X::Matrix{T}, Y::Matrix{T}, w::Vector{T})
+function pairwise_XtYt!{T<:Base.LinAlg.BlasReal}(K::Matrix{T}, κ::ScalarProductKernel{T}, X::Matrix{T}, Y::Matrix{T}, w::Vector{T})
     Z = scale!(kappa_array(X, κ), w)
     V = scale!(kappa_array(κ, Y), w)
-    gramian_Xt!(K, Z, Y)
+    gramian_Xt!(K, Z, V)
 end
 
 
@@ -281,24 +281,24 @@ function squared_distance!{T<:FloatingPoint}(K::Matrix{T}, xᵀx::Vector{T}, y�
     K
 end
 
-function pairwise_X!{T<:Base.LinAlg.BlasReal}(K::Matrix{T}, κ::SquaredDistanceKernel{T,:t1}, X::Matrix{T}, Y::Matrix{T}, store_upper::Bool)
+function pairwise_XY!{T<:Base.LinAlg.BlasReal}(K::Matrix{T}, κ::SquaredDistanceKernel{T,:t1}, X::Matrix{T}, Y::Matrix{T}, store_upper::Bool)
     gramian_X!(K, X, Y)
     squared_distance!(K, dot_rows(X), dot_rows(Y))
 end
 
-function pairwise_Xt!{T<:Base.LinAlg.BlasReal}(K::Matrix{T}, κ::SquaredDistanceKernel{T,:t1}, X::Matrix{T}, Y::Matrix{T}, store_upper::Bool)
+function pairwise_XtYt!{T<:Base.LinAlg.BlasReal}(K::Matrix{T}, κ::SquaredDistanceKernel{T,:t1}, X::Matrix{T}, Y::Matrix{T}, store_upper::Bool)
     gramian_Xt!(K, X, Y)
     squared_distance!(K, dot_columns(X), dot_columns(Y))
 end
 
-function pairwise_X!{T<:Base.LinAlg.BlasReal}(K::Matrix{T}, κ::SquaredDistanceKernel{T,:t1}, X::Matrix{T}, Y::Matrix{T}, w::Vector{T}, store_upper::Bool)
+function pairwise_XY!{T<:Base.LinAlg.BlasReal}(K::Matrix{T}, κ::SquaredDistanceKernel{T,:t1}, X::Matrix{T}, Y::Matrix{T}, w::Vector{T}, store_upper::Bool)
     Z = scale(X, w)
     V = scale(Y, w)
     gramian_X!(K, Z, V)
     squared_distance!(K, dot_rows(Z), dot_rows(V))
 end
 
-function pairwise_Xt!{T<:Base.LinAlg.BlasReal}(K::Matrix{T}, κ::SquaredDistanceKernel{T,:t1}, X::Matrix{T}, Y::Matrix{T}, w::Vector{T}, store_upper::Bool)
+function pairwise_XtYt!{T<:Base.LinAlg.BlasReal}(K::Matrix{T}, κ::SquaredDistanceKernel{T,:t1}, X::Matrix{T}, Y::Matrix{T}, w::Vector{T}, store_upper::Bool)
     Z = scale(w, X)
     V = scale(w, Y)
     gramian_Xt!(K, X, Y)

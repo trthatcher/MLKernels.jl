@@ -114,55 +114,41 @@ LaplacianKernel{T<:FloatingPoint}(α::T = 1.0) = ExponentialKernel(SquaredDistan
 LinearKernel{T<:FloatingPoint}(α::T = 1.0, c::T = one(T)) = PolynomialKernel(ScalarProductKernel(), α, c, one(T))
 
 
-#===========================================================================
-  Kernel Conversions
-===========================================================================#
-
-
-
-#=
-function convert{T<:FloatingPoint}(::Type{ARD{T}}, κ::ARD)
-    ARD(convert(Kernel{T}, κ.k), T[κ.w...])
-end
-
-for kernelobject in concretesubtypes(Kernel)
-    kernelobjectsym = kernelobject.name.name  # symbol for concrete kernel type
-
-    for kerneltype in supertypes(kernelobject)
-        kerneltypesym = kerneltype.name.name  # symbol for abstract supertype
-
-        @eval begin
-            function convert{T<:FloatingPoint}(::Type{$kerneltypesym{T}}, κ::$kernelobjectsym)
-                convert($kernelobjectsym{T}, κ)
-            end
-        end
-    end
-end
-=#
-
 #===================================================================================================
   Composite Kernels
 ===================================================================================================#
 
 abstract CombinationKernel{T<:FloatingPoint} <: Kernel{T}
 
-#=
+immutable KernelProduct{T<:FloatingPoint} <: CombinationKernel{T}
+    a::T
+    k::Vector{Kernel{T}}
+    function KernelProduct(a::T, κ::Vector{Kernel{T}})
+        a > 0 || error("a = $(a) must be greater than zero.")
+        all(ismercer, κ) || warn("Only Mercer kernels are closed under multiplication.")
+        new(a, κ)
+    end
+end
+KernelProduct{T<:FloatingPoint}(a::T, κ::Vector{Kernel{T}}) = KernelProduct(a, κ)
+
+immutable KernelSum{T<:FloatingPoint} <: CombinationKernel{T}
+    a::T
+    k::Vector{Kernel{T}}
+    function KernelSum(a::T, κ::Vector{Kernel{T}})
+        a >= 0 || error("a = $(a) must be greater than or equal to zero.")
+        all(ismercer, κ) || all(isnegdef, κ) || warn("Mixed kernels detected.")
+        new(a, κ)
+    end
+end
+KernelSum{T<:FloatingPoint}(a::T, κ::Vector{Kernel{T}}) = KernelSum{T}(a, κ)
+
+ismercer(ψ::KernelSum) = all(ismercer, ψ.k)
 
 for (kernel_object, kernel_op, kernel_array_op, identity) in (
         (:KernelProduct, :*, :prod, :1),
         (:KernelSum,     :+, :sum,  :0)
     )
     @eval begin
-
-        immutable $kernel_object{T<:FloatingPoint} <: CombinationKernel{T}
-            a::T
-            k::Vector{Kernel{T}}
-            function $kernel_object(a::T, κ::Vector{Kernel{T}})
-                $(kernel_op == :+ ? :(>=) : :>)(a, 0) || error("a = $(a) must be greater than zero.")
-                new(a, κ)
-            end
-        end
-        $kernel_object{T<:FloatingPoint}(a::T, κ::Vector{Kernel{T}}) = $kernel_object{T}(a, κ)
 
         function $kernel_object(a::Real, κ::Kernel...)
             U = promote_type(typeof(a), map(eltype, κ)...)
@@ -173,9 +159,8 @@ for (kernel_object, kernel_op, kernel_array_op, identity) in (
         convert{T<:FloatingPoint}(::Type{CombinationKernel{T}}, ψ::$kernel_object) = $kernel_object(convert(T, ψ.a), Kernel{T}[ψ.k...])
         convert{T<:FloatingPoint}(::Type{Kernel{T}}, ψ::$kernel_object) = $kernel_object(convert(T, ψ.a), Kernel{T}[ψ.k...])
 
-        kernel{T<:FloatingPoint}(ψ::$kernel_object{T}, x::KernelInput{T}, y::KernelInput{T}) = $kernel_op(ψ.a, $kernel_array_op(map(κ -> kernel(κ,x,y), ψ.k)))
+        #kernel{T<:FloatingPoint}(ψ::$kernel_object{T}, x::KernelInput{T}, y::KernelInput{T}) = $kernel_op(ψ.a, $kernel_array_op(map(κ -> kernel(κ,x,y), ψ.k)))
 
-        ismercer(ψ::$kernel_object) = all(ismercer, ψ.k)
         isnegdef(ψ::$kernel_object) = all(isnegdef, ψ.k)
 
         function description_string{T<:FloatingPoint}(ψ::$kernel_object{T}, eltype::Bool = true)
@@ -210,5 +195,3 @@ for (kernel_object, kernel_op, kernel_array_op, identity) in (
 
     end
 end
-
-=#
