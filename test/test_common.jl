@@ -8,8 +8,6 @@ function matrix_test_approx_eq(A::Array, B::Array)
     end
 end
 
-@test MLKernels.description_matrix_size(rand(4,5)) == "4×5"
-
 print("- Testing matrix functions ... ")
 for T in (Float32,Float64,BigFloat)
     S1 = T[1 2 3;
@@ -58,6 +56,7 @@ for T in (Float32,Float64,BigFloat)
 end
 println("Done")
 
+#=
 print("- Testing sqdist ... ")
 @test MLKernels.sqdist(2.0, 3.0) == 1
 @test MLKernels.sqdist(2.0, 3.0, 2.0) == 4
@@ -128,7 +127,6 @@ Z = [MLKernels.sqdist(x,y,w) for x in Sx, y in Sy]; matrix_test_approx_eq(MLKern
 Z = [MLKernels.sqdist(x,y,w) for x in Sx, y in Sy]; matrix_test_approx_eq(MLKernels.sqdistmatrix(X', Y', w, true), Z)
 println("Done")
 
-#=
 print("- Testing in-place scprod ... ")
 Z = MLKernels.scprodmatrix(X,Y)
 @test MLKernels.scprod(2,X,2,Y,1,false) == Z[2,1]

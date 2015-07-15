@@ -99,38 +99,35 @@ function test_kernel_function{T<:FloatingPoint}(K::Kernel, x::Vector{T}, y::Vect
 end
 
 
-# Test Standard Kernels
+# Test Base Kernels
 
-println("- Testing StandardKernel show():")
+println("- Testing BaseKernel show():")
 for kernelobject in (
-        ExponentialKernel,
-        RationalQuadraticKernel,
-        PowerKernel,
-        LogKernel,
-        MaternKernel,
-        PolynomialKernel,
-        SigmoidKernel,
+        SquaredDistanceKernel,
+        SineSquaredKernel,
+        ChiSquaredKernel,
+        ScalarProductKernel,
+        MercerSigmoidKernel
     )
     print(STDOUT, "    - Testing ")
     show(STDOUT, (kernelobject)())
     println(" ... Done")
 end
 
-println("- Testing StandardKernel constructors:")
+println("- Testing BaseKernel constructors:")
 for (kernelobject, default_args, test_args) in (
-        (ExponentialKernel, [1, 1], [2, 0.5]),
-        (RationalQuadraticKernel, [1, 1, 1], [2, 2, 0.5]),
-        (PowerKernel, [1], [0.5]),
-        (LogKernel, [1,1], [2,0.5]),
-        (PolynomialKernel, [1,1,2], [2,2,3]),
-        (MaternKernel, [1,1], [2,2]),
-        (SigmoidKernel, [1,1], [2,2]),
+        (SquaredDistanceKernel, [1.0], [0.5]),
+        (SineSquaredKernel, [1.0], [0.5]),
+        (ChiSquaredKernel, [1.0], [0.5]),
+        #(ScalarProductKernel,Float64[],Float64[])
+        (MercerSigmoidKernel, [0.0, 1.0], [1.0, 2.0])
     )
     print("    - Testing ", kernelobject, " ... ")
     test_constructor_case(kernelobject, default_args, test_args)
     println("Done")
 end
 
+#=
 println("- Testing StandardKernel and ARD type conversions:")
 for (kernelobject, default_args, test_args) in (
         (ExponentialKernel, [1, 1], [2, 0.5]),
@@ -431,3 +428,5 @@ for T in FloatingPointTypes
     test_kernel_function(K, x1, y1, v1)
 end
 println(" Done")
+
+=#
