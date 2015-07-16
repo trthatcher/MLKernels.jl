@@ -11,7 +11,7 @@ export
     ismercer,
     isnegdef,
     #kernel,
-    #kernelmatrix,
+    kernelmatrix,
     #center_kernelmatrix!,
     #center_kernelmatrix,
     #nystrom,
@@ -36,8 +36,14 @@ export
                 PolynomiaKernel,
                 LogKernel,
                 PowerKernel,
-        CombinationKernel
-
+        CombinationKernel,
+            KernelProduct,
+            KernelSum,
+        # Kernel Constructors
+        GaussianKernel,
+        RadialBasisKernel,
+        LaplacianKernel,
+        LinearKernel
 
 import Base: show, eltype, convert
 
@@ -45,5 +51,6 @@ include("common.jl")
 include("meta.jl")
 include("kernels.jl")
 include("pairwise.jl")
+include("kernelfunctions.jl")
 
 end # MLKernels
