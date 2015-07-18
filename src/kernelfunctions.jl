@@ -1,4 +1,24 @@
 #==========================================================================
+  Kernel Functions
+==========================================================================#
+
+kernel{T<:FloatingPoint}(κ::BaseKernel{T}, x::T, y::T) = pairwise(κ, x, y)
+kernel{T<:FloatingPoint}(κ::BaseKernel{T}, x::Vector{T}, y::Vector{T}) = pairwise(κ, x, y)
+
+kernel{T<:FloatingPoint}(κ::ARD{T}, x::T, y::T) = pairwise(κ.k, x, y, κ.w[1])
+kernel{T<:FloatingPoint}(κ::ARD{T}, x::Vector{T}, y::Vector{T}) = pairwise(κ.k, x, y, κ.w)
+
+kernel{T<:FloatingPoint}(κ::CompositeKernel{T}, x::T, y::T) = kappa(κ, pairwise(κ.k, x, y))
+kernel{T<:FloatingPoint}(κ::CompositeKernel{T}, x::Vector{T}, y::Vector{T}) = kappa(κ, pairwise(κ.k, x, y))
+
+kernel{T<:FloatingPoint}(ψ::KernelSum{T}, x::T, y::T) = sum(ψ.a, sym(map(κ -> kernel(κ,x,y), ψ.k)))
+kernel{T<:FloatingPoint}(ψ::KernelSum{T}, x::Vector{T}, y::Vector{T}) = sum(ψ.a, sym(map(κ -> kernel(κ,x,y), ψ.k)))
+
+kernel{T<:FloatingPoint}(ψ::KernelProduct{T}, x::T, y::T) = sum(ψ.a, sym(map(κ -> kernel(κ,x,y), ψ.k)))
+kernel{T<:FloatingPoint}(ψ::KernelProduct{T}, x::Vector{T}, y::Vector{T}) = prod(ψ.a, prod(map(κ -> kernel(κ,x,y), ψ.k)))
+
+
+#==========================================================================
   Kernel Matrix Transformation
 ==========================================================================#
 

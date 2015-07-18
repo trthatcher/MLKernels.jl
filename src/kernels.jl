@@ -28,6 +28,7 @@ attainsrangemin(::Kernel) = true
 >(κ::Kernel, x::Real)  = x < κ
 >(x::Real, κ::Kernel)  = κ < x
 
+
 #==========================================================================
   Base Kernels
 ==========================================================================#
@@ -35,6 +36,18 @@ attainsrangemin(::Kernel) = true
 abstract BaseKernel{T<:FloatingPoint} <: StandardKernel{T}
 
 include("kernels/additivekernels.jl")
+
+for kernel in concrete_subtypes(AdditiveKernel)
+    kernel_sym = kernel.name.name  # symbol for kernel
+    for parent in supertypes(kernel)
+        parent_sym = parent.name.name  # symbol for abstract supertype
+        @eval begin
+            function convert{T<:FloatingPoint}(::Type{$parent_sym{T}}, κ::$kernel_sym)
+                convert($kernel_sym{T}, κ)
+            end
+        end
+    end
+end
 
 immutable ARD{T<:FloatingPoint} <: BaseKernel{T}
     k::AdditiveKernel{T}
@@ -59,18 +72,6 @@ function description_string{T<:FloatingPoint,}(κ::ARD{T}, eltype::Bool = true)
 end
 
 convert{T<:FloatingPoint}(::Type{ARD{T}}, κ::ARD) = ARD(convert(Kernel{T},κ.k), convert(Vector{T}, κ.w))
-
-for kernel in concrete_subtypes(AdditiveKernel)
-    kernel_sym = kernel.name.name  # symbol for kernel
-    for parent in supertypes(kernel)
-        parent_sym = parent.name.name  # symbol for abstract supertype
-        @eval begin
-            function convert{T<:FloatingPoint}(::Type{$parent_sym{T}}, κ::$kernel_sym)
-                convert($kernel_sym{T}, κ)
-            end
-        end
-    end
-end
 
 
 #==========================================================================
@@ -158,8 +159,6 @@ for (kernel_object, kernel_op, kernel_array_op, identity) in (
         convert{T<:FloatingPoint}(::Type{$kernel_object{T}}, ψ::$kernel_object) = $kernel_object(convert(T, ψ.a), Kernel{T}[ψ.k...])
         convert{T<:FloatingPoint}(::Type{CombinationKernel{T}}, ψ::$kernel_object) = $kernel_object(convert(T, ψ.a), Kernel{T}[ψ.k...])
         convert{T<:FloatingPoint}(::Type{Kernel{T}}, ψ::$kernel_object) = $kernel_object(convert(T, ψ.a), Kernel{T}[ψ.k...])
-
-        #kernel{T<:FloatingPoint}(ψ::$kernel_object{T}, x::KernelInput{T}, y::KernelInput{T}) = $kernel_op(ψ.a, $kernel_array_op(map(κ -> kernel(κ,x,y), ψ.k)))
 
         isnegdef(ψ::$kernel_object) = all(isnegdef, ψ.k)
 

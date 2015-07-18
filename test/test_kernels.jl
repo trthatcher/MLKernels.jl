@@ -22,7 +22,8 @@ function check_fields(kernelobject::BaseKernel, field_values)
 end
 
 # Iterate through constructor cases - test only Float64 to ensure fields are populating as expected
-function test_constructor_case{T<:BaseKernel}(kernelobject::Type{T}, default_args, test_args, n = length(names(kernelobject)))
+function test_constructor_case{T<:BaseKernel}(kernelobject::Type{T}, default_args, test_args)
+    n = length(names(kernelobject))
     check_fields((kernelobject)(), Float64[default_args...])
     for i = 1:n
         case_args = Float64[test_args[1:i]..., default_args[(i+1):end]...]
@@ -31,20 +32,20 @@ function test_constructor_case{T<:BaseKernel}(kernelobject::Type{T}, default_arg
     end
 end
 
-function test_constructor_case{T<:CompositeKernel}(kernelobject::Type{T}, default_args, test_args, n = length(names(kernelobject)))
-    if n > 1
-        default_kernel = default_args[1]
-        default_params = default_args[2:n]
-        check_fields((kernelobject)(), [convert(Kernel{Float64}, default_kernel),default_params...])
-    end
-    #check_fields((kernelobject)(), Float64[default_args...])
-    #for i = 1:n
-    #    case_args = Float64[test_args[1:i]..., default_args[(i+1):end]...]
-    #    κ = (kernelobject)(case_args[1:i]...)
-    #    check_fields(κ, case_args)
+function test_constructor_case{T<:CompositeKernel}(kernelobject::Type{T}, default_kernel, default_args, test_kernel, test_args)
+    n = length(default_args)
+    κ = (kernelobject)()
+    default_kernel_64 = convert(Kernel{Float64}, default_kernel)
+    check_fields(κ, [default_kernel_64, Float64[default_args...]...])
+   # check_fields((kernelobject)(convert(Kernel{Float64},(test_kernel)())), Float64[default_args...])
+    #if n >= 1
+     #   for i = 1:n
+      #      case_args = Float64[test_args[1:i]..., default_args[(i+1):end]...]
+       #     κ = (kernelobject)(case_args[1:i]...)
+        #    check_fields(κ, case_args)
+        #end
     #end
 end
-
 
 
 
@@ -149,10 +150,10 @@ for (kernelobject, default_args, test_args) in (
 end
 
 info("Testing CompositeKernel constructors")
-for (kernelobject, default_args, test_args) in (
-        (ExponentialKernel, [SquaredDistanceKernel(), 1.0, 1.0], [ChiSquaredKernel(), 2.0,0.5]),
+for (kernelobject, default_kernel, default_args, test_kernel, test_args) in (
+        (ExponentialKernel, SquaredDistanceKernel(), [1.0, 1.0], ChiSquaredKernel(), [2.0,0.5]),
     )
-    test_constructor_case(kernelobject, default_args, test_args)
+    test_constructor_case(kernelobject, default_kernel, default_args, test_kernel, test_args)
 end
 
 

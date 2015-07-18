@@ -10,7 +10,7 @@ export
     # Functions
     ismercer,
     isnegdef,
-    #kernel,
+    kernel,
     kernelmatrix,
     #center_kernelmatrix!,
     #center_kernelmatrix,
@@ -20,6 +20,7 @@ export
     Kernel,
         StandardKernel,
             BaseKernel,
+                TestKernel,
                 AdditiveKernel,
                     SquaredDistanceKernel,
                     SineSquaredKernel,
@@ -44,8 +45,6 @@ export
         RadialBasisKernel,
         LaplacianKernel,
         LinearKernel
-
-import Base: show, eltype, convert
 
 include("common.jl")
 include("meta.jl")

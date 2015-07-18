@@ -2,19 +2,8 @@
   Pairwise Computation
 ===================================================================================================#
 
-function init_pairwise{T<:FloatingPoint}(X::Matrix{T}, is_trans::Bool = false)
-    n = size(X, is_trans ? 2 : 1)
-    Array(T, n, n)
-end
 
-function init_pairwise{T<:FloatingPoint}(X::Matrix{T}, Y::Matrix{T}, is_trans::Bool = false)
-    n_dim = is_trans ? 2 : 1
-    n = size(X, n_dim)
-    m = size(Y, n_dim)
-    Array(T, n, m)
-end
-
-## Calculate the gramian matrix of X
+# Calculate the gramian matrix of X
 function gramian_X!{T<:Base.LinAlg.BlasReal}(G::Matrix{T}, X::Matrix{T}, store_upper::Bool)
     (n = size(G, 1)) == size(G, 2) == size(X, 1) || throw(DimensionMismatch("Supplied kernel matrix must be square and have same number of rows as X."))
     BLAS.syrk!(store_upper ? 'U' : 'L', 'N', one(T), X, zero(T), G)
@@ -26,7 +15,7 @@ function gramian_Xt!{T<:Base.LinAlg.BlasReal}(G::Matrix{T}, X::Matrix{T}, store_
 end
 
 
-# Returns the upper right corner of the gramian of [Xᵀ Yᵀ]ᵀ or [X Y]
+# Returns the upper right corner of the gramian of [X Y] or [Xᵀ Yᵀ]ᵀ
 function gramian_XY!{T<:Base.LinAlg.BlasReal}(G::Matrix{T}, X::Matrix{T}, Y::Matrix{T})
     size(X, 2) == size(Y, 2) || throw(DimensionMismatch("X must have as many columns as Y."))
     size(X, 1) == size(G, 1) || throw(DimensionMismatch("Supplied kernel matrix must have as many rows as X has rows."))
@@ -41,6 +30,7 @@ function gramian_XtYt!{T<:Base.LinAlg.BlasReal}(G::Matrix{T}, X::Matrix{T}, Y::M
     BLAS.gemm!('T', 'N', one(T), X, Y, zero(T), G)
 end
 
+# Apply kappa to matrix elements
 function kappa_matrix!{T<:FloatingPoint}(κ::Kernel{T}, X::Matrix{T})
     @inbounds @simd for i = 1:length(X)
         X[i] = kappa(κ, X[i])
@@ -59,8 +49,85 @@ end
 kappa_square_matrix{T<:FloatingPoint}(κ::Kernel{T}, X::Matrix{T}, store_upper::Bool) = kappa_array!(κ, copy(X), store_upper)
 
 
+#===================================================================================================
+  Default Pairwise Computation
+===================================================================================================#
+
+# Initiate pairwise matrices
+
+function init_pairwise{T<:FloatingPoint}(X::Matrix{T}, is_trans::Bool)
+    n = size(X, is_trans ? 2 : 1)
+    Array(T, n, n)
+end
+
+function init_pairwise{T<:FloatingPoint}(X::Matrix{T}, Y::Matrix{T}, is_trans::Bool)
+    n_dim = is_trans ? 2 : 1
+    n = size(X, n_dim)
+    m = size(Y, n_dim)
+    Array(T, n, m)
+end
+
+
+# Pairwise definition
+
+function pairwise!{T<:FloatingPoint}(K::Matrix{T}, κ::BaseKernel{T}, X::Matrix{T}, is_trans::Bool, store_upper::Bool)
+    if is_trans
+        pairwise_Xt!(K, κ, X, store_upper)
+    else
+        pairwise_X!(K, κ, X, store_upper)
+    end
+end
+function pairwise{T<:FloatingPoint}(κ::BaseKernel{T}, X::Matrix{T}, is_trans::Bool, store_upper::Bool)
+    pairwise!(init_pairwise(X, is_trans), κ, X, is_trans, store_upper)
+end
+
+function pairwise!{T<:FloatingPoint}(K::Matrix{T}, κ::BaseKernel{T}, X::Matrix{T}, w::Vector{T}, is_trans::Bool, store_upper::Bool)
+    if is_trans
+        pairwise_Xt!(K, κ, X, w, store_upper)
+    else
+        pairwise_X!(K, κ, X, w, store_upper)
+    end
+end
+function pairwise{T<:FloatingPoint}(κ::BaseKernel{T}, X::Matrix{T}, w::Vector{T}, is_trans::Bool, store_upper::Bool)
+    pairwise!(init_pairwise(X, is_trans), κ, X, w, is_trans, store_upper)
+end
+
+
+# Default Pairwise Calculation
+
+for (fn, dim_n, X_i, X_j, Y_j) in (
+        (:pairwise_X!,  1, parse("X[i,:]"), parse("X[j,:]"), parse("Y[j,:]")),
+        (:pairwise_Xt!, 2, parse("X[:,i]"), parse("X[:,j]"), parse("Y[:,j]"))
+    )
+    dim_p = dim_n == 1 ? 2 : 1
+    @eval begin
+
+        function ($fn){T<:FloatingPoint}(K::Matrix{T}, κ::BaseKernel{T}, X::Matrix{T}, store_upper::Bool)
+            (n = size(X,$dim_n)) == size(K,1) == size(K,2) || throw(DimensionMismatch("Kernel matrix must be square and match X."))
+            p = size(X,$dim_p)
+            for j = 1:n, i = store_upper ? (1:j) : (j:n)
+                K[i,j] = kappa(κ, vec($X_i), vec($X_j))
+            end
+            K
+        end
+
+        function ($fn){T<:FloatingPoint}(K::Matrix{T}, κ::AdditiveKernel{T}, X::Matrix{T}, Y::Matrix{T})
+            (n = size(X,$dim_n)) == size(K,1) || throw(DimensionMismatch("Dimension $($dim_n) of X must match dimension 1 of K."))
+            (m = size(Y,$dim_n)) == size(K,2) || throw(DimensionMismatch("Dimension $($dim_n) of Y must match dimension 2 of K."))
+            size(X,$dim_p) == size(Y,$dim_p) || throw(DimensionMismatch("Dimension $($dim_p) of Y must match dimension $($dim_p) of X."))
+            for j = 1:m, i = 1:n
+                K[i,j] = kappa(κ, vec($X_i), vec($Y_j))
+            end
+            K
+        end
+
+    end
+
+end
+
+
 #===========================================================================
-  Additive Pairwise Scalar & Vector
+  "Optimised" Generic Additive Pairwise 
 ===========================================================================#
 
 pairwise{T<:FloatingPoint}(κ::AdditiveKernel{T}, x::T, y::T) = kappa(κ, x, y)
@@ -86,92 +153,55 @@ function pairwise{T<:FloatingPoint}(κ::AdditiveKernel{T}, x::Vector{T}, y::Vect
     v
 end
 
-
-#===========================================================================
-  Additive Pairwise Matrix
-===========================================================================#
-
-for (fn, dim_n, dim_p, formula) in (
-        (:pairwise_X!, 1, 2, parse("kappa(κ, X[j,i], X[k,i])")),
-        (:pairwise_Xt!, 2, 1, parse("kappa(κ, X[i,j], X[i,k])"))
+for (fn_X, fn_XY, dim_n, X_ji, X_ki, Y_ki) in (
+        (:pairwise_X!,  :pairwise_XY,   1, parse("X[j,i]"), parse("X[k,i]"), parse("Y[k,i]")),
+        (:pairwise_Xt!, :pairwise_XtYt, 2, parse("X[i,j]"), parse("X[i,k]"), parse("Y[i,k]"))
     )
+    dim_p = dim_n == 1 ? 2 : 1
     @eval begin
 
-        function ($fn){T<:FloatingPoint}(K::Matrix{T}, κ::AdditiveKernel{T}, X::Matrix{T}, store_upper::Bool)
+        function ($fn_X){T<:FloatingPoint}(K::Matrix{T}, κ::AdditiveKernel{T}, X::Matrix{T}, store_upper::Bool)
             (n = size(X,$dim_n)) == size(K,1) == size(K,2) || throw(DimensionMismatch("Kernel matrix must be square and match X."))
             p = size(X,$dim_p)
             for k = 1:n, j = store_upper ? (1:k) : (k:n)
                 v = 0
                 @inbounds @simd for i = 1:p
-                    v += $formula
+                    v += kappa(κ, $X_ji, $X_ki)
                 end
                 K[j,k] = v
             end
+            K
         end
 
-        function ($fn){T<:FloatingPoint}(K::Matrix{T}, κ::AdditiveKernel{T}, X::Matrix{T}, w::Vector{T}, store_upper::Bool)
+        function ($fn_X){T<:FloatingPoint}(K::Matrix{T}, κ::AdditiveKernel{T}, X::Matrix{T}, w::Vector{T}, store_upper::Bool)
             (n = size(X,$dim_n)) == size(K,1) == size(K,2) || throw(DimensionMismatch("Kernel matrix must be square and match X."))
             (p = size(X,$dim_p)) == length(w) || throw(DimensionMismatch("Weight vector w must match X."))
             w² = w.^2
             for k = 1:n, j = store_upper ? (1:k) : (k:n)
                 v = 0
                 @inbounds @simd for i = 1:p
-                    v += w²[i] * $formula
+                    v += w²[i] * kappa(κ, $X_ji, $X_ki)
                 end
                 K[j,k] = v
             end
+            K
         end
 
-    end
-end
-
-function pairwise!{T<:FloatingPoint}(K::Matrix{T}, κ::AdditiveKernel{T}, X::Matrix{T}, is_trans::Bool, store_upper::Bool)
-    if is_trans
-        pairwise_Xt!(K, κ, X, store_upper)
-    else
-        pairwise_X!(K, κ, X, store_upper)
-    end
-end
-function pairwise{T<:FloatingPoint}(κ::AdditiveKernel{T}, X::Matrix{T}, is_trans::Bool, store_upper::Bool)
-    pairwise!(init_pairwise(X, is_trans), κ, X, is_trans, store_upper)
-end
-
-function pairwise!{T<:FloatingPoint}(K::Matrix{T}, κ::AdditiveKernel{T}, X::Matrix{T}, w::Vector{T}, is_trans::Bool, store_upper::Bool)
-    if is_trans
-        pairwise_Xt!(K, κ, X, w, store_upper)
-    else
-        pairwise_X!(K, κ, X, w, store_upper)
-    end
-end
-function pairwise{T<:FloatingPoint}(κ::AdditiveKernel{T}, X::Matrix{T}, w::Vector{T}, is_trans::Bool, store_upper::Bool)
-    pairwise!(init_pairwise(X, is_trans), κ, X, w, is_trans, store_upper)
-end
-
-
-#===========================================================================
-  Additive Pairwise Matrix-Matrix
-===========================================================================#
-
-for (fn, dim_n, dim_p, formula) in (
-        (:pairwise_XY!, 1, 2, parse("kappa(κ, X[j,i], Y[k,i])")),
-        (:pairwise_XtYt!, 2, 1, parse("kappa(κ, X[i,j], Y[i,k])"))
-    )
-    @eval begin
-
-        function ($fn){T<:FloatingPoint}(K::Matrix{T}, κ::AdditiveKernel{T}, X::Matrix{T}, Y::Matrix{T})
+        function ($fn_XY){T<:FloatingPoint}(K::Matrix{T}, κ::AdditiveKernel{T}, X::Matrix{T}, Y::Matrix{T})
             (n = size(X,$dim_n)) == size(K,1) || throw(DimensionMismatch("Dimension $($dim_n) of X must match dimension 1 of K."))
             (m = size(Y,$dim_n)) == size(K,2) || throw(DimensionMismatch("Dimension $($dim_n) of Y must match dimension 2 of K."))
             (p = size(X,$dim_p)) == size(Y,$dim_p) || throw(DimensionMismatch("Dimension $($dim_p) of X must match $($dim_p) of Y."))
             for k = 1:m, j = 1:n
                 v = 0
                 @inbounds @simd for i = 1:p
-                    v += $formula
+                    v += kappa(κ, $X_ji, $Y_ki)
                 end
                 K[j,k] = v
             end
+            K
         end
 
-        function ($fn){T<:FloatingPoint}(K::Matrix{T}, κ::AdditiveKernel{T}, X::Matrix{T}, Y::Matrix{T}, w::Vector{T})
+        function ($fn_XY){T<:FloatingPoint}(K::Matrix{T}, κ::AdditiveKernel{T}, X::Matrix{T}, Y::Matrix{T}, w::Vector{T})
             (n = size(X,$dim_n)) == size(K,1) || throw(DimensionMismatch("Dimension $($dim_n) of X must match dimension 1 of K."))
             (m = size(Y,$dim_n)) == size(K,2) || throw(DimensionMismatch("Dimension $($dim_n) of Y must match dimension 2 of K."))
             (p = size(X,$dim_p)) == size(Y,$dim_p) || throw(DimensionMismatch("Dimension $($dim_p) of X must match $($dim_p) of Y."))
@@ -180,59 +210,23 @@ for (fn, dim_n, dim_p, formula) in (
             for k = 1:m, j = 1:n
                 v = 0
                 @inbounds @simd for i = 1:p
-                    v += w²[i] * $formula
+                    v += w²[i] * kappa(κ, $X_ji, $Y_ki)
                 end
                 K[j,k] = v
             end
+            K
         end
 
     end
 end
 
-function pairwise!{T<:FloatingPoint}(K::Matrix{T}, κ::AdditiveKernel{T}, X::Matrix{T}, Y::Matrix{T}, is_trans::Bool)
-    if is_trans
-        pairwise_XtYt!(K, κ, X, Y)
-    else
-        pairwise_XY!(K, κ, X, Y)
-    end
-    K
-end
-function pairwise{T<:FloatingPoint}(κ::AdditiveKernel{T}, X::Matrix{T}, Y::Matrix{T}, is_trans::Bool)
-    pairwise!(init_pairwise(X, Y), κ, X, Y, is_trans)
-end
+#  ARD - Automatic Relevance Determination
 
-function pairwise!{T<:FloatingPoint}(K::Matrix{T}, κ::AdditiveKernel{T}, X::Matrix{T}, Y::Matrix{T}, w::Vector{T}, is_trans::Bool)
-    if is_trans
-        pairwise_XtYt!(K, κ, X, Y, w)
-    else
-        pairwise_XY!(K, κ, X, Y, w)
-    end
-    K
-end
-function pairwise{T<:FloatingPoint}(κ::AdditiveKernel{T}, X::Matrix{T}, Y::Matrix{T}, w::Vector{T}, is_trans::Bool)
-    pairwise!(init_pairwise(X, Y), κ, X, Y, w, is_trans)
-end
+pairwise!{T<:FloatingPoint}(K::Matrix{T}, κ::ARD{T}, X::Matrix{T}, is_trans::Bool, store_upper::Bool) = pairwise!(K, κ.k, X, κ.w, is_trans, store_upper)
+pairwise{T<:FloatingPoint}(κ::ARD{T}, X::Matrix{T}, is_trans::Bool, store_upper::Bool) = pairwise(κ.k, X, κ.w, is_trans, store_upper)
 
-
-#===========================================================================
-  ARD
-===========================================================================#
-
-function pairwise!{T<:FloatingPoint}(K::Matrix{T}, κ::ARD{T}, X::Matrix{T}, is_trans::Bool, store_upper::Bool)
-    pairwise!(K, κ.k, X, κ.w, is_trans, store_upper)
-end
-
-function pairwise{T<:FloatingPoint}(κ::ARD{T}, X::Matrix{T}, is_trans::Bool, store_upper::Bool)
-    pairwise(κ.k, X, κ.w, is_trans, store_upper)
-end
-
-function pairwise!{T<:FloatingPoint}(K::Matrix{T}, κ::ARD{T}, X::Matrix{T}, Y::Matrix{T}, is_trans::Bool)
-    pairwise!(K, κ.k, X, Y, κ.w, is_trans)
-end
-
-function pairwise{T<:FloatingPoint}(κ::ARD{T}, X::Matrix{T}, Y::Matrix{T}, is_trans::Bool)
-    pairwise(κ.k, X, Y, κ.w, is_trans)
-end
+pairwise!{T<:FloatingPoint}(K::Matrix{T}, κ::ARD{T}, X::Matrix{T}, Y::Matrix{T}, is_trans::Bool) = pairwise!(K, κ.k, X, Y, κ.w, is_trans)
+pairwise{T<:FloatingPoint}(κ::ARD{T}, X::Matrix{T}, Y::Matrix{T}, is_trans::Bool) = pairwise(κ.k, X, Y, κ.w, is_trans)
 
 
 #===========================================================================
