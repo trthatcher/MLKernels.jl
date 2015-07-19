@@ -3,6 +3,8 @@
 [![Build Status](https://travis-ci.org/trthatcher/MLKernels.jl.svg?branch=master)](https://travis-ci.org/trthatcher/MLKernels.jl)
 [![Coverage Status](https://coveralls.io/repos/trthatcher/MLKernels.jl/badge.svg)](https://coveralls.io/r/trthatcher/MLKernels.jl)
 
+### Introduction
+
 MLKernels.jl is a Julia package for Mercer and non-Mercer kernels that are used in the kernel methods of machine learning. The goal is to provide a Julia datatype for machine learning kernels and an efficient set of methods to calculate or approximate kernel matrices. The package has no dependencies beyond base Julia.
 
 Consistent with traditional literature on kernels, kernels come in two flavours:
@@ -12,98 +14,189 @@ Consistent with traditional literature on kernels, kernels come in two flavours:
 Negative definite kernels are equivalent to conditionally positive definite kernels that are often found in Machine Learning literature. To convert a negative definite kernel to a conditionally positive definite kernel, simply multiply the result of the kernel function by -1.
 
 Kernels are further broken into three categories:
+
  - Base Kernels: These are simple kernels that serve as building blocks for more complex kernels. They are easily extended.
  - Composite Kernels: These kernels are a scalar transformation of the result of a Base Kernel. As a result, they are not standalone; they require a base kernel. Most kernels experiencing widespread usage fall into this category.
  - Combination Kernels: These kernels are the result of addition or multiplication of Base or Composite kernels.
+
+Base Kernels are available as Automatic Relevance Determination (ARD) Kernels which act as a separate scaling constant for each element-wise operation on the inputs. For the dot product, this corresponds to a linear scaling of each of the dimensions.
+
+### Getting Started
+
+A kernel can be constructed using one of the many predefined kernels. Once a kernel has been constructed, it can be passed to the `kernel` function and used to compute kernel function of two vectors. For example, the simplest base kernel is the scalar (dot) product kernel:
+
+```julia
+julia> κ = ScalarProductKernel()
+ScalarProductKernel{Float64}()
+
+julia> x,y = (10rand(3),10rand(3))
+([4.5167,7.60119,0.692922],[7.46812,0.605204,9.39787])
+
+julia> kernel(κ,x,y)
+44.843518824558856
+
+julia> dot(x,y)
+44.843518824558856
+```
+
+Several other base kernels have been defined. For example, the squared distance kernel is the squared l2 norm:
+
+```julia
+julia> κ = SquaredDistanceKernel()
+SquaredDistanceKernel{Float64}(t=1.0)
+
+julia> kernel(κ,x,y)
+133.43099175980925
+
+julia> dot(x.-y,x.-y)
+133.43099175980925
+```
+A subset of the base kernels, known as Additive Kernels, are also available as Automatic Relevance Determination kernels. If the kernel function consists of a sum of elementwise functions applied to each dimension, then it is amenable to automatic relevance determination. Continuing on with the squared distance kernel:
+
+```julia
+julia> SquaredDistanceKernel <: AdditiveKernel
+true
+
+julia> w = 10rand(3)
+3-element Array{Float64,1}:
+ 9.29903
+ 1.24022
+ 3.21233
+
+julia> ψ = ARD(κ,w)
+ARD{Float64}(κ=SquaredDistanceKernel(t=1.0),w=[9.29903,1.24022,3.21233])
+
+julia> kernel(ψ,x,y)
+1610.469072503976
+
+julia> dot((x.-y).*w,(x.-y).*w)
+1610.4690725039757
+```
+
+Base kernels can be extended using composite kernels. These kernels are a function of a base kernel. For example, the Gaussian Kernel (Radial Basis Kernel) may be constructed in the following way:
+
+```julia
+julia> ϕ = ExponentialKernel(κ)
+ExponentialKernel{Float64}(κ=SquaredDistanceKernel(t=1.0),α=1.0,γ=1.0)
+
+julia> GaussianKernel()
+ExponentialKernel{Float64}(κ=SquaredDistanceKernel(t=1.0),α=1.0,γ=1.0)
+```
+
+To compute a kernel matrix:
+
+```
+julia> X = rand(5,3);
+
+julia> kernelmatrix(ϕ, X)
+5x5 Array{Float64,2}:
+ 1.0       0.710224  0.353483  0.858427  0.704625
+ 0.710224  1.0       0.743461  0.799072  0.713864
+ 0.353483  0.743461  1.0       0.584813  0.284877
+ 0.858427  0.799072  0.584813  1.0       0.526931
+ 0.704625  0.713864  0.284877  0.526931  1.0     
+```
+
+This assumes that each row of X is an observation. If observations are stored as columns, use `'T'` (default is `'N'`) for the first argument:
+
+```julia
+julia> kernelmatrix(ϕ, X, 'T')
+3x3 Array{Float64,2}:
+ 1.0       0.617104  0.245039
+ 0.617104  1.0       0.408998
+ 0.245039  0.408998  1.0   
+```
+
+### Reference
+
+#### Base Kernels
+
+#### Composite Kernels
 
 The following table outlines all documented kernel combinations available:
 
 <table>
   <tr>
-    <th colspan="2" rowspan="3">Composite Kernels</th>
-    <th colspan="5">Base Kernels</th>
+    <th colspan="2" rowspan="2">Composite Kernels</th>
+    <th align="center" colspan="5">Base Kernels</th>
   </tr>
   <tr>
-    <td colspan="3">Negative Definite Kernels</td>
-    <td colspan="2">Mercer Kernels</td>
+    <td align="center">Squared Distance</td>
+    <td align="center">Chi Squared</td>
+    <td align="center">Sine Squared</td>
+    <td align="center">Scalar Product</td>
+    <td align="center">Mercer Sigmoid</td>
   </tr>
   <tr>
-    <td>Squared Distance</td>
-    <td>Chi Squared</td>
-    <td>Sine Squared</td>
-    <td>Scalar Product</td>
-    <td>Mercer Sigmoid</td>
+    <td align="center"rowspan="2">Negative Definite Kernels</td>
+    <td align="center">Power Kernel</td>
+    <td align="center">&#10004;</td>
+    <td align="center">&#10004;</td>
+    <td align="center">&#10004;</td>
+    <td align="center"></td>
+    <td align="center"></td>
   </tr>
   <tr>
-    <td rowspan="2">Negative Definite Kernels</td>
-    <td>Power Kernel</td>
-    <td></td>
-    <td></td>
-    <td></td>
-    <td></td>
-    <td></td>
-  </tr>
-  <tr>
-    <td>Log Kernel</td>
-    <td></td>
-    <td></td>
-    <td></td>
-    <td></td>
-    <td></td>
+    <td align="center">Log Kernel</td>
+    <td align="center">&#10004;</td>
+    <td align="center">&#10004;</td>
+    <td align="center">&#10004;</td>
+    <td align="center"></td>
+    <td align="center"></td>
   </tr>
   <tr>
     <td rowspan="5">Mercer Kernels</td>
-    <td>Exponential Kernel</td>
-    <td></td>
-    <td></td>
-    <td></td>
-    <td></td>
-    <td></td>
+    <td align="center">Exponential Kernel</td>
+    <td align="center">&#10004;</td>
+    <td align="center">&#10004;</td>
+    <td align="center">&#10004;</td>
+    <td align="center"></td>
+    <td align="center"></td>
   </tr>
   <tr>
-    <td>Rational Quadratic Kernel</td>
-    <td></td>
-    <td></td>
-    <td></td>
-    <td></td>
-    <td></td>
+    <td align="center">Rational Quadratic Kernel</td>
+    <td align="center">&#10004;</td>
+    <td align="center">&#10004;</td>
+    <td align="center">&#10004;</td>
+    <td align="center"></td>
+    <td align="center"></td>
   </tr>
   <tr>
-    <td>Matern Kernel</td>
-    <td></td>
-    <td></td>
-    <td></td>
-    <td></td>
-    <td></td>
+    <td align="center">Matern Kernel</td>
+    <td align="center">&#10004;</td>
+    <td align="center">&#10004;</td>
+    <td align="center">&#10004;</td>
+    <td align="center"></td>
+    <td align="center"></td>
   </tr>
   <tr>
-    <td>Polynomial Kernel</td>
-    <td></td>
-    <td></td>
-    <td></td>
-    <td></td>
-    <td></td>
+    <td align="center">Polynomial Kernel</td>
+    <td align="center"></td>
+    <td align="center"></td>
+    <td align="center"></td>
+    <td align="center">&#10004;</td>
+    <td align="center">&#10004;</td>
   </tr>
   <tr>
-    <td>ExponentiatedKernel</td>
-    <td></td>
-    <td></td>
-    <td></td>
-    <td></td>
-    <td></td>
+    <td align="center">ExponentiatedKernel</td>
+    <td align="center"></td>
+    <td align="center"></td>
+    <td align="center"></td>
+    <td align="center">&#10004;</td>
+    <td align="center">&#10004;</td>
   </tr>
   <tr>
-    <td>Non-Kernels</td>
-    <td>Sigmoid Kernel</td>
-    <td></td>
-    <td></td>
-    <td></td>
-    <td></td>
-    <td></td>
+    <td align="center">Non-Kernels</td>
+    <td align="center">Sigmoid Kernel</td>
+    <td align="center"></td>
+    <td align="center"></td>
+    <td align="center"></td>
+    <td align="center">&#10004;</td>
+    <td align="center">&#10004;</td>
   </tr>
 </table>
 
-All kernels are available as Automatic Relevance Determination (ARD) Kernels which act as a separate scaling constant for each dimension of input.
+
 
 New Kernels may be constructed by scaling and translating existing kernels by positive real numbers. Further, kernels may be arbitrarily added and multiplied together to create composite kernels.
 
@@ -135,7 +228,7 @@ This package allows for a scaled point-wise product of kernels to be defined usi
 
 The Nystrom Method of approximating kernel matrices has been implemented. It requires an additional array of integers that specify the sampled columns. It should be noted that the Nystrom method is intended for large matrices:
 
-## References
+#### Citations
 
 [Marc G. Genton. 2002. Classes of kernels for machine learning: a statistics perspective. J. Mach. Learn. Res. 2 (March 2002), 299-312.](http://dl.acm.org/citation.cfm?id=944815)
 
