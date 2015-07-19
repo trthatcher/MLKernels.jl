@@ -81,28 +81,28 @@ function pairwise{T<:FloatingPoint}(κ::BaseKernel{T}, X::Matrix{T}, is_trans::B
     pairwise!(init_pairwise(X, is_trans), κ, X, is_trans, store_upper)
 end
 
-function pairwise!{T<:FloatingPoint}(K::Matrix{T}, κ::BaseKernel{T}, X::Matrix{T}, w::Vector{T}, is_trans::Bool, store_upper::Bool)
+function pairwise!{T<:FloatingPoint}(K::Matrix{T}, κ::BaseKernel{T}, X::Matrix{T}, Y::Matrix{T}, is_trans::Bool)
     if is_trans
-        pairwise_Xt!(K, κ, X, w, store_upper)
+        pairwise_XtYt!(K, κ, X, Y)
     else
-        pairwise_X!(K, κ, X, w, store_upper)
+        pairwise_XY!(K, κ, X, Y)
     end
 end
-function pairwise{T<:FloatingPoint}(κ::BaseKernel{T}, X::Matrix{T}, w::Vector{T}, is_trans::Bool, store_upper::Bool)
-    pairwise!(init_pairwise(X, is_trans), κ, X, w, is_trans, store_upper)
+function pairwise{T<:FloatingPoint}(κ::BaseKernel{T}, X::Matrix{T}, Y::Matrix{T}, is_trans::Bool)
+    pairwise!(init_pairwise(X, is_trans), κ, X, Y, is_trans)
 end
 
 
 # Default Pairwise Calculation
 
-for (fn, dim_n, X_i, X_j, Y_j) in (
-        (:pairwise_X!,  1, parse("X[i,:]"), parse("X[j,:]"), parse("Y[j,:]")),
-        (:pairwise_Xt!, 2, parse("X[:,i]"), parse("X[:,j]"), parse("Y[:,j]"))
+for (fn_X, fn_XY, dim_n, X_i, X_j, Y_j) in (
+        (:pairwise_X!,  :pairwise_XY!,   1, parse("X[i,:]"), parse("X[j,:]"), parse("Y[j,:]")),
+        (:pairwise_Xt!, :pairwise_XtYt!, 2, parse("X[:,i]"), parse("X[:,j]"), parse("Y[:,j]"))
     )
     dim_p = dim_n == 1 ? 2 : 1
     @eval begin
 
-        function ($fn){T<:FloatingPoint}(K::Matrix{T}, κ::BaseKernel{T}, X::Matrix{T}, store_upper::Bool)
+        function ($fn_X){T<:FloatingPoint}(K::Matrix{T}, κ::BaseKernel{T}, X::Matrix{T}, store_upper::Bool)
             (n = size(X,$dim_n)) == size(K,1) == size(K,2) || throw(DimensionMismatch("Kernel matrix must be square and match X."))
             p = size(X,$dim_p)
             for j = 1:n, i = store_upper ? (1:j) : (j:n)
@@ -111,7 +111,7 @@ for (fn, dim_n, X_i, X_j, Y_j) in (
             K
         end
 
-        function ($fn){T<:FloatingPoint}(K::Matrix{T}, κ::AdditiveKernel{T}, X::Matrix{T}, Y::Matrix{T})
+        function ($fn_XY){T<:FloatingPoint}(K::Matrix{T}, κ::BaseKernel{T}, X::Matrix{T}, Y::Matrix{T})
             (n = size(X,$dim_n)) == size(K,1) || throw(DimensionMismatch("Dimension $($dim_n) of X must match dimension 1 of K."))
             (m = size(Y,$dim_n)) == size(K,2) || throw(DimensionMismatch("Dimension $($dim_n) of Y must match dimension 2 of K."))
             size(X,$dim_p) == size(Y,$dim_p) || throw(DimensionMismatch("Dimension $($dim_p) of Y must match dimension $($dim_p) of X."))
@@ -222,11 +222,11 @@ end
 
 #  ARD - Automatic Relevance Determination
 
-pairwise!{T<:FloatingPoint}(K::Matrix{T}, κ::ARD{T}, X::Matrix{T}, is_trans::Bool, store_upper::Bool) = pairwise!(K, κ.k, X, κ.w, is_trans, store_upper)
-pairwise{T<:FloatingPoint}(κ::ARD{T}, X::Matrix{T}, is_trans::Bool, store_upper::Bool) = pairwise(κ.k, X, κ.w, is_trans, store_upper)
+pairwise_X!{T<:FloatingPoint}(K::Matrix{T}, κ::ARD{T}, X::Matrix{T}, store_upper::Bool) = pairwise_X!(K, κ.k, X, κ.w, store_upper)
+pairwise_Xt!{T<:FloatingPoint}(K::Matrix{T}, κ::ARD{T}, X::Matrix{T}, store_upper::Bool) = pairwise_Xt!(K, κ.k, X, κ.w, store_upper)
 
-pairwise!{T<:FloatingPoint}(K::Matrix{T}, κ::ARD{T}, X::Matrix{T}, Y::Matrix{T}, is_trans::Bool) = pairwise!(K, κ.k, X, Y, κ.w, is_trans)
-pairwise{T<:FloatingPoint}(κ::ARD{T}, X::Matrix{T}, Y::Matrix{T}, is_trans::Bool) = pairwise(κ.k, X, Y, κ.w, is_trans)
+pairwise_XY!{T<:FloatingPoint}(K::Matrix{T}, κ::ARD{T}, X::Matrix{T}, Y::Matrix{T}) = pairwise_XY!(K, κ.k, X, Y, κ.w)
+pairwise_XtYt!{T<:FloatingPoint}(K::Matrix{T}, κ::ARD{T}, X::Matrix{T}, Y::Matrix{T}) = pairwise_XtYt!(K, κ.k, X, Y, κ.w)
 
 
 #===========================================================================
@@ -332,26 +332,26 @@ function squared_distance!{T<:FloatingPoint}(K::Matrix{T}, xᵀx::Vector{T}, y�
     K
 end
 
-function pairwise_XY!{T<:Base.LinAlg.BlasReal}(K::Matrix{T}, κ::SquaredDistanceKernel{T,:t1}, X::Matrix{T}, Y::Matrix{T}, store_upper::Bool)
-    gramian_X!(K, X, Y)
+function pairwise_XY!{T<:Base.LinAlg.BlasReal}(K::Matrix{T}, κ::SquaredDistanceKernel{T,:t1}, X::Matrix{T}, Y::Matrix{T})
+    gramian_XY!(K, X, Y)
     squared_distance!(K, dot_rows(X), dot_rows(Y))
 end
 
-function pairwise_XtYt!{T<:Base.LinAlg.BlasReal}(K::Matrix{T}, κ::SquaredDistanceKernel{T,:t1}, X::Matrix{T}, Y::Matrix{T}, store_upper::Bool)
-    gramian_Xt!(K, X, Y)
+function pairwise_XtYt!{T<:Base.LinAlg.BlasReal}(K::Matrix{T}, κ::SquaredDistanceKernel{T,:t1}, X::Matrix{T}, Y::Matrix{T})
+    gramian_XtYt!(K, X, Y)
     squared_distance!(K, dot_columns(X), dot_columns(Y))
 end
 
-function pairwise_XY!{T<:Base.LinAlg.BlasReal}(K::Matrix{T}, κ::SquaredDistanceKernel{T,:t1}, X::Matrix{T}, Y::Matrix{T}, w::Vector{T}, store_upper::Bool)
+function pairwise_XY!{T<:Base.LinAlg.BlasReal}(K::Matrix{T}, κ::SquaredDistanceKernel{T,:t1}, X::Matrix{T}, Y::Matrix{T}, w::Vector{T})
     Z = scale(X, w)
     V = scale(Y, w)
-    gramian_X!(K, Z, V)
+    gramian_XY!(K, Z, V)
     squared_distance!(K, dot_rows(Z), dot_rows(V))
 end
 
-function pairwise_XtYt!{T<:Base.LinAlg.BlasReal}(K::Matrix{T}, κ::SquaredDistanceKernel{T,:t1}, X::Matrix{T}, Y::Matrix{T}, w::Vector{T}, store_upper::Bool)
+function pairwise_XtYt!{T<:Base.LinAlg.BlasReal}(K::Matrix{T}, κ::SquaredDistanceKernel{T,:t1}, X::Matrix{T}, Y::Matrix{T}, w::Vector{T})
     Z = scale(w, X)
     V = scale(w, Y)
-    gramian_Xt!(K, X, Y)
+    gramian_XtYt!(K, Z, V)
     squared_distance!(K, dot_columns(Z), dot_columns(V))
 end

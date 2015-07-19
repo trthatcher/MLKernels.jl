@@ -133,7 +133,7 @@ ScalarProductKernel() = ScalarProductKernel{Float64}()
 ismercer(::ScalarProductKernel) = true
 
 function description_string{T<:FloatingPoint}(κ::ScalarProductKernel{T}, eltype::Bool = true)
-    "ScalarProduct" * (eltype ? "{$(T)}" : "") * "()"
+    "ScalarProductKernel" * (eltype ? "{$(T)}" : "") * "()"
 end
 
 convert{T<:FloatingPoint}(::Type{ScalarProductKernel{T}}, κ::ScalarProductKernel) = ScalarProductKernel{T}()
