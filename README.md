@@ -3,9 +3,7 @@
 [![Build Status](https://travis-ci.org/trthatcher/MLKernels.jl.svg?branch=master)](https://travis-ci.org/trthatcher/MLKernels.jl)
 [![Coverage Status](https://coveralls.io/repos/trthatcher/MLKernels.jl/badge.svg)](https://coveralls.io/r/trthatcher/MLKernels.jl)
 
-### Introduction
-
-MLKernels.jl is a Julia package for Mercer and non-Mercer kernels that are used in the kernel methods of machine learning. The goal is to provide a Julia datatype for machine learning kernels and an efficient set of methods to calculate or approximate kernel matrices. The package has no dependencies beyond base Julia.
+MLKernels.jl is a Julia package for Mercer and negative definite kernels that are used in the kernel methods of machine learning. The goal is to provide a Julia datatype for machine learning kernels and an efficient set of methods to calculate or approximate kernel matrices. The package has no dependencies beyond base Julia.
 
 Consistent with traditional literature on kernels, kernels come in two flavours:
  - Positive Definite Kernels (Mercer Kernels)
@@ -19,7 +17,88 @@ Kernels are further broken into three categories:
  - Composite Kernels: These kernels are a scalar transformation of the result of a Base Kernel. As a result, they are not standalone; they require a base kernel. Most kernels experiencing widespread usage fall into this category.
  - Combination Kernels: These kernels are the result of addition or multiplication of Base or Composite kernels.
 
-Base Kernels are available as Automatic Relevance Determination (ARD) Kernels which act as a separate scaling constant for each element-wise operation on the inputs. For the dot product, this corresponds to a linear scaling of each of the dimensions.
+Base kernels can be instantiated on their own. The following chart illustrates the possible base kernel and composite kernel combinations:
+
+<table>
+  <tr>
+    <th rowspan="2">Composite Kernels</th>
+    <th align="center" colspan="5">Base Kernels</th>
+  </tr>
+  <tr>
+    <td align="center">Squared Distance</td>
+    <td align="center">Chi Squared</td>
+    <td align="center">Sine Squared</td>
+    <td align="center">Scalar Product</td>
+    <td align="center">Mercer Sigmoid</td>
+  </tr>
+  <tr>
+    <td align="center">Power Kernel</td>
+    <td align="center">&#10004;</td>
+    <td align="center">&#10004;</td>
+    <td align="center">&#10004;</td>
+    <td align="center"></td>
+    <td align="center"></td>
+  </tr>
+  <tr>
+    <td align="center">Log Kernel</td>
+    <td align="center">&#10004;</td>
+    <td align="center">&#10004;</td>
+    <td align="center">&#10004;</td>
+    <td align="center"></td>
+    <td align="center"></td>
+  </tr>
+  <tr>
+    <td align="center">Exponential Kernel</td>
+    <td align="center">&#10004;</td>
+    <td align="center">&#10004;</td>
+    <td align="center">&#10004;</td>
+    <td align="center"></td>
+    <td align="center"></td>
+  </tr>
+  <tr>
+    <td align="center">Rational Quadratic Kernel</td>
+    <td align="center">&#10004;</td>
+    <td align="center">&#10004;</td>
+    <td align="center">&#10004;</td>
+    <td align="center"></td>
+    <td align="center"></td>
+  </tr>
+  <tr>
+    <td align="center">Matern Kernel</td>
+    <td align="center">&#10004;</td>
+    <td align="center">&#10004;</td>
+    <td align="center">&#10004;</td>
+    <td align="center"></td>
+    <td align="center"></td>
+  </tr>
+  <tr>
+    <td align="center">Polynomial Kernel</td>
+    <td align="center"></td>
+    <td align="center"></td>
+    <td align="center"></td>
+    <td align="center">&#10004;</td>
+    <td align="center">&#10004;</td>
+  </tr>
+  <tr>
+    <td align="center">ExponentiatedKernel</td>
+    <td align="center"></td>
+    <td align="center"></td>
+    <td align="center"></td>
+    <td align="center">&#10004;</td>
+    <td align="center">&#10004;</td>
+  </tr>
+  <tr>
+    <td align="center">Sigmoid Kernel*</td>
+    <td align="center"></td>
+    <td align="center"></td>
+    <td align="center"></td>
+    <td align="center">&#10004;</td>
+    <td align="center">&#10004;</td>
+  </tr>
+</table>
+*Not a true kernel
+
+Base Kernels are available as Automatic Relevance Determination (ARD) Kernels which act as a separate scaling constant for each element-wise operation on the inputs. For the dot product and the squared distance kernel, this corresponds to a linear scaling of each of the dimensions.
 
 ### Getting Started
 
@@ -110,6 +189,48 @@ julia> kernelmatrix(ϕ, X, 'T')
 ### Reference
 
 #### Base Kernels
+
+<table>
+  <tr>
+    <th>Definity</th>
+    <th>Type</th>
+    <th>k(x,y)</th>
+    <th>Restrictions</th>
+    <th>Notes</th>
+  </tr>
+  <tr>
+    <td rowspan=3>Negative Definite Kernels</td>
+    <td>SquaredDistanceKernel</td>
+    <td>sum((x-y).^2t)</td>
+    <td>t &gt; 0</td>
+    <td>Uses BLAS for t = 1</td>
+  </tr>
+  <tr>
+    <td>SineSquaredKernel</td>
+    <td>sum(sin(x-y).^2t)</td>
+    <td>t &gt; 0</td>
+    <td></td>
+  </tr>
+  <tr>
+    <td>ChiSquaredKernel</td>
+    <td>sum(((x-y).^2 ./ (x+y)).^t)</td>
+    <td>t &gt; 0</td>
+    <td></td>
+  </tr>
+  <tr>
+    <td rowspan=2>Mercer Kernels</td>
+    <td>ScalarProductKernel</td>
+    <td>dot(x,y)</td>
+    <td></td>
+    <td>Uses BLAS</td>
+  </tr>
+  <tr>
+    <td>MercerSigmoidKernel</td>
+    <td>dot(tanh((x.-d)/b),tanh((y.-d)/b))</td>
+    <td>t &gt; 0</td>
+    <td>Uses BLAS</td>
+  </tr>
+</table>
 
 #### Composite Kernels
 
