@@ -102,7 +102,7 @@ Base Kernels are available as Automatic Relevance Determination (ARD) Kernels wh
 
 ### Getting Started
 
-A kernel can be constructed using one of the many predefined kernels. Once a kernel has been constructed, it can be passed to the `kernel` function and used to compute kernel function of two vectors. For example, the simplest base kernel is the scalar (dot) product kernel:
+The `Kernel` data type is parametric - either `Float32` or `Float64` depending on the input arguments. The default is `Float64`. A kernel can be constructed using one of the many predefined kernels. Once a kernel has been constructed, it can be passed to the `kernel` function and used to compute kernel function of two vectors. For example, the simplest base kernel is the scalar (dot) product kernel:
 
 ```julia
 julia> κ = ScalarProductKernel()
@@ -186,168 +186,31 @@ julia> kernelmatrix(ϕ, X, 'T')
  0.245039  0.408998  1.0   
 ```
 
-### Reference
+One key property of kernels is whether or not they are Mercer kernels or negative definite kernels. The functions `ismercer` and `isnegdef` can be used to test whether or not a kernel is Mercer or negative definite:
 
-#### Base Kernels
+```julia
+julia> ismercer(SquaredDistanceKernel())
+false
 
-<table>
-  <tr>
-    <th>Definity</th>
-    <th>Type</th>
-    <th>k(x,y)</th>
-    <th>Restrictions</th>
-    <th>Notes</th>
-  </tr>
-  <tr>
-    <td rowspan=3>Negative Definite Kernels</td>
-    <td>SquaredDistanceKernel</td>
-    <td>sum((x-y).^2t)</td>
-    <td>t &gt; 0</td>
-    <td>Uses BLAS for t = 1</td>
-  </tr>
-  <tr>
-    <td>SineSquaredKernel</td>
-    <td>sum(sin(x-y).^2t)</td>
-    <td>t &gt; 0</td>
-    <td></td>
-  </tr>
-  <tr>
-    <td>ChiSquaredKernel</td>
-    <td>sum(((x-y).^2 ./ (x+y)).^t)</td>
-    <td>t &gt; 0</td>
-    <td></td>
-  </tr>
-  <tr>
-    <td rowspan=2>Mercer Kernels</td>
-    <td>ScalarProductKernel</td>
-    <td>dot(x,y)</td>
-    <td></td>
-    <td>Uses BLAS</td>
-  </tr>
-  <tr>
-    <td>MercerSigmoidKernel</td>
-    <td>dot(tanh((x.-d)/b),tanh((y.-d)/b))</td>
-    <td>t &gt; 0</td>
-    <td>Uses BLAS</td>
-  </tr>
-</table>
+julia> isnegdef(SquaredDistanceKernel())
+true
 
-#### Composite Kernels
+julia> ismercer(ScalarProductKernel())
+true
 
-The following table outlines all documented kernel combinations available:
+julia> isnegdef(ScalarProductKernel())
+false
+```
 
-<table>
-  <tr>
-    <th colspan="2" rowspan="2">Composite Kernels</th>
-    <th align="center" colspan="5">Base Kernels</th>
-  </tr>
-  <tr>
-    <td align="center">Squared Distance</td>
-    <td align="center">Chi Squared</td>
-    <td align="center">Sine Squared</td>
-    <td align="center">Scalar Product</td>
-    <td align="center">Mercer Sigmoid</td>
-  </tr>
-  <tr>
-    <td align="center"rowspan="2">Negative Definite Kernels</td>
-    <td align="center">Power Kernel</td>
-    <td align="center">&#10004;</td>
-    <td align="center">&#10004;</td>
-    <td align="center">&#10004;</td>
-    <td align="center"></td>
-    <td align="center"></td>
-  </tr>
-  <tr>
-    <td align="center">Log Kernel</td>
-    <td align="center">&#10004;</td>
-    <td align="center">&#10004;</td>
-    <td align="center">&#10004;</td>
-    <td align="center"></td>
-    <td align="center"></td>
-  </tr>
-  <tr>
-    <td rowspan="5">Mercer Kernels</td>
-    <td align="center">Exponential Kernel</td>
-    <td align="center">&#10004;</td>
-    <td align="center">&#10004;</td>
-    <td align="center">&#10004;</td>
-    <td align="center"></td>
-    <td align="center"></td>
-  </tr>
-  <tr>
-    <td align="center">Rational Quadratic Kernel</td>
-    <td align="center">&#10004;</td>
-    <td align="center">&#10004;</td>
-    <td align="center">&#10004;</td>
-    <td align="center"></td>
-    <td align="center"></td>
-  </tr>
-  <tr>
-    <td align="center">Matern Kernel</td>
-    <td align="center">&#10004;</td>
-    <td align="center">&#10004;</td>
-    <td align="center">&#10004;</td>
-    <td align="center"></td>
-    <td align="center"></td>
-  </tr>
-  <tr>
-    <td align="center">Polynomial Kernel</td>
-    <td align="center"></td>
-    <td align="center"></td>
-    <td align="center"></td>
-    <td align="center">&#10004;</td>
-    <td align="center">&#10004;</td>
-  </tr>
-  <tr>
-    <td align="center">ExponentiatedKernel</td>
-    <td align="center"></td>
-    <td align="center"></td>
-    <td align="center"></td>
-    <td align="center">&#10004;</td>
-    <td align="center">&#10004;</td>
-  </tr>
-  <tr>
-    <td align="center">Non-Kernels</td>
-    <td align="center">Sigmoid Kernel</td>
-    <td align="center"></td>
-    <td align="center"></td>
-    <td align="center"></td>
-    <td align="center">&#10004;</td>
-    <td align="center">&#10004;</td>
-  </tr>
-</table>
+Note that the definity of a base kernel does not imply anything about the definity of the composite kernel. For example, the Gaussian Kernel is Mercer but the underlying Squared Distance base kernel is negative definite:
 
+```julia
+julia> ismercer(GaussianKernel())
+true
 
-
-New Kernels may be constructed by scaling and translating existing kernels by positive real numbers. Further, kernels may be arbitrarily added and multiplied together to create composite kernels.
-
-
-The `Kernel` data type is parametric - either `Float32` or `Float64` depending on the input arguments. 
-
-Not all of the provided kernels are Mercer kernels (a kernel is Mercer if its kernel matrices are positive semi-definite). The function `ismercer` will return `true` if the kernel is a Mercer kernel, and `false` otherwise.
-
-Given a data matrix with one observation per row, the kernel matrix for kernel `κ` can be calculated using the `kernelmatrix` method:
-
-## Convex Cone of Kernels
-
-According to the properties of Mercer kernels:
-
-- If κ is a kernel and a > 0, then aκ is also a kernel
-- If κ₁ is a kernel and κ₂ is a kernel, then κ₁ + κ₂ is a kernel
-
-In other words, Mercer Kernels form a convex cone. This package supports addition and multiplication of Kernel objects:
-
-## Kernel Product
-
-Mercer Kernels have the additional property:
-
-- If κ₁ is a kernel and κ₂ is a kernel, then κ₁κ₂ is a kernel
-
-This package allows for a scaled point-wise product of kernels to be defined using the `KernelProduct` type:
-
-## Approximating Kernel Matrices
-
-The Nystrom Method of approximating kernel matrices has been implemented. It requires an additional array of integers that specify the sampled columns. It should be noted that the Nystrom method is intended for large matrices:
+julia> isnegdef(GaussianKernel())
+false
+```
 
 #### Citations
 
