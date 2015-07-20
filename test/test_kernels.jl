@@ -14,7 +14,7 @@ macro test_approx_eq_type(value, reference, typ)
 end
 
 # Check each field for equality with args (assumed same order)
-function check_fields(kernelobject::BaseKernel, field_values)
+function check_fields(kernelobject::Kernel, field_values)
     fields = names(kernelobject)
     for i = 1:length(fields)
         @test getfield(kernelobject, fields[i]) === field_values[i]
@@ -22,33 +22,63 @@ function check_fields(kernelobject::BaseKernel, field_values)
 end
 
 # Iterate through constructor cases - test only Float64 to ensure fields are populating as expected
-function test_constructor_case{T<:BaseKernel}(kernelobject::Type{T}, default_args, test_args)
+function test_constructor_case{T<:Kernel}(kernelobject::Type{T}, default_args, test_args)
     n = length(names(kernelobject))
-    check_fields((kernelobject)(), Float64[default_args...])
+    check_fields((kernelobject)(), [default_args...])
     for i = 1:n
-        case_args = Float64[test_args[1:i]..., default_args[(i+1):end]...]
+        case_args = [test_args[1:i]..., default_args[(i+1):end]...]
         κ = (kernelobject)(case_args[1:i]...)
         check_fields(κ, case_args)
     end
 end
 
-function test_constructor_case{T<:CompositeKernel}(kernelobject::Type{T}, default_kernel, default_args, test_kernel, test_args)
-    n = length(default_args)
-    κ = (kernelobject)()
-    default_kernel_64 = convert(Kernel{Float64}, default_kernel)
-    check_fields(κ, [default_kernel_64, Float64[default_args...]...])
-   # check_fields((kernelobject)(convert(Kernel{Float64},(test_kernel)())), Float64[default_args...])
-    #if n >= 1
-     #   for i = 1:n
-      #      case_args = Float64[test_args[1:i]..., default_args[(i+1):end]...]
-       #     κ = (kernelobject)(case_args[1:i]...)
-        #    check_fields(κ, case_args)
-        #end
-    #end
+# Test Base Kernels
+
+T = Float64
+
+info("Testing BaseKernel show()")
+for kernelobject in (
+        SquaredDistanceKernel,
+        SineSquaredKernel,
+        ChiSquaredKernel,
+        ScalarProductKernel,
+        MercerSigmoidKernel
+    )
+    show(STDOUT, (kernelobject)())
+    println("")
+end
+
+info("Testing BaseKernel constructors")
+for (kernelobject, default_args, test_args) in (
+        (SquaredDistanceKernel, T[1], T[0.5]),
+        (SineSquaredKernel, T[1], T[0.5]),
+        (ChiSquaredKernel, T[1], T[0.5]),
+        #(ScalarProductKernel,Float64[],Float64[])
+        (MercerSigmoidKernel, T[0, 1], T[1, 2])
+    )
+    test_constructor_case(kernelobject, default_args, test_args)
+end
+
+info("Testing CompositeKernel constructors")
+for (kernelobject, default_args, test_args) in (
+        (ExponentialKernel, [SquaredDistanceKernel(one(T)), T[1, 1]...], [ChiSquaredKernel(one(T)), T[2,0.5]...]),
+    )
+    test_constructor_case(kernelobject, default_args, test_args)
 end
 
 
 
+
+
+
+
+
+
+
+
+
+
+#=
 # Check each field for equality with args (assumed same order)
 function check_fields(kernelobject::CompositeKernel, field_values)
     fields = names(kernelobject)
@@ -62,13 +92,6 @@ end
 
 
 # Compare the values of two kernels of the same type
-#function check_fields{T<:StandardKernel}(kernel1::T, kernel2::T)
-#    fields = names(kernel1)
-#    for i = 1:length(fields)
-#        @test getfield(kernel1, fields[i]) === getfield(kernel2, fields[i])
-#    end
-#end
-
 function test_fields_equal(kernel1, kernel2)
     fields = names(kernel1)
     @test fields == names(kernel2)
@@ -123,38 +146,7 @@ function test_kernel_function{T<:FloatingPoint}(K::Kernel, x::Vector{T}, y::Vect
     @test_approx_eq_type kernelmatrix(K, x'', y'', 'T')[1,1]   value T # matrix X',Y'
 end
 
-
-# Test Base Kernels
-
-info("Testing BaseKernel show()")
-for kernelobject in (
-        SquaredDistanceKernel,
-        SineSquaredKernel,
-        ChiSquaredKernel,
-        ScalarProductKernel,
-        MercerSigmoidKernel
-    )
-    show(STDOUT, (kernelobject)())
-    println("")
-end
-
-info("Testing BaseKernel constructors")
-for (kernelobject, default_args, test_args) in (
-        (SquaredDistanceKernel, [1.0], [0.5]),
-        (SineSquaredKernel, [1.0], [0.5]),
-        (ChiSquaredKernel, [1.0], [0.5]),
-        #(ScalarProductKernel,Float64[],Float64[])
-        (MercerSigmoidKernel, [0.0, 1.0], [1.0, 2.0])
-    )
-    test_constructor_case(kernelobject, default_args, test_args)
-end
-
-info("Testing CompositeKernel constructors")
-for (kernelobject, default_kernel, default_args, test_kernel, test_args) in (
-        (ExponentialKernel, SquaredDistanceKernel(), [1.0, 1.0], ChiSquaredKernel(), [2.0,0.5]),
-    )
-    test_constructor_case(kernelobject, default_kernel, default_args, test_kernel, test_args)
-end
+=#
 
 
 

@@ -53,7 +53,7 @@ immutable ARD{T<:FloatingPoint} <: BaseKernel{T}
     k::AdditiveKernel{T}
     w::Vector{T}
     function ARD(κ::AdditiveKernel{T}, w::Vector{T})
-        all(w .> 0) || error("Weights must be positive real numbers.")
+        all(w .> 0) || throw(ArgumentError("Weight vector w must consist of positive values."))
         new(κ, w)
     end
 end
@@ -125,8 +125,8 @@ immutable KernelProduct{T<:FloatingPoint} <: CombinationKernel{T}
     a::T
     k::Vector{Kernel{T}}
     function KernelProduct(a::T, κ::Vector{Kernel{T}})
-        a > 0 || error("a = $(a) must be greater than zero.")
-        all(ismercer, κ) || warn("Only Mercer kernels are closed under multiplication.")
+        a > 0 || throw(ArgumentError("a = $(a) must be greater than zero."))
+        all(ismercer, κ) || throw(ArgumentError("All kernels must be Mercer for closure under multiplication."))
         new(a, κ)
     end
 end
@@ -136,14 +136,14 @@ immutable KernelSum{T<:FloatingPoint} <: CombinationKernel{T}
     a::T
     k::Vector{Kernel{T}}
     function KernelSum(a::T, κ::Vector{Kernel{T}})
-        a >= 0 || error("a = $(a) must be greater than or equal to zero.")
-        all(ismercer, κ) || all(isnegdef, κ) || warn("Mixed kernels detected.")
+        a >= 0 || throw(ArgumentError("a = $(a) must be greater than or equal to zero."))
+        all(ismercer, κ) || all(isnegdef, κ) || throw(ArgumentError("All kernels must be Mercer or negative definite for closure under addition"))
         new(a, κ)
     end
 end
 KernelSum{T<:FloatingPoint}(a::T, κ::Vector{Kernel{T}}) = KernelSum{T}(a, κ)
 
-ismercer(ψ::KernelSum) = all(ismercer, ψ.k)
+isnegdef(ψ::KernelSum) = all(isnegdef, ψ.k)
 
 for (kernel_object, kernel_op, kernel_array_op, identity) in (
         (:KernelProduct, :*, :prod, :1),
@@ -160,7 +160,7 @@ for (kernel_object, kernel_op, kernel_array_op, identity) in (
         convert{T<:FloatingPoint}(::Type{CombinationKernel{T}}, ψ::$kernel_object) = $kernel_object(convert(T, ψ.a), Kernel{T}[ψ.k...])
         convert{T<:FloatingPoint}(::Type{Kernel{T}}, ψ::$kernel_object) = $kernel_object(convert(T, ψ.a), Kernel{T}[ψ.k...])
 
-        isnegdef(ψ::$kernel_object) = all(isnegdef, ψ.k)
+        ismercer(ψ::$kernel_object) = all(ismercer, ψ.k)
 
         function description_string{T<:FloatingPoint}(ψ::$kernel_object{T}, eltype::Bool = true)
             descs = map(κ -> description_string(κ, false), ψ.k)
