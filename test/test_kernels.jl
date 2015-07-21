@@ -32,48 +32,39 @@ function test_constructor_case{T<:Kernel}(kernelobject::Type{T}, default_args, t
     end
 end
 
+
+indent_block = "   "
+
 # Test Base Kernels
 
 T = Float64
 
-info("Testing BaseKernel show()")
-for kernelobject in (
-        SquaredDistanceKernel,
-        SineSquaredKernel,
-        ChiSquaredKernel,
-        ScalarProductKernel,
-        MercerSigmoidKernel
+SDKern = SquaredDistanceKernel
+SSKern = SineSquaredKernel
+CSKern = ChiSquaredKernel
+SPKern = ScalarProductKernel
+MSKern = MercerSigmoidKernel
+
+print("Testing CompositeKernel constructors")
+for (kernelobject, fields, default_fields, test_fields) in (
+        (SquaredDistanceKernel, [:t], T[1], T[0.5]),
+        (SineSquaredKernel, [:t], T[1], T[0.5]),
+        (ChiSquaredKernel, [:t], T[1], T[0.5]),
+        (ScalarProductKernel,[], [], []),
+        (MercerSigmoidKernel, [:d, :b], T[0, 1], T[1, 2])
     )
-    show(STDOUT, (kernelobject)())
-    println("")
+    print(indent_block, "Testing ", kernelobject, " [] ")
+    (kernelobject)()
+    for i = 1:length(fields)
+        print(fields[1:i], " ")
+        test_args = [test_fields[1:i]..., default_fields[i+1:end]...]
+        k = (kernelobject)(test_args...)
+        for j = 1:length(fields)
+            @test getfield(k, fields[j]) === test_args[j]
+        end
+    end
+    println("... Done")
 end
-
-info("Testing BaseKernel constructors")
-for (kernelobject, default_args, test_args) in (
-        (SquaredDistanceKernel, T[1], T[0.5]),
-        (SineSquaredKernel, T[1], T[0.5]),
-        (ChiSquaredKernel, T[1], T[0.5]),
-        #(ScalarProductKernel,Float64[],Float64[])
-        (MercerSigmoidKernel, T[0, 1], T[1, 2])
-    )
-    test_constructor_case(kernelobject, default_args, test_args)
-end
-
-info("Testing CompositeKernel constructors")
-for (kernelobject, default_args, test_args) in (
-        (ExponentialKernel, [SquaredDistanceKernel(one(T)), T[1, 1]...], [ChiSquaredKernel(one(T)), T[2,0.5]...]),
-    )
-    test_constructor_case(kernelobject, default_args, test_args)
-end
-
-
-
-
-
-
-
-
-
 
 
 
