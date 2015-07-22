@@ -13,9 +13,9 @@ Negative definite kernels are equivalent to conditionally positive definite kern
 
 Kernels are further broken into three categories:
 
- - Base Kernels: These are simple kernels that serve as building blocks for more complex kernels. They are easily extended.
- - Composite Kernels: These kernels are a scalar transformation of the result of a Base Kernel. As a result, they are not standalone; they require a base kernel. Most kernels experiencing widespread usage fall into this category.
- - Combination Kernels: These kernels are the result of addition or multiplication of Base or Composite kernels.
+ - **Base Kernels**: These are simple kernels that serve as building blocks for more complex kernels. They are easily extended.
+ - **Composite Kernels**: These kernels are a scalar transformation of a Base Kernel. As a result, they are not standalone; they require a base kernel. Most kernels with widespread usage fall into this category.
+ - **Combination Kernels**: These kernels are the result of addition or multiplication of Base or Composite kernels.
 
 Base kernels can be instantiated on their own. The following chart illustrates the possible base kernel and composite kernel combinations:
 
@@ -96,9 +96,9 @@ Base kernels can be instantiated on their own. The following chart illustrates t
     <td align="center">&#10004;</td>
   </tr>
 </table>
-*Not a true kernel
+**Not a true kernel*
 
-Base Kernels are available as Automatic Relevance Determination (ARD) Kernels which act as a separate scaling constant for each element-wise operation on the inputs. For the dot product and the squared distance kernel, this corresponds to a linear scaling of each of the dimensions.
+Base Kernels are available as **Automatic Relevance Determination** (ARD) Kernels which act as a separate scaling constant for each element-wise operation on the inputs. For the dot product and the squared distance kernel, this corresponds to a linear scaling of each of the dimensions.
 
 ### Getting Started
 
