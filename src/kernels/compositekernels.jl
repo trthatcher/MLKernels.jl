@@ -206,8 +206,7 @@ immutable PolynomialKernel{T<:FloatingPoint,CASE} <: CompositeKernel{T}
         new(κ, α, c, d)
     end
 end
-PolynomialKernel{T<:FloatingPoint}(κ::BaseKernel{T}, α::T = one(T), c::T = one(T), d::T = convert(T, 2)) = PolynomialKernel{T, d == 1 ? :d1 : :Ø}(κ, α, c, d)
-PolynomialKernel{T<:FloatingPoint}(κ::BaseKernel{T}, α::T, c::T, d::Integer) = PolynomialKernel(κ, α, c, convert(T, d))
+PolynomialKernel{T<:FloatingPoint}(κ::BaseKernel{T} = ScalarProductKernel(), α::T = one(T), c::T = one(T), d::T = convert(T, 2)) = PolynomialKernel{T, d == 1 ? :d1 : :Ø}(κ, α, c, d)
 
 ismercer(::PolynomialKernel) = true
 

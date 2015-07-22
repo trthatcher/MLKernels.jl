@@ -163,4 +163,4 @@ end
 
 convert{T<:FloatingPoint}(::Type{MercerSigmoidKernel{T}}, κ::MercerSigmoidKernel) = MercerSigmoidKernel{T}(convert(T,κ.d), convert(T,κ.b))
 
-kappa{T<:FloatingPoint}(κ::MercerSigmoidKernel{T}, x::T) = tanh((x-d)/b)
+kappa{T<:FloatingPoint}(κ::MercerSigmoidKernel{T}, x::T) = tanh((x-κ.d)/κ.b)

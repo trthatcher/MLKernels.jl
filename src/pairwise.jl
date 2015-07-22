@@ -37,7 +37,7 @@ function kappa_matrix!{T<:FloatingPoint}(κ::Kernel{T}, X::Matrix{T})
     end
     X
 end
-kappa_matrix{T<:FloatingPoint}(κ::Kernel{T}, X::Matrix{T}) = kappa_array!(κ, copy(X))
+kappa_matrix{T<:FloatingPoint}(κ::Kernel{T}, X::Matrix{T}) = kappa_matrix!(κ, copy(X))
 
 function kappa_square_matrix!{T<:FloatingPoint}(κ::Kernel{T}, X::Matrix{T}, store_upper::Bool)
     (n = size(X,1)) == size(X,2) || throw(DimensionMismatch("X must be square."))
@@ -46,7 +46,7 @@ function kappa_square_matrix!{T<:FloatingPoint}(κ::Kernel{T}, X::Matrix{T}, sto
     end
     X
 end
-kappa_square_matrix{T<:FloatingPoint}(κ::Kernel{T}, X::Matrix{T}, store_upper::Bool) = kappa_array!(κ, copy(X), store_upper)
+kappa_square_matrix{T<:FloatingPoint}(κ::Kernel{T}, X::Matrix{T}, store_upper::Bool) = kappa_matrix!(κ, copy(X), store_upper)
 
 
 #===================================================================================================
@@ -89,7 +89,7 @@ function pairwise!{T<:FloatingPoint}(K::Matrix{T}, κ::BaseKernel{T}, X::Matrix{
     end
 end
 function pairwise{T<:FloatingPoint}(κ::BaseKernel{T}, X::Matrix{T}, Y::Matrix{T}, is_trans::Bool)
-    pairwise!(init_pairwise(X, is_trans), κ, X, Y, is_trans)
+    pairwise!(init_pairwise(X, Y, is_trans), κ, X, Y, is_trans)
 end
 
 
@@ -154,8 +154,8 @@ function pairwise{T<:FloatingPoint}(κ::AdditiveKernel{T}, x::Vector{T}, y::Vect
 end
 
 for (fn_X, fn_XY, dim_n, X_ji, X_ki, Y_ki) in (
-        (:pairwise_X!,  :pairwise_XY,   1, parse("X[j,i]"), parse("X[k,i]"), parse("Y[k,i]")),
-        (:pairwise_Xt!, :pairwise_XtYt, 2, parse("X[i,j]"), parse("X[i,k]"), parse("Y[i,k]"))
+        (:pairwise_X!,  :pairwise_XY!,   1, parse("X[j,i]"), parse("X[k,i]"), parse("Y[k,i]")),
+        (:pairwise_Xt!, :pairwise_XtYt!, 2, parse("X[i,j]"), parse("X[i,k]"), parse("Y[i,k]"))
     )
     dim_p = dim_n == 1 ? 2 : 1
     @eval begin
