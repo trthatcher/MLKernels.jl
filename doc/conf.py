@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 #
 # MLKernels documentation build configuration file, created by
-# sphinx-quickstart on Wed Jul 22 08:58:05 2015.
+# sphinx-quickstart on Wed Jul 22 23:02:52 2015.
 #
 # This file is execfile()d with the current directory set to its
 # containing dir.
