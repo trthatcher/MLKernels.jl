@@ -1,13 +1,3 @@
-using Base.Test
-importall MLKernels
-
-function matrix_test_approx_eq(A::Array, B::Array)
-    length(A) == length(B) || error("dimensions do not conform")
-    for i = 1:length(A)
-        @test_approx_eq A[i] B[i]
-    end
-end
-
 print("- Testing matrix functions ... ")
 for T in (Float32,Float64,BigFloat)
     S1 = T[1 2 3;

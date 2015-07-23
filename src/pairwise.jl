@@ -222,6 +222,13 @@ end
 
 #  ARD - Automatic Relevance Determination
 
+function pairwise{T<:FloatingPoint}(κ::ARD{T}, x::T, y::T) 
+    length(κ.w) == 1 || throw(DimensionMismatch("w must be of length 1 to operate on scalars."))
+    pairwise(κ.k, x, y, κ.w[1])
+end
+
+pairwise{T<:FloatingPoint}(κ::ARD{T}, x::Vector{T}, y::Vector{T}) = pairwise(κ.k, x, y, κ.w)
+
 pairwise_X!{T<:FloatingPoint}(K::Matrix{T}, κ::ARD{T}, X::Matrix{T}, store_upper::Bool) = pairwise_X!(K, κ.k, X, κ.w, store_upper)
 pairwise_Xt!{T<:FloatingPoint}(K::Matrix{T}, κ::ARD{T}, X::Matrix{T}, store_upper::Bool) = pairwise_Xt!(K, κ.k, X, κ.w, store_upper)
 
@@ -263,30 +270,30 @@ function pairwise_X!{T<:Base.LinAlg.BlasReal}(K::Matrix{T}, κ::SeparableKernel{
     gramian_X!(K, Z, store_upper)
 end
 function pairwise_Xt!{T<:Base.LinAlg.BlasReal}(K::Matrix{T}, κ::SeparableKernel{T}, X::Matrix{T}, w::Vector{T}, store_upper::Bool)
-    Z = scale!(kappa_matrix(X, κ), w)
+    Z = scale!(w, kappa_matrix(κ, X))
     gramian_Xt!(K, Z, store_upper)
 end
 
-function pairwise_X!{T<:Base.LinAlg.BlasReal}(K::Matrix{T}, κ::SeparableKernel{T}, X::Matrix{T}, Y::Matrix{T})
+function pairwise_XY!{T<:Base.LinAlg.BlasReal}(K::Matrix{T}, κ::SeparableKernel{T}, X::Matrix{T}, Y::Matrix{T})
     Z = kappa_matrix(κ, X)
     V = kappa_matrix(κ, Y)
-    gramian_X!(K, Z, V)
+    gramian_XY!(K, Z, V)
 end
-function pairwise_Xt!{T<:Base.LinAlg.BlasReal}(K::Matrix{T}, κ::SeparableKernel{T}, X::Matrix{T}, Y::Matrix{T})
+function pairwise_XtYt!{T<:Base.LinAlg.BlasReal}(K::Matrix{T}, κ::SeparableKernel{T}, X::Matrix{T}, Y::Matrix{T})
     Z = kappa_matrix(κ, X)
     V = kappa_matrix(κ, Y)
-    gramian_Xt!(K, Z, V)
+    gramian_XtYt!(K, Z, V)
 end
 
 function pairwise_XY!{T<:Base.LinAlg.BlasReal}(K::Matrix{T}, κ::SeparableKernel{T}, X::Matrix{T}, Y::Matrix{T}, w::Vector{T})
     Z = scale!(kappa_matrix(κ, X), w)
     V = scale!(kappa_matrix(κ, Y), w)
-    gramian_X!(K, Z, V)
+    gramian_XY!(K, Z, V)
 end
 function pairwise_XtYt!{T<:Base.LinAlg.BlasReal}(K::Matrix{T}, κ::SeparableKernel{T}, X::Matrix{T}, Y::Matrix{T}, w::Vector{T})
-    Z = scale!(kappa_matrix(X, κ), w)
-    V = scale!(kappa_matrix(κ, Y), w)
-    gramian_Xt!(K, Z, V)
+    Z = scale!(w, kappa_matrix(κ, X))
+    V = scale!(w, kappa_matrix(κ, Y))
+    gramian_XtYt!(K, Z, V)
 end
 
 
