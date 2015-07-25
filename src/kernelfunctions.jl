@@ -42,8 +42,16 @@ function kernelmatrix{T<:FloatingPoint}(κ::Kernel{T}, X::Matrix{T}, trans::Char
     kernelmatrix!(init_pairwise(X, is_trans), κ, X, is_trans, uplo == 'U', symmetrize)
 end
 
+function kernelmatrix{T<:FloatingPoint}(κ::Kernel{T}, X::Matrix{T}, is_trans::Bool, store_upper::Bool = true, symmetrize::Bool = true)
+    kernelmatrix!(init_pairwise(X, is_trans), κ, X, is_trans, store_upper, symmetrize)
+end
+
 function kernelmatrix{T<:FloatingPoint}(κ::Kernel{T}, X::Matrix{T}, Y::Matrix{T}, trans::Char = 'N')
     is_trans = trans == 'T'
+    kernelmatrix!(init_pairwise(X, Y, is_trans), κ, X, Y, is_trans)
+end
+
+function kernelmatrix{T<:FloatingPoint}(κ::Kernel{T}, X::Matrix{T}, Y::Matrix{T}, is_trans::Bool)
     kernelmatrix!(init_pairwise(X, Y, is_trans), κ, X, Y, is_trans)
 end
 

@@ -73,29 +73,25 @@ end
   Nystrom Method
 ===================================================================================================#
 
-# Moore-Penrose pseudo-inverse for positive semidefinite matrices
-function nystrom_decomp!{T<:FloatingPoint}(S::Matrix{T}, tol::T = eps(T)*maximum(size(S)))
-    tol > 0 || error("tol = $tol must be greater than zero.")
-    (n = size(S, 1)) == size(S, 2) || throw(ArgumentError("S must be a square matrix"))
-    D, V = syevd!('V', 'L', S)
-    @inbounds for i = 1:n
-        if D[i] < tol
-            D[i] = zero(T)
-        else
-            D[i] = 1/sqrt(D[i])
-        end
-    end
-    scale!(V, D)
-end
-
-
 # Nystrom method for Kernel Matrix approximation
-function nystrom{T<:FloatingPoint,S<:Integer}(κ::Kernel{T}, X::Matrix{T}, s::Array{S})
+function nystrom!{T<:FloatingPoint,U<:Integer}(K::Matrix{T}, κ::Kernel{T}, X::Matrix{T}, s::Vector{U}, is_trans::Bool, store_upper::Bool, symmetrize::Bool)
     c = length(s)
     n = size(X, 1)
-    C = kernelmatrix(κ, X[s,:], X)
-    DV = nystrom_decomp!(C[:,s])
-    DVC = BLAS.gemm('T', 'N', C, DV)
-    K = BLAS.syrk('U', 'N', one(T), DVC)
-    syml!(K)
+    C = is_trans ? kernelmatrix(κ, X[:,s], X, true) : kernelmatrix(κ, X[s,:], X, false)
+    D, V = syevd!('V', 'U', is_trans ? C[:,s] : C[s,:])
+    tol = eps(T)*c
+    @inbounds for i = 1:c
+        D[i] = D[i] < tol ? zero(T) : 1/sqrt(D[i])
+    end
+    BLAS.syrk!(store_upper ? 'U' : 'L', 'N', one(T), BLAS.gemm('T', 'N', C, scale!(V, D)), zero(T), K)
+    symmetrize ? (store_upper ?  syml!(K) : symu!(K)) : K
+end
+
+function nystrom{T<:FloatingPoint,U<:Integer}(κ::Kernel{T}, X::Matrix{T}, s::Array{U}, trans::Char = 'N', uplo::Char = 'U', symmetrize::Bool = true)
+    is_trans = trans == 'T'
+    nystrom!(init_pairwise(X, is_trans), κ, X, s, is_trans, uplo == 'U', symmetrize)
+end
+
+function nystrom{T<:FloatingPoint,U<:Integer}(κ::Kernel{T}, X::Matrix{T}, s::Array{U}, is_trans::Bool, store_upper::Bool = true, symmetrize::Bool = true)
+    nystrom!(init_pairwise(X, is_trans), κ, X, s, is_trans, store_upper, symmetrize)
 end

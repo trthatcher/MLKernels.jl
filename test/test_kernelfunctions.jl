@@ -36,31 +36,31 @@ for kernelobject in (
     print(" Matrix")
     K = [kernel(k,x,y) for x in Set_x, y in Set_x]
     print(" _X!")
-    matrix_test_approx_eq(kernelmatrix(k, X, 'N', 'U', true), K)
-    matrix_test_approx_eq(kernelmatrix(k, X, 'N', 'L', true), K)
+    @test_approx_eq kernelmatrix(k, X, 'N', 'U', true) K
+    @test_approx_eq kernelmatrix(k, X, 'N', 'L', true) K
     print(" _Xt!")
-    matrix_test_approx_eq(kernelmatrix(k, X', 'T', 'U', true), K)
-    matrix_test_approx_eq(kernelmatrix(k, X', 'T', 'L', true), K)
+    @test_approx_eq kernelmatrix(k, X', 'T', 'U', true) K
+    @test_approx_eq kernelmatrix(k, X', 'T', 'L', true) K
 
     K = [kernel(ARD(k,w),x,y) for x in Set_x, y in Set_x]
     print(" w_X!")
-    matrix_test_approx_eq(kernelmatrix(ARD(k,w), X, 'N', 'U', true), K)
-    matrix_test_approx_eq(kernelmatrix(ARD(k,w), X, 'N', 'L', true), K)
+    @test_approx_eq kernelmatrix(ARD(k,w), X, 'N', 'U', true) K
+    @test_approx_eq kernelmatrix(ARD(k,w), X, 'N', 'L', true) K
     print(" w_Xt!")
-    matrix_test_approx_eq(kernelmatrix(ARD(k,w), X', 'T', 'U', true), K)
-    matrix_test_approx_eq(kernelmatrix(ARD(k,w), X', 'T', 'L', true), K)
+    @test_approx_eq kernelmatrix(ARD(k,w), X', 'T', 'U', true) K
+    @test_approx_eq kernelmatrix(ARD(k,w), X', 'T', 'L', true) K
 
     K = [kernel(k,x,y) for x in Set_x, y in Set_y]
     print(" _XY!")
-    matrix_test_approx_eq(kernelmatrix(k, X, Y, 'N'), K)
+    @test_approx_eq kernelmatrix(k, X, Y, 'N') K
     print(" _XtYt!")
-    matrix_test_approx_eq(kernelmatrix(k, X', Y', 'T'), K)
+    @test_approx_eq kernelmatrix(k, X', Y', 'T') K
 
     K = [kernel(ARD(k,w),x,y) for x in Set_x, y in Set_y]
     print(" w_XY!")
-    matrix_test_approx_eq(kernelmatrix(ARD(k,w), X, Y, 'N'), K)
+    @test_approx_eq kernelmatrix(ARD(k,w), X, Y, 'N') K
     print(" w_XtYt!")
-    matrix_test_approx_eq(kernelmatrix(ARD(k,w), X', Y', 'T'), K)
+    @test_approx_eq kernelmatrix(ARD(k,w), X', Y', 'T') K
     
     println(" ... Done")
 end

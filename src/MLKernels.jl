@@ -14,7 +14,7 @@ export
     kernelmatrix,
     #center_kernelmatrix!,
     #center_kernelmatrix,
-    #nystrom,
+    nystrom,
 
     # Kernel Types
     Kernel,
@@ -52,5 +52,6 @@ include("meta.jl")
 include("kernels.jl")
 include("pairwise.jl")
 include("kernelfunctions.jl")
+include("kernelapproximation.jl")
 
 end # MLKernels

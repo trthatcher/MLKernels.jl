@@ -33,31 +33,31 @@ for kernelobject in (
     print(" Matrix")
     P = [MLKernels.pairwise(k,x,y) for x in Set_x, y in Set_x]
     print(" _X!")
-    matrix_test_approx_eq(MLKernels.syml!(MLKernels.pairwise(k, X,false,true)), P)
-    matrix_test_approx_eq(MLKernels.symu!(MLKernels.pairwise(k, X,false,false)), P)
+    @test_approx_eq MLKernels.syml!(MLKernels.pairwise(k, X,false,true)) P
+    @test_approx_eq MLKernels.symu!(MLKernels.pairwise(k, X,false,false)) P
     print(" _Xt!")
-    matrix_test_approx_eq(MLKernels.syml!(MLKernels.pairwise(k, X',true,true)), P)
-    matrix_test_approx_eq(MLKernels.symu!(MLKernels.pairwise(k, X',true,false)), P)
+    @test_approx_eq MLKernels.syml!(MLKernels.pairwise(k, X',true,true)) P
+    @test_approx_eq MLKernels.symu!(MLKernels.pairwise(k, X',true,false)) P
 
     P = [MLKernels.pairwise(k,x,y,w) for x in Set_x, y in Set_x]
     print(" w_X!")
-    matrix_test_approx_eq(MLKernels.syml!(MLKernels.pairwise(ARD(k,w), X,false,true)), P)
-    matrix_test_approx_eq(MLKernels.symu!(MLKernels.pairwise(ARD(k,w), X,false,false)), P)
+    @test_approx_eq MLKernels.syml!(MLKernels.pairwise(ARD(k,w), X,false,true)) P
+    @test_approx_eq MLKernels.symu!(MLKernels.pairwise(ARD(k,w), X,false,false)) P
     print(" w_Xt!")
-    matrix_test_approx_eq(MLKernels.syml!(MLKernels.pairwise(ARD(k,w), X',true,true)), P)
-    matrix_test_approx_eq(MLKernels.symu!(MLKernels.pairwise(ARD(k,w), X',true,false)), P)
+    @test_approx_eq MLKernels.syml!(MLKernels.pairwise(ARD(k,w), X',true,true)) P
+    @test_approx_eq MLKernels.symu!(MLKernels.pairwise(ARD(k,w), X',true,false)) P
 
     P = [MLKernels.pairwise(k,x,y) for x in Set_x, y in Set_y]
     print(" _XY!")
-    matrix_test_approx_eq(MLKernels.pairwise(k, X, Y, false), P)
+    @test_approx_eq MLKernels.pairwise(k, X, Y, false) P
     print(" _XtYt!")
-    matrix_test_approx_eq(MLKernels.pairwise(k, X', Y', true), P)
+    @test_approx_eq MLKernels.pairwise(k, X', Y', true) P
 
     P = [MLKernels.pairwise(k,x,y,w) for x in Set_x, y in Set_y]
     print(" w_XY!")
-    matrix_test_approx_eq(MLKernels.pairwise(ARD(k,w), X, Y, false), P)
+    @test_approx_eq MLKernels.pairwise(ARD(k,w), X, Y, false) P
     print(" w_XtYt!")
-    matrix_test_approx_eq(MLKernels.pairwise(ARD(k,w), X', Y', true), P)
+    @test_approx_eq MLKernels.pairwise(ARD(k,w), X', Y', true) P
 
     println(" ... Done")
 end
