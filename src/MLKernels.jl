@@ -20,7 +20,6 @@ export
     Kernel,
         StandardKernel,
             BaseKernel,
-                TestKernel,
                 AdditiveKernel,
                     SquaredDistanceKernel,
                     SineSquaredKernel,
