@@ -9,7 +9,11 @@ MLKernels.jl: Machine Learning Kernels
 Contents:
 
 .. toctree::
-   :maxdepth: 2
+    :maxdepth: 2
+
+    basekernels
+    compositekernels
+    citations
 
 
 

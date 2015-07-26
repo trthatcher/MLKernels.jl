@@ -116,6 +116,3 @@ The ``ismercer`` and ``isnegdef`` functions for ARD evaluate to true if the unde
     .. math::
     
         \kappa(\mathbf{x},\mathbf{y}) = \sum_{i=1}^n w_i\phi(x_i,y_i) \qquad \phi \text{ is a kernel in } \mathbb{R}, \; w_i > 0 \; \forall i
-
-
-.. [berg] Berg C, Christensen JPR, Ressel P. 1984. Harmonic Analysis on Semigroups. New York (NY): Springer-Verlag New York. Chapter 3, General Results on Positive and Negative Definite Matrices and Kernels; p. 66-85.

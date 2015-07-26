@@ -1,7 +1,5 @@
 #==========================================================================
   Exponential Kernel
-  k(x,y) = exp(-αf(x,y)²ᵞ)    x ∈ ℝⁿ, y ∈ ℝⁿ, α > 0, γ ∈ (0,1]
-                              f ≧ is negative definite
 ==========================================================================#
 
 immutable ExponentialKernel{T<:FloatingPoint,CASE} <: CompositeKernel{T}
@@ -33,7 +31,6 @@ phi{T<:FloatingPoint}(κ::ExponentialKernel{T,:γ1}, z::T) = exp(-κ.alpha * z)
 
 #==========================================================================
   Rational Quadratic Kernel
-  k(x,y) = (1 + α‖x-y‖²ᵞ)⁻ᵝ    x ∈ ℝⁿ, y ∈ ℝⁿ, α > 0, β > 0, γ ∈ (0,1]
 ==========================================================================#
 
 immutable RationalQuadraticKernel{T<:FloatingPoint,CASE} <: CompositeKernel{T}
@@ -86,7 +83,6 @@ phi{T<:FloatingPoint}(κ::RationalQuadraticKernel{T,:γ1}, z::T) = (1 + κ.alpha
 
 #==========================================================================
   Matern Kernel
-  k(x,y) = ...    x ∈ ℝⁿ, y ∈ ℝⁿ, ν > 0, θ > 0
 ==========================================================================#
 
 immutable MaternKernel{T<:FloatingPoint,CASE} <: CompositeKernel{T}
@@ -125,7 +121,6 @@ end
 
 #==========================================================================
   Power Kernel
-  k(x,y) = ‖x-y‖²ᵞ   x ∈ ℝⁿ, y ∈ ℝⁿ, γ ∈ (0,1]
 ==========================================================================#
 
 immutable PowerKernel{T<:FloatingPoint,CASE} <: CompositeKernel{T}
@@ -155,7 +150,6 @@ phi{T<:FloatingPoint}(κ::PowerKernel{T,:γ1}, z::T) = z
 
 #==========================================================================
   Log Kernel
-  k(x,y) = log(α‖x-y‖²ᵞ + 1)    x ∈ ℝⁿ, y ∈ ℝⁿ, α > 0, γ ∈ (0,1]
 ==========================================================================#
 
 immutable LogKernel{T<:FloatingPoint,CASE} <: CompositeKernel{T}
@@ -187,7 +181,6 @@ phi{T<:FloatingPoint}(κ::LogKernel{T,:γ1}, z::T) = log(κ.alpha*z + 1)
 
 #==========================================================================
   Polynomial Kernel
-  k(x,y) = (αxᵀy + c)ᵈ    x ∈ ℝⁿ, y ∈ ℝⁿ, α > 0, c ≥ 0, d > 0
 ==========================================================================#
 
 immutable PolynomialKernel{T<:FloatingPoint,CASE} <: CompositeKernel{T}
@@ -244,7 +237,6 @@ phi{T<:FloatingPoint}(κ::ExponentiatedKernel{T}, z::T) = exp(κ.alpha*z)
 
 #==========================================================================
   Sigmoid Kernel
-  k(x,y) = tanh(αxᵀy + c)    x ∈ ℝⁿ, y ∈ ℝⁿ, α > 0, c ≥ 0
 ==========================================================================#
 
 immutable SigmoidKernel{T<:FloatingPoint} <: CompositeKernel{T}
