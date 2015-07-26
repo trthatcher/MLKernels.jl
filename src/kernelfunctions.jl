@@ -8,8 +8,8 @@ kernel{T<:FloatingPoint}(κ::BaseKernel{T}, x::Vector{T}, y::Vector{T}) = pairwi
 kernel{T<:FloatingPoint}(κ::ARD{T}, x::T, y::T) = pairwise(κ.k, x, y, κ.w[1])
 kernel{T<:FloatingPoint}(κ::ARD{T}, x::Vector{T}, y::Vector{T}) = pairwise(κ.k, x, y, κ.w)
 
-kernel{T<:FloatingPoint}(κ::CompositeKernel{T}, x::T, y::T) = kappa(κ, pairwise(κ.k, x, y))
-kernel{T<:FloatingPoint}(κ::CompositeKernel{T}, x::Vector{T}, y::Vector{T}) = kappa(κ, pairwise(κ.k, x, y))
+kernel{T<:FloatingPoint}(κ::CompositeKernel{T}, x::T, y::T) = phi(κ, pairwise(κ.k, x, y))
+kernel{T<:FloatingPoint}(κ::CompositeKernel{T}, x::Vector{T}, y::Vector{T}) = phi(κ, pairwise(κ.k, x, y))
 
 kernel{T<:FloatingPoint}(ψ::KernelSum{T}, x::T, y::T) = sum(ψ.a, sym(map(κ -> kernel(κ,x,y), ψ.k)))
 kernel{T<:FloatingPoint}(ψ::KernelSum{T}, x::Vector{T}, y::Vector{T}) = sum(ψ.a, sym(map(κ -> kernel(κ,x,y), ψ.k)))
@@ -77,13 +77,13 @@ end
 
 function kernelmatrix!{T<:FloatingPoint}(K::Matrix{T}, κ::CompositeKernel{T}, X::Matrix{T}, is_trans::Bool, store_upper::Bool, symmetrize::Bool)
     pairwise!(K, κ.k, X, is_trans, store_upper)
-    kappa_square_matrix!(κ, K, store_upper)
+    phi_square_matrix!(κ, K, store_upper)
     symmetrize ? (store_upper ? syml!(K) : symu!(K)) : K
 end
 
 function kernelmatrix!{T<:FloatingPoint}(K::Matrix{T}, κ::CompositeKernel{T}, X::Matrix{T}, Y::Matrix{T}, is_trans::Bool)
     pairwise!(K, κ.k, X, Y, is_trans)
-    kappa_matrix!(κ, K)
+    phi_matrix!(κ, K)
 end
 
 

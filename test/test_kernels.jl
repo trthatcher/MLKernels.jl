@@ -69,6 +69,6 @@ end
 
 println("Standard Kernel ismercer() and isnegdef():")
 
-println("Base Kernel kappa():")
+println("Base Kernel phi():")
 
-println("Composite Kernel kappa():")
+println("Composite Kernel phi():")

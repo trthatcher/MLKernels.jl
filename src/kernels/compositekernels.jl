@@ -27,8 +27,8 @@ function description_string{T<:FloatingPoint}(κ::ExponentialKernel{T}, eltype::
     "ExponentialKernel" * (eltype ? "{$(T)}" : "") * "(κ=" * description_string(κ.k, false) * ",α=$(κ.alpha),γ=$(κ.gamma))"
 end
 
-kappa{T<:FloatingPoint}(κ::ExponentialKernel{T}, z::T) = exp(-κ.alpha * z^κ.gamma)
-kappa{T<:FloatingPoint}(κ::ExponentialKernel{T,:γ1}, z::T) = exp(-κ.alpha * z)
+phi{T<:FloatingPoint}(κ::ExponentialKernel{T}, z::T) = exp(-κ.alpha * z^κ.gamma)
+phi{T<:FloatingPoint}(κ::ExponentialKernel{T,:γ1}, z::T) = exp(-κ.alpha * z)
 
 
 #==========================================================================
@@ -78,10 +78,10 @@ function description_string{T<:FloatingPoint}(κ::RationalQuadraticKernel{T}, el
     "RationalQuadraticKernel" * (eltype ? "{$(T)}" : "") * "(κ=" * description_string(κ.k, false) * ",α=$(κ.alpha),β=$(κ.beta),γ=$(κ.gamma))"
 end
 
-kappa{T<:FloatingPoint}(κ::RationalQuadraticKernel{T}, z::T) = (1 + κ.alpha*z^κ.gamma)^(-κ.beta)
-kappa{T<:FloatingPoint}(κ::RationalQuadraticKernel{T,:β1γ1}, z::T) = 1/(1 + κ.alpha*z)
-kappa{T<:FloatingPoint}(κ::RationalQuadraticKernel{T,:β1}, z::T) = 1/(1 + κ.alpha*z^κ.gamma)
-kappa{T<:FloatingPoint}(κ::RationalQuadraticKernel{T,:γ1}, z::T) = (1 + κ.alpha*z)^(-κ.beta)
+phi{T<:FloatingPoint}(κ::RationalQuadraticKernel{T}, z::T) = (1 + κ.alpha*z^κ.gamma)^(-κ.beta)
+phi{T<:FloatingPoint}(κ::RationalQuadraticKernel{T,:β1γ1}, z::T) = 1/(1 + κ.alpha*z)
+phi{T<:FloatingPoint}(κ::RationalQuadraticKernel{T,:β1}, z::T) = 1/(1 + κ.alpha*z^κ.gamma)
+phi{T<:FloatingPoint}(κ::RationalQuadraticKernel{T,:γ1}, z::T) = (1 + κ.alpha*z)^(-κ.beta)
 
 
 #==========================================================================
@@ -112,12 +112,12 @@ function description_string{T<:FloatingPoint}(κ::MaternKernel{T}, eltype::Bool 
   "MaternKernel" * (eltype ? "{$(T)}" : "") * "(κ=" * description_string(κ.k, false) * ",ν=$(κ.nu),θ=$(κ.theta))"
 end
 
-function kappa{T<:FloatingPoint}(κ::MaternKernel{T}, z::T)
+function phi{T<:FloatingPoint}(κ::MaternKernel{T}, z::T)
   v1 = sqrt(2κ.nu * z)/κ.theta
   2 * (v1/2)^(κ.nu) * besselk(κ.nu, z)/gamma(κ.nu)
 end
 
-function kappa{T<:FloatingPoint}(κ::MaternKernel{T,:ν1}, z::T)
+function phi{T<:FloatingPoint}(κ::MaternKernel{T,:ν1}, z::T)
   v1 = sqrt(2z)/κ.theta
   v1 * besselk(one(T), z)
 end
@@ -149,8 +149,8 @@ function description_string{T<:FloatingPoint}(κ::PowerKernel{T}, eltype::Bool =
     "PowerKernel" * (eltype ? "{$(T)}" : "") * "(κ=" * description_string(κ.k, false) * ",γ=$(κ.gamma))"
 end
 
-kappa{T<:FloatingPoint}(κ::PowerKernel{T}, z::T) = z^(κ.gamma)
-kappa{T<:FloatingPoint}(κ::PowerKernel{T,:γ1}, z::T) = z
+phi{T<:FloatingPoint}(κ::PowerKernel{T}, z::T) = z^(κ.gamma)
+phi{T<:FloatingPoint}(κ::PowerKernel{T,:γ1}, z::T) = z
 
 
 #==========================================================================
@@ -181,8 +181,8 @@ function description_string{T<:FloatingPoint}(κ::LogKernel{T}, eltype::Bool = t
     "LogKernel" * (eltype ? "{$(T)}" : "") * "(κ=" * description_string(κ.k, false) * ",α=$(κ.alpha),γ=$(κ.gamma))"
 end
 
-kappa{T<:FloatingPoint}(κ::LogKernel{T}, z::T) = log(κ.alpha*z^(κ.gamma) + 1)
-kappa{T<:FloatingPoint}(κ::LogKernel{T,:γ1}, z::T) = log(κ.alpha*z + 1)
+phi{T<:FloatingPoint}(κ::LogKernel{T}, z::T) = log(κ.alpha*z^(κ.gamma) + 1)
+phi{T<:FloatingPoint}(κ::LogKernel{T,:γ1}, z::T) = log(κ.alpha*z + 1)
 
 
 #==========================================================================
@@ -214,8 +214,8 @@ function description_string{T<:FloatingPoint}(κ::PolynomialKernel{T}, eltype::B
     "PolynomialKernel" * (eltype ? "{$(T)}" : "") * "(κ=" * description_string(κ.k, false) * ",α=$(κ.alpha),c=$(κ.c),d=$(convert(Int64,κ.d)))"
 end
 
-kappa{T<:FloatingPoint}(κ::PolynomialKernel{T}, xᵀy::T) = (κ.alpha*xᵀy + κ.c)^κ.d
-kappa{T<:FloatingPoint}(κ::PolynomialKernel{T,:d1}, xᵀy::T) = κ.alpha*xᵀy + κ.c
+phi{T<:FloatingPoint}(κ::PolynomialKernel{T}, xᵀy::T) = (κ.alpha*xᵀy + κ.c)^κ.d
+phi{T<:FloatingPoint}(κ::PolynomialKernel{T,:d1}, xᵀy::T) = κ.alpha*xᵀy + κ.c
 
 
 #==========================================================================
@@ -239,7 +239,7 @@ function description_string{T<:FloatingPoint}(κ::ExponentiatedKernel{T}, eltype
     "ExponentiatedKernel" * (eltype ? "{$(T)}" : "") * "(κ=" * description_string(κ.k, false) * ",α=$(κ.alpha))"
 end
 
-kappa{T<:FloatingPoint}(κ::ExponentiatedKernel{T}, z::T) = exp(κ.alpha*z)
+phi{T<:FloatingPoint}(κ::ExponentiatedKernel{T}, z::T) = exp(κ.alpha*z)
 
 
 #==========================================================================
@@ -263,4 +263,4 @@ function description_string{T<:FloatingPoint}(κ::SigmoidKernel{T}, eltype::Bool
     "SigmoidKernel" * (eltype ? "{$(T)}" : "") * "(κ=" * description_string(κ.k, false) * ",α=$(κ.alpha),c=$(κ.c))"
 end
 
-kappa{T<:FloatingPoint}(κ::SigmoidKernel{T}, z::T) = tanh(κ.alpha*z + κ.c)
+phi{T<:FloatingPoint}(κ::SigmoidKernel{T}, z::T) = tanh(κ.alpha*z + κ.c)

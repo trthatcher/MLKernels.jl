@@ -30,23 +30,23 @@ function gramian_XtYt!{T<:Base.LinAlg.BlasReal}(G::Matrix{T}, X::Matrix{T}, Y::M
     BLAS.gemm!('T', 'N', one(T), X, Y, zero(T), G)
 end
 
-# Apply kappa to matrix elements
-function kappa_matrix!{T<:FloatingPoint}(κ::Kernel{T}, X::Matrix{T})
+# Apply phi to matrix elements
+function phi_matrix!{T<:FloatingPoint}(κ::Kernel{T}, X::Matrix{T})
     @inbounds @simd for i = 1:length(X)
-        X[i] = kappa(κ, X[i])
+        X[i] = phi(κ, X[i])
     end
     X
 end
-kappa_matrix{T<:FloatingPoint}(κ::Kernel{T}, X::Matrix{T}) = kappa_matrix!(κ, copy(X))
+phi_matrix{T<:FloatingPoint}(κ::Kernel{T}, X::Matrix{T}) = phi_matrix!(κ, copy(X))
 
-function kappa_square_matrix!{T<:FloatingPoint}(κ::Kernel{T}, X::Matrix{T}, store_upper::Bool)
+function phi_square_matrix!{T<:FloatingPoint}(κ::Kernel{T}, X::Matrix{T}, store_upper::Bool)
     (n = size(X,1)) == size(X,2) || throw(DimensionMismatch("X must be square."))
     @inbounds for j = 1:n, i = store_upper ? (1:j) : (j:n)
-        X[i,j] = kappa(κ, X[i,j])
+        X[i,j] = phi(κ, X[i,j])
     end
     X
 end
-kappa_square_matrix{T<:FloatingPoint}(κ::Kernel{T}, X::Matrix{T}, store_upper::Bool) = kappa_matrix!(κ, copy(X), store_upper)
+phi_square_matrix{T<:FloatingPoint}(κ::Kernel{T}, X::Matrix{T}, store_upper::Bool) = phi_matrix!(κ, copy(X), store_upper)
 
 
 #===================================================================================================
@@ -106,7 +106,7 @@ for (fn_X, fn_XY, dim_n, X_i, X_j, Y_j) in (
             (n = size(X,$dim_n)) == size(K,1) == size(K,2) || throw(DimensionMismatch("Kernel matrix must be square and match X."))
             p = size(X,$dim_p)
             for j = 1:n, i = store_upper ? (1:j) : (j:n)
-                K[i,j] = kappa(κ, vec($X_i), vec($X_j))
+                K[i,j] = phi(κ, vec($X_i), vec($X_j))
             end
             K
         end
@@ -116,7 +116,7 @@ for (fn_X, fn_XY, dim_n, X_i, X_j, Y_j) in (
             (m = size(Y,$dim_n)) == size(K,2) || throw(DimensionMismatch("Dimension $($dim_n) of Y must match dimension 2 of K."))
             size(X,$dim_p) == size(Y,$dim_p) || throw(DimensionMismatch("Dimension $($dim_p) of Y must match dimension $($dim_p) of X."))
             for j = 1:m, i = 1:n
-                K[i,j] = kappa(κ, vec($X_i), vec($Y_j))
+                K[i,j] = phi(κ, vec($X_i), vec($Y_j))
             end
             K
         end
@@ -130,14 +130,14 @@ end
   "Optimised" Generic Additive Pairwise 
 ===========================================================================#
 
-pairwise{T<:FloatingPoint}(κ::AdditiveKernel{T}, x::T, y::T) = kappa(κ, x, y)
-pairwise{T<:FloatingPoint}(κ::AdditiveKernel{T}, x::T, y::T, w::T) = w * w * kappa(κ, x, y)
+pairwise{T<:FloatingPoint}(κ::AdditiveKernel{T}, x::T, y::T) = phi(κ, x, y)
+pairwise{T<:FloatingPoint}(κ::AdditiveKernel{T}, x::T, y::T, w::T) = w * w * phi(κ, x, y)
 
 function pairwise{T<:FloatingPoint}(κ::AdditiveKernel{T}, x::Vector{T}, y::Vector{T})
     (n = length(x)) == length(y) || throw(DimensionMismatch("x and y must be of the same dimension."))
     v = zero(T)
     @inbounds @simd for i = 1:n
-        v += kappa(κ, x[i], y[i])
+        v += phi(κ, x[i], y[i])
     end
     v
 end
@@ -148,7 +148,7 @@ function pairwise{T<:FloatingPoint}(κ::AdditiveKernel{T}, x::Vector{T}, y::Vect
     v = zero(T)
     @inbounds @simd for i = 1:n
         w² = w[i] * w[i]
-        v += w² * kappa(κ, x[i], y[i])
+        v += w² * phi(κ, x[i], y[i])
     end
     v
 end
@@ -166,7 +166,7 @@ for (fn_X, fn_XY, dim_n, X_ji, X_ki, Y_ki) in (
             for k = 1:n, j = store_upper ? (1:k) : (k:n)
                 v = 0
                 @inbounds @simd for i = 1:p
-                    v += kappa(κ, $X_ji, $X_ki)
+                    v += phi(κ, $X_ji, $X_ki)
                 end
                 K[j,k] = v
             end
@@ -180,7 +180,7 @@ for (fn_X, fn_XY, dim_n, X_ji, X_ki, Y_ki) in (
             for k = 1:n, j = store_upper ? (1:k) : (k:n)
                 v = 0
                 @inbounds @simd for i = 1:p
-                    v += w²[i] * kappa(κ, $X_ji, $X_ki)
+                    v += w²[i] * phi(κ, $X_ji, $X_ki)
                 end
                 K[j,k] = v
             end
@@ -194,7 +194,7 @@ for (fn_X, fn_XY, dim_n, X_ji, X_ki, Y_ki) in (
             for k = 1:m, j = 1:n
                 v = 0
                 @inbounds @simd for i = 1:p
-                    v += kappa(κ, $X_ji, $Y_ki)
+                    v += phi(κ, $X_ji, $Y_ki)
                 end
                 K[j,k] = v
             end
@@ -210,7 +210,7 @@ for (fn_X, fn_XY, dim_n, X_ji, X_ki, Y_ki) in (
             for k = 1:m, j = 1:n
                 v = 0
                 @inbounds @simd for i = 1:p
-                    v += w²[i] * kappa(κ, $X_ji, $Y_ki)
+                    v += w²[i] * phi(κ, $X_ji, $Y_ki)
                 end
                 K[j,k] = v
             end
@@ -257,42 +257,42 @@ pairwise_XtYt!{T<:Base.LinAlg.BlasReal}(K::Matrix{T}, κ::ScalarProductKernel{T}
 # Separable Kernel
 
 function pairwise_X!{T<:Base.LinAlg.BlasReal}(K::Matrix{T}, κ::SeparableKernel{T}, X::Matrix{T}, store_upper::Bool)
-    Z = kappa_matrix(κ, X)
+    Z = phi_matrix(κ, X)
     gramian_X!(K, Z, store_upper)
 end
 function pairwise_Xt!{T<:Base.LinAlg.BlasReal}(K::Matrix{T}, κ::SeparableKernel{T}, X::Matrix{T}, store_upper::Bool)
-    Z = kappa_matrix(κ, X)
+    Z = phi_matrix(κ, X)
     gramian_Xt!(K, Z, store_upper)
 end
 
 function pairwise_X!{T<:Base.LinAlg.BlasReal}(K::Matrix{T}, κ::SeparableKernel{T}, X::Matrix{T}, w::Vector{T}, store_upper::Bool)
-    Z = scale!(kappa_matrix(κ, X), w)
+    Z = scale!(phi_matrix(κ, X), w)
     gramian_X!(K, Z, store_upper)
 end
 function pairwise_Xt!{T<:Base.LinAlg.BlasReal}(K::Matrix{T}, κ::SeparableKernel{T}, X::Matrix{T}, w::Vector{T}, store_upper::Bool)
-    Z = scale!(w, kappa_matrix(κ, X))
+    Z = scale!(w, phi_matrix(κ, X))
     gramian_Xt!(K, Z, store_upper)
 end
 
 function pairwise_XY!{T<:Base.LinAlg.BlasReal}(K::Matrix{T}, κ::SeparableKernel{T}, X::Matrix{T}, Y::Matrix{T})
-    Z = kappa_matrix(κ, X)
-    V = kappa_matrix(κ, Y)
+    Z = phi_matrix(κ, X)
+    V = phi_matrix(κ, Y)
     gramian_XY!(K, Z, V)
 end
 function pairwise_XtYt!{T<:Base.LinAlg.BlasReal}(K::Matrix{T}, κ::SeparableKernel{T}, X::Matrix{T}, Y::Matrix{T})
-    Z = kappa_matrix(κ, X)
-    V = kappa_matrix(κ, Y)
+    Z = phi_matrix(κ, X)
+    V = phi_matrix(κ, Y)
     gramian_XtYt!(K, Z, V)
 end
 
 function pairwise_XY!{T<:Base.LinAlg.BlasReal}(K::Matrix{T}, κ::SeparableKernel{T}, X::Matrix{T}, Y::Matrix{T}, w::Vector{T})
-    Z = scale!(kappa_matrix(κ, X), w)
-    V = scale!(kappa_matrix(κ, Y), w)
+    Z = scale!(phi_matrix(κ, X), w)
+    V = scale!(phi_matrix(κ, Y), w)
     gramian_XY!(K, Z, V)
 end
 function pairwise_XtYt!{T<:Base.LinAlg.BlasReal}(K::Matrix{T}, κ::SeparableKernel{T}, X::Matrix{T}, Y::Matrix{T}, w::Vector{T})
-    Z = scale!(w, kappa_matrix(κ, X))
-    V = scale!(w, kappa_matrix(κ, Y))
+    Z = scale!(w, phi_matrix(κ, X))
+    V = scale!(w, phi_matrix(κ, Y))
     gramian_XtYt!(K, Z, V)
 end
 

@@ -11,7 +11,7 @@ Composite kernels extend the base kernels by using a scalar transformation to co
 
 .. math::
     
-    k(\mathbf{x},\mathbf{y}) =  \phi(\kappa(x_i,y_i)) \qquad \kappa:\mathbb{R}^n \times \mathbb{R}^n \rightarrow \mathbb{R}
+    \kappa(\mathbf{x},\mathbf{y}) =  \phi(\kappa(x_i,y_i)) \qquad \kappa:\mathbb{R}^n \times \mathbb{R}^n \rightarrow \mathbb{R}
 
 Blah
 

@@ -38,9 +38,9 @@ end
 
 convert{T<:FloatingPoint}(::Type{SquaredDistanceKernel{T}}, κ::SquaredDistanceKernel) = SquaredDistanceKernel(convert(T, κ.t))
 
-kappa{T<:FloatingPoint}(κ::SquaredDistanceKernel{T,:t1}, x::T, y::T) = (x-y)^2
-kappa{T<:FloatingPoint}(κ::SquaredDistanceKernel{T,:t0p5}, x::T, y::T) = abs(x-y)
-kappa{T<:FloatingPoint}(κ::SquaredDistanceKernel{T}, x::T, y::T) = ((x-y)^2)^κ.t
+phi{T<:FloatingPoint}(κ::SquaredDistanceKernel{T,:t1}, x::T, y::T) = (x-y)^2
+phi{T<:FloatingPoint}(κ::SquaredDistanceKernel{T,:t0p5}, x::T, y::T) = abs(x-y)
+phi{T<:FloatingPoint}(κ::SquaredDistanceKernel{T}, x::T, y::T) = ((x-y)^2)^κ.t
 
 
 #==========================================================================
@@ -75,9 +75,9 @@ end
 
 convert{T<:FloatingPoint}(::Type{SineSquaredKernel{T}}, κ::SineSquaredKernel) = SineSquaredKernel(convert(T, κ.t))
 
-kappa{T<:FloatingPoint}(κ::SineSquaredKernel{T,:t1}, x::T, y::T) = sin(x-y)^2
-kappa{T<:FloatingPoint}(κ::SineSquaredKernel{T,:t0p5}, x::T, y::T) = abs(sin(x-y))
-kappa{T<:FloatingPoint}(κ::SineSquaredKernel{T}, x::T, y::T) = (sin(x-y)^2)^κ.t
+phi{T<:FloatingPoint}(κ::SineSquaredKernel{T,:t1}, x::T, y::T) = sin(x-y)^2
+phi{T<:FloatingPoint}(κ::SineSquaredKernel{T,:t0p5}, x::T, y::T) = abs(sin(x-y))
+phi{T<:FloatingPoint}(κ::SineSquaredKernel{T}, x::T, y::T) = (sin(x-y)^2)^κ.t
 
 
 #==========================================================================
@@ -110,8 +110,8 @@ end
 
 convert{T<:FloatingPoint}(::Type{ChiSquaredKernel{T}}, κ::ChiSquaredKernel) = ChiSquaredKernel(convert(T, κ.t))
 
-kappa{T<:FloatingPoint}(κ::ChiSquaredKernel{T,:t1}, x::T, y::T) = (x-y)^2/(x+y)
-kappa{T<:FloatingPoint}(κ::ChiSquaredKernel{T}, x::T, y::T) = ((x-y)^2/(x+y))^κ.t
+phi{T<:FloatingPoint}(κ::ChiSquaredKernel{T,:t1}, x::T, y::T) = (x-y)^2/(x+y)
+phi{T<:FloatingPoint}(κ::ChiSquaredKernel{T}, x::T, y::T) = ((x-y)^2/(x+y))^κ.t
 
 
 #==========================================================================
@@ -121,7 +121,7 @@ kappa{T<:FloatingPoint}(κ::ChiSquaredKernel{T}, x::T, y::T) = ((x-y)^2/(x+y))^�
 
 abstract SeparableKernel{T<:FloatingPoint} <: AdditiveKernel{T}
 
-kappa{T<:FloatingPoint}(κ::SeparableKernel{T}, x::T, y::T) = kappa(κ,x) * kappa(κ,y)
+phi{T<:FloatingPoint}(κ::SeparableKernel{T}, x::T, y::T) = phi(κ,x) * phi(κ,y)
 
 #==========================================================================
   Scalar Product Kernel
@@ -138,7 +138,7 @@ end
 
 convert{T<:FloatingPoint}(::Type{ScalarProductKernel{T}}, κ::ScalarProductKernel) = ScalarProductKernel{T}()
 
-kappa{T<:FloatingPoint}(κ::ScalarProductKernel{T}, x::T) = x
+phi{T<:FloatingPoint}(κ::ScalarProductKernel{T}, x::T) = x
 
 
 #==========================================================================
@@ -163,4 +163,4 @@ end
 
 convert{T<:FloatingPoint}(::Type{MercerSigmoidKernel{T}}, κ::MercerSigmoidKernel) = MercerSigmoidKernel{T}(convert(T,κ.d), convert(T,κ.b))
 
-kappa{T<:FloatingPoint}(κ::MercerSigmoidKernel{T}, x::T) = tanh((x-κ.d)/κ.b)
+phi{T<:FloatingPoint}(κ::MercerSigmoidKernel{T}, x::T) = tanh((x-κ.d)/κ.b)
