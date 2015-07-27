@@ -3,7 +3,14 @@
 [![Build Status](https://travis-ci.org/trthatcher/MLKernels.jl.svg?branch=master)](https://travis-ci.org/trthatcher/MLKernels.jl)
 [![Coverage Status](https://coveralls.io/repos/trthatcher/MLKernels.jl/badge.svg)](https://coveralls.io/r/trthatcher/MLKernels.jl)
 
-MLKernels.jl is a Julia package for Mercer and negative definite kernels that are used in the kernel methods of machine learning. The goal is to provide a Julia datatype for machine learning kernels and an efficient set of methods to calculate or approximate kernel matrices. The package has no dependencies beyond base Julia.
+MLKernels.jl is a Julia package for kernel functions (or covariance functions in Gaussian 
+processes) that are used in the kernel methods of machine learning. The goal is to provide a Julia
+datatype for machine learning kernels and an efficient set of methods to calculate or approximate 
+kernel matrices. The package has no dependencies beyond base Julia.
+
+ - [**Documentation**](http://mlkernels.readthedocs.org/)
+
+### Getting Started
 
 Consistent with traditional literature on kernels, kernels come in two flavours:
  - Positive Definite Kernels (Mercer Kernels)
@@ -96,13 +103,11 @@ Base kernels can be instantiated on their own. The following chart illustrates t
     <td align="center">&#10004;</td>
   </tr>
 </table>
-**Not a true kernel*
+\**Not a true kernel*
 
 Base Kernels are available as **Automatic Relevance Determination** (ARD) Kernels which act as a separate scaling constant for each element-wise operation on the inputs. For the dot product and the squared distance kernel, this corresponds to a linear scaling of each of the dimensions.
 
-### Getting Started
-
-The `Kernel` data type is parametric - either `Float32` or `Float64` depending on the input arguments. The default is `Float64`. A kernel can be constructed using one of the many predefined kernels. Once a kernel has been constructed, it can be passed to the `kernel` function and used to compute kernel function of two vectors. For example, the simplest base kernel is the scalar (dot) product kernel:
+The `Kernel` data type is parametric - either `Float32`, `Float64` or `BigFloat` depending on the input arguments. The default is `Float64`. A kernel can be constructed using one of the many predefined kernels. Once a kernel has been constructed, it can be passed to the `kernel` function and used to compute kernel function of two vectors. For example, the simplest base kernel is the scalar (dot) product kernel:
 
 ```julia
 julia> κ = ScalarProductKernel()

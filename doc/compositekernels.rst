@@ -27,7 +27,11 @@ The following kernels have been predefined:
     where :math:`\kappa` is a non-negative negative definite kernel. When :math:`\kappa` is the
     squared distance kernel, then :math:`k` is the radial basis (Gaussian) kernel.
 
-.. function:: RationalQuadraticKernel{T<:FloatingPoint}(κ::BaseKernel{T} = SquaredDistanceKernel(1.0), α::T = one(T), β::T = one(T), γ::T = one(T))
+.. function:: RationalQuadraticKernel{T<:FloatingPoint}(
+                κ::BaseKernel{T} = SquaredDistanceKernel(1.0), 
+                α::T = one(T), 
+                β::T = one(T),
+                 γ::T = one(T))
 
     Construct a rational-quadratic class kernel:
 

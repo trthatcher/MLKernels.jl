@@ -39,61 +39,80 @@ Additive kernels can be extended using Automatic Relevance Determination (ARD). 
     k(\mathbf{x},\mathbf{y};\mathbf{w}) = \sum_{i=1}^n w_i \phi(x_i,y_i) \qquad \phi:\mathbb{R}^2 \rightarrow \mathbb{R}, \; w_i > 0 \; \forall i
 
 
-The base kernels defined by default are listed below:
-
-----------------
-Additive Kernels
-----------------
+List of Base Kernels
+--------------------
 
 See page 79 of [berg]_ for examples of other negative or positive definite kernels.
 
-.. function:: SquaredDistanceKernel{T<:FloatingPoint}(t::T = 1.0)
+    - Additive Kernels
+        - :ref:`SquaredDistance`
+        - Sine Squared Kernel
+        - Chi-Squared Kernel
+        - Separable Kernels
+            - Scalar Product Kernel
+            - Mercer Sigmoid Kernel
+    - Automatic Relevance Determination Kernels
 
-    Construct a squared distance kernel type:
 
-    .. math::
+.. _SquaredDistance:
+
+Squared Distance Kernel
+~~~~~~~~~~~~~~~~~~~~~~~
+
+Construct a squared distance kernel type:
+
+.. math::
     
-        \kappa(\mathbf{x},\mathbf{y}) = \sum_{i=1}^n (x_i - y_i)^{2t} \qquad 0 < t \leq 1
+    \kappa(\mathbf{x},\mathbf{y}) = \sum_{i=1}^n (x_i - y_i)^{2t} \qquad 0 < t \leq 1
 
-    The squared distance is a **negative definite** kernel [berg]_. The radial basis kernel is a scalar
-    transformation of this kernel.
+The squared distance is a **negative definite** kernel [berg]_. The radial basis kernel is a scalar 
+transformation of this kernel.
 
-.. function:: SineSquaredKernel{T<:FloatingPoint}(t::T = 1.0)
+.. code-block:: julia
 
-    Construct a sine squared kernel type:
+    SquaredDistanceKernel()   # Squared distance kernel with t = 1.0
+    SquaredDistanceKernel(t)  # Squared distance kernel specified t value
 
-    .. math::
+.. _SineSquared:
+
+Sine Squared Kernel
+~~~~~~~~~~~~~~~~~~~
     
-        \kappa(\mathbf{x},\mathbf{y}) = \sum_{i=1}^n \sin^{2t}(x_i - y_i) \qquad 0 < t \leq 1
+Construct a sine squared kernel type:
 
-    The sine squared kernel is a **negative definite** kernel [berg]_. The periodic kernel is a scalar
-    transformation of this kernel.
-
-.. function:: ChiSquaredKernel{T<:FloatingPoint}(t::T = 1.0)
-
-    Construct a Chi-Squared kernel:
-
-    .. math::
+.. math::
     
-        \kappa(\mathbf{x},\mathbf{y}) = \sum_{i=1}^n \left(\frac{(x_i - y_i)^2}{x_i + y_i}\right)^t \qquad 0 < t \leq 1, \; x_i > 0 \; \forall i, \; y_i > 0 \; \forall i
+    \kappa(\mathbf{x},\mathbf{y}) = \sum_{i=1}^n \sin^{2t}(x_i - y_i) \qquad 0 < t \leq 1
 
-    The Chi-Squared kernel is often used with bag-of-words models.
+The sine squared kernel is a **negative definite** kernel [berg]_. The periodic kernel is a scalar
+transformation of this kernel.
 
------------------
-Separable Kernels
------------------
+.. _ChiSquared:
 
-Since separable kernels are equivalent to a vector dot product, they are all **mercer** kernels:
+Chi-Squared Kernel
+~~~~~~~~~~~~~~~~~~
 
-.. function:: ScalarProductKernel{T<:FloatingPoint}()
+Construct a Chi-Squared kernel:
 
-    Construct a Scalar Product kernel:
-
-    .. math::
+.. math::
     
-        \kappa(\mathbf{x},\mathbf{y}) = \mathbf{x}^{\intercal} \mathbf{y}
+    \kappa(\mathbf{x},\mathbf{y}) = \sum_{i=1}^n \left(\frac{(x_i - y_i)^2}{x_i + y_i}\right)^t \qquad 0 < t \leq 1, \; x_i > 0 \; \forall i, \; y_i > 0 \; \forall i
 
-    This is simply the scalar product of two vectors.
+The Chi-Squared kernel is often used with bag-of-words models.
+
+.. _ScalarProduct:
+
+Construct a Scalar Product kernel:
+
+.. math::
+    
+    \kappa(\mathbf{x},\mathbf{y}) = \mathbf{x}^{\intercal} \mathbf{y}
+
+This is simply the scalar product of two vectors.
+
+.. _MercerSigmoid:
+
+
 
 .. function:: MercerSigmoidKernel{T<:FloatingPoint}()
 
@@ -103,9 +122,9 @@ Since separable kernels are equivalent to a vector dot product, they are all **m
     
         \kappa(\mathbf{x},\mathbf{y}) = \sum_{i=1}^n \tanh\left(\frac{x_i-d}{b}\right) \tanh\left(\frac{y_i-d}{b}\right) \qquad b > 0
 
----------------------------------
+
 Automatic Relevance Determination
----------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The ``ismercer`` and ``isnegdef`` functions for ARD evaluate to true if the underlying kernel is Mercer or negative definite, respectively.
 
