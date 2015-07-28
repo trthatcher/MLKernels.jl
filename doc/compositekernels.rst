@@ -14,7 +14,12 @@ complex kernels. Formally:
     
     \kappa(\mathbf{x},\mathbf{y}) =  \phi(\kappa(\mathbf{x},\mathbf{y})) \qquad \kappa:\mathbb{R}^n \times \mathbb{R}^n \rightarrow \mathbb{R}
 
-The following kernels have been predefined:
+.. contents::
+    :local:
+    :backlinks: none
+
+Exponential Kernel
+------------------
 
 .. function:: ExponentialKernel{T<:FloatingPoint}(κ::BaseKernel{T} = SquaredDistanceKernel(1.0), α::T = one(T), γ::T = one(T))
 
@@ -26,6 +31,9 @@ The following kernels have been predefined:
 
     where :math:`\kappa` is a non-negative negative definite kernel. When :math:`\kappa` is the
     squared distance kernel, then :math:`k` is the radial basis (Gaussian) kernel.
+
+Rational-Quadratic Kernel
+-------------------------
 
 .. function:: RationalQuadraticKernel{T<:FloatingPoint}(
                 κ::BaseKernel{T} = SquaredDistanceKernel(1.0), 
