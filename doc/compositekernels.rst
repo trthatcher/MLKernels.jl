@@ -50,6 +50,9 @@ Rational-Quadratic Kernel
     where :math:`\kappa` is a non-negative negative definite kernel. The rational-quadratic
     kernel is a Mercer kernel.
 
+Matern Kernel
+-------------
+
 .. function:: MaternKernel{T<:FloatingPoint}(κ::BaseKernel{T} = SquaredDistanceKernel(1.0), α::T = one(T), β::T = one(T), γ::T = one(T))
 
     Construct a Matern class kernel:
@@ -61,6 +64,9 @@ Rational-Quadratic Kernel
     where :math:`\kappa` is a non-negative negative definite kernel, :math:`\Gamma` is the gamma
     function, :math:`K_{\nu}` is the modified Bessel function of the second kind, :math:`\nu > 0`
     and :math:`\theta > 0`. The Matern kernel is a Mercer kernel. 
+
+Power Kernel
+------------
 
 .. function:: PowerKernel{T<:FloatingPoint}(κ::BaseKernel{T} = SquaredDistanceKernel(1.0), γ::T = one(T))
 
