@@ -7,7 +7,7 @@ Standard Interface
 Kernel Functions
 ----------------
 
-.. function:: kernelmatrix{T<:FloatingPoint}(κ::Kernel{T}, X::Matrix{T}, is_trans::Bool = false, store_upper::Bool = true, symmetrize::Bool = true)
+.. function:: kernelmatrix(κ::Kernel{T}, X::Matrix{T}, is_trans::Bool, store_upper::Bool, symmetrize::Bool)
 
 
 Kernel Approximation
