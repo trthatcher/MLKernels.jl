@@ -37,23 +37,15 @@ center_kernelmatrix{T<:FloatingPoint}(K::Matrix{T}) = center_kernelmatrix!(copy(
   Generic Kernel Matrix Functions
 ==========================================================================#
 
-function kernelmatrix{T<:FloatingPoint}(κ::Kernel{T}, X::Matrix{T}, trans::Char = 'N', uplo::Char = 'U', symmetrize::Bool = true)
-    is_trans = trans == 'T'
-    kernelmatrix!(init_pairwise(X, is_trans), κ, X, is_trans, uplo == 'U', symmetrize)
-end
-
-function kernelmatrix{T<:FloatingPoint}(κ::Kernel{T}, X::Matrix{T}, is_trans::Bool, store_upper::Bool = true, symmetrize::Bool = true)
+function kernelmatrix{T<:FloatingPoint}(κ::Kernel{T}, X::Matrix{T}, is_trans::Bool = false, store_upper::Bool = true, symmetrize::Bool = true)
     kernelmatrix!(init_pairwise(X, is_trans), κ, X, is_trans, store_upper, symmetrize)
 end
+kernelmatrix{T<:FloatingPoint}(κ::Kernel{T}, X::Matrix{T}; is_trans::Bool = false, store_upper::Bool = true, symmetrize::Bool = true) = kernelmatrix(κ, X, is_trans, store_upper, symmetrize)
 
-function kernelmatrix{T<:FloatingPoint}(κ::Kernel{T}, X::Matrix{T}, Y::Matrix{T}, trans::Char = 'N')
-    is_trans = trans == 'T'
+function kernelmatrix{T<:FloatingPoint}(κ::Kernel{T}, X::Matrix{T}, Y::Matrix{T}, is_trans::Bool = false)
     kernelmatrix!(init_pairwise(X, Y, is_trans), κ, X, Y, is_trans)
 end
-
-function kernelmatrix{T<:FloatingPoint}(κ::Kernel{T}, X::Matrix{T}, Y::Matrix{T}, is_trans::Bool)
-    kernelmatrix!(init_pairwise(X, Y, is_trans), κ, X, Y, is_trans)
-end
+kernelmatrix{T<:FloatingPoint}(κ::Kernel{T}, X::Matrix{T}, Y::Matrix{T}; is_trans::Bool = false) = kernelmatrix(κ, X, Y, is_trans)
 
 
 #==========================================================================

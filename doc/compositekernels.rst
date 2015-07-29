@@ -21,102 +21,82 @@ complex kernels. Formally:
 Exponential Kernel
 ------------------
 
-.. function:: ExponentialKernel{T<:FloatingPoint}(κ::BaseKernel{T} = SquaredDistanceKernel(1.0), α::T = one(T), γ::T = one(T))
+Construct an exponential class kernel:
 
-    Construct an exponential class kernel:
+.. math::
 
-    .. math::
-    
-        k(\mathbf{x},\mathbf{y}) = \exp\left(-\alpha \kappa(\mathbf{x},\mathbf{y})^{\gamma}\right) \qquad \alpha > 0, \; 0 < \gamma \leq 1
+    k(\mathbf{x},\mathbf{y}) = \exp\left(-\alpha \kappa(\mathbf{x},\mathbf{y})^{\gamma}\right) \qquad \alpha > 0, \; 0 < \gamma \leq 1
 
-    where :math:`\kappa` is a non-negative negative definite kernel. When :math:`\kappa` is the
-    squared distance kernel, then :math:`k` is the radial basis (Gaussian) kernel.
+where :math:`\kappa` is a non-negative negative definite kernel. When :math:`\kappa` is the
+squared distance kernel, then :math:`k` is the radial basis (Gaussian) kernel.
 
 Rational-Quadratic Kernel
 -------------------------
 
-.. function:: RationalQuadraticKernel{T<:FloatingPoint}(
-                κ::BaseKernel{T} = SquaredDistanceKernel(1.0), 
-                α::T = one(T), 
-                β::T = one(T),
-                 γ::T = one(T))
+.. math::
 
-    Construct a rational-quadratic class kernel:
+    k(\mathbf{x},\mathbf{y}) = \left(1 +\alpha \kappa(\mathbf{x},\mathbf{y})^{\gamma}\right)^{-\beta} \qquad \alpha > 0, \; \beta > 0, \; 0 < \gamma \leq 1
 
-    .. math::
-    
-        k(\mathbf{x},\mathbf{y}) = \left(1 +\alpha \kappa(\mathbf{x},\mathbf{y})^{\gamma}\right)^{-\beta} \qquad \alpha > 0, \; \beta > 0, \; 0 < \gamma \leq 1
-
-    where :math:`\kappa` is a non-negative negative definite kernel. The rational-quadratic
-    kernel is a Mercer kernel.
+where :math:`\kappa` is a non-negative negative definite kernel. The rational-quadratic
+kernel is a Mercer kernel.
 
 Matern Kernel
 -------------
 
-.. function:: MaternKernel{T<:FloatingPoint}(κ::BaseKernel{T} = SquaredDistanceKernel(1.0), α::T = one(T), β::T = one(T), γ::T = one(T))
+.. math::
 
-    Construct a Matern class kernel:
+    k(\mathbf{x},\mathbf{y}) = \frac{1}{2^{\nu-1}\Gamma(\nu)} \left(\frac{2\sqrt{\nu}\kappa(\mathbf{x},\mathbf{y})}{\theta}\right)^{\nu} K_{\nu}\left(\frac{2\sqrt{\nu}\kappa(\mathbf{x},\mathbf{y})}{\theta}\right)
 
-    .. math::
-
-        k(\mathbf{x},\mathbf{y}) = \frac{1}{2^{\nu-1}\Gamma(\nu)} \left(\frac{2\sqrt{\nu}\kappa(\mathbf{x},\mathbf{y})}{\theta}\right)^{\nu} K_{\nu}\left(\frac{2\sqrt{\nu}\kappa(\mathbf{x},\mathbf{y})}{\theta}\right)
-    
-    where :math:`\kappa` is a non-negative negative definite kernel, :math:`\Gamma` is the gamma
-    function, :math:`K_{\nu}` is the modified Bessel function of the second kind, :math:`\nu > 0`
-    and :math:`\theta > 0`. The Matern kernel is a Mercer kernel. 
+where :math:`\kappa` is a non-negative negative definite kernel, :math:`\Gamma` is the gamma
+function, :math:`K_{\nu}` is the modified Bessel function of the second kind, :math:`\nu > 0`
+and :math:`\theta > 0`. The Matern kernel is a Mercer kernel. 
 
 Power Kernel
 ------------
 
-.. function:: PowerKernel{T<:FloatingPoint}(κ::BaseKernel{T} = SquaredDistanceKernel(1.0), γ::T = one(T))
+.. math::
 
-    Construct a power kernel:
+    k(\mathbf{x},\mathbf{y}) = \kappa(\mathbf{x},\mathbf{y})^{\gamma} \qquad 0 < \gamma \leq 1
 
-    .. math::
-    
-        k(\mathbf{x},\mathbf{y}) = \kappa(\mathbf{x},\mathbf{y})^{\gamma} \qquad 0 < \gamma \leq 1
+where :math:`\kappa` is a non-negative negative definite kernel. The power kernel is a
+negative definite kernel.
 
-    where :math:`\kappa` is a non-negative negative definite kernel. The power kernel is a
-    negative definite kernel.
+Log Kernel
+----------
 
-.. function:: LogKernel{T<:FloatingPoint}(κ::BaseKernel{T} = SquaredDistanceKernel(1.0), α::T = one(T), γ::T = one(T))
+.. math::
 
-    Construct a log kernel:
+    k(\mathbf{x},\mathbf{y}) = \log(1 + \alpha\kappa(\mathbf{x},\mathbf{y})^{\gamma}) \qquad \alpha > 0, \; 0 < \gamma \leq 1
 
-    .. math::
-    
-        k(\mathbf{x},\mathbf{y}) = \log(1 + \alpha\kappa(\mathbf{x},\mathbf{y})^{\gamma}) \qquad \alpha > 0, \; 0 < \gamma \leq 1
+where :math:`\kappa` is a non-negative negative definite kernel. The power kernel is a
+negative definite kernel.
 
-    where :math:`\kappa` is a non-negative negative definite kernel. The power kernel is a
-    negative definite kernel.
+Polynomial Kernel
+-----------------
 
-.. function:: PolynomialKernel{T<:FloatingPoint}(κ::BaseKernel{T} = ScalarProductKernel(), α::T = one(T), c::T = one(T), d::T = convert(T,2))
+.. math::
 
-    Construct a polynomial kernel:
+    k(\mathbf{x},\mathbf{y}) = (\alpha\kappa(\mathbf{x},\mathbf{y}) + c)^d \qquad \alpha > 0, \; c \geq 0, \; d \in \mathbb{Z}_{+}
 
-    .. math::
-    
-        k(\mathbf{x},\mathbf{y}) = (\alpha\kappa(\mathbf{x},\mathbf{y}) + c)^d \qquad \alpha > 0, \; c \geq 0, \; d \in \mathbb{Z}_{+}
+where :math:`\kappa` is a Mercer kernel. The polynomial kernel is a Mercer kernel.
 
-    where :math:`\kappa` is a Mercer kernel. The polynomial kernel is a Mercer kernel.
+Exponentiated Kernel
+--------------------
 
-.. function:: ExponentiatedKernel{T<:FloatingPoint}(κ::BaseKernel{T} = ScalarProductKernel(), α::T = one(T))
+.. math::
 
-    Construct an exponentiated kernel:
+    k(\mathbf{x},\mathbf{y}) = \exp(\alpha\kappa(\mathbf{x},\mathbf{y}) + c) \qquad \alpha > 0, \; c \geq 0
 
-    .. math::
-    
-        k(\mathbf{x},\mathbf{y}) = \exp(\alpha\kappa(\mathbf{x},\mathbf{y}) + c) \qquad \alpha > 0, \; c \geq 0
+where :math:`\kappa` is a Mercer kernel. An exponentiated kernel is a Mercer kernel.
 
-    where :math:`\kappa` is a Mercer kernel. An exponentiated kernel is a Mercer kernel.
+Sigmoid Kernel
+--------------
 
-.. function:: SigmoidKernel{T<:FloatingPoint}(κ::BaseKernel{T} = ScalarProductKernel(), α::T = one(T), c::T = one(T))
+Construct a sigmoid kernel:
 
-    Construct a sigmoid kernel:
+.. math::
 
-    .. math::
-    
-        k(\mathbf{x},\mathbf{y}) = \tanh(\alpha\kappa(\mathbf{x},\mathbf{y}) + c) \qquad \alpha > 0, \; c \geq 0
+    k(\mathbf{x},\mathbf{y}) = \tanh(\alpha\kappa(\mathbf{x},\mathbf{y}) + c) \qquad \alpha > 0, \; c \geq 0
 
-    where :math:`\kappa` is a Mercer kernel. The sigmoid kernel is a not a true kernel, although
-    it has been used in application.
+where :math:`\kappa` is a Mercer kernel. The sigmoid kernel is a not a true kernel, although
+it has been used in application.
