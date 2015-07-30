@@ -3,7 +3,7 @@
 [![Build Status](https://travis-ci.org/trthatcher/MLKernels.jl.svg?branch=master)](https://travis-ci.org/trthatcher/MLKernels.jl)
 [![Coverage Status](https://coveralls.io/repos/trthatcher/MLKernels.jl/badge.svg)](https://coveralls.io/r/trthatcher/MLKernels.jl)
 
-MLKernels.jl is a Julia package for kernel functions (or covariance functions in Gaussian 
+**MLKernels.jl** is a Julia package for kernel functions (or covariance functions in Gaussian 
 processes) that are used in the kernel methods of machine learning. The goal is to provide a Julia
 datatype for machine learning kernels and an efficient set of methods to calculate or approximate 
 kernel matrices. The package has no dependencies beyond base Julia.
@@ -13,8 +13,8 @@ kernel matrices. The package has no dependencies beyond base Julia.
 ### Getting Started
 
 Consistent with traditional literature on kernels, kernels come in two flavours:
- - Positive Definite Kernels (Mercer Kernels)
- - Negative Definite Kernels
+ - **Mercer Kernels** (Positive Definite Kernels)
+ - **Negative Definite Kernels**
 
 Negative definite kernels are equivalent to conditionally positive definite kernels that are often found in Machine Learning literature. To convert a negative definite kernel to a conditionally positive definite kernel, simply multiply the result of the kernel function by -1.
 
@@ -216,11 +216,3 @@ true
 julia> isnegdef(GaussianKernel())
 false
 ```
-
-#### Citations
-
-[Marc G. Genton. 2002. Classes of kernels for machine learning: a statistics perspective. J. Mach. Learn. Res. 2 (March 2002), 299-312.](http://dl.acm.org/citation.cfm?id=944815)
-
-[Petros Drineas and Michael W. Mahoney. 2005. On the Nyström Method for Approximating a Gram Matrix for Improved Kernel-Based Learning. J. Mach. Learn. Res. 6 (December 2005), 2153-2175.](http://dl.acm.org/citation.cfm?id=1194916)
-
-C. K. I. Williams and M. Seeger. Using the Nyström method to speed up kernel machines. In Annual Advances in Neural Information Processing Systems 13: Proceedings of the 2000 Conference, pages 682-688, 2001.
