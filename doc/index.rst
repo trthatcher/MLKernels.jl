@@ -1,12 +1,10 @@
-.. Machine Learning Kernels documentation master file, created by
-   sphinx-quickstart on Sat Jul 25 10:39:46 2015.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
-
 Machine Learning Kernels
 ========================
 
-Contents:
+MLKernels.jl is a Julia package for kernel functions (or covariance functions in Gaussian 
+processes) that are used in the kernel methods of machine learning. The goal is to provide a Julia
+datatype for machine learning kernels and an efficient set of methods to calculate or approximate 
+kernel matrices. The package has no dependencies beyond base Julia.
 
 .. toctree::
 
@@ -14,4 +12,3 @@ Contents:
     basekernels
     compositekernels
     citations
-

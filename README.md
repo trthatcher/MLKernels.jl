@@ -8,7 +8,7 @@ processes) that are used in the kernel methods of machine learning. The goal is 
 datatype for machine learning kernels and an efficient set of methods to calculate or approximate 
 kernel matrices. The package has no dependencies beyond base Julia.
 
- - [**Documentation**](http://mlkernels.readthedocs.org/)
+ - **Documentation:** http://mlkernels.readthedocs.org/
 
 ### Getting Started
 

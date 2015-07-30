@@ -1,3 +1,5 @@
+.. _basekernels:
+
 Base Kernels
 ============
 

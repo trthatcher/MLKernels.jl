@@ -1,3 +1,5 @@
+.. _compositekernels:
+
 Composite Kernels
 =================
 
