@@ -17,7 +17,14 @@ immutable ExponentialKernel{T<:FloatingPoint,CASE} <: CompositeKernel{T}
         new(κ, α, γ)
     end
 end
-ExponentialKernel{T<:FloatingPoint}(κ::BaseKernel{T} = SquaredDistanceKernel(1.0), α::T = one(T), γ::T = one(T)) = ExponentialKernel{T, γ == 1 ? :γ1 : :Ø}(κ, α, γ)
+function ExponentialKernel{T<:FloatingPoint}(κ::BaseKernel{T}, α::T = one(T), γ::T = one(T))
+    ExponentialKernel{T, γ == 1 ? :γ1 : :Ø}(κ, α, γ)
+end
+ExponentialKernel{T<:FloatingPoint}(α::T = 1.0, γ::T = one(T)) = ExponentialKernel(convert(Kernel{T}, SquaredDistanceKernel()), α, γ)
+
+GaussianKernel{T<:FloatingPoint}(α::T = 1.0) = ExponentialKernel(SquaredDistanceKernel(one(T)), α)
+RadialBasisKernel{T<:FloatingPoint}(α::T = 1.0) = ExponentialKernel(SquaredDistanceKernel(one(T)),α)
+LaplacianKernel{T<:FloatingPoint}(α::T = 1.0) = ExponentialKernel(SquaredDistanceKernel(one(T)),α, convert(T, 0.5))
 
 ismercer(::ExponentialKernel) = true
 
@@ -54,7 +61,7 @@ immutable RationalQuadraticKernel{T<:FloatingPoint,CASE} <: CompositeKernel{T}
         new(κ, α, β, γ)
     end
 end
-function RationalQuadraticKernel{T<:FloatingPoint}(κ::BaseKernel{T} = SquaredDistanceKernel(1.0), α::T = one(T), β::T = one(T), γ::T = one(T))
+function RationalQuadraticKernel{T<:FloatingPoint}(κ::BaseKernel{T}, α::T = one(T), β::T = one(T), γ::T = one(T))
     β1 = β == 1
     γ1 = γ == 1
     CASE =  if β1 && γ1
@@ -67,6 +74,9 @@ function RationalQuadraticKernel{T<:FloatingPoint}(κ::BaseKernel{T} = SquaredDi
                 :Ø
             end    
     RationalQuadraticKernel{T,CASE}(κ, α, β, γ)
+end
+function RationalQuadraticKernel{T<:FloatingPoint}(α::T = 1.0, β::T = one(T), γ::T = one(T))
+    RationalQuadraticKernel(convert(Kernel{T}, SquaredDistanceKernel()), α, β, γ)
 end
 
 ismercer(::RationalQuadraticKernel) = true
@@ -100,7 +110,8 @@ immutable MaternKernel{T<:FloatingPoint,CASE} <: CompositeKernel{T}
         new(κ, ν, θ)
     end
 end
-MaternKernel{T<:FloatingPoint}(κ::BaseKernel{T} = SquaredDistanceKernel(1.0), ν::T = one(T), θ::T = one(T)) = MaternKernel{T, ν == 1 ? :ν1 : :Ø}(κ, ν, θ)
+MaternKernel{T<:FloatingPoint}(κ::BaseKernel{T}, ν::T = one(T), θ::T = one(T)) = MaternKernel{T, ν == 1 ? :ν1 : :Ø}(κ, ν, θ)
+MaternKernel{T<:FloatingPoint}(ν::T = 1.0, θ::T = one(T)) = (convert(Kernel{T},SquaredDistanceKernel()), ν, θ)
 
 ismercer(::MaternKernel) = true
 
@@ -136,7 +147,8 @@ immutable PowerKernel{T<:FloatingPoint,CASE} <: CompositeKernel{T}
         new(κ,γ)
     end
 end
-PowerKernel{T<:FloatingPoint}(κ::BaseKernel{T} = SquaredDistanceKernel(1.0), γ::T = one(T)) = PowerKernel{T, γ == 1 ? :γ1 : :Ø}(κ, γ)
+PowerKernel{T<:FloatingPoint}(κ::BaseKernel{T}, γ::T = one(T)) = PowerKernel{T, γ == 1 ? :γ1 : :Ø}(κ, γ)
+PowerKernel{T<:FloatingPoint}(γ::T = 1.0) = PowerKernel(convert(Kernel{T},SquaredDistanceKernel()), γ)
 
 isnegdef(::PowerKernel) = true
 
@@ -167,7 +179,8 @@ immutable LogKernel{T<:FloatingPoint,CASE} <: CompositeKernel{T}
         new(κ,α,γ)
     end
 end
-LogKernel{T<:FloatingPoint}(κ::BaseKernel{T} = SquaredDistanceKernel(1.0), α::T = one(T), γ::T = one(T)) = LogKernel{T, γ == 1 ? :γ1 : :Ø}(κ, α, γ)
+LogKernel{T<:FloatingPoint}(κ::BaseKernel{T}, α::T = one(T), γ::T = one(T)) = LogKernel{T, γ == 1 ? :γ1 : :Ø}(κ, α, γ)
+LogKernel{T<:FloatingPoint}(α::T = 1.0, γ::T = one(T)) = LogKernel(convert(Kernel{T},SquaredDistanceKernel(1.0)), α, γ)
 
 isnegdef(::LogKernel) = true
 
@@ -199,7 +212,10 @@ immutable PolynomialKernel{T<:FloatingPoint,CASE} <: CompositeKernel{T}
         new(κ, α, c, d)
     end
 end
-PolynomialKernel{T<:FloatingPoint}(κ::BaseKernel{T} = ScalarProductKernel(), α::T = one(T), c::T = one(T), d::T = convert(T, 2)) = PolynomialKernel{T, d == 1 ? :d1 : :Ø}(κ, α, c, d)
+PolynomialKernel{T<:FloatingPoint}(κ::BaseKernel{T}, α::T = one(T), c::T = one(T), d::T = convert(T, 2)) = PolynomialKernel{T, d == 1 ? :d1 : :Ø}(κ, α, c, d)
+PolynomialKernel{T<:FloatingPoint}(α::T = 1.0, c::T = one(T), d::T = convert(T, 2)) = PolynomialKernel(convert(Kernel{T},ScalarProductKernel()), α, c, d)
+
+LinearKernel{T<:FloatingPoint}(α::T = 1.0, c::T = one(T)) = PolynomialKernel(ScalarProductKernel(), α, c, one(T))
 
 ismercer(::PolynomialKernel) = true
 
@@ -224,7 +240,8 @@ immutable ExponentiatedKernel{T<:FloatingPoint} <: CompositeKernel{T}
         new(κ, α)
     end
 end
-ExponentiatedKernel{T<:FloatingPoint}(κ::BaseKernel{T} = ScalarProductKernel(), α::T = one(T)) = ExponentiatedKernel{T}(κ, α)
+ExponentiatedKernel{T<:FloatingPoint}(κ::BaseKernel{T}, α::T = one(T)) = ExponentiatedKernel{T}(κ, α)
+ExponentiatedKernel{T<:FloatingPoint}(α::T = 1.0) = ExponentiatedKernel(convert(Kernel{T},ScalarProductKernel()), α)
 
 ismercer(::ExponentiatedKernel) = true
 
@@ -249,7 +266,8 @@ immutable SigmoidKernel{T<:FloatingPoint} <: CompositeKernel{T}
         new(κ, α, c)
     end
 end
-SigmoidKernel{T<:FloatingPoint}(κ::BaseKernel{T} = ScalarProductKernel(), α::T = one(T), c::T = one(T)) = SigmoidKernel{T}(κ, α, c)
+SigmoidKernel{T<:FloatingPoint}(κ::BaseKernel{T}, α::T = one(T), c::T = one(T)) = SigmoidKernel{T}(κ, α, c)
+SigmoidKernel{T<:FloatingPoint}(α::T = 1.0, c::T = one(T)) = SigmoidKernel(convert(Kernel{T},ScalarProductKernel()), α, c)
 
 function description_string{T<:FloatingPoint}(κ::SigmoidKernel{T}, eltype::Bool = true)
     "SigmoidKernel" * (eltype ? "{$(T)}" : "") * "(κ=" * description_string(κ.k, false) * ",α=$(κ.alpha),c=$(κ.c))"

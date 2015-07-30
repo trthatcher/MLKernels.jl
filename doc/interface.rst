@@ -4,7 +4,21 @@ Interface
 Kernels
 -------
 
-Many kernels have been predefined. See the section on :ref:`basekernels` and 
+Several of the most popular kernels have been predefined for quick instantiation as they fall
+into a more general class of kernel. For example:
+
+.. code-block:: julia
+
+    GaussianKernel(α)     # Exponentiation of the squared distance multiplied by α
+    LaplacianKernel(α)    # Exponentiation of the distance multiplied by α
+    RadialBasisKernel(α)  # Identical to GaussianKernel()
+
+    PolynomialKernel(α,c,d)   # Polynomial kernel of degree d
+    LinearKernel(α,c)         # Polynomial kernel of degree d = 1
+
+    SigmoidKernel()  # The sigmoid 'kernel' (this kernel is neither Mercer or negative definite)
+
+Many other kernels have been predefined. See the section on :ref:`basekernels` and 
 :ref:`compositekernels` for a listing of kernels.
 
 Kernels may be inspected using the ``ismercer`` and ``isnegdef`` functions to determine if the
@@ -17,10 +31,6 @@ kernel is positive or negative definite, respectively:
 .. function:: isnegdef(::Kernel)
 
     Returns ``true`` if the kernel type is a negative definite kernel.
-
-
-Kernel Algebra
---------------
 
 Both Mercer kernels and negative definite kernels are closed under addition with another kernel
 or a positive constant. Addition can be used to generate a new kernel:
@@ -65,9 +75,6 @@ Negative definite kernels may be multiplied by a positive scalar:
     julia> ChiSquaredKernel() * 2
     KernelProduct{Float64}(2.0, ChiSquaredKernel(t=1.0))
 
-
-Kernel Functions
-----------------
 
 Kernel Matrices
 ----------------
