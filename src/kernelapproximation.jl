@@ -87,10 +87,10 @@ function nystrom!{T<:FloatingPoint,U<:Integer}(K::Matrix{T}, κ::Kernel{T}, X::M
     symmetrize ? (store_upper ?  syml!(K) : symu!(K)) : K
 end
 
-function nystrom{T<:FloatingPoint,U<:Integer}(κ::Kernel{T}, X::Matrix{T}, s::Array{U}, is_trans::Bool = true, store_upper::Bool = true, symmetrize::Bool = true)
+function nystrom{T<:FloatingPoint,U<:Integer}(κ::Kernel{T}, X::Matrix{T}, s::Array{U}, is_trans::Bool = false, store_upper::Bool = true, symmetrize::Bool = true)
     nystrom!(init_pairwise(X, is_trans), κ, X, s, is_trans, store_upper, symmetrize)
 end
 
-function nystrom{T<:FloatingPoint,U<:Integer}(κ::Kernel{T}, X::Matrix{T}, s::Array{U}; is_trans::Bool = true, store_upper::Bool = true, symmetrize::Bool = true)
+function nystrom{T<:FloatingPoint,U<:Integer}(κ::Kernel{T}, X::Matrix{T}, s::Array{U}; is_trans::Bool = false, store_upper::Bool = true, symmetrize::Bool = true)
     nystrom(κ, X, s, is_trans, store_upper, symmetrize)
 end
