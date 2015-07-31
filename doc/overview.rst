@@ -1,8 +1,31 @@
-Interface
-=========
+Overview
+========
 
 Kernels
 -------
+
+The kernel methods are a class of algorithms that are used for pattern analysis. These methods make
+use of **kernel** functions. A symmetric, real valued kernel function 
+:math:`\kappa: \mathcal{X} \times \mathcal{X} \rightarrow \mathbb{R}` is said to be **positive 
+definite** or **Mercer** if and only:
+
+.. math::
+
+    \sum_{i=1}^n \sum_{j=1}^n c_i c_j \kappa(\mathbf{x}_i,\mathbf{x}_j) \geq 0
+
+for all :math:`n \in \mathbb{N}`, :math:`\{\mathbf{x}_1, \dots, \mathbf{x}_n\} \subseteq \mathcal{X}`
+and :math:`\{c_1, \dots, c_n\} \subseteq \mathbb{R}`. Similarly, a real valued kernel function
+is said to be **negative definite** if and only if:
+
+.. math::
+
+    \sum_{i=1}^n \sum_{j=1}^n c_i c_j \kappa(\mathbf{x}_i,\mathbf{x}_j) \leq 0 \qquad \sum_{i=1}^n c_i = 0
+
+for :math:`n \geq 2`, :math:`\{\mathbf{x}_1, \dots, \mathbf{x}_n\} \subseteq \mathcal{X}` and 
+:math:`\{c_1, \dots, c_n\} \subseteq \mathbb{R}`. In machine learning literature, **conditionally
+positive definite** kernels are often studied instead. This is simply a reversal of the above
+inequality. Trivially, every negative definite kernel can be transformed into a conditionally
+positive definite kernel by negation.
 
 Several of the most popular kernels have been predefined for quick instantiation as they fall
 into a more general class of kernel. For example:
@@ -16,64 +39,48 @@ into a more general class of kernel. For example:
     PolynomialKernel(α,c,d)   # Polynomial kernel of degree d
     LinearKernel(α,c)         # Polynomial kernel of degree d = 1
 
-    SigmoidKernel()  # The sigmoid 'kernel' (this kernel is neither Mercer or negative definite)
+    SigmoidKernel()  # The sigmoid "kernel" (this kernel is neither Mercer or negative definite)
 
 Many other kernels have been predefined. See the section on :ref:`basekernels` and 
 :ref:`compositekernels` for a listing of kernels.
 
+To evaluate a kernel, the ``kernel`` function can be used. See the interface for kernel_ function
+evaluation.
+
 Kernels may be inspected using the ``ismercer`` and ``isnegdef`` functions to determine if the
-kernel is positive or negative definite, respectively:
-
-.. function:: ismercer(::Kernel)
-
-    Returns ``true`` if the kernel type is a Mercer kernel.
-
-.. function:: isnegdef(::Kernel)
-
-    Returns ``true`` if the kernel type is a negative definite kernel.
+kernel is positive or negative definite. See the interface for ismercer_ and isnegdef_ 
+respectively.
 
 Both Mercer kernels and negative definite kernels are closed under addition with another kernel
 or a positive constant. Addition can be used to generate a new kernel:
 
 .. code-block:: julia
 
-    julia> ScalarProductKernel() + 2.0
-    KernelSum{Float64}(2.0, ScalarProductKernel())
+    # Mercer kernel combination
+    ScalarProductKernel() + 2.0
+    ScalarProductKernel() + MercerSigmoidKernel()
+    ScalarProductKernel() + MercerSigmoidKernel() + 2.0
 
-    julia> ScalarProductKernel() + MercerSigmoidKernel()
-    KernelSum{Float64}(0.0, ScalarProductKernel(), MercerSigmoidProduct(d=0.0,b=1.0))
-
-    julia> ScalarProductKernel() + MercerSigmoidKernel() + 2.0
-    KernelSum{Float64}(2.0, ScalarProductKernel(), MercerSigmoidProduct(d=0.0,b=1.0))
-
-    julia> SquaredDistanceKernel() + 2.0
-    KernelSum{Float64}(2.0, SquaredDistanceKernel(t=1.0))
-
-    julia> SquaredDistanceKernel() + ChiSquaredKernel()
-    KernelSum{Float64}(0.0, SquaredDistanceKernel(t=1.0), ChiSquaredKernel(t=1.0))
-
-    julia> SquaredDistanceKernel() + ChiSquaredKernel() + 2.0
-    KernelSum{Float64}(2.0, SquaredDistanceKernel(t=1.0), ChiSquaredKernel(t=1.0))
+    # Negative definite kernel combination
+    SquaredDistanceKernel() + 2.0
+    SquaredDistanceKernel() + ChiSquaredKernel()
+    SquaredDistanceKernel() + ChiSquaredKernel() + 2.0
 
 Mercer kernels are also closed under multiplication:
 
 .. code-block:: julia
 
-    julia> ScalarProductKernel() * 2.0
-    KernelProduct{Float64}(2.0, ScalarProductKernel())
+    # Mercer kernel multiplication
+    ScalarProductKernel() * 2.0
+    ScalarProductKernel() * MercerSigmoidKernel()
+    ScalarProductKernel() * MercerSigmoidKernel() * 2.0
 
-    julia> ScalarProductKernel() * MercerSigmoidKernel()
-    KernelProduct{Float64}(1.0, ScalarProductKernel(), MercerSigmoidProduct(d=0.0,b=1.0))
-
-    julia> ScalarProductKernel() * MercerSigmoidKernel() * 2.0
-    KernelProduct{Float64}(2.0, ScalarProductKernel(), MercerSigmoidProduct(d=0.0,b=1.0))
-
-Negative definite kernels may be multiplied by a positive scalar:
+Negative definite kernels may only be multiplied by a positive scalar:
 
 .. code-block:: julia
 
-    julia> ChiSquaredKernel() * 2
-    KernelProduct{Float64}(2.0, ChiSquaredKernel(t=1.0))
+    # Negative definite kernel scaling
+    ChiSquaredKernel() * 2
 
 
 Kernel Matrices
@@ -93,6 +100,40 @@ For a single input matrix, the kernel matrix is defined:
 For two input matrices:
 
 .. math:: \mathbf{K}(\mathbf{X}, \mathbf{Y}) = \left[\kappa(\mathbf{x}_i,\mathbf{y}_j)\right]_{i,j} \qquad \forall i \in \{1, \dots, n\}, \; j \in \{1, \dots, m\}
+
+See the interface for kernelmatrix_ computation.
+
+Kernel Approximation
+--------------------
+
+The **Nystrom method** can be used to approximate squared kernel matrices when full computation becomes
+prohibitively expensive. The underlying approximation uses an eigendecomposition. Note that the 
+computational complexity of an eigendecomposition is :math:`\mathcal{O}(|s|^3)` where :math:`s`
+is the set of sampled vectors. See the interface for nystrom_.
+
+
+Interface
+---------
+
+.. _kernel:
+
+.. function:: kernel(κ::BaseKernel{T}, x::Vector{T}, y::Vector{T})
+
+    Evaluate the kernel of two vectors. Type ``T`` may be any subtype of ``FloatingPoint``.
+
+.. _ismercer:
+
+.. function:: ismercer(::Kernel)
+
+    Returns ``true`` if the kernel type is a Mercer kernel.
+
+.. _isnegdef:
+
+.. function:: isnegdef(::Kernel)
+
+    Returns ``true`` if the kernel type is a negative definite kernel.
+
+.. _kernelmatrix:
 
 .. function:: kernelmatrix(κ::Kernel{T}, X::Matrix{T}; is_trans::Bool, store_upper::Bool, symmetrize::Bool)
 
@@ -136,13 +177,7 @@ For two input matrices:
 
         kernelmatrix!(K, κ, X, Y, is_trans)
 
-Kernel Approximation
---------------------
-
-The Nystrom method can be used to approximate squared kernel matrices when full computation becomes
-prohibitively expensive. The underlying approximation uses an eigen decomposition. Note that the 
-computational complexity of an eigen decomposition is :math:`\mathcal{O}(|s|^3)` where :math:`s`
-is the set of sampled vectors.
+.. _nystrom:
 
 .. function:: nystrom(κ::Kernel{T}, X::Matrix{T}, s::Array{U}; is_trans::Bool, store_upper::Bool, symmetrize::Bool)
 
@@ -169,3 +204,5 @@ is the set of sampled vectors.
     .. code-block:: julia
 
         nystrom!(K, κ, X, s, is_trans, store_upper, symmetrize)
+
+

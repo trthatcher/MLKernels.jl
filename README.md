@@ -18,7 +18,7 @@ Consistent with traditional literature on kernels, kernels come in two flavours:
 
 Negative definite kernels are equivalent to conditionally positive definite kernels that are often found in Machine Learning literature. To convert a negative definite kernel to a conditionally positive definite kernel, simply multiply the result of the kernel function by -1.
 
-Kernels are further broken into three categories:
+Kernels are further broken into three main types:
 
  - **Base Kernels**: These are simple kernels that serve as building blocks for more complex kernels. They are easily extended.
  - **Composite Kernels**: These kernels are a scalar transformation of a Base Kernel. As a result, they are not standalone; they require a base kernel. Most kernels with widespread usage fall into this category.
