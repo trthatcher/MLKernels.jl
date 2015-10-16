@@ -6,8 +6,10 @@ const liblapack = Base.liblapack_name
 
 import Base.blasfunc
 
-import Base.LinAlg: BlasFloat, BlasChar, BlasInt, blas_int, LAPACKException,
+import Base.LinAlg: BlasFloat, BlasInt, LAPACKException,
     DimensionMismatch, SingularException, PosDefException, chkstride1, chksquare
+
+typealias BlasChar Char
 
 #Generic LAPACK error handlers
 macro assertargsok() #Handle only negative info codes - use only if positive info code is useful!
@@ -46,9 +48,9 @@ for (syevd, elty) in
             n = chksquare(A)
             W     = similar(A, $elty, n)
             work  = Array($elty, 1)
-            lwork = blas_int(-1)
+            lwork = convert(BlasInt, -1)
             iwork  = Array(BlasInt, 1)
-            liwork = blas_int(-1)
+            liwork = convert(BlasInt, -1)
             info  = Array(BlasInt, 1)
             for i in 1:2
                 ccall(($(blasfunc(syevd)), liblapack), Void,
@@ -57,7 +59,7 @@ for (syevd, elty) in
                       &jobz, &uplo, &n, A, &max(1,stride(A,2)), W, work, &lwork, iwork, &liwork, info)
                 @lapackerror
                 if lwork < 0
-                    lwork = blas_int(real(work[1]))
+                    lwork = convert(BlasInt, real(work[1]))
                     work = Array($elty, lwork)
                     liwork = iwork[1]
                     iwork = Array(BlasInt, liwork)
@@ -74,7 +76,7 @@ end
 ===================================================================================================#
 
 # Nystrom method for Kernel Matrix approximation
-function nystrom!{T<:FloatingPoint,U<:Integer}(K::Matrix{T}, κ::Kernel{T}, X::Matrix{T}, s::Vector{U}, is_trans::Bool, store_upper::Bool, symmetrize::Bool)
+function nystrom!{T<:AbstractFloat,U<:Integer}(K::Matrix{T}, κ::Kernel{T}, X::Matrix{T}, s::Vector{U}, is_trans::Bool, store_upper::Bool, symmetrize::Bool)
     c = length(s)
     n = size(X, 1)
     C = is_trans ? kernelmatrix(κ, X[:,s], X, true) : kernelmatrix(κ, X[s,:], X, false)
@@ -87,10 +89,10 @@ function nystrom!{T<:FloatingPoint,U<:Integer}(K::Matrix{T}, κ::Kernel{T}, X::M
     symmetrize ? (store_upper ?  syml!(K) : symu!(K)) : K
 end
 
-function nystrom{T<:FloatingPoint,U<:Integer}(κ::Kernel{T}, X::Matrix{T}, s::Array{U}, is_trans::Bool = false, store_upper::Bool = true, symmetrize::Bool = true)
+function nystrom{T<:AbstractFloat,U<:Integer}(κ::Kernel{T}, X::Matrix{T}, s::Array{U}, is_trans::Bool = false, store_upper::Bool = true, symmetrize::Bool = true)
     nystrom!(init_pairwise(X, is_trans), κ, X, s, is_trans, store_upper, symmetrize)
 end
 
-function nystrom{T<:FloatingPoint,U<:Integer}(κ::Kernel{T}, X::Matrix{T}, s::Array{U}; is_trans::Bool = false, store_upper::Bool = true, symmetrize::Bool = true)
+function nystrom{T<:AbstractFloat,U<:Integer}(κ::Kernel{T}, X::Matrix{T}, s::Array{U}; is_trans::Bool = false, store_upper::Bool = true, symmetrize::Bool = true)
     nystrom(κ, X, s, is_trans, store_upper, symmetrize)
 end

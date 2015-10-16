@@ -4,7 +4,7 @@
 
 module MLKernels
 
-import Base: show, eltype, convert
+import Base: show, eltype, convert, <=, <, >=, >, *, +
 
 export
     # Functions
