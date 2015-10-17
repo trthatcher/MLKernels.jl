@@ -1,6 +1,6 @@
 abstract Kernel{T}
 
-abstract StandardKernel{T<:FloatingPoint} <: Kernel{T}
+abstract StandardKernel{T<:AbstractFloat} <: Kernel{T}
 
 function show(io::IO, κ::Kernel)
     print(io, description_string(κ))
@@ -33,7 +33,7 @@ attainsrangemin(::Kernel) = true
   Base Kernels
 ==========================================================================#
 
-abstract BaseKernel{T<:FloatingPoint} <: StandardKernel{T}
+abstract BaseKernel{T<:AbstractFloat} <: StandardKernel{T}
 
 include("kernels/additivekernels.jl")
 
@@ -42,14 +42,14 @@ for kernel in concrete_subtypes(AdditiveKernel)
     for parent in supertypes(kernel)
         parent_sym = parent.name.name  # symbol for abstract supertype
         @eval begin
-            function convert{T<:FloatingPoint}(::Type{$parent_sym{T}}, κ::$kernel_sym)
+            function convert{T<:AbstractFloat}(::Type{$parent_sym{T}}, κ::$kernel_sym)
                 convert($kernel_sym{T}, κ)
             end
         end
     end
 end
 
-immutable ARD{T<:FloatingPoint} <: BaseKernel{T}
+immutable ARD{T<:AbstractFloat} <: BaseKernel{T}
     k::AdditiveKernel{T}
     w::Vector{T}
     function ARD(κ::AdditiveKernel{T}, w::Vector{T})
@@ -57,7 +57,7 @@ immutable ARD{T<:FloatingPoint} <: BaseKernel{T}
         new(κ, w)
     end
 end
-ARD{T<:FloatingPoint}(κ::AdditiveKernel{T}, w::Vector{T}) = ARD{T}(κ, w)
+ARD{T<:AbstractFloat}(κ::AdditiveKernel{T}, w::Vector{T}) = ARD{T}(κ, w)
 
 ismercer(κ::ARD) = ismercer(κ.k)
 isnegdef(κ::ARD) = isnegdef(κ.k)
@@ -67,18 +67,18 @@ rangemin(κ::ARD) = rangemax(κ.k)
 attainsrangemax(κ::ARD) = attainsrangemax(κ.k)
 attainsrangemin(κ::ARD) = attainsrangemax(κ.k)
 
-function description_string{T<:FloatingPoint,}(κ::ARD{T}, eltype::Bool = true)
+function description_string{T<:AbstractFloat,}(κ::ARD{T}, eltype::Bool = true)
     "ARD" * (eltype ? "{$(T)}" : "") * "(κ=$(description_string(κ.k, false)),w=$(κ.w))"
 end
 
-convert{T<:FloatingPoint}(::Type{ARD{T}}, κ::ARD) = ARD(convert(Kernel{T},κ.k), convert(Vector{T}, κ.w))
+convert{T<:AbstractFloat}(::Type{ARD{T}}, κ::ARD) = ARD(convert(Kernel{T},κ.k), convert(Vector{T}, κ.w))
 
 
 #==========================================================================
   Composite Kernel
 ==========================================================================#
 
-abstract CompositeKernel{T<:FloatingPoint} <: StandardKernel{T}
+abstract CompositeKernel{T<:AbstractFloat} <: StandardKernel{T}
 
 include("kernels/compositekernels.jl")
 
@@ -87,21 +87,21 @@ for kernel in concrete_subtypes(CompositeKernel)
 
     field_conversions = [:(convert(Kernel{T}, κ.k))]
 
-    if length(names(kernel)) != 1
-        append!(field_conversions, [:(convert(T, κ.$field)) for field in names(kernel)[2:end]])
+    if length(fieldnames(kernel)) != 1
+        append!(field_conversions, [:(convert(T, κ.$field)) for field in fieldnames(kernel)[2:end]])
     end
 
     constructor = Expr(:call, kernel_sym, field_conversions...)
 
     @eval begin
-        convert{T<:FloatingPoint}(::Type{$kernel_sym{T}}, κ::$kernel_sym) = $constructor
+        convert{T<:AbstractFloat}(::Type{$kernel_sym{T}}, κ::$kernel_sym) = $constructor
     end
 
     for parent in supertypes(kernel)
         parent_sym = parent.name.name  # symbol for abstract supertype
 
         @eval begin
-            function convert{T<:FloatingPoint}(::Type{$parent_sym{T}}, κ::$kernel_sym)
+            function convert{T<:AbstractFloat}(::Type{$parent_sym{T}}, κ::$kernel_sym)
                 convert($kernel_sym{T}, κ)
             end
         end
@@ -113,9 +113,9 @@ end
   Composite Kernels
 ===================================================================================================#
 
-abstract CombinationKernel{T<:FloatingPoint} <: Kernel{T}
+abstract CombinationKernel{T<:AbstractFloat} <: Kernel{T}
 
-immutable KernelProduct{T<:FloatingPoint} <: CombinationKernel{T}
+immutable KernelProduct{T<:AbstractFloat} <: CombinationKernel{T}
     a::T
     k::Vector{Kernel{T}}
     function KernelProduct(a::T, κ::Vector{Kernel{T}})
@@ -126,9 +126,9 @@ immutable KernelProduct{T<:FloatingPoint} <: CombinationKernel{T}
         new(a, κ)
     end
 end
-KernelProduct{T<:FloatingPoint}(a::T, κ::Vector{Kernel{T}}) = KernelProduct(a, κ)
+KernelProduct{T<:AbstractFloat}(a::T, κ::Vector{Kernel{T}}) = KernelProduct(a, κ)
 
-immutable KernelSum{T<:FloatingPoint} <: CombinationKernel{T}
+immutable KernelSum{T<:AbstractFloat} <: CombinationKernel{T}
     a::T
     k::Vector{Kernel{T}}
     function KernelSum(a::T, κ::Vector{Kernel{T}})
@@ -137,7 +137,7 @@ immutable KernelSum{T<:FloatingPoint} <: CombinationKernel{T}
         new(a, κ)
     end
 end
-KernelSum{T<:FloatingPoint}(a::T, κ::Vector{Kernel{T}}) = KernelSum{T}(a, κ)
+KernelSum{T<:AbstractFloat}(a::T, κ::Vector{Kernel{T}}) = KernelSum{T}(a, κ)
 
 for (kernel_object, kernel_op, kernel_array_op, identity) in (
         (:KernelProduct, :*, :prod, :1),
@@ -150,14 +150,14 @@ for (kernel_object, kernel_op, kernel_array_op, identity) in (
             $kernel_object{U}(convert(U, a), Kernel{U}[κ...])
         end
 
-        convert{T<:FloatingPoint}(::Type{$kernel_object{T}}, ψ::$kernel_object) = $kernel_object(convert(T, ψ.a), Kernel{T}[ψ.k...])
-        convert{T<:FloatingPoint}(::Type{CombinationKernel{T}}, ψ::$kernel_object) = $kernel_object(convert(T, ψ.a), Kernel{T}[ψ.k...])
-        convert{T<:FloatingPoint}(::Type{Kernel{T}}, ψ::$kernel_object) = $kernel_object(convert(T, ψ.a), Kernel{T}[ψ.k...])
+        convert{T<:AbstractFloat}(::Type{$kernel_object{T}}, ψ::$kernel_object) = $kernel_object(convert(T, ψ.a), Kernel{T}[ψ.k...])
+        convert{T<:AbstractFloat}(::Type{CombinationKernel{T}}, ψ::$kernel_object) = $kernel_object(convert(T, ψ.a), Kernel{T}[ψ.k...])
+        convert{T<:AbstractFloat}(::Type{Kernel{T}}, ψ::$kernel_object) = $kernel_object(convert(T, ψ.a), Kernel{T}[ψ.k...])
 
         ismercer(ψ::$kernel_object) = all(ismercer, ψ.k)
         isnegdef(ψ::$kernel_object) = all(isnegdef, ψ.k)
 
-        function description_string{T<:FloatingPoint}(ψ::$kernel_object{T}, eltype::Bool = true)
+        function description_string{T<:AbstractFloat}(ψ::$kernel_object{T}, eltype::Bool = true)
             descs = map(κ -> description_string(κ, false), ψ.k)
             if eltype
                 $(string(kernel_object)) * (eltype ? "{$(T)}" : "") * "($(ψ.a), $(join(descs, ", ")))"

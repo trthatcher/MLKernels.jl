@@ -19,7 +19,7 @@ end
 symu(S::Matrix) = symu!(copy(S))
 
 # Return vector of dot products for each row of A
-function dot_rows{T<:FloatingPoint}(A::Matrix{T})
+function dot_rows{T<:AbstractFloat}(A::Matrix{T})
     n, m = size(A)
     aᵀa = zeros(T, n)
     @inbounds for j = 1:m, i = 1:n
@@ -29,7 +29,7 @@ function dot_rows{T<:FloatingPoint}(A::Matrix{T})
 end
 
 # Return vector of dot products for each row of A
-function dot_rows{T<:FloatingPoint}(A::Matrix{T}, w::Array{T})
+function dot_rows{T<:AbstractFloat}(A::Matrix{T}, w::Array{T})
     n, m = size(A)
     length(w) == m || throw(DimensionMismatch("w must have the same length as A's rows."))
     aᵀa = zeros(T, n)
@@ -40,7 +40,7 @@ function dot_rows{T<:FloatingPoint}(A::Matrix{T}, w::Array{T})
 end
 
 # Return vector of dot products for each column of A
-function dot_columns{T<:FloatingPoint}(A::Matrix{T})
+function dot_columns{T<:AbstractFloat}(A::Matrix{T})
     n, m = size(A)
     aᵀa = zeros(T, m)
     @inbounds for j = 1:m, i = 1:n
@@ -50,7 +50,7 @@ function dot_columns{T<:FloatingPoint}(A::Matrix{T})
 end
 
 # Return vector of dot products for each column of A
-function dot_columns{T<:FloatingPoint}(A::Matrix{T}, w::Array{T})
+function dot_columns{T<:AbstractFloat}(A::Matrix{T}, w::Array{T})
     n, m = size(A)
     length(w) == n || throw(DimensionMismatch("w must have the same length as A's rows."))
     aᵀa = zeros(T, m)
@@ -66,7 +66,7 @@ end
 ==========================================================================#
 
 # Overwrite A with the Hadamard product of A and B. Returns A
-function matrix_prod!{T<:FloatingPoint}(A::Array{T}, B::Array{T})
+function matrix_prod!{T<:AbstractFloat}(A::Array{T}, B::Array{T})
     length(A) == length(B) || error("A and B must be of the same length.")
     @inbounds for i = 1:length(A)
         A[i] *= B[i]
@@ -75,7 +75,7 @@ function matrix_prod!{T<:FloatingPoint}(A::Array{T}, B::Array{T})
 end
 
 # Overwrite A with the Hadamard product of A and B, for symmetric matrices. Returns A
-function matrix_prod!{T<:FloatingPoint}(A::Matrix{T}, B::Matrix{T}, is_upper::Bool, symmetrize::Bool = true)
+function matrix_prod!{T<:AbstractFloat}(A::Matrix{T}, B::Matrix{T}, is_upper::Bool, symmetrize::Bool = true)
     (n = size(A,1)) == size(A,2) == size(B,1) == size(B,2) || throw(DimensionMismatch("A and B must be square and of same order."))
     if is_upper
         @inbounds for j = 1:n, i = 1:j
@@ -91,7 +91,7 @@ function matrix_prod!{T<:FloatingPoint}(A::Matrix{T}, B::Matrix{T}, is_upper::Bo
 end
 
 # Overwrite A with the matrix sum of A and B. Returns A
-function matrix_sum!{T<:FloatingPoint}(A::Array{T}, B::Array{T})
+function matrix_sum!{T<:AbstractFloat}(A::Array{T}, B::Array{T})
     length(A) == length(B) || error("A and B must be of the same length.")
     @inbounds for i = 1:length(A)
         A[i] += B[i]
@@ -100,7 +100,7 @@ function matrix_sum!{T<:FloatingPoint}(A::Array{T}, B::Array{T})
 end
 
 # Overwrite A with the matrix sum of A and B, for symmetric matrices. Returns A
-function matrix_sum!{T<:FloatingPoint}(A::Matrix{T}, B::Matrix{T}, is_upper::Bool, symmetrize::Bool = true)
+function matrix_sum!{T<:AbstractFloat}(A::Matrix{T}, B::Matrix{T}, is_upper::Bool, symmetrize::Bool = true)
     (n = size(A,1)) == size(A,2) == size(B,1) == size(B,2) || throw(DimensionMismatch("A and B must be square and of same order."))
     if is_upper
         @inbounds for j = 1:n, i = 1:j
@@ -115,12 +115,12 @@ function matrix_sum!{T<:FloatingPoint}(A::Matrix{T}, B::Matrix{T}, is_upper::Boo
     end
 end
 
-function translate!{T<:FloatingPoint}(A::Array{T}, b::T)
+function translate!{T<:AbstractFloat}(A::Array{T}, b::T)
     @inbounds for i = 1:length(A)
         A[i] += b
     end
     A
 end
-translate!{T<:FloatingPoint}(b::T, A::Array{T}) = translate!(A, b)
+translate!{T<:AbstractFloat}(b::T, A::Array{T}) = translate!(A, b)
 
 

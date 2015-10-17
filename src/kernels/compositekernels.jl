@@ -2,7 +2,7 @@
   Exponential Kernel
 ==========================================================================#
 
-immutable ExponentialKernel{T<:FloatingPoint,CASE} <: CompositeKernel{T}
+immutable ExponentialKernel{T<:AbstractFloat,CASE} <: CompositeKernel{T}
     k::BaseKernel{T}
     alpha::T
     gamma::T
@@ -17,30 +17,31 @@ immutable ExponentialKernel{T<:FloatingPoint,CASE} <: CompositeKernel{T}
         new(κ, α, γ)
     end
 end
-function ExponentialKernel{T<:FloatingPoint}(κ::BaseKernel{T}, α::T = one(T), γ::T = one(T))
+
+function ExponentialKernel{T<:AbstractFloat}(κ::BaseKernel{T}, α::T = one(T), γ::T = one(T))
     ExponentialKernel{T, γ == 1 ? :γ1 : :Ø}(κ, α, γ)
 end
-ExponentialKernel{T<:FloatingPoint}(α::T = 1.0, γ::T = one(T)) = ExponentialKernel(convert(Kernel{T}, SquaredDistanceKernel()), α, γ)
+ExponentialKernel{T<:AbstractFloat}(α::T = 1.0, γ::T = one(T)) = ExponentialKernel(convert(Kernel{T}, SquaredDistanceKernel()), α, γ)
 
-GaussianKernel{T<:FloatingPoint}(α::T = 1.0) = ExponentialKernel(SquaredDistanceKernel(one(T)), α)
-RadialBasisKernel{T<:FloatingPoint}(α::T = 1.0) = ExponentialKernel(SquaredDistanceKernel(one(T)),α)
-LaplacianKernel{T<:FloatingPoint}(α::T = 1.0) = ExponentialKernel(SquaredDistanceKernel(one(T)),α, convert(T, 0.5))
+GaussianKernel{T<:AbstractFloat}(α::T = 1.0) = ExponentialKernel(SquaredDistanceKernel(one(T)), α)
+RadialBasisKernel{T<:AbstractFloat}(α::T = 1.0) = ExponentialKernel(SquaredDistanceKernel(one(T)),α)
+LaplacianKernel{T<:AbstractFloat}(α::T = 1.0) = ExponentialKernel(SquaredDistanceKernel(one(T)),α, convert(T, 0.5))
 
 ismercer(::ExponentialKernel) = true
 
-function description_string{T<:FloatingPoint}(κ::ExponentialKernel{T}, eltype::Bool = true)
+function description_string{T<:AbstractFloat}(κ::ExponentialKernel{T}, eltype::Bool = true)
     "ExponentialKernel" * (eltype ? "{$(T)}" : "") * "(κ=" * description_string(κ.k, false) * ",α=$(κ.alpha),γ=$(κ.gamma))"
 end
 
-phi{T<:FloatingPoint}(κ::ExponentialKernel{T}, z::T) = exp(-κ.alpha * z^κ.gamma)
-phi{T<:FloatingPoint}(κ::ExponentialKernel{T,:γ1}, z::T) = exp(-κ.alpha * z)
+phi{T<:AbstractFloat}(κ::ExponentialKernel{T}, z::T) = exp(-κ.alpha * z^κ.gamma)
+phi{T<:AbstractFloat}(κ::ExponentialKernel{T,:γ1}, z::T) = exp(-κ.alpha * z)
 
 
 #==========================================================================
   Rational Quadratic Kernel
 ==========================================================================#
 
-immutable RationalQuadraticKernel{T<:FloatingPoint,CASE} <: CompositeKernel{T}
+immutable RationalQuadraticKernel{T<:AbstractFloat,CASE} <: CompositeKernel{T}
     k::BaseKernel{T}
     alpha::T
     beta::T
@@ -61,7 +62,8 @@ immutable RationalQuadraticKernel{T<:FloatingPoint,CASE} <: CompositeKernel{T}
         new(κ, α, β, γ)
     end
 end
-function RationalQuadraticKernel{T<:FloatingPoint}(κ::BaseKernel{T}, α::T = one(T), β::T = one(T), γ::T = one(T))
+
+function RationalQuadraticKernel{T<:AbstractFloat}(κ::BaseKernel{T}, α::T = one(T), β::T = one(T), γ::T = one(T))
     β1 = β == 1
     γ1 = γ == 1
     CASE =  if β1 && γ1
@@ -75,27 +77,27 @@ function RationalQuadraticKernel{T<:FloatingPoint}(κ::BaseKernel{T}, α::T = on
             end    
     RationalQuadraticKernel{T,CASE}(κ, α, β, γ)
 end
-function RationalQuadraticKernel{T<:FloatingPoint}(α::T = 1.0, β::T = one(T), γ::T = one(T))
+function RationalQuadraticKernel{T<:AbstractFloat}(α::T = 1.0, β::T = one(T), γ::T = one(T))
     RationalQuadraticKernel(convert(Kernel{T}, SquaredDistanceKernel()), α, β, γ)
 end
 
 ismercer(::RationalQuadraticKernel) = true
 
-function description_string{T<:FloatingPoint}(κ::RationalQuadraticKernel{T}, eltype::Bool = true)
+function description_string{T<:AbstractFloat}(κ::RationalQuadraticKernel{T}, eltype::Bool = true)
     "RationalQuadraticKernel" * (eltype ? "{$(T)}" : "") * "(κ=" * description_string(κ.k, false) * ",α=$(κ.alpha),β=$(κ.beta),γ=$(κ.gamma))"
 end
 
-phi{T<:FloatingPoint}(κ::RationalQuadraticKernel{T}, z::T) = (1 + κ.alpha*z^κ.gamma)^(-κ.beta)
-phi{T<:FloatingPoint}(κ::RationalQuadraticKernel{T,:β1γ1}, z::T) = 1/(1 + κ.alpha*z)
-phi{T<:FloatingPoint}(κ::RationalQuadraticKernel{T,:β1}, z::T) = 1/(1 + κ.alpha*z^κ.gamma)
-phi{T<:FloatingPoint}(κ::RationalQuadraticKernel{T,:γ1}, z::T) = (1 + κ.alpha*z)^(-κ.beta)
+phi{T<:AbstractFloat}(κ::RationalQuadraticKernel{T}, z::T) = (1 + κ.alpha*z^κ.gamma)^(-κ.beta)
+phi{T<:AbstractFloat}(κ::RationalQuadraticKernel{T,:β1γ1}, z::T) = 1/(1 + κ.alpha*z)
+phi{T<:AbstractFloat}(κ::RationalQuadraticKernel{T,:β1}, z::T) = 1/(1 + κ.alpha*z^κ.gamma)
+phi{T<:AbstractFloat}(κ::RationalQuadraticKernel{T,:γ1}, z::T) = (1 + κ.alpha*z)^(-κ.beta)
 
 
 #==========================================================================
   Matern Kernel
 ==========================================================================#
 
-immutable MaternKernel{T<:FloatingPoint,CASE} <: CompositeKernel{T}
+immutable MaternKernel{T<:AbstractFloat,CASE} <: CompositeKernel{T}
     k::BaseKernel{T}
     nu::T
     theta::T
@@ -110,21 +112,22 @@ immutable MaternKernel{T<:FloatingPoint,CASE} <: CompositeKernel{T}
         new(κ, ν, θ)
     end
 end
-MaternKernel{T<:FloatingPoint}(κ::BaseKernel{T}, ν::T = one(T), θ::T = one(T)) = MaternKernel{T, ν == 1 ? :ν1 : :Ø}(κ, ν, θ)
-MaternKernel{T<:FloatingPoint}(ν::T = 1.0, θ::T = one(T)) = (convert(Kernel{T},SquaredDistanceKernel()), ν, θ)
+
+MaternKernel{T<:AbstractFloat}(κ::BaseKernel{T}, ν::T = one(T), θ::T = one(T)) = MaternKernel{T, ν == 1 ? :ν1 : :Ø}(κ, ν, θ)
+MaternKernel{T<:AbstractFloat}(ν::T = 1.0, θ::T = one(T)) = (convert(Kernel{T},SquaredDistanceKernel()), ν, θ)
 
 ismercer(::MaternKernel) = true
 
-function description_string{T<:FloatingPoint}(κ::MaternKernel{T}, eltype::Bool = true)
+function description_string{T<:AbstractFloat}(κ::MaternKernel{T}, eltype::Bool = true)
   "MaternKernel" * (eltype ? "{$(T)}" : "") * "(κ=" * description_string(κ.k, false) * ",ν=$(κ.nu),θ=$(κ.theta))"
 end
 
-function phi{T<:FloatingPoint}(κ::MaternKernel{T}, z::T)
+function phi{T<:AbstractFloat}(κ::MaternKernel{T}, z::T)
   v1 = sqrt(2κ.nu * z)/κ.theta
   2 * (v1/2)^(κ.nu) * besselk(κ.nu, z)/gamma(κ.nu)
 end
 
-function phi{T<:FloatingPoint}(κ::MaternKernel{T,:ν1}, z::T)
+function phi{T<:AbstractFloat}(κ::MaternKernel{T,:ν1}, z::T)
   v1 = sqrt(2z)/κ.theta
   v1 * besselk(one(T), z)
 end
@@ -134,7 +137,7 @@ end
   Power Kernel
 ==========================================================================#
 
-immutable PowerKernel{T<:FloatingPoint,CASE} <: CompositeKernel{T}
+immutable PowerKernel{T<:AbstractFloat,CASE} <: CompositeKernel{T}
     k::BaseKernel{T}
     gamma::T
     function PowerKernel(κ::BaseKernel{T}, γ::T)
@@ -147,24 +150,25 @@ immutable PowerKernel{T<:FloatingPoint,CASE} <: CompositeKernel{T}
         new(κ,γ)
     end
 end
-PowerKernel{T<:FloatingPoint}(κ::BaseKernel{T}, γ::T = one(T)) = PowerKernel{T, γ == 1 ? :γ1 : :Ø}(κ, γ)
-PowerKernel{T<:FloatingPoint}(γ::T = 1.0) = PowerKernel(convert(Kernel{T},SquaredDistanceKernel()), γ)
+
+PowerKernel{T<:AbstractFloat}(κ::BaseKernel{T}, γ::T = one(T)) = PowerKernel{T, γ == 1 ? :γ1 : :Ø}(κ, γ)
+PowerKernel{T<:AbstractFloat}(γ::T = 1.0) = PowerKernel(convert(Kernel{T},SquaredDistanceKernel()), γ)
 
 isnegdef(::PowerKernel) = true
 
-function description_string{T<:FloatingPoint}(κ::PowerKernel{T}, eltype::Bool = true)
+function description_string{T<:AbstractFloat}(κ::PowerKernel{T}, eltype::Bool = true)
     "PowerKernel" * (eltype ? "{$(T)}" : "") * "(κ=" * description_string(κ.k, false) * ",γ=$(κ.gamma))"
 end
 
-phi{T<:FloatingPoint}(κ::PowerKernel{T}, z::T) = z^(κ.gamma)
-phi{T<:FloatingPoint}(κ::PowerKernel{T,:γ1}, z::T) = z
+phi{T<:AbstractFloat}(κ::PowerKernel{T}, z::T) = z^(κ.gamma)
+phi{T<:AbstractFloat}(κ::PowerKernel{T,:γ1}, z::T) = z
 
 
 #==========================================================================
   Log Kernel
 ==========================================================================#
 
-immutable LogKernel{T<:FloatingPoint,CASE} <: CompositeKernel{T}
+immutable LogKernel{T<:AbstractFloat,CASE} <: CompositeKernel{T}
     k::BaseKernel{T}
     alpha::T
     gamma::T
@@ -179,24 +183,25 @@ immutable LogKernel{T<:FloatingPoint,CASE} <: CompositeKernel{T}
         new(κ,α,γ)
     end
 end
-LogKernel{T<:FloatingPoint}(κ::BaseKernel{T}, α::T = one(T), γ::T = one(T)) = LogKernel{T, γ == 1 ? :γ1 : :Ø}(κ, α, γ)
-LogKernel{T<:FloatingPoint}(α::T = 1.0, γ::T = one(T)) = LogKernel(convert(Kernel{T},SquaredDistanceKernel(1.0)), α, γ)
+
+LogKernel{T<:AbstractFloat}(κ::BaseKernel{T}, α::T = one(T), γ::T = one(T)) = LogKernel{T, γ == 1 ? :γ1 : :Ø}(κ, α, γ)
+LogKernel{T<:AbstractFloat}(α::T = 1.0, γ::T = one(T)) = LogKernel(convert(Kernel{T},SquaredDistanceKernel(1.0)), α, γ)
 
 isnegdef(::LogKernel) = true
 
-function description_string{T<:FloatingPoint}(κ::LogKernel{T}, eltype::Bool = true)
+function description_string{T<:AbstractFloat}(κ::LogKernel{T}, eltype::Bool = true)
     "LogKernel" * (eltype ? "{$(T)}" : "") * "(κ=" * description_string(κ.k, false) * ",α=$(κ.alpha),γ=$(κ.gamma))"
 end
 
-phi{T<:FloatingPoint}(κ::LogKernel{T}, z::T) = log(κ.alpha*z^(κ.gamma) + 1)
-phi{T<:FloatingPoint}(κ::LogKernel{T,:γ1}, z::T) = log(κ.alpha*z + 1)
+phi{T<:AbstractFloat}(κ::LogKernel{T}, z::T) = log(κ.alpha*z^(κ.gamma) + 1)
+phi{T<:AbstractFloat}(κ::LogKernel{T,:γ1}, z::T) = log(κ.alpha*z + 1)
 
 
 #==========================================================================
   Polynomial Kernel
 ==========================================================================#
 
-immutable PolynomialKernel{T<:FloatingPoint,CASE} <: CompositeKernel{T}
+immutable PolynomialKernel{T<:AbstractFloat,CASE} <: CompositeKernel{T}
     k::BaseKernel{T}
     alpha::T
     c::T
@@ -212,26 +217,27 @@ immutable PolynomialKernel{T<:FloatingPoint,CASE} <: CompositeKernel{T}
         new(κ, α, c, d)
     end
 end
-PolynomialKernel{T<:FloatingPoint}(κ::BaseKernel{T}, α::T = one(T), c::T = one(T), d::T = convert(T, 2)) = PolynomialKernel{T, d == 1 ? :d1 : :Ø}(κ, α, c, d)
-PolynomialKernel{T<:FloatingPoint}(α::T = 1.0, c::T = one(T), d::T = convert(T, 2)) = PolynomialKernel(convert(Kernel{T},ScalarProductKernel()), α, c, d)
 
-LinearKernel{T<:FloatingPoint}(α::T = 1.0, c::T = one(T)) = PolynomialKernel(ScalarProductKernel(), α, c, one(T))
+PolynomialKernel{T<:AbstractFloat}(κ::BaseKernel{T}, α::T = one(T), c::T = one(T), d::T = convert(T, 2)) = PolynomialKernel{T, d == 1 ? :d1 : :Ø}(κ, α, c, d)
+PolynomialKernel{T<:AbstractFloat}(α::T = 1.0, c::T = one(T), d::T = convert(T, 2)) = PolynomialKernel(convert(Kernel{T},ScalarProductKernel()), α, c, d)
+
+LinearKernel{T<:AbstractFloat}(α::T = 1.0, c::T = one(T)) = PolynomialKernel(ScalarProductKernel(), α, c, one(T))
 
 ismercer(::PolynomialKernel) = true
 
-function description_string{T<:FloatingPoint}(κ::PolynomialKernel{T}, eltype::Bool = true) 
+function description_string{T<:AbstractFloat}(κ::PolynomialKernel{T}, eltype::Bool = true) 
     "PolynomialKernel" * (eltype ? "{$(T)}" : "") * "(κ=" * description_string(κ.k, false) * ",α=$(κ.alpha),c=$(κ.c),d=$(convert(Int64,κ.d)))"
 end
 
-phi{T<:FloatingPoint}(κ::PolynomialKernel{T}, xᵀy::T) = (κ.alpha*xᵀy + κ.c)^κ.d
-phi{T<:FloatingPoint}(κ::PolynomialKernel{T,:d1}, xᵀy::T) = κ.alpha*xᵀy + κ.c
+phi{T<:AbstractFloat}(κ::PolynomialKernel{T}, xᵀy::T) = (κ.alpha*xᵀy + κ.c)^κ.d
+phi{T<:AbstractFloat}(κ::PolynomialKernel{T,:d1}, xᵀy::T) = κ.alpha*xᵀy + κ.c
 
 
 #==========================================================================
   Exponentiated Kernel
 ==========================================================================#
 
-immutable ExponentiatedKernel{T<:FloatingPoint} <: CompositeKernel{T}
+immutable ExponentiatedKernel{T<:AbstractFloat} <: CompositeKernel{T}
     k::BaseKernel{T}
     alpha::T
     function ExponentiatedKernel(κ::BaseKernel{T}, α::T)
@@ -240,23 +246,24 @@ immutable ExponentiatedKernel{T<:FloatingPoint} <: CompositeKernel{T}
         new(κ, α)
     end
 end
-ExponentiatedKernel{T<:FloatingPoint}(κ::BaseKernel{T}, α::T = one(T)) = ExponentiatedKernel{T}(κ, α)
-ExponentiatedKernel{T<:FloatingPoint}(α::T = 1.0) = ExponentiatedKernel(convert(Kernel{T},ScalarProductKernel()), α)
+
+ExponentiatedKernel{T<:AbstractFloat}(κ::BaseKernel{T}, α::T = one(T)) = ExponentiatedKernel{T}(κ, α)
+ExponentiatedKernel{T<:AbstractFloat}(α::T = 1.0) = ExponentiatedKernel(convert(Kernel{T},ScalarProductKernel()), α)
 
 ismercer(::ExponentiatedKernel) = true
 
-function description_string{T<:FloatingPoint}(κ::ExponentiatedKernel{T}, eltype::Bool = true)
+function description_string{T<:AbstractFloat}(κ::ExponentiatedKernel{T}, eltype::Bool = true)
     "ExponentiatedKernel" * (eltype ? "{$(T)}" : "") * "(κ=" * description_string(κ.k, false) * ",α=$(κ.alpha))"
 end
 
-phi{T<:FloatingPoint}(κ::ExponentiatedKernel{T}, z::T) = exp(κ.alpha*z)
+phi{T<:AbstractFloat}(κ::ExponentiatedKernel{T}, z::T) = exp(κ.alpha*z)
 
 
 #==========================================================================
   Sigmoid Kernel
 ==========================================================================#
 
-immutable SigmoidKernel{T<:FloatingPoint} <: CompositeKernel{T}
+immutable SigmoidKernel{T<:AbstractFloat} <: CompositeKernel{T}
     k::BaseKernel{T}
     alpha::T
     c::T
@@ -266,11 +273,12 @@ immutable SigmoidKernel{T<:FloatingPoint} <: CompositeKernel{T}
         new(κ, α, c)
     end
 end
-SigmoidKernel{T<:FloatingPoint}(κ::BaseKernel{T}, α::T = one(T), c::T = one(T)) = SigmoidKernel{T}(κ, α, c)
-SigmoidKernel{T<:FloatingPoint}(α::T = 1.0, c::T = one(T)) = SigmoidKernel(convert(Kernel{T},ScalarProductKernel()), α, c)
 
-function description_string{T<:FloatingPoint}(κ::SigmoidKernel{T}, eltype::Bool = true)
+SigmoidKernel{T<:AbstractFloat}(κ::BaseKernel{T}, α::T = one(T), c::T = one(T)) = SigmoidKernel{T}(κ, α, c)
+SigmoidKernel{T<:AbstractFloat}(α::T = 1.0, c::T = one(T)) = SigmoidKernel(convert(Kernel{T},ScalarProductKernel()), α, c)
+
+function description_string{T<:AbstractFloat}(κ::SigmoidKernel{T}, eltype::Bool = true)
     "SigmoidKernel" * (eltype ? "{$(T)}" : "") * "(κ=" * description_string(κ.k, false) * ",α=$(κ.alpha),c=$(κ.c))"
 end
 
-phi{T<:FloatingPoint}(κ::SigmoidKernel{T}, z::T) = tanh(κ.alpha*z + κ.c)
+phi{T<:AbstractFloat}(κ::SigmoidKernel{T}, z::T) = tanh(κ.alpha*z + κ.c)
