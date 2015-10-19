@@ -65,3 +65,44 @@ for kernelobject in (
     println(" ... Done")
 end
 
+println("Composite Kernel kernel() and kernelmatrix():")
+
+for (kernelobject_comp, kernelobject_base) in (
+                (ExponentialKernel, SquaredDistanceKernel),
+                (RationalQuadraticKernel, SquaredDistanceKernel),
+                #(MaternKernel, SquaredDistanceKernel),
+                (PowerKernel, SquaredDistanceKernel),
+                (LogKernel, SquaredDistanceKernel),
+                (PolynomialKernel, ScalarProductKernel),
+                (ExponentiatedKernel, ScalarProductKernel),
+                (SigmoidKernel, ScalarProductKernel)
+        )
+
+    print(indent_block, kernelobject_comp)
+    k_base = (kernelobject_base)()
+    k_comp = (kernelobject_comp)(k_base)
+
+    print(" Scalar")
+    @test kernel(k_comp, x1[1], y1[1]) == MLKernels.phi(k_comp, MLKernels.pairwise(k_base, x1[1], y1[1]))
+    
+    print(" Vector")
+    @test kernel(k_comp, x1, y1) == MLKernels.phi(k_comp, MLKernels.pairwise(k_base, x1, y1))
+
+    print(" Matrix")
+    K = [kernel(k_comp,x,y) for x in Set_x, y in Set_x]
+    print(" _X!")
+    @test_approx_eq kernelmatrix(k_comp, X, false, true, true) K
+    @test_approx_eq kernelmatrix(k_comp, X, false, false, true) K
+    print(" _Xt!")
+    @test_approx_eq kernelmatrix(k_comp, X', true, true, true) K
+    @test_approx_eq kernelmatrix(k_comp, X', true, false, true) K
+
+    K = [kernel(k_comp,x,y) for x in Set_x, y in Set_y]
+    print(" _XY!")
+    @test_approx_eq kernelmatrix(k_comp, X, Y, false) K
+    print(" _XtYt!")
+    @test_approx_eq kernelmatrix(k_comp, X', Y', true) K
+
+    println(" ... Done")
+
+end

@@ -28,6 +28,10 @@ attainsrangemin(::Kernel) = true
 >(κ::Kernel, x::Real)  = x < κ
 >(x::Real, κ::Kernel)  = κ < x
 
+call{T<:AbstractFloat}(κ::Kernel{T}, x::T, y::T) = kernel(κ, x, y)
+call{T<:AbstractFloat}(κ::Kernel{T}, x::Vector{T}, y::Vector{T}) = kernel(κ, x, y)
+call{T<:AbstractFloat}(κ::Kernel{T}, x::Matrix{T}, y::Matrix{T}) = kernel(κ, x, y)
+
 
 #==========================================================================
   Base Kernels

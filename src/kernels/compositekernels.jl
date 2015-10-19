@@ -114,12 +114,12 @@ immutable MaternKernel{T<:AbstractFloat,CASE} <: CompositeKernel{T}
 end
 
 MaternKernel{T<:AbstractFloat}(κ::BaseKernel{T}, ν::T = one(T), θ::T = one(T)) = MaternKernel{T, ν == 1 ? :ν1 : :Ø}(κ, ν, θ)
-MaternKernel{T<:AbstractFloat}(ν::T = 1.0, θ::T = one(T)) = (convert(Kernel{T},SquaredDistanceKernel()), ν, θ)
+MaternKernel{T<:AbstractFloat}(ν::T = 1.0, θ::T = one(T)) = MaternKernel(convert(Kernel{T},SquaredDistanceKernel()), ν, θ)
 
 ismercer(::MaternKernel) = true
 
 function description_string{T<:AbstractFloat}(κ::MaternKernel{T}, eltype::Bool = true)
-  "MaternKernel" * (eltype ? "{$(T)}" : "") * "(κ=" * description_string(κ.k, false) * ",ν=$(κ.nu),θ=$(κ.theta))"
+  "MatérnKernel" * (eltype ? "{$(T)}" : "") * "(κ=" * description_string(κ.k, false) * ",ν=$(κ.nu),θ=$(κ.theta))"
 end
 
 function phi{T<:AbstractFloat}(κ::MaternKernel{T}, z::T)
