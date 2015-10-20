@@ -7,11 +7,19 @@ additive_kernelfunctions = Dict(
 )
 
 additive_kernelargs = Dict(
-    SquaredDistanceKernel => [1],
-    SineSquaredKernel => [1],
-    ChiSquaredKernel => [1],
-    ScalarProductKernel => Int[],
-    MercerSigmoidKernel => [0,1]
+    SquaredDistanceKernel => ([:t],[1]),
+    SineSquaredKernel => ([:t],[1]),
+    ChiSquaredKernel => ([:t],[1]),
+    ScalarProductKernel => (Symbol[], Int[]),
+    MercerSigmoidKernel => ([:d,:b],[0,1])
+)
+
+additive_kernelcases = Dict(
+    SquaredDistanceKernel => ([0.25],[0.5],[1]),
+    SineSquaredKernel => ([0.25],[0.5],[1]),
+    ChiSquaredKernel => ([0.25],[0.5],[1]),
+    ScalarProductKernel => (Int[],),
+    MercerSigmoidKernel => ([0.5,2],[0,1])
 )
 
 composite_kernelfunctions = Dict(
