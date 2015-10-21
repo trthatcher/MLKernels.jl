@@ -1,3 +1,34 @@
+# Samples Input
+
+x1 = [1; 2]
+x2 = [2; 0]
+x3 = [3; 2]
+X = [x1';
+     x2';
+     x3']
+
+y1 = [1; 1]
+y2 = [1; 1]
+Y = [y1'; 
+     y2']
+
+w = [2; 1]
+
+Set_x = (x1,x2,x3)
+Set_y = (y1,y2)
+
+
+
+# Kernel References
+
+additive_kernels = (
+    SquaredDistanceKernel,
+    SineSquaredKernel,
+    ChiSquaredKernel,
+    ScalarProductKernel,
+    MercerSigmoidKernel
+)
+
 additive_kernelfunctions = Dict(
     SquaredDistanceKernel => phi(x,y,t) = (x-y)^(2t),
     SineSquaredKernel => phi(x,y,t) = sin(x-y)^(2t),
@@ -7,14 +38,14 @@ additive_kernelfunctions = Dict(
 )
 
 additive_kernelargs = Dict(
-    SquaredDistanceKernel => ([:t],[1]),
-    SineSquaredKernel => ([:t],[1]),
-    ChiSquaredKernel => ([:t],[1]),
-    ScalarProductKernel => (Symbol[], Int[]),
-    MercerSigmoidKernel => ([:d,:b],[0,1])
+    SquaredDistanceKernel => ([:t],[1],[0.5]),
+    SineSquaredKernel => ([:t],[1],[0.5]),
+    ChiSquaredKernel => ([:t],[1],[0.5]),
+    ScalarProductKernel => (Symbol[], Int[], Int[]),
+    MercerSigmoidKernel => ([:d,:b],[0,1],[0.5,2])
 )
 
-additive_kernelcases = Dict(
+additive_cases = Dict(
     SquaredDistanceKernel => ([0.25],[0.5],[1]),
     SineSquaredKernel => ([0.25],[0.5],[1]),
     ChiSquaredKernel => ([0.25],[0.5],[1]),
@@ -42,4 +73,15 @@ composite_pairs = Dict(
     PolynomialKernel => (ScalarProductKernel,MercerSigmoidKernel),
     ExponentiatedKernel => (ScalarProductKernel,MercerSigmoidKernel),
     SigmoidKernel => (ScalarProductKernel,MercerSigmoidKernel)
+)
+
+composite_cases = Dict(
+    ExponentialKernel => ([1,1], [1,0.5]),
+    RationalQuadraticKernel => ([1,1,1], [1,1,0.5], [1,2,1]),
+    MaternKernel => ([1,1,1], [1,2,1]),
+    PowerKernel => ([0.5], [1]),
+    LogKernel => ([1,0.5], [1,1]),
+    PolynomialKernel => ([1,1,2],[1,1,2]),
+    ExponentiatedKernel => ([1],),
+    SigmoidKernel => ([1,1],)
 )

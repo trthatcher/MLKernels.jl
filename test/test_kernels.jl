@@ -2,7 +2,7 @@ using Base.Test
 
 importall MLKernels
 
-const FloatingPointTypes = (Float32, Float64, BigFloat)
+FloatingPointTypes = (Float32, Float64, BigFloat)
 
 macro test_approx_eq_type(value, reference, typ)
     x = gensym()
@@ -36,39 +36,43 @@ end
 
 # Test Base Kernels
 
-T = Float64
+println("Additive Kernel Constructors:")
 
-println("Standard Kernel Constructors:")
-for (kernelobject, fields, default_fields, test_fields) in (
-        (SquaredDistanceKernel, [:t], T[1], T[0.5]),
-        (SineSquaredKernel, [:t], T[1], T[0.5]),
-        (ChiSquaredKernel, [:t], T[1], T[0.5]),
-        (ScalarProductKernel,[], [], []),
-        (MercerSigmoidKernel, [:d, :b], T[0, 1], T[1, 2]),
-        (ExponentialKernel, [:k, :alpha, :gamma], [SquaredDistanceKernel(), T[1,1]...], [SineSquaredKernel(), T[2,0.5]...]),
-        (RationalQuadraticKernel, [:k, :alpha, :beta, :gamma], [SquaredDistanceKernel(), T[1,1,1]...], [SineSquaredKernel(), T[2,2,0.5]...]),
-        (MaternKernel, [:k, :nu, :theta], [SquaredDistanceKernel(), T[1,1]...], [SineSquaredKernel(), T[2,2]...]),
-        (PowerKernel, [:k, :gamma], [SquaredDistanceKernel(), T[1]...], [SineSquaredKernel(), T[0.5]...]),
-        (LogKernel, [:k, :alpha, :gamma], [SquaredDistanceKernel(), T[1,1]...], [SineSquaredKernel(), T[2,0.5]...]),
-        (PolynomialKernel, [:k, :alpha, :c, :d], [ScalarProductKernel(), T[1,1,2]...], [MercerSigmoidKernel(), T[2,0.5,3]...]),
-        (ExponentiatedKernel, [:k, :alpha], [ScalarProductKernel(), T[1]...], [MercerSigmoidKernel(), T[2]...]),
-        (SigmoidKernel, [:k, :alpha, :c], [ScalarProductKernel(), T[1,1]...], [MercerSigmoidKernel(), T[2,2]...])
-    )
-    print(indent_block, "Testing ", kernelobject, " [] ")
-    (kernelobject)()
-    for i = 1:length(fields)
-        print(fields[i], " ")
-        test_args = [test_fields[1:i]..., default_fields[i+1:end]...]
-        k = (kernelobject)(test_args...)
-        for j = 1:length(fields)
-            @test getfield(k, fields[j]) === test_args[j]
+for kernelobj in additive_kernels
+
+    println(indent_block, "Testing ", kernelobj, ":")
+
+    for T in FloatingPointTypes
+
+        print(indent_block^2, "Testing ",  T, " Constructor: ")        
+        if T == Float64
+            k = (kernelobj)()
+            @test eltype(k) == Float64
         end
+
+        fields, default_values, test_values = get(additive_kernelargs, kernelobj, (Symbol[],T[],T[]))
+        for i = 1:length(fields)
+            print(fields[i], " ")
+            test_args = T[test_values[1:i]..., default_values[i+1:end]...]
+            k = (kernelobj)(test_args...)
+            @test eltype(k) == T
+            for j = 1:length(fields)
+                @test getfield(k, fields[j]) === test_args[j]
+            end
+        end
+
+        println("... Done")
+
+        print(indent_block^2, "Testing ",  T, " phi(): ")
+        println("... Done")
     end
+
+    print(indent_block^2, "Testing ismercer() ")
     println("... Done")
+
+    print(indent_block^2, "Testing isnegdef() ")
+    println("... Done")
+
 end
 
-println("Standard Kernel ismercer() and isnegdef():")
-
-println("Base Kernel phi():")
-
-println("Composite Kernel phi():")
+T = Float64

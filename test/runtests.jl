@@ -3,6 +3,7 @@ using Base.Test
 importall MLKernels
 
 include("utilities.jl")
+include("reference.jl")
 
 indent_block = "   "
 
