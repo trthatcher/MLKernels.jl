@@ -130,7 +130,7 @@ immutable KernelProduct{T<:AbstractFloat} <: CombinationKernel{T}
         new(a, κ)
     end
 end
-KernelProduct{T<:AbstractFloat}(a::T, κ::Vector{Kernel{T}}) = KernelProduct(a, κ)
+KernelProduct{T<:AbstractFloat}(a::T, κ::Vector{Kernel{T}}) = KernelProduct{T}(a, κ)
 
 immutable KernelSum{T<:AbstractFloat} <: CombinationKernel{T}
     a::T

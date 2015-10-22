@@ -40,19 +40,18 @@ println("Additive Kernel Constructors:")
 
 for kernelobj in additive_kernels
 
-    println(indent_block, "Testing ", kernelobj, ":")
+    info("Testing ", kernelobj)
 
     for T in FloatingPointTypes
-
-        print(indent_block^2, "Testing ",  T, " Constructor: ")        
+    
         if T == Float64
             k = (kernelobj)()
             @test eltype(k) == Float64
         end
 
+        # Test constructors
         fields, default_values, test_values = get(additive_kernelargs, kernelobj, (Symbol[],T[],T[]))
         for i = 1:length(fields)
-            print(fields[i], " ")
             test_args = T[test_values[1:i]..., default_values[i+1:end]...]
             k = (kernelobj)(test_args...)
             @test eltype(k) == T
@@ -61,17 +60,21 @@ for kernelobj in additive_kernels
             end
         end
 
-        println("... Done")
+        #Test phi() function
+        f = get(additive_kernelfunctions, kernelobj, "error")
+        for test_values in get(additive_cases, kernelobj, "error")
+            arg_values = T[test_values...]
+            k = convert(Kernel{T},(kernelobj)(arg_values...))
+            x = convert(T, x1[1])
+            y = convert(T, y1[1])
+            @test_approx_eq MLKernels.phi(k, x, y) f(arg_values..., x, y)
+        end
 
-        print(indent_block^2, "Testing ",  T, " phi(): ")
-        println("... Done")
+
     end
 
-    print(indent_block^2, "Testing ismercer() ")
-    println("... Done")
-
-    print(indent_block^2, "Testing isnegdef() ")
-    println("... Done")
+    @test ismercer((kernelobj)()) === get(additive_ismercer, kernelobj, "error")
+    @test ismercer((kernelobj)()) === get(additive_ismercer, kernelobj, "error")
 
 end
 

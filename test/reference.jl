@@ -19,7 +19,7 @@ Set_y = (y1,y2)
 
 
 
-# Kernel References
+# Additive Kernel References
 
 additive_kernels = (
     SquaredDistanceKernel,
@@ -30,11 +30,11 @@ additive_kernels = (
 )
 
 additive_kernelfunctions = Dict(
-    SquaredDistanceKernel => phi(x,y,t) = (x-y)^(2t),
-    SineSquaredKernel => phi(x,y,t) = sin(x-y)^(2t),
-    ChiSquaredKernel => phi(x,y,t) = ((x-y)^2/(x+y))^t,
-    ScalarProductKernel => phi(x,y) = x*y,
-    MercerSigmoidKernel => phi(x,y,d,b) = tanh((x-d)/b) * tanh((y-d)/b)
+    SquaredDistanceKernel => (t,x,y) -> (x-y)^(2t),
+    SineSquaredKernel => (t,x,y) -> sin(x-y)^(2t),
+    ChiSquaredKernel => (t,x,y) -> ((x-y)^2/(x+y))^t,
+    ScalarProductKernel => (x,y) -> x*y,
+    MercerSigmoidKernel => (d,b,x,y) -> tanh((x-d)/b) * tanh((y-d)/b)
 )
 
 additive_kernelargs = Dict(
@@ -45,6 +45,22 @@ additive_kernelargs = Dict(
     MercerSigmoidKernel => ([:d,:b],[0,1],[0.5,2])
 )
 
+additive_ismercer = Dict(
+    SquaredDistanceKernel => false,
+    SineSquaredKernel => false,
+    ChiSquaredKernel => false,
+    ScalarProductKernel => true,
+    MercerSigmoidKernel => true
+)
+
+additive_isnegdef = Dict(
+    SquaredDistanceKernel => true,
+    SineSquaredKernel => true,
+    ChiSquaredKernel => true,
+    ScalarProductKernel => false,
+    MercerSigmoidKernel => false
+)
+
 additive_cases = Dict(
     SquaredDistanceKernel => ([0.25],[0.5],[1]),
     SineSquaredKernel => ([0.25],[0.5],[1]),
@@ -52,6 +68,8 @@ additive_cases = Dict(
     ScalarProductKernel => (Int[],),
     MercerSigmoidKernel => ([0.5,2],[0,1])
 )
+
+# Composite Kernel Cases
 
 composite_kernelfunctions = Dict(
     ExponentialKernel => phi(z,α,γ) = exp(-α*z^γ),
