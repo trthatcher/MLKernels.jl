@@ -14,7 +14,7 @@ abstract AdditiveKernel{T<:AbstractFloat} <: BaseKernel{T}
 immutable SquaredDistanceKernel{T<:AbstractFloat,CASE} <: AdditiveKernel{T} 
     t::T
     function SquaredDistanceKernel(t::T)
-        0 < t <= 1 || error("Bad range")
+        0 < t <= 1 || error("Parameter t = $(t) must be in range (0,1]")
         new(t)
     end
 end
@@ -51,7 +51,7 @@ phi{T<:AbstractFloat}(κ::SquaredDistanceKernel{T}, x::T, y::T) = ((x-y)^2)^κ.t
 immutable SineSquaredKernel{T<:AbstractFloat,CASE} <: AdditiveKernel{T}
     t::T
     function SineSquaredKernel(t::T)
-        0 < t <= 1 || error("Bad range")
+        0 < t <= 1 || error("Parameter t = $(t) must be in range (0,1]")
         new(t)
     end
 end
@@ -88,7 +88,7 @@ phi{T<:AbstractFloat}(κ::SineSquaredKernel{T}, x::T, y::T) = (sin(x-y)^2)^κ.t
 immutable ChiSquaredKernel{T<:AbstractFloat,CASE} <: AdditiveKernel{T}
     t::T
     function ChiSquaredKernel(t::T)
-        0 < t <= 1 || error("Bad range")
+        0 < t <= 1 || error("Parameter t = $(t) must be in range (0,1]")
         new(t)
     end
 end
@@ -149,7 +149,7 @@ immutable MercerSigmoidKernel{T<:AbstractFloat} <: SeparableKernel{T}
     d::T
     b::T
     function MercerSigmoidKernel(d::T, b::T)
-        b > 0 || throw(ArgumentError("b = $(b) must be greater than zero."))
+        b > 0 || error("b = $(b) must be greater than zero.")
         new(d, b)
     end
 end

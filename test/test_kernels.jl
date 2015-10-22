@@ -60,6 +60,11 @@ for kernelobj in additive_kernels
             end
         end
 
+        for test_values in get(additive_errorcases, kernelobj, ())
+            test_args = T[test_values...]
+            @test_throws ErrorException (kernelobj)(test_args...)
+        end
+
         #Test phi() function
         f = get(additive_kernelfunctions, kernelobj, "error")
         for test_values in get(additive_cases, kernelobj, "error")
@@ -74,7 +79,7 @@ for kernelobj in additive_kernels
     end
 
     @test ismercer((kernelobj)()) === get(additive_ismercer, kernelobj, "error")
-    @test ismercer((kernelobj)()) === get(additive_ismercer, kernelobj, "error")
+    @test isnegdef((kernelobj)()) === get(additive_isnegdef, kernelobj, "error")
 
 end
 

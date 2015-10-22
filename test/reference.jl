@@ -69,6 +69,14 @@ additive_cases = Dict(
     MercerSigmoidKernel => ([0.5,2],[0,1])
 )
 
+additive_errorcases = Dict(
+    SquaredDistanceKernel => ([1.1], [0]),
+    SineSquaredKernel => ([1.1], [0]),
+    ChiSquaredKernel => ([1.1], [0]),
+    MercerSigmoidKernel => ([0,0],)
+)
+
+
 # Composite Kernel Cases
 
 composite_kernelfunctions = Dict(
