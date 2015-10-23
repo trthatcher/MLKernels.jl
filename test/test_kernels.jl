@@ -116,16 +116,13 @@ for kernelobj in composite_kernels
             end
 
             # Test phi() function
-            #=
-            f = get(additive_kernelfunctions, kernelobj, "error")
-            for test_values in get(additive_cases, kernelobj, "error")
+            f = get(composite_kernelfunctions, kernelobj, "error")
+            for test_values in get(composite_cases, kernelobj, "error")
                 arg_values = T[test_values...]
-                k = convert(Kernel{T},(kernelobj)(arg_values...))
-                x = convert(T, x1[1])
-                y = convert(T, y1[1])
-                @test_approx_eq MLKernels.phi(k, x, y) f(arg_values..., x, y)
+                k = convert(Kernel{T},(kernelobj)(base_k, arg_values...))
+                z = convert(T, x1[1])
+                @test_approx_eq MLKernels.phi(k, z) f(arg_values..., z)
             end
-            =#
 
         end
 

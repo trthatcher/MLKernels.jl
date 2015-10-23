@@ -103,14 +103,14 @@ composite_pairs = Dict(
 )
 
 composite_kernelfunctions = Dict(
-    ExponentialKernel => phi(z,α,γ) = exp(-α*z^γ),
-    RationalQuadraticKernel => phi(z,α,β,γ) = (1 + α*z^γ)^(-β),
-    MaternKernel => phi(z,ν,θ) = 2*(sqrt(2*ν*z)/(2*θ))^ν * besselk(ν,z)/gamma(ν),
-    PowerKernel => phi(z,γ) = z^γ,
-    LogKernel => phi(z,α,γ) = log(α*z^γ+1),
-    PolynomialKernel => phi(z,α,c,d) = (α*z+c)^d,
-    ExponentiatedKernel => phi(z,α) = exp(α*z),
-    SigmoidKernel => phi(z,α,c) = tanh(α*z+c)
+    ExponentialKernel => (α,γ,z) -> exp(-α*z^γ),
+    RationalQuadraticKernel => (α,β,γ,z) -> (1 + α*z^γ)^(-β),
+    MaternKernel => (ν,θ,z) -> 2*(sqrt(2*ν*z)/(2*θ))^ν * besselk(ν,z)/gamma(ν),
+    PowerKernel => (γ,z) -> z^γ,
+    LogKernel => (α,γ,z) -> log(α*z^γ+1),
+    PolynomialKernel => (α,c,d,z) -> (α*z+c)^d,
+    ExponentiatedKernel => (α,z) -> exp(α*z),
+    SigmoidKernel => (α,c,z) -> tanh(α*z+c)
 )
 
 composite_kernelargs = Dict(
