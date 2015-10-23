@@ -7,10 +7,10 @@ immutable ExponentialKernel{T<:AbstractFloat,CASE} <: CompositeKernel{T}
     alpha::T
     gamma::T
     function ExponentialKernel(κ::BaseKernel{T}, α::T, γ::T)
-        isnegdef(κ) == true || throw(ArgumentError("Composed kernel must be negative definite."))
-        κ >= 0 || throw(ArgumentError("Composed kernel must attain only non-negative values."))
-        α > 0 || throw(ArgumentError("α = $(α) must be greater than zero."))
-        0 < γ <= 1 || throw(ArgumentError("γ = $(γ) must be in the interval (0,1]."))
+        isnegdef(κ) == true || error("Composed kernel must be negative definite.")
+        κ >= 0 || error("Composed kernel must attain only non-negative values.")
+        α > 0 || error("α = $(α) must be greater than zero.")
+        0 < γ <= 1 || error("γ = $(γ) must be in the interval (0,1].")
         if CASE == :γ1 &&  γ != 1
             error("Special case γ = 1 flagged but γ = $(γ)")
         end
@@ -48,10 +48,10 @@ immutable RationalQuadraticKernel{T<:AbstractFloat,CASE} <: CompositeKernel{T}
     gamma::T
     function RationalQuadraticKernel(κ::BaseKernel{T}, α::T, β::T, γ::T)
         isnegdef(κ) == true || throw(ArgumentError("Composed kernel must be negative definite."))
-        κ >= 0 || throw(ArgumentError("Composed kernel must attain only non-negative values."))
-        α > 0 || throw(ArgumentError("α = $(α) must be greater than zero."))
-        β > 0 || throw(ArgumentError("β = $(β) must be greater than zero."))
-        0 < γ <= 1 || throw(ArgumentError("γ = $(γ) must be in the interval (0,1]."))      
+        κ >= 0 || error("Composed kernel must attain only non-negative values.")
+        α > 0 || error("α = $(α) must be greater than zero.")
+        β > 0 || error("β = $(β) must be greater than zero.")
+        0 < γ <= 1 || error("γ = $(γ) must be in the interval (0,1].")
         if CASE == :β1γ1 && (β != 1 || γ != 1)
             error("Special case β = 1 and γ = 1 flagged but β = $(β) and γ = $(γ)")
         elseif CASE == :β1 && β != 1
@@ -102,10 +102,10 @@ immutable MaternKernel{T<:AbstractFloat,CASE} <: CompositeKernel{T}
     nu::T
     theta::T
     function MaternKernel(κ::BaseKernel{T}, ν::T, θ::T)
-        isnegdef(κ) == true || throw(ArgumentError("Composed kernel must be negative definite."))
-        κ >= 0 || throw(ArgumentError("Composed kernel must attain only non-negative values."))
-        ν > 0 || throw(ArgumentError("ν = $(ν) must be greater than zero."))
-        θ > 0 || throw(ArgumentError("θ = $(θ) must be greater than zero."))
+        isnegdef(κ) == true || error("Composed kernel must be negative definite.")
+        κ >= 0 || error("Composed kernel must attain only non-negative values.")
+        ν > 0 || error("ν = $(ν) must be greater than zero.")
+        θ > 0 || error("θ = $(θ) must be greater than zero.")
         if CASE == :ν1 && ν != 1
             error("Special case ν = 1 flagged but ν = $(ν)")
         end
@@ -141,9 +141,9 @@ immutable PowerKernel{T<:AbstractFloat,CASE} <: CompositeKernel{T}
     k::BaseKernel{T}
     gamma::T
     function PowerKernel(κ::BaseKernel{T}, γ::T)
-        isnegdef(κ) == true || throw(ArgumentError("Composed kernel must be negative definite."))
-        κ >= 0 || throw(ArgumentError("Composed kernel must attain only non-negative values."))
-        0 < γ <= 1 || throw(ArgumentError("γ = $(γ) must be in the interval (0,1]."))
+        isnegdef(κ) == true || error("Composed kernel must be negative definite.")
+        κ >= 0 || error("Composed kernel must attain only non-negative values.")
+        0 < γ <= 1 || error("γ = $(γ) must be in the interval (0,1].")
         if CASE == :γ1 && γ != 1
             error("Special case γ = 1 flagged but γ = $(γ)")
         end
@@ -173,10 +173,10 @@ immutable LogKernel{T<:AbstractFloat,CASE} <: CompositeKernel{T}
     alpha::T
     gamma::T
     function LogKernel(κ::BaseKernel{T}, α::T, γ::T)
-        isnegdef(κ) == true || throw(ArgumentError("Composed kernel must be negative definite."))
-        κ >= 0 || throw(ArgumentError("Composed kernel must attain only non-negative values."))
-        α > 0 || throw(ArgumentError("α = $(α) must be greater than zero."))
-        0 < γ <= 1 || throw(ArgumentError("γ = $(γ) must be in the interval (0,1]."))
+        isnegdef(κ) == true || error("Composed kernel must be negative definite.")
+        κ >= 0 || error("Composed kernel must attain only non-negative values.")
+        α > 0 || error("α = $(α) must be greater than zero.")
+        0 < γ <= 1 || error("γ = $(γ) must be in the interval (0,1].")
         if CASE == :γ1 && γ != 1
             error("Special case γ = 1 flagged but γ = $(γ)")
         end
@@ -207,10 +207,10 @@ immutable PolynomialKernel{T<:AbstractFloat,CASE} <: CompositeKernel{T}
     c::T
     d::T
     function PolynomialKernel(κ::BaseKernel{T}, α::T, c::T, d::T)
-        ismercer(κ) == true || throw(ArgumentError("Composed kernel must be a Mercer kernel."))
-        α > 0 || throw(ArgumentError("α = $(α) must be greater than zero."))
-        c >= 0 || throw(ArgumentError("c = $(c) must be non-negative."))
-        (d > 0 && trunc(d) == d) || throw(ArgumentError("d = $(d) must be an integer greater than zero."))
+        ismercer(κ) == true || error("Composed kernel must be a Mercer kernel.")
+        α > 0 || error("α = $(α) must be greater than zero.")
+        c >= 0 || error("c = $(c) must be non-negative.")
+        (d > 0 && trunc(d) == d) || error("d = $(d) must be an integer greater than zero.")
         if CASE == :d1 && d != 1
             error("Special case d = 1 flagged but d = $(convert(Int64,d))")
         end
@@ -241,8 +241,8 @@ immutable ExponentiatedKernel{T<:AbstractFloat} <: CompositeKernel{T}
     k::BaseKernel{T}
     alpha::T
     function ExponentiatedKernel(κ::BaseKernel{T}, α::T)
-        ismercer(κ) == true || throw(ArgumentError("Composed kernel must be a Mercer kernel."))
-        α > 0 || throw(ArgumentError("α = $(α) must be greater than zero."))
+        ismercer(κ) == true || error("Composed kernel must be a Mercer kernel.")
+        α > 0 || error("α = $(α) must be greater than zero.")
         new(κ, α)
     end
 end
@@ -268,8 +268,8 @@ immutable SigmoidKernel{T<:AbstractFloat} <: CompositeKernel{T}
     alpha::T
     c::T
     function SigmoidKernel(κ::BaseKernel{T}, α::T, c::T)
-        α > 0 || throw(ArgumentError("α = $(α) must be greater than zero."))
-        c >= 0 || throw(ArgumentError("c = $(c) must be non-negative."))
+        α > 0 || error("α = $(α) must be greater than zero.")
+        c >= 0 || error("c = $(c) must be non-negative.")
         new(κ, α, c)
     end
 end

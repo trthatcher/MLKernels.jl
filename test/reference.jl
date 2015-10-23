@@ -77,17 +77,18 @@ additive_errorcases = Dict(
 )
 
 
+
 # Composite Kernel Cases
 
-composite_kernelfunctions = Dict(
-    ExponentialKernel => phi(z,α,γ) = exp(-α*z^γ),
-    RationalQuadraticKernel => phi(z,α,β,γ) = (1 + α*z^γ)^(-β),
-    MaternKernel => phi(z,ν,θ) = 2*(sqrt(2*ν*z)/(2*θ))^ν * besselk(ν,z)/gamma(ν),
-    PowerKernel => phi(z,γ) = z^γ,
-    LogKernel => phi(z,α,γ) = log(α*z^γ+1),
-    PolynomialKernel => phi(z,α,c,d) = (α*z+c)^d,
-    ExponentiatedKernel => phi(z,α) = exp(α*z),
-    SigmoidKernel => phi(z,α,c) = tanh(α*z+c)
+composite_kernels = (
+    ExponentialKernel,
+    RationalQuadraticKernel,
+    MaternKernel,
+    PowerKernel,
+    LogKernel,
+    PolynomialKernel,
+    ExponentiatedKernel,
+    SigmoidKernel
 )
 
 composite_pairs = Dict(
@@ -101,13 +102,68 @@ composite_pairs = Dict(
     SigmoidKernel => (ScalarProductKernel,MercerSigmoidKernel)
 )
 
+composite_kernelfunctions = Dict(
+    ExponentialKernel => phi(z,α,γ) = exp(-α*z^γ),
+    RationalQuadraticKernel => phi(z,α,β,γ) = (1 + α*z^γ)^(-β),
+    MaternKernel => phi(z,ν,θ) = 2*(sqrt(2*ν*z)/(2*θ))^ν * besselk(ν,z)/gamma(ν),
+    PowerKernel => phi(z,γ) = z^γ,
+    LogKernel => phi(z,α,γ) = log(α*z^γ+1),
+    PolynomialKernel => phi(z,α,c,d) = (α*z+c)^d,
+    ExponentiatedKernel => phi(z,α) = exp(α*z),
+    SigmoidKernel => phi(z,α,c) = tanh(α*z+c)
+)
+
+composite_kernelargs = Dict(
+    ExponentialKernel => ([:alpha, :gamma], [1,1], [2,0.5]),
+    RationalQuadraticKernel => ([:alpha, :beta, :gamma], [1,1,1], [2,2,0.5]),
+    MaternKernel => ([:nu, :theta], [1,1], [2,2]),
+    PowerKernel => ([:gamma], [1], [0.5]),
+    LogKernel => ([:alpha, :gamma], [1,1], [2,0.5]),
+    PolynomialKernel => ([:alpha, :c, :d], [1,1,2], [2,2,3]),
+    ExponentiatedKernel => ([:alpha], [1], [2]),
+    SigmoidKernel => ([:alpha, :c], [1, 1], [2, 2])
+)
+
+composite_ismercer = Dict(
+    ExponentialKernel => true,
+    RationalQuadraticKernel => true,
+    MaternKernel => true,
+    PowerKernel => false,
+    LogKernel => false,
+    PolynomialKernel => true,
+    ExponentiatedKernel => true,
+    SigmoidKernel => false
+)
+
+composite_isnegdef = Dict(
+    ExponentialKernel => false,
+    RationalQuadraticKernel => false,
+    MaternKernel => false,
+    PowerKernel => true,
+    LogKernel => true,
+    PolynomialKernel => false,
+    ExponentiatedKernel => false,
+    SigmoidKernel => false
+)
+
 composite_cases = Dict(
     ExponentialKernel => ([1,1], [1,0.5]),
     RationalQuadraticKernel => ([1,1,1], [1,1,0.5], [1,2,1]),
-    MaternKernel => ([1,1,1], [1,2,1]),
+    MaternKernel => ([1,1], [2,1]),
     PowerKernel => ([0.5], [1]),
     LogKernel => ([1,0.5], [1,1]),
-    PolynomialKernel => ([1,1,2],[1,1,2]),
+    PolynomialKernel => ([1,1,2],[1,1,1]),
     ExponentiatedKernel => ([1],),
     SigmoidKernel => ([1,1],)
+)
+
+composite_errorcases = Dict(
+    ExponentialKernel => ([0,1], [1,1.1], [1,0]),
+    RationalQuadraticKernel => ([0,1,1], [1,0,1], [1,1,0], [1,1,1.1]),
+    MaternKernel => ([1,0], [0,1]),
+    PowerKernel => ([0], [1.1]),
+    LogKernel => ([0,1], [1,0], [1,1.1]),
+    PolynomialKernel => ([0,1,1],[1,-0.1,1],[1,1,1.5],[1,1,0]),
+    ExponentiatedKernel => ([0],),
+    SigmoidKernel => ([0,1],[1,-0.1])
 )

@@ -83,4 +83,57 @@ for kernelobj in additive_kernels
 
 end
 
+for kernelobj in composite_kernels
+
+    info("Testing ", kernelobj)
+
+    for T in FloatingPointTypes
+    
+        if T == Float64
+            k = (kernelobj)()
+            @test eltype(k) == Float64
+        end
+
+        for base_kernelobj in get(composite_pairs, kernelobj, ())
+
+            base_k = convert(Kernel{T}, (base_kernelobj)())
+
+            # Test constructors
+            fields, default_values, test_values = get(composite_kernelargs, kernelobj, (Symbol[],T[],T[]))
+            for i = 1:length(fields)
+                test_args = T[test_values[1:i]..., default_values[i+1:end]...]
+                k = (kernelobj)(base_k, test_args...)
+                @test eltype(k) == T
+                @test getfield(k, :k) === base_k
+                for j = 1:length(fields)
+                    @test getfield(k, fields[j]) === test_args[j]
+                end
+            end
+
+            for test_values in get(composite_errorcases, kernelobj, ())
+                test_args = T[test_values...]
+                @test_throws ErrorException (kernelobj)(base_k, test_args...)
+            end
+
+            # Test phi() function
+            #=
+            f = get(additive_kernelfunctions, kernelobj, "error")
+            for test_values in get(additive_cases, kernelobj, "error")
+                arg_values = T[test_values...]
+                k = convert(Kernel{T},(kernelobj)(arg_values...))
+                x = convert(T, x1[1])
+                y = convert(T, y1[1])
+                @test_approx_eq MLKernels.phi(k, x, y) f(arg_values..., x, y)
+            end
+            =#
+
+        end
+
+    end
+
+    @test ismercer((kernelobj)()) === get(composite_ismercer, kernelobj, "error")
+    @test isnegdef((kernelobj)()) === get(composite_isnegdef, kernelobj, "error")
+
+end
+
 T = Float64
