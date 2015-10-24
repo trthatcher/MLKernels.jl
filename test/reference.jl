@@ -30,11 +30,19 @@ additive_kernels = (
 )
 
 additive_kernelfunctions = Dict(
-    SquaredDistanceKernel => (t,x,y) -> (x-y)^(2t),
-    SineSquaredKernel => (t,x,y) -> sin(x-y)^(2t),
+    SquaredDistanceKernel => (t,x,y) -> ((x-y)^2)^t,
+    SineSquaredKernel => (t,x,y) -> (sin(x-y)^2)^t,
     ChiSquaredKernel => (t,x,y) -> ((x-y)^2/(x+y))^t,
     ScalarProductKernel => (x,y) -> x*y,
     MercerSigmoidKernel => (d,b,x,y) -> tanh((x-d)/b) * tanh((y-d)/b)
+)
+
+additive_testinputs = Dict(
+    SquaredDistanceKernel => ([1,1],[1,0],[0,1],[-1,-1],[-1,0],[0,-1]),
+    SineSquaredKernel => ([1,1],[1,0],[0,1],[-1,-1],[-1,0],[0,-1]),
+    ChiSquaredKernel => ([1,1],[1,0],[0,1]),
+    ScalarProductKernel => ([1,1],[1,0],[0,1],[-1,-1],[-1,0],[0,-1]),
+    MercerSigmoidKernel => ([1,1],[1,0],[0,1],[-1,-1],[-1,0],[0,-1])
 )
 
 additive_kernelargs = Dict(
@@ -105,12 +113,27 @@ composite_pairs = Dict(
 composite_kernelfunctions = Dict(
     ExponentialKernel => (α,γ,z) -> exp(-α*z^γ),
     RationalQuadraticKernel => (α,β,γ,z) -> (1 + α*z^γ)^(-β),
-    MaternKernel => (ν,θ,z) -> 2*(sqrt(2*ν*z)/(2*θ))^ν * besselk(ν,z)/gamma(ν),
+    MaternKernel => (ν,θ,z) -> begin 
+                                   v1 = sqrt(2*ν) * z / θ
+                                   v1 = v1 < eps(typeof(z)) ? eps(typeof(z)) : v1
+                                   2*(v1/2)^ν * besselk(ν,v1)/gamma(ν)
+                               end,
     PowerKernel => (γ,z) -> z^γ,
     LogKernel => (α,γ,z) -> log(α*z^γ+1),
     PolynomialKernel => (α,c,d,z) -> (α*z+c)^d,
     ExponentiatedKernel => (α,z) -> exp(α*z),
     SigmoidKernel => (α,c,z) -> tanh(α*z+c)
+)
+
+composite_testinputs = Dict(
+    ExponentialKernel => ([0],[1e-10],[0.5],[1]),
+    RationalQuadraticKernel => ([0],[1e-10],[0.5],[1]),
+    MaternKernel => ([0],[1e-10],[0.5],[1]),
+    PowerKernel => ([0],[1e-10],[0.5],[1]),
+    LogKernel => ([0],[1e-10],[0.5],[1]),
+    PolynomialKernel => ([0],[1e-10],[0.5],[1],[-1e-10],[-0.5],[-1]),
+    ExponentiatedKernel => ([0],[1e-10],[0.5],[1],[-1e-10],[-0.5],[-1]),
+    SigmoidKernel => ([0],[1e-10],[0.5],[1],[-1e-10],[-0.5],[-1])
 )
 
 composite_kernelargs = Dict(
@@ -148,7 +171,7 @@ composite_isnegdef = Dict(
 
 composite_cases = Dict(
     ExponentialKernel => ([1,1], [1,0.5]),
-    RationalQuadraticKernel => ([1,1,1], [1,1,0.5], [1,2,1]),
+    RationalQuadraticKernel => ([1,1,1], [1,1,0.5], [1,2,1], [2,2,0.5]),
     MaternKernel => ([1,1], [2,1]),
     PowerKernel => ([0.5], [1]),
     LogKernel => ([1,0.5], [1,1]),

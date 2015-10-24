@@ -33,7 +33,7 @@ rangemin(::SquaredDistanceKernel) = 0
 isnegdef(::SquaredDistanceKernel) = true
 
 function description_string{T<:AbstractFloat}(κ::SquaredDistanceKernel{T}, eltype::Bool = true)
-    "SquaredDistanceKernel" * (eltype ? "{$(T)}" : "") * "(t=$(κ.t))"
+    "SquaredDistance" * (eltype ? "{$(T)}" : "") * "(t=$(κ.t))"
 end
 
 convert{T<:AbstractFloat}(::Type{SquaredDistanceKernel{T}}, κ::SquaredDistanceKernel) = SquaredDistanceKernel(convert(T, κ.t))
@@ -70,7 +70,7 @@ rangemin(::SineSquaredKernel) = 0
 isnegdef(::SineSquaredKernel) = true
 
 function description_string{T<:AbstractFloat}(κ::SineSquaredKernel{T}, eltype::Bool = true)
-    "SineSquaredKernel" * (eltype ? "{$(T)}" : "") * "(t=$(κ.t))"
+    "SineSquared" * (eltype ? "{$(T)}" : "") * "(t=$(κ.t))"
 end
 
 convert{T<:AbstractFloat}(::Type{SineSquaredKernel{T}}, κ::SineSquaredKernel) = SineSquaredKernel(convert(T, κ.t))
@@ -105,7 +105,7 @@ rangemin(::ChiSquaredKernel) = 0
 isnegdef(::ChiSquaredKernel) = true
 
 function description_string{T<:AbstractFloat}(κ::ChiSquaredKernel{T}, eltype::Bool = true)
-    "ChiSquaredKernel" * (eltype ? "{$(T)}" : "") * "(t=$(κ.t))"
+    "ChiSquared" * (eltype ? "{$(T)}" : "") * "(t=$(κ.t))"
 end
 
 convert{T<:AbstractFloat}(::Type{ChiSquaredKernel{T}}, κ::ChiSquaredKernel) = ChiSquaredKernel(convert(T, κ.t))
@@ -133,7 +133,7 @@ ScalarProductKernel() = ScalarProductKernel{Float64}()
 ismercer(::ScalarProductKernel) = true
 
 function description_string{T<:AbstractFloat}(κ::ScalarProductKernel{T}, eltype::Bool = true)
-    "ScalarProductKernel" * (eltype ? "{$(T)}" : "") * "()"
+    "ScalarProduct" * (eltype ? "{$(T)}" : "") * "()"
 end
 
 convert{T<:AbstractFloat}(::Type{ScalarProductKernel{T}}, κ::ScalarProductKernel) = ScalarProductKernel{T}()
@@ -158,7 +158,7 @@ MercerSigmoidKernel{T<:AbstractFloat}(d::T = 0.0, b::T = one(T)) = MercerSigmoid
 ismercer(::MercerSigmoidKernel) = true
 
 function description_string{T<:AbstractFloat}(κ::MercerSigmoidKernel{T}, eltype::Bool = true)
-    "MercerSigmoidProduct" * (eltype ? "{$(T)}" : "") * "(d=$(κ.d),b=$(κ.b))"
+    "MercerSigmoid" * (eltype ? "{$(T)}" : "") * "(d=$(κ.d),b=$(κ.b))"
 end
 
 convert{T<:AbstractFloat}(::Type{MercerSigmoidKernel{T}}, κ::MercerSigmoidKernel) = MercerSigmoidKernel{T}(convert(T,κ.d), convert(T,κ.b))

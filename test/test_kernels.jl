@@ -60,21 +60,28 @@ for kernelobj in additive_kernels
             end
         end
 
-        for test_values in get(additive_errorcases, kernelobj, ())
-            test_args = T[test_values...]
-            @test_throws ErrorException (kernelobj)(test_args...)
+        for test_args in get(additive_errorcases, kernelobj, ())
+            arg_values = T[test_args...]
+            @test_throws ErrorException (kernelobj)(arg_values...)
         end
 
         #Test phi() function
         f = get(additive_kernelfunctions, kernelobj, "error")
-        for test_values in get(additive_cases, kernelobj, "error")
+        for test_args in get(additive_cases, kernelobj, "error")
             arg_values = T[test_values...]
             k = convert(Kernel{T},(kernelobj)(arg_values...))
-            x = convert(T, x1[1])
-            y = convert(T, y1[1])
-            @test_approx_eq MLKernels.phi(k, x, y) f(arg_values..., x, y)
+            for test_inputs in get(additive_testinputs, kernelobj, "error")
+                x = convert(T, test_inputs[1])
+                y = convert(T, test_inputs[2])
+                a = MLKernels.phi(k, x, y)
+                b = f(arg_values..., x, y)
+                if T == BigFloat
+                    @test_approx_eq convert(Float64,a) convert(Float64,b)
+                else
+                    @test_approx_eq a b
+                end
+            end
         end
-
 
     end
 
@@ -117,11 +124,20 @@ for kernelobj in composite_kernels
 
             # Test phi() function
             f = get(composite_kernelfunctions, kernelobj, "error")
-            for test_values in get(composite_cases, kernelobj, "error")
-                arg_values = T[test_values...]
+            for test_args in get(composite_cases, kernelobj, "error")
+                arg_values = T[test_args...]
                 k = convert(Kernel{T},(kernelobj)(base_k, arg_values...))
-                z = convert(T, x1[1])
-                @test_approx_eq MLKernels.phi(k, z) f(arg_values..., z)
+                for test_input in get(composite_testinputs, kernelobj, "error")
+                    z = convert(T, test_input[1])
+                    a = MLKernels.phi(k, z)
+                    b = f(arg_values..., z)
+                    if T == BigFloat
+                        @test_approx_eq convert(Float64,a) convert(Float64,b)
+                    else
+                        @test_approx_eq a b
+                    end
+                end
+
             end
 
         end
