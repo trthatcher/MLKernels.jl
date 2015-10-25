@@ -11,22 +11,17 @@ eltype{T}(κ::Kernel{T}) = T
 ismercer(::Kernel) = false
 isnegdef(::Kernel) = false
 
-rangemax(::Kernel) = Inf
-rangemin(::Kernel) = -Inf
-attainsrangemax(::Kernel) = true
-attainsrangemin(::Kernel) = true
+kernelrange(::Kernel) = :R
+# R  -> Real Number line
+# Rp -> Real Non-Negative Numbers
+# Rn -> Real Non-Positive Numbers
 
-<=(κ::Kernel, x::Real) = attainsrangemax(κ) ? (rangemax(κ) <= x) : (rangemax(κ) <= x)
-<=(x::Real, κ::Kernel) = attainsrangemin(κ) ? (x <= rangemin(κ)) : (x <  rangemin(κ))
+attainszero(::Kernel) = true  # Does it attain zero?
 
-<(κ::Kernel, x::Real)  = attainsrangemax(κ) ? (rangemax(κ) <= x) : (rangemax(κ) <  x)
-<(x::Real, κ::Kernel)  = attainsrangemin(κ) ? (x <  rangemin(κ)) : (x <= rangemax(κ))
-
->=(κ::Kernel, x::Real) = x <= κ
->=(x::Real, κ::Kernel) = κ <= x
-
->(κ::Kernel, x::Real)  = x < κ
->(x::Real, κ::Kernel)  = κ < x
+ispositive(κ::Kernel)   = kernelrange(κ) == :Rp && !attainszero(κ)
+isnonnegative(κ::Kernel) = kernelrange(κ) == :Rp
+isnonpositive(κ::Kernel) = kernelrange(κ) == :Rn
+isnegative(κ::Kernel)   = kernelrange(κ) == :Rn && !attainszero(κ)
 
 call{T<:AbstractFloat}(κ::Kernel{T}, x::T, y::T) = kernel(κ, x, y)
 call{T<:AbstractFloat}(κ::Kernel{T}, x::Vector{T}, y::Vector{T}) = kernel(κ, x, y)
@@ -66,10 +61,8 @@ ARD{T<:AbstractFloat}(κ::AdditiveKernel{T}, w::Vector{T}) = ARD{T}(κ, w)
 ismercer(κ::ARD) = ismercer(κ.k)
 isnegdef(κ::ARD) = isnegdef(κ.k)
 
-rangemax(κ::ARD) = rangemax(κ.k)
-rangemin(κ::ARD) = rangemax(κ.k)
-attainsrangemax(κ::ARD) = attainsrangemax(κ.k)
-attainsrangemin(κ::ARD) = attainsrangemax(κ.k)
+kernelrange(κ::ARD) = kernelrange(κ.k)
+attainszero(κ::ARD) = attainszero(κ.k)
 
 function description_string{T<:AbstractFloat,}(κ::ARD{T}, eltype::Bool = true)
     "ARD" * (eltype ? "{$(T)}" : "") * "(κ=$(description_string(κ.k, false)),w=$(κ.w))"

@@ -81,8 +81,19 @@ for kernelobj in additive_kernels
 
     end
 
-    @test ismercer((kernelobj)()) === get(additive_ismercer, kernelobj, "error")
-    @test isnegdef((kernelobj)()) === get(additive_isnegdef, kernelobj, "error")
+    k = (kernelobj)()
+
+    @test ismercer(k) === get(additive_ismercer, kernelobj, "error")
+    @test isnegdef(k) === get(additive_isnegdef, kernelobj, "error")
+
+
+    (kr,az,pos,nn,np,neg) = get(additive_kernelranges, kernelobj, "error")
+    @test MLKernels.kernelrange(k) == kr
+    @test attainszero(k) == az
+    @test ispositive(k) == pos
+    @test isnonnegative(k) == nn
+    @test isnonpositive(k) == np
+    @test isnegative(k) == neg
 
 end
 

@@ -29,8 +29,9 @@ function SquaredDistanceKernel{T<:AbstractFloat}(t::T = 1.0)
     SquaredDistanceKernel{T,CASE}(t)
 end
 
-rangemin(::SquaredDistanceKernel) = 0
 isnegdef(::SquaredDistanceKernel) = true
+kernelrange(::SquaredDistanceKernel) = :Rp
+attainszero(::SquaredDistanceKernel) = true
 
 function description_string{T<:AbstractFloat}(κ::SquaredDistanceKernel{T}, eltype::Bool = true)
     "SquaredDistance" * (eltype ? "{$(T)}" : "") * "(t=$(κ.t))"
@@ -38,9 +39,9 @@ end
 
 convert{T<:AbstractFloat}(::Type{SquaredDistanceKernel{T}}, κ::SquaredDistanceKernel) = SquaredDistanceKernel(convert(T, κ.t))
 
-phi{T<:AbstractFloat}(κ::SquaredDistanceKernel{T,:t1}, x::T, y::T) = (x-y)^2
-phi{T<:AbstractFloat}(κ::SquaredDistanceKernel{T,:t0p5}, x::T, y::T) = abs(x-y)
-phi{T<:AbstractFloat}(κ::SquaredDistanceKernel{T}, x::T, y::T) = ((x-y)^2)^κ.t
+@inline phi{T<:AbstractFloat}(κ::SquaredDistanceKernel{T,:t1}, x::T, y::T) = (x-y)^2
+@inline phi{T<:AbstractFloat}(κ::SquaredDistanceKernel{T,:t0p5}, x::T, y::T) = abs(x-y)
+@inline phi{T<:AbstractFloat}(κ::SquaredDistanceKernel{T}, x::T, y::T) = ((x-y)^2)^κ.t
 
 
 #==========================================================================
@@ -66,8 +67,9 @@ function SineSquaredKernel{T<:AbstractFloat}(t::T = 1.0)
     SineSquaredKernel{T,CASE}(t)
 end
 
-rangemin(::SineSquaredKernel) = 0
 isnegdef(::SineSquaredKernel) = true
+kernelrange(::SineSquaredKernel) = :Rp
+attainszero(::SineSquaredKernel) = true
 
 function description_string{T<:AbstractFloat}(κ::SineSquaredKernel{T}, eltype::Bool = true)
     "SineSquared" * (eltype ? "{$(T)}" : "") * "(t=$(κ.t))"
@@ -75,9 +77,9 @@ end
 
 convert{T<:AbstractFloat}(::Type{SineSquaredKernel{T}}, κ::SineSquaredKernel) = SineSquaredKernel(convert(T, κ.t))
 
-phi{T<:AbstractFloat}(κ::SineSquaredKernel{T,:t1}, x::T, y::T) = sin(x-y)^2
-phi{T<:AbstractFloat}(κ::SineSquaredKernel{T,:t0p5}, x::T, y::T) = abs(sin(x-y))
-phi{T<:AbstractFloat}(κ::SineSquaredKernel{T}, x::T, y::T) = (sin(x-y)^2)^κ.t
+@inline phi{T<:AbstractFloat}(κ::SineSquaredKernel{T,:t1}, x::T, y::T) = sin(x-y)^2
+@inline phi{T<:AbstractFloat}(κ::SineSquaredKernel{T,:t0p5}, x::T, y::T) = abs(sin(x-y))
+@inline phi{T<:AbstractFloat}(κ::SineSquaredKernel{T}, x::T, y::T) = (sin(x-y)^2)^κ.t
 
 
 #==========================================================================
@@ -101,8 +103,9 @@ function ChiSquaredKernel{T<:AbstractFloat}(t::T = 1.0)
     ChiSquaredKernel{T,CASE}(t)
 end
 
-rangemin(::ChiSquaredKernel) = 0
 isnegdef(::ChiSquaredKernel) = true
+kernelrange(::ChiSquaredKernel) = :Rp
+attainszero(::ChiSquaredKernel) = true
 
 function description_string{T<:AbstractFloat}(κ::ChiSquaredKernel{T}, eltype::Bool = true)
     "ChiSquared" * (eltype ? "{$(T)}" : "") * "(t=$(κ.t))"
@@ -110,8 +113,8 @@ end
 
 convert{T<:AbstractFloat}(::Type{ChiSquaredKernel{T}}, κ::ChiSquaredKernel) = ChiSquaredKernel(convert(T, κ.t))
 
-phi{T<:AbstractFloat}(κ::ChiSquaredKernel{T,:t1}, x::T, y::T) = (x-y)^2/(x+y)
-phi{T<:AbstractFloat}(κ::ChiSquaredKernel{T}, x::T, y::T) = ((x-y)^2/(x+y))^κ.t
+@inline phi{T<:AbstractFloat}(κ::ChiSquaredKernel{T,:t1}, x::T, y::T) = (x == y == zero(T)) ? zero(T) : (x-y)^2/(x+y)
+@inline phi{T<:AbstractFloat}(κ::ChiSquaredKernel{T},x::T, y::T) = (x == y == zero(T)) ? zero(T) : ((x-y)^2/(x+y))^κ.t
 
 
 #==========================================================================
@@ -138,7 +141,7 @@ end
 
 convert{T<:AbstractFloat}(::Type{ScalarProductKernel{T}}, κ::ScalarProductKernel) = ScalarProductKernel{T}()
 
-phi{T<:AbstractFloat}(κ::ScalarProductKernel{T}, x::T) = x
+@inline phi{T<:AbstractFloat}(κ::ScalarProductKernel{T}, x::T) = x
 
 
 #==========================================================================
@@ -163,4 +166,4 @@ end
 
 convert{T<:AbstractFloat}(::Type{MercerSigmoidKernel{T}}, κ::MercerSigmoidKernel) = MercerSigmoidKernel{T}(convert(T,κ.d), convert(T,κ.b))
 
-phi{T<:AbstractFloat}(κ::MercerSigmoidKernel{T}, x::T) = tanh((x-κ.d)/κ.b)
+@inline phi{T<:AbstractFloat}(κ::MercerSigmoidKernel{T}, x::T) = tanh((x-κ.d)/κ.b)

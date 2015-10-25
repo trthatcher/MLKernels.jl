@@ -4,12 +4,17 @@
 
 module MLKernels
 
-import Base: call, convert, eltype, show, <=, <, >=, >, *, +
+import Base: call, convert, eltype, show, *, +
 
 export
     # Functions
     ismercer,
     isnegdef,
+    attainszero,
+    ispositive,
+    isnonnegative,
+    isnonpositive,
+    isnegative,
     kernel,
     kernelmatrix,
     #center_kernelmatrix!,

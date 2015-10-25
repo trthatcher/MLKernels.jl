@@ -32,17 +32,25 @@ additive_kernels = (
 additive_kernelfunctions = Dict(
     SquaredDistanceKernel => (t,x,y) -> ((x-y)^2)^t,
     SineSquaredKernel => (t,x,y) -> (sin(x-y)^2)^t,
-    ChiSquaredKernel => (t,x,y) -> ((x-y)^2/(x+y))^t,
+    ChiSquaredKernel => (t,x,y) -> (x == y == 0) ? zero(typeof(t)) : ((x-y)^2/(x+y))^t,
     ScalarProductKernel => (x,y) -> x*y,
     MercerSigmoidKernel => (d,b,x,y) -> tanh((x-d)/b) * tanh((y-d)/b)
 )
 
+additive_kernelranges = Dict(
+    SquaredDistanceKernel => (:Rp, true, false, true, false, false), # (range,attainszero,pos,nonneg,nonpos,neg)
+    SineSquaredKernel => (:Rp, true, false, true, false, false),
+    ChiSquaredKernel => (:Rp, true, false, true, false, false),
+    ScalarProductKernel => (:R, true, false, false, false, false),
+    MercerSigmoidKernel => (:R, true, false, false, false, false)
+)
+
 additive_testinputs = Dict(
-    SquaredDistanceKernel => ([1,1],[1,0],[0,1],[-1,-1],[-1,0],[0,-1]),
-    SineSquaredKernel => ([1,1],[1,0],[0,1],[-1,-1],[-1,0],[0,-1]),
-    ChiSquaredKernel => ([1,1],[1,0],[0,1]),
-    ScalarProductKernel => ([1,1],[1,0],[0,1],[-1,-1],[-1,0],[0,-1]),
-    MercerSigmoidKernel => ([1,1],[1,0],[0,1],[-1,-1],[-1,0],[0,-1])
+    SquaredDistanceKernel => ([1,1],[1,0],[0,1],[0,0],[-1,-1],[-1,0],[0,-1]),
+    SineSquaredKernel => ([1,1],[1,0],[0,1],[0,0],[-1,-1],[-1,0],[0,-1]),
+    ChiSquaredKernel => ([1,1],[1,0],[0,1],[0,0]),
+    ScalarProductKernel => ([1,1],[1,0],[0,1],[0,0],[-1,-1],[-1,0],[0,-1]),
+    MercerSigmoidKernel => ([1,1],[1,0],[0,1],[0,0],[-1,-1],[-1,0],[0,-1])
 )
 
 additive_kernelargs = Dict(
@@ -123,6 +131,17 @@ composite_kernelfunctions = Dict(
     PolynomialKernel => (α,c,d,z) -> (α*z+c)^d,
     ExponentiatedKernel => (α,z) -> exp(α*z),
     SigmoidKernel => (α,c,z) -> tanh(α*z+c)
+)
+
+composite_kernelranges = Dict(
+    ExponentialKernel => (0, false, 1, true), # (min, attains_min, max, attains_max)
+    RationalQuadraticKernel => (0, false, 1, true),
+    MaternKernel => (0, false, 1, true),
+    PowerKernel => (0, true, Inf, true),
+    LogKernel => (0, true, Inf, true),
+    PolynomialKernel => (-Inf, true, Inf, true),
+    ExponentiatedKernel => (0, false, Inf, true),
+    SigmoidKernel => (-Inf, true, Inf, true)
 )
 
 composite_testinputs = Dict(
