@@ -1,26 +1,5 @@
 FloatingPointTypes = (Float32, Float64, BigFloat)
 
-# Samples Input
-
-#=
-x1 = [1; 2]
-x2 = [2; 0]
-x3 = [3; 2]
-X = [x1';
-     x2';
-     x3']
-
-y1 = [1; 1]
-y2 = [1; 1]
-Y = [y1'; 
-     y2']
-
-w = [2; 1]
-
-Set_x = (x1,x2,x3)
-Set_y = (y1,y2)
-=#
-
 # Additive Kernel References
 
 additive_kernels = (
@@ -90,7 +69,7 @@ all_kernelfunctions = Dict(
 
 )
 
-all_kernelproperties = Dict(  # (range,attainszero,pos,nonneg,nonpos,neg,ismercer,isnegdef)
+all_kernelproperties = Dict( #|range|zero  |pos   |nonneg|nonpos|neg   |mercer|negdef|
     SquaredDistanceKernel   => (:Rp, true,  false, true,  false, false, false, true), 
     SineSquaredKernel       => (:Rp, true,  false, true,  false, false, false, true),
     ChiSquaredKernel        => (:Rp, true,  false, true,  false, false, false, true),
@@ -109,7 +88,7 @@ all_kernelproperties = Dict(  # (range,attainszero,pos,nonneg,nonpos,neg,ismerce
 all_testinputs = Dict(
     SquaredDistanceKernel   => ([1,1],[1,0],[0,1],[0,0],[-1,-1],[-1,0],[0,-1]),
     SineSquaredKernel       => ([1,1],[1,0],[0,1],[0,0],[-1,-1],[-1,0],[0,-1]),
-    ChiSquaredKernel        => ([1,1],[1,0],[0,1],[0,0]),
+    ChiSquaredKernel        => ([1,1],[1,0],[0,1],[0,0],[2,1],[1,2],[2,0],[0,2]),
     ScalarProductKernel     => ([1,1],[1,0],[0,1],[0,0],[-1,-1],[-1,0],[0,-1]),
     MercerSigmoidKernel     => ([1,1],[1,0],[0,1],[0,0],[-1,-1],[-1,0],[0,-1]),
     ExponentialKernel       => ([0],[1e-10],[0.5],[1]),

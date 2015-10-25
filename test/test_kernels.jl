@@ -77,4 +77,27 @@ for kernelobj in (additive_kernels..., composite_kernels...)
 
 end
 
+info("Testing ", ARD)
+for kernelobj in additive_kernels
+    w = rand(3)
+    for T in FloatingPointTypes
+        k_base = convert(Kernel{T}, (kernelobj)())
+        k = ARD(k_base, T[w...])
+
+        @test eltype(k) == T
+        @test getfield(k, :k) == k_base 
+        @test getfield(k, :w) == T[w...]
+        @test MLKernels.kernelrange(k) == MLKernels.kernelrange(k_base)
+        @test attainszero(k) == attainszero(k_base)
+        @test ispositive(k) == ispositive(k_base)
+        @test isnonnegative(k) == isnonnegative(k_base)
+        @test isnonpositive(k) == isnonpositive(k_base)
+        @test isnegative(k) == isnegative(k_base)
+        @test ismercer(k) === ismercer(k_base)
+        @test isnegdef(k) === isnegdef(k_base)
+
+    end  # End floating point loop
+end  # End additive kernels loop
+
+
 T = Float64

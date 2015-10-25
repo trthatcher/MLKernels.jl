@@ -52,7 +52,8 @@ immutable ARD{T<:AbstractFloat} <: BaseKernel{T}
     k::AdditiveKernel{T}
     w::Vector{T}
     function ARD(κ::AdditiveKernel{T}, w::Vector{T})
-        all(w .> 0) || throw(ArgumentError("Weight vector w must consist of positive values."))
+        length(w) > 0 || error("Weight vector w must be at least of length 1.")
+        all(w .> 0) || error("Weight vector w must consist of positive values.")
         new(κ, w)
     end
 end
@@ -116,9 +117,9 @@ immutable KernelProduct{T<:AbstractFloat} <: CombinationKernel{T}
     a::T
     k::Vector{Kernel{T}}
     function KernelProduct(a::T, κ::Vector{Kernel{T}})
-        a > 0 || throw(ArgumentError("a = $(a) must be greater than zero."))
+        a > 0 || error("a = $(a) must be greater than zero.")
         if length(κ) > 1
-            all(ismercer, κ) || throw(ArgumentError("All kernels must be Mercer for closure under multiplication."))
+            all(ismercer, κ) || error("All kernels must be Mercer for closure under multiplication.")
         end
         new(a, κ)
     end
@@ -129,8 +130,8 @@ immutable KernelSum{T<:AbstractFloat} <: CombinationKernel{T}
     a::T
     k::Vector{Kernel{T}}
     function KernelSum(a::T, κ::Vector{Kernel{T}})
-        a >= 0 || throw(ArgumentError("a = $(a) must be greater than or equal to zero."))
-        all(ismercer, κ) || all(isnegdef, κ) || throw(ArgumentError("All kernels must be Mercer or negative definite for closure under addition"))
+        a >= 0 || error("a = $(a) must be greater than or equal to zero.")
+        all(ismercer, κ) || all(isnegdef, κ) || error("All kernels must be Mercer or negative definite for closure under addition")
         new(a, κ)
     end
 end
