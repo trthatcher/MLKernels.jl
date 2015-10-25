@@ -1,3 +1,5 @@
+FloatingPointTypes = (Float32, Float64, BigFloat)
+
 # Samples Input
 
 x1 = [1; 2]
@@ -16,8 +18,6 @@ w = [2; 1]
 
 Set_x = (x1,x2,x3)
 Set_y = (y1,y2)
-
-
 
 # Additive Kernel References
 

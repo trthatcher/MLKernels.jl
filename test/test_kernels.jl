@@ -2,8 +2,6 @@ using Base.Test
 
 importall MLKernels
 
-FloatingPointTypes = (Float32, Float64, BigFloat)
-
 macro test_approx_eq_type(value, reference, typ)
     x = gensym()
     quote
@@ -36,8 +34,6 @@ end
 
 # Test Base Kernels
 
-println("Additive Kernel Constructors:")
-
 for kernelobj in additive_kernels
 
     info("Testing ", kernelobj)
@@ -50,13 +46,13 @@ for kernelobj in additive_kernels
         end
 
         # Test constructors
-        fields, default_values, test_values = get(additive_kernelargs, kernelobj, (Symbol[],T[],T[]))
+        fields, default_args, test_args = get(additive_kernelargs, kernelobj, (Symbol[],T[],T[]))
         for i = 1:length(fields)
-            test_args = T[test_values[1:i]..., default_values[i+1:end]...]
-            k = (kernelobj)(test_args...)
+            arg_values = T[test_args[1:i]..., default_args[i+1:end]...]
+            k = (kernelobj)(arg_values...)
             @test eltype(k) == T
             for j = 1:length(fields)
-                @test getfield(k, fields[j]) === test_args[j]
+                @test getfield(k, fields[j]) === arg_values[j]
             end
         end
 
@@ -68,7 +64,7 @@ for kernelobj in additive_kernels
         #Test phi() function
         f = get(additive_kernelfunctions, kernelobj, "error")
         for test_args in get(additive_cases, kernelobj, "error")
-            arg_values = T[test_values...]
+            arg_values = T[test_args...]
             k = convert(Kernel{T},(kernelobj)(arg_values...))
             for test_inputs in get(additive_testinputs, kernelobj, "error")
                 x = convert(T, test_inputs[1])
@@ -106,20 +102,20 @@ for kernelobj in composite_kernels
             base_k = convert(Kernel{T}, (base_kernelobj)())
 
             # Test constructors
-            fields, default_values, test_values = get(composite_kernelargs, kernelobj, (Symbol[],T[],T[]))
+            fields, default_args, test_args = get(composite_kernelargs, kernelobj, (Symbol[],T[],T[]))
             for i = 1:length(fields)
-                test_args = T[test_values[1:i]..., default_values[i+1:end]...]
-                k = (kernelobj)(base_k, test_args...)
+                arg_values = T[test_args[1:i]..., default_args[i+1:end]...]
+                k = (kernelobj)(base_k, arg_values...)
                 @test eltype(k) == T
                 @test getfield(k, :k) === base_k
                 for j = 1:length(fields)
-                    @test getfield(k, fields[j]) === test_args[j]
+                    @test getfield(k, fields[j]) === arg_values[j]
                 end
             end
 
-            for test_values in get(composite_errorcases, kernelobj, ())
-                test_args = T[test_values...]
-                @test_throws ErrorException (kernelobj)(base_k, test_args...)
+            for test_args in get(composite_errorcases, kernelobj, ())
+                arg_values = T[test_args...]
+                @test_throws ErrorException (kernelobj)(base_k, arg_values...)
             end
 
             # Test phi() function
