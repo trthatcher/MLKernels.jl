@@ -18,10 +18,10 @@ kernelrange(::Kernel) = :R
 
 attainszero(::Kernel) = true  # Does it attain zero?
 
-ispositive(κ::Kernel)   = kernelrange(κ) == :Rp && !attainszero(κ)
+ispositive(κ::Kernel)    = kernelrange(κ) == :Rp && !attainszero(κ)
 isnonnegative(κ::Kernel) = kernelrange(κ) == :Rp
 isnonpositive(κ::Kernel) = kernelrange(κ) == :Rn
-isnegative(κ::Kernel)   = kernelrange(κ) == :Rn && !attainszero(κ)
+isnegative(κ::Kernel)    = kernelrange(κ) == :Rn && !attainszero(κ)
 
 call{T<:AbstractFloat}(κ::Kernel{T}, x::T, y::T) = kernel(κ, x, y)
 call{T<:AbstractFloat}(κ::Kernel{T}, x::Vector{T}, y::Vector{T}) = kernel(κ, x, y)
@@ -35,18 +35,6 @@ call{T<:AbstractFloat}(κ::Kernel{T}, x::Matrix{T}, y::Matrix{T}) = kernel(κ, x
 abstract BaseKernel{T<:AbstractFloat} <: StandardKernel{T}
 
 include("kernels/additivekernels.jl")
-
-for kernel in concrete_subtypes(AdditiveKernel)
-    kernel_sym = kernel.name.name  # symbol for kernel
-    for parent in supertypes(kernel)
-        parent_sym = parent.name.name  # symbol for abstract supertype
-        @eval begin
-            function convert{T<:AbstractFloat}(::Type{$parent_sym{T}}, κ::$kernel_sym)
-                convert($kernel_sym{T}, κ)
-            end
-        end
-    end
-end
 
 immutable ARD{T<:AbstractFloat} <: BaseKernel{T}
     k::AdditiveKernel{T}
@@ -79,32 +67,6 @@ convert{T<:AbstractFloat}(::Type{ARD{T}}, κ::ARD) = ARD(convert(Kernel{T},κ.k)
 abstract CompositeKernel{T<:AbstractFloat} <: StandardKernel{T}
 
 include("kernels/compositekernels.jl")
-
-for kernel in concrete_subtypes(CompositeKernel)
-    kernel_sym = kernel.name.name  # symbol for concrete kernel type
-
-    field_conversions = [:(convert(Kernel{T}, κ.k))]
-
-    if length(fieldnames(kernel)) != 1
-        append!(field_conversions, [:(convert(T, κ.$field)) for field in fieldnames(kernel)[2:end]])
-    end
-
-    constructor = Expr(:call, kernel_sym, field_conversions...)
-
-    @eval begin
-        convert{T<:AbstractFloat}(::Type{$kernel_sym{T}}, κ::$kernel_sym) = $constructor
-    end
-
-    for parent in supertypes(kernel)
-        parent_sym = parent.name.name  # symbol for abstract supertype
-
-        @eval begin
-            function convert{T<:AbstractFloat}(::Type{$parent_sym{T}}, κ::$kernel_sym)
-                convert($kernel_sym{T}, κ)
-            end
-        end
-    end
-end
 
 
 #===================================================================================================
@@ -148,9 +110,9 @@ for (kernel_object, kernel_op, kernel_array_op, identity) in (
             $kernel_object{U}(convert(U, a), Kernel{U}[κ...])
         end
 
-        convert{T<:AbstractFloat}(::Type{$kernel_object{T}}, ψ::$kernel_object) = $kernel_object(convert(T, ψ.a), Kernel{T}[ψ.k...])
-        convert{T<:AbstractFloat}(::Type{CombinationKernel{T}}, ψ::$kernel_object) = $kernel_object(convert(T, ψ.a), Kernel{T}[ψ.k...])
-        convert{T<:AbstractFloat}(::Type{Kernel{T}}, ψ::$kernel_object) = $kernel_object(convert(T, ψ.a), Kernel{T}[ψ.k...])
+        function convert{T<:AbstractFloat}(::Type{$kernel_object{T}}, ψ::$kernel_object)
+            $kernel_object(convert(T, ψ.a), Kernel{T}[ψ.k...])
+        end
 
         ismercer(ψ::$kernel_object) = all(ismercer, ψ.k)
         isnegdef(ψ::$kernel_object) = all(isnegdef, ψ.k)
@@ -187,3 +149,23 @@ for (kernel_object, kernel_op, kernel_array_op, identity) in (
 
     end
 end
+
+
+#===================================================================================================
+  Conversions
+===================================================================================================#
+
+for kernel in (concrete_subtypes(AdditiveKernel)..., ARD, concrete_subtypes(CompositeKernel)..., 
+               KernelSum, KernelProduct)
+    kernel_sym = kernel.name.name  # symbol for concrete kernel type
+    for parent in supertypes(kernel)
+        parent_sym = parent.name.name  # symbol for abstract supertype
+
+        @eval begin
+            function convert{T<:AbstractFloat}(::Type{$parent_sym{T}}, κ::$kernel_sym)
+                convert($kernel_sym{T}, κ)
+            end
+        end
+    end
+end
+
