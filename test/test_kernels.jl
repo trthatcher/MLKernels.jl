@@ -13,7 +13,10 @@ for kernelobj in (additive_kernels..., composite_kernels...)
             @test eltype(k) == Float64
         end
 
+        @test eltype(convert(kernelobj{T}, (kernelobj)())) == T
+
         fields, default_args, test_args = get(all_kernelargs, kernelobj, (Symbol[],T[],T[]))
+
         f = get(all_kernelfunctions, kernelobj, "error")
 
         for base_kernelobj in get(composite_pairs, kernelobj, (kernelobj,))

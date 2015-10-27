@@ -136,7 +136,7 @@ function description_string{T<:AbstractFloat}(κ::MaternKernel{T}, eltype::Bool 
     "Matérn" * (eltype ? "{$(T)}" : "") * "(κ=" * description_string(κ.k, false) * ",ν=$(κ.nu),θ=$(κ.theta))"
 end
 
-function convert{T<:AbstractFloat}(::Type{Kernel{T}}, κ::MaternKernel)
+function convert{T<:AbstractFloat}(::Type{MaternKernel{T}}, κ::MaternKernel)
     MaternKernel(convert(Kernel{T}, κ.k), convert(T, κ.nu), convert(T, κ.theta))
 end
 
@@ -182,7 +182,7 @@ function description_string{T<:AbstractFloat}(κ::PowerKernel{T}, eltype::Bool =
     "Power" * (eltype ? "{$(T)}" : "") * "(κ=" * description_string(κ.k, false) * ",γ=$(κ.gamma))"
 end
 
-function convert{T<:AbstractFloat}(::Type{Kernel{T}}, κ::PowerKernel)
+function convert{T<:AbstractFloat}(::Type{PowerKernel{T}}, κ::PowerKernel)
     PowerKernel(convert(Kernel{T}, κ.k), convert(T, κ.gamma))
 end
 
@@ -221,8 +221,8 @@ function description_string{T<:AbstractFloat}(κ::LogKernel{T}, eltype::Bool = t
     "Log" * (eltype ? "{$(T)}" : "") * "(κ=" * description_string(κ.k, false) * ",α=$(κ.alpha),γ=$(κ.gamma))"
 end
 
-function convert{T<:AbstractFloat}(::Type{Kernel{T}}, κ::LogKernel)
-    LogKernel(convert(T, κ.k), convert(T, κ.alpha), convert(T, κ.gamma))
+function convert{T<:AbstractFloat}(::Type{LogKernel{T}}, κ::LogKernel)
+    LogKernel(convert(Kernel{T}, κ.k), convert(T, κ.alpha), convert(T, κ.gamma))
 end
 
 @inline phi{T<:AbstractFloat}(κ::LogKernel{T}, z::T) = log(κ.alpha*z^(κ.gamma) + 1)
@@ -261,8 +261,8 @@ function description_string{T<:AbstractFloat}(κ::PolynomialKernel{T}, eltype::B
     "Polynomial" * (eltype ? "{$(T)}" : "") * "(κ=" * description_string(κ.k, false) * ",α=$(κ.alpha),c=$(κ.c),d=$(convert(Int64,κ.d)))"
 end
 
-function convert{T<:AbstractFloat}(::Type{Kernel{T}}, κ::PolynomialKernel)
-    PolynomialKernel(convert(T, κ.k), convert(T, κ.alpha), convert(T, κ.c), convert(T, κ.d))
+function convert{T<:AbstractFloat}(::Type{PolynomialKernel{T}}, κ::PolynomialKernel)
+    PolynomialKernel(convert(Kernel{T}, κ.k), convert(T, κ.alpha), convert(T, κ.c), convert(T, κ.d))
 end
 
 @inline phi{T<:AbstractFloat}(κ::PolynomialKernel{T}, xᵀy::T) = (κ.alpha*xᵀy + κ.c)^κ.d
@@ -294,8 +294,8 @@ function description_string{T<:AbstractFloat}(κ::ExponentiatedKernel{T}, eltype
     "Exponentiated" * (eltype ? "{$(T)}" : "") * "(κ=" * description_string(κ.k, false) * ",α=$(κ.alpha))"
 end
 
-function convert{T<:AbstractFloat}(::Type{Kernel{T}}, κ::ExponentiatedKernel)
-    ExponentiatedKernel(convert(T, κ.k), convert(T, κ.alpha))
+function convert{T<:AbstractFloat}(::Type{ExponentiatedKernel{T}}, κ::ExponentiatedKernel)
+    ExponentiatedKernel(convert(Kernel{T}, κ.k), convert(T, κ.alpha))
 end
 
 @inline phi{T<:AbstractFloat}(κ::ExponentiatedKernel{T}, z::T) = exp(κ.alpha*z)
@@ -323,8 +323,8 @@ function description_string{T<:AbstractFloat}(κ::SigmoidKernel{T}, eltype::Bool
     "Sigmoid" * (eltype ? "{$(T)}" : "") * "(κ=" * description_string(κ.k, false) * ",α=$(κ.alpha),c=$(κ.c))"
 end
 
-function convert{T<:AbstractFloat}(::Type{Kernel{T}}, κ::SigmoidKernel)
-    SigmoidKernel(convert(T, κ.k), convert(T, κ.alpha), convert(T, κ.c))
+function convert{T<:AbstractFloat}(::Type{SigmoidKernel{T}}, κ::SigmoidKernel)
+    SigmoidKernel(convert(Kernel{T}, κ.k), convert(T, κ.alpha), convert(T, κ.c))
 end
 
 @inline phi{T<:AbstractFloat}(κ::SigmoidKernel{T}, z::T) = tanh(κ.alpha*z + κ.c)

@@ -23,10 +23,6 @@ isnonnegative(κ::Kernel) = kernelrange(κ) == :Rp
 isnonpositive(κ::Kernel) = kernelrange(κ) == :Rn
 isnegative(κ::Kernel)    = kernelrange(κ) == :Rn && !attainszero(κ)
 
-call{T<:AbstractFloat}(κ::Kernel{T}, x::T, y::T) = kernel(κ, x, y)
-call{T<:AbstractFloat}(κ::Kernel{T}, x::Vector{T}, y::Vector{T}) = kernel(κ, x, y)
-call{T<:AbstractFloat}(κ::Kernel{T}, x::Matrix{T}, y::Matrix{T}) = kernel(κ, x, y)
-
 
 #==========================================================================
   Base Kernels
