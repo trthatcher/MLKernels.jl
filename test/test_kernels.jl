@@ -86,6 +86,7 @@ for kernelobj in additive_kernels
         k = ARD(k_base, T[w...])
 
         @test eltype(k) == T
+        @test eltype(convert(ARD{T}, ARD((kernelobj)(),Float64[w...]))) == T
         @test getfield(k, :k) == k_base 
         @test getfield(k, :w) == T[w...]
         @test MLKernels.kernelrange(k) == MLKernels.kernelrange(k_base)

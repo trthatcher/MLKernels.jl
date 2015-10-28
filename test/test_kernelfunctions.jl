@@ -1,38 +1,57 @@
-T = Float64
-
-x1 = T[1; 2]
-x2 = T[2; 0]
-x3 = T[3; 2]
+x1 = [1; 2]
+x2 = [2; 0]
+x3 = [3; 2]
 X = [x1'; x2'; x3']
 
-y1 = T[1; 1]
-y2 = T[1; 1]
+y1 = [1; 1]
+y2 = [1; 1]
 Y = [y1'; y2']
 
-w = T[2; 1]
+w = [2; 1]
 
 Set_x = (x1,x2,x3)
 Set_y = (y1,y2)
 
-println("Additive Kernel kernel() and kernelmatrix():")
-for kernelobject in (
-        SquaredDistanceKernel,
-        SineSquaredKernel,
-        ChiSquaredKernel,
-        ScalarProductKernel,
-        MercerSigmoidKernel
-    )
-    print(indent_block, kernelobject)
-    k = (kernelobject)()
+info("Testing ", kernel)
+for T in FloatingPointTypes
 
-    print(" Scalar")
-    @test kernel(k, x1[1], y1[1]) == MLKernels.pairwise(k, x1[1], y1[1])
-    @test kernel(ARD(k,w[1:1]), x1[1], y1[1]) == MLKernels.pairwise(ARD(k,w[1:1]), x1[1], y1[1])
+    x = T[1; 2]
+    y = T[1; 1]
+    w = T[2; 1]
 
-    print(" Vector")
-    @test kernel(k, x1, y1) == MLKernels.pairwise(k, x1, y1)
-    @test kernel(ARD(k,w), x1, y1) == MLKernels.pairwise(ARD(k,w), x1, y1)
+    for kernelobj in additive_kernels
+        k = convert(Kernel{T}, (kernelobj)())
 
+        @test kernel(k, x[1], y[1]) == MLKernels.pairwise(k, x[1], y[1])
+        @test (k)(x[1], y[1])       == MLKernels.pairwise(k, x[1], y[1])
+
+        @test kernel(ARD(k,w[1:1]), x[1], y[1]) == MLKernels.pairwise(ARD(k,w[1:1]), x[1], y[1])
+        @test (ARD(k,w[1:1]))(x[1], y[1])       == MLKernels.pairwise(ARD(k,w[1:1]), x[1], y[1])
+
+        @test kernel(k, x, y) == MLKernels.pairwise(k, x, y)
+        @test (k)(x, y)       == MLKernels.pairwise(k, x, y)
+
+        @test kernel(ARD(k,w), x, y) == MLKernels.pairwise(ARD(k,w), x, y)
+        @test (ARD(k,w))(x, y)       == MLKernels.pairwise(ARD(k,w), x, y)
+    end
+
+    for kernelobj in composite_kernels
+        for base_kernelobj in get(composite_pairs, kernelobj, "error")
+
+            k_base = convert(Kernel{T}, (base_kernelobj)())
+            k = (kernelobj)(k_base)
+
+            @test kernel(k, x[1], y[1]) == MLKernels.phi(k, MLKernels.pairwise(k_base, x[1], y[1]))
+            @test (k)(x[1], y[1])       == MLKernels.phi(k, MLKernels.pairwise(k_base, x[1], y[1]))
+
+            @test kernel(k, x, y) == MLKernels.phi(k, MLKernels.pairwise(k_base, x, y))
+            @test (k)(x, y)       == MLKernels.phi(k, MLKernels.pairwise(k_base, x, y))
+        end
+    end
+
+end
+
+#=
     print(" Matrix")
     K = [kernel(k,x,y) for x in Set_x, y in Set_x]
     print(" _X!")
@@ -91,6 +110,7 @@ for (kernelobject_comp, kernelobject_base) in (
     print(" Matrix")
     K = [kernel(k_comp,x,y) for x in Set_x, y in Set_x]
     print(" _X!")
+  
     @test_approx_eq kernelmatrix(k_comp, X, false, true, true) K
     @test_approx_eq kernelmatrix(k_comp, X, false, false, true) K
     print(" _Xt!")
@@ -104,5 +124,6 @@ for (kernelobject_comp, kernelobject_base) in (
     @test_approx_eq kernelmatrix(k_comp, X', Y', true) K
 
     println(" ... Done")
+=#
 
-end
+T = Float64
