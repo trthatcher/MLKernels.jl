@@ -14,14 +14,11 @@ isnegdef(::Kernel) = false
 kernelrange(::Kernel) = :R
 # R  -> Real Number line
 # Rp -> Real Non-Negative Numbers
-# Rn -> Real Non-Positive Numbers
 
 attainszero(::Kernel) = true  # Does it attain zero?
 
 ispositive(κ::Kernel)    = kernelrange(κ) == :Rp && !attainszero(κ)
 isnonnegative(κ::Kernel) = kernelrange(κ) == :Rp
-isnonpositive(κ::Kernel) = kernelrange(κ) == :Rn
-isnegative(κ::Kernel)    = kernelrange(κ) == :Rn && !attainszero(κ)
 
 
 #==========================================================================
@@ -84,6 +81,9 @@ immutable KernelProduct{T<:AbstractFloat} <: CombinationKernel{T}
 end
 KernelProduct{T<:AbstractFloat}(a::T, κ::Vector{Kernel{T}}) = KernelProduct{T}(a, κ)
 
+attainszero(κ::KernelProduct)   = any(attainszero, κ.k)  # Does it attain zero?
+
+
 immutable KernelSum{T<:AbstractFloat} <: CombinationKernel{T}
     a::T
     k::Vector{Kernel{T}}
@@ -94,6 +94,9 @@ immutable KernelSum{T<:AbstractFloat} <: CombinationKernel{T}
     end
 end
 KernelSum{T<:AbstractFloat}(a::T, κ::Vector{Kernel{T}}) = KernelSum{T}(a, κ)
+
+attainszero(κ::KernelSum)   = all(attainszero, κ.k)  # Does it attain zero?
+
 
 for (kernel_object, kernel_op, kernel_array_op, identity) in (
         (:KernelProduct, :*, :prod, :1),
@@ -109,6 +112,9 @@ for (kernel_object, kernel_op, kernel_array_op, identity) in (
         function convert{T<:AbstractFloat}(::Type{$kernel_object{T}}, ψ::$kernel_object)
             $kernel_object(convert(T, ψ.a), Kernel{T}[ψ.k...])
         end
+
+        ispositive(ψ::$kernel_object)    = all(ispositive, ψ.k)
+        isnonnegative(ψ::$kernel_object) = all(isnonnegative, ψ.k)
 
         ismercer(ψ::$kernel_object) = all(ismercer, ψ.k)
         isnegdef(ψ::$kernel_object) = all(isnegdef, ψ.k)
@@ -164,4 +170,3 @@ for kernel in (concrete_subtypes(AdditiveKernel)..., ARD, concrete_subtypes(Comp
         end
     end
 end
-

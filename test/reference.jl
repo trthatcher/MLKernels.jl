@@ -69,20 +69,20 @@ all_kernelfunctions = Dict(
 
 )
 
-all_kernelproperties = Dict( #|range|zero  |pos   |nonneg|nonpos|neg   |mercer|negdef|
-    SquaredDistanceKernel   => (:Rp, true,  false, true,  false, false, false, true), 
-    SineSquaredKernel       => (:Rp, true,  false, true,  false, false, false, true),
-    ChiSquaredKernel        => (:Rp, true,  false, true,  false, false, false, true),
-    ScalarProductKernel     => (:R,  true,  false, false, false, false, true,  false),
-    MercerSigmoidKernel     => (:R,  true,  false, false, false, false, true,  false),
-    ExponentialKernel       => (:Rp, false, true,  true,  false, false, true,  false),
-    RationalQuadraticKernel => (:Rp, false, true,  true,  false, false, true,  false),
-    MaternKernel            => (:Rp, false, true,  true,  false, false, true,  false),
-    PowerKernel             => (:Rp, true,  false, true,  false, false, false, true),
-    LogKernel               => (:Rp, true,  false, true,  false, false, false, true),
-    PolynomialKernel        => (:R,  true,  false, false, false, false, true,  false),
-    ExponentiatedKernel     => (:Rp, false, true,  true,  false, false, true,  false),
-    SigmoidKernel           => (:R,  true,  false, false, false, false, false, false)
+all_kernelproperties = Dict( #|range|zero  |pos   |nonneg|mercer|negdef|
+    SquaredDistanceKernel   => (:Rp, true,  false, true,  false, true), 
+    SineSquaredKernel       => (:Rp, true,  false, true,  false, true),
+    ChiSquaredKernel        => (:Rp, true,  false, true,  false, true),
+    ScalarProductKernel     => (:R,  true,  false, false, true,  false),
+    MercerSigmoidKernel     => (:R,  true,  false, false, true,  false),
+    ExponentialKernel       => (:Rp, false, true,  true,  true,  false),
+    RationalQuadraticKernel => (:Rp, false, true,  true,  true,  false),
+    MaternKernel            => (:Rp, false, true,  true,  true,  false),
+    PowerKernel             => (:Rp, true,  false, true,  false, true),
+    LogKernel               => (:Rp, true,  false, true,  false, true),
+    PolynomialKernel        => (:R,  true,  false, false, true,  false),
+    ExponentiatedKernel     => (:Rp, false, true,  true,  true,  false),
+    SigmoidKernel           => (:R,  true,  false, false, false, false)
 )
 
 all_testinputs = Dict(
