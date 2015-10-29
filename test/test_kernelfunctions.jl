@@ -49,6 +49,36 @@ for T in FloatingPointTypes
         end
     end
 
+    for kernelobj1 in (RationalQuadraticKernel, ExponentialKernel)
+        for kernelobj2 in (PolynomialKernel, MaternKernel)
+            k1 = convert(Kernel{T}, (kernelobj1)())
+            k2 = convert(Kernel{T}, (kernelobj2)())
+
+            k = one(T) + k1 + k2
+
+            @test kernel(k, x[1], y[1]) == (MLKernels.phi(k1, MLKernels.pairwise(k1.k, x[1], y[1])) +
+                                            MLKernels.phi(k2, MLKernels.pairwise(k2.k, x[1], y[1])) + one(T))
+            @test (k)(x[1], y[1])       == (MLKernels.phi(k1, MLKernels.pairwise(k1.k, x[1], y[1])) +
+                                            MLKernels.phi(k2, MLKernels.pairwise(k2.k, x[1], y[1])) + one(T))
+
+            @test kernel(k, x, y) == (MLKernels.phi(k1, MLKernels.pairwise(k1.k, x, y)) +
+                                      MLKernels.phi(k2, MLKernels.pairwise(k2.k, x, y)) + one(T))
+            @test (k)(x, y)       == (MLKernels.phi(k1, MLKernels.pairwise(k1.k, x, y)) +
+                                      MLKernels.phi(k2, MLKernels.pairwise(k2.k, x, y)) + one(T))
+
+            k = convert(T,2) * k1 * k2
+
+            @test kernel(k, x[1], y[1]) == (MLKernels.phi(k1, MLKernels.pairwise(k1.k, x[1], y[1])) *
+                                            MLKernels.phi(k2, MLKernels.pairwise(k2.k, x[1], y[1])) * convert(T,2))
+            @test (k)(x[1], y[1])       == (MLKernels.phi(k1, MLKernels.pairwise(k1.k, x[1], y[1])) *
+                                            MLKernels.phi(k2, MLKernels.pairwise(k2.k, x[1], y[1])) * convert(T,2))
+
+            @test kernel(k, x, y) == (MLKernels.phi(k1, MLKernels.pairwise(k1.k, x, y)) *
+                                      MLKernels.phi(k2, MLKernels.pairwise(k2.k, x, y)) * convert(T,2))
+            @test (k)(x, y)       == (MLKernels.phi(k1, MLKernels.pairwise(k1.k, x, y)) *
+                                      MLKernels.phi(k2, MLKernels.pairwise(k2.k, x, y)) * convert(T,2))
+        end
+    end
 end
 
 #=

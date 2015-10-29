@@ -15,11 +15,11 @@ kernel{T<:AbstractFloat}(κ::ARD{T}, x::Vector{T}, y::Vector{T}) = pairwise(κ.k
 kernel{T<:AbstractFloat}(κ::CompositeKernel{T}, x::T, y::T) = phi(κ, pairwise(κ.k, x, y))
 kernel{T<:AbstractFloat}(κ::CompositeKernel{T}, x::Vector{T}, y::Vector{T}) = phi(κ, pairwise(κ.k, x, y))
 
-kernel{T<:AbstractFloat}(ψ::KernelSum{T}, x::T, y::T) = sum(ψ.a, sym(map(κ -> kernel(κ,x,y), ψ.k)))
-kernel{T<:AbstractFloat}(ψ::KernelSum{T}, x::Vector{T}, y::Vector{T}) = sum(ψ.a, sym(map(κ -> kernel(κ,x,y), ψ.k)))
+kernel{T<:AbstractFloat}(ψ::KernelSum{T}, x::T, y::T) = ψ.a + sum(map(κ -> kernel(κ,x,y), ψ.k))
+kernel{T<:AbstractFloat}(ψ::KernelSum{T}, x::Vector{T}, y::Vector{T}) = ψ.a + sum(map(κ -> kernel(κ,x,y), ψ.k))
 
-kernel{T<:AbstractFloat}(ψ::KernelProduct{T}, x::T, y::T) = sum(ψ.a, sym(map(κ -> kernel(κ,x,y), ψ.k)))
-kernel{T<:AbstractFloat}(ψ::KernelProduct{T}, x::Vector{T}, y::Vector{T}) = prod(ψ.a, prod(map(κ -> kernel(κ,x,y), ψ.k)))
+kernel{T<:AbstractFloat}(ψ::KernelProduct{T}, x::T, y::T) = ψ.a * prod(map(κ -> kernel(κ,x,y), ψ.k))
+kernel{T<:AbstractFloat}(ψ::KernelProduct{T}, x::Vector{T}, y::Vector{T}) = ψ.a * prod(map(κ -> kernel(κ,x,y), ψ.k))
 
 
 #==========================================================================
