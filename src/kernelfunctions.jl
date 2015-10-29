@@ -4,7 +4,9 @@
 
 call{T<:AbstractFloat}(κ::Kernel{T}, x::T, y::T) = kernel(κ, x, y)
 call{T<:AbstractFloat}(κ::Kernel{T}, x::Vector{T}, y::Vector{T}) = kernel(κ, x, y)
-call{T<:AbstractFloat}(κ::Kernel{T}, x::Matrix{T}, y::Matrix{T}) = kernel(κ, x, y)
+
+call{T<:AbstractFloat}(κ::Kernel{T}, X::Matrix{T}) = kernelmatrix(κ, X)
+call{T<:AbstractFloat}(κ::Kernel{T}, X::Matrix{T}, Y::Matrix{T}) = kernelmatrix(κ, X, Y)
 
 kernel{T<:AbstractFloat}(κ::BaseKernel{T}, x::T, y::T) = pairwise(κ, x, y)
 kernel{T<:AbstractFloat}(κ::BaseKernel{T}, x::Vector{T}, y::Vector{T}) = pairwise(κ, x, y)

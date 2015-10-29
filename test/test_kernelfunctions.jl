@@ -1,16 +1,3 @@
-x1 = [1; 2]
-x2 = [2; 0]
-x3 = [3; 2]
-X = [x1'; x2'; x3']
-
-y1 = [1; 1]
-y2 = [1; 1]
-Y = [y1'; y2']
-
-w = [2; 1]
-
-Set_x = (x1,x2,x3)
-Set_y = (y1,y2)
 
 info("Testing ", kernel)
 for T in FloatingPointTypes
@@ -78,6 +65,45 @@ for T in FloatingPointTypes
             @test (k)(x, y)       == (MLKernels.phi(k1, MLKernels.pairwise(k1.k, x, y)) *
                                       MLKernels.phi(k2, MLKernels.pairwise(k2.k, x, y)) * convert(T,2))
         end
+    end
+end
+
+
+info("Testing ", kernelmatrix)
+for T in FloatingPointTypes
+
+    x1 = T[1; 2]
+    x2 = T[2; 0]
+    x3 = T[3; 2]
+    X =  T[x1'; x2'; x3']
+
+    y1 = T[1; 1]
+    y2 = T[1; 1]
+    Y = T[y1'; y2']
+
+    w = T[2; 1]
+
+    Set_x = (x1,x2,x3)
+    Set_y = (y1,y2)
+
+    for kernelobj in (RationalQuadraticKernel, PolynomialKernel, SquaredDistanceKernel)
+
+        k = convert(Kernel{T},(kernelobj)())
+
+        K = [kernel(k,x,y) for x in Set_x, y in Set_x]
+        @test_approx_eq kernelmatrix(k, X, false, true, true) K
+        @test_approx_eq kernelmatrix(k, X, false, false, true) K
+        @test_approx_eq kernelmatrix(k, X', true, true, true) K
+        @test_approx_eq kernelmatrix(k, X', true, false, true) K
+
+        @test_approx_eq kernelmatrix(k, X) K
+
+        K = [kernel(k,x,y) for x in Set_x, y in Set_y]
+        @test_approx_eq kernelmatrix(k, X, Y, false) K
+        @test_approx_eq kernelmatrix(k, X', Y', true) K
+
+        @test_approx_eq (k)(X, Y) K
+
     end
 end
 
