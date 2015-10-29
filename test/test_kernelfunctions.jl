@@ -91,20 +91,64 @@ for T in FloatingPointTypes
         k = convert(Kernel{T},(kernelobj)())
 
         K = [kernel(k,x,y) for x in Set_x, y in Set_x]
-        @test_approx_eq kernelmatrix(k, X, false, true, true) K
+        @test_approx_eq kernelmatrix(k, X, false, true, true)  K
         @test_approx_eq kernelmatrix(k, X, false, false, true) K
-        @test_approx_eq kernelmatrix(k, X', true, true, true) K
+        @test_approx_eq kernelmatrix(k, X', true, true, true)  K
         @test_approx_eq kernelmatrix(k, X', true, false, true) K
 
         @test_approx_eq kernelmatrix(k, X) K
 
         K = [kernel(k,x,y) for x in Set_x, y in Set_y]
-        @test_approx_eq kernelmatrix(k, X, Y, false) K
+        @test_approx_eq kernelmatrix(k, X, Y, false)  K
         @test_approx_eq kernelmatrix(k, X', Y', true) K
 
         @test_approx_eq (k)(X, Y) K
 
     end
+
+    for (kernelobj1, kernelobj2, kernelobj3) in (
+            (RationalQuadraticKernel, PolynomialKernel, ExponentialKernel),
+            (ChiSquaredKernel,        LogKernel,        PowerKernel)
+        )
+        k1 = convert(Kernel{T},(kernelobj1)())
+        k2 = convert(Kernel{T},(kernelobj2)())
+        k3 = convert(Kernel{T},(kernelobj3)())
+        k  = k1 + k2 + k3 + one(T)
+
+        K = [kernel(k1,x,y) for x in Set_x, y in Set_x] +
+            [kernel(k2,x,y) for x in Set_x, y in Set_x] +
+            [kernel(k3,x,y) for x in Set_x, y in Set_x] .+ one(T)
+
+        @test_approx_eq kernelmatrix(k, X, false, true, true)  K
+        @test_approx_eq kernelmatrix(k, X, false, false, true) K
+        @test_approx_eq kernelmatrix(k, X', true, true, true)  K
+        @test_approx_eq kernelmatrix(k, X', true, false, true) K
+
+        @test_approx_eq kernelmatrix(k, X) K
+
+    end
+
+    for (kernelobj1, kernelobj2, kernelobj3) in (
+            (RationalQuadraticKernel, PolynomialKernel, ExponentialKernel),
+        )
+        k1 = convert(Kernel{T},(kernelobj1)())
+        k2 = convert(Kernel{T},(kernelobj2)())
+        k3 = convert(Kernel{T},(kernelobj3)())
+        k  = k1 * k2 * k3 * convert(T,2)
+
+        K = [kernel(k1,x,y) for x in Set_x, y in Set_x] .*
+            [kernel(k2,x,y) for x in Set_x, y in Set_x] .*
+            [kernel(k3,x,y) for x in Set_x, y in Set_x] * convert(T,2)
+
+        @test_approx_eq kernelmatrix(k, X, false, true, true)  K
+        @test_approx_eq kernelmatrix(k, X, false, false, true) K
+        @test_approx_eq kernelmatrix(k, X', true, true, true)  K
+        @test_approx_eq kernelmatrix(k, X', true, false, true) K
+
+        @test_approx_eq kernelmatrix(k, X) K
+
+    end
+
 end
 
 #=
