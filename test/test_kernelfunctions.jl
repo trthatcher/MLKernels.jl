@@ -126,6 +126,15 @@ for T in FloatingPointTypes
 
         @test_approx_eq kernelmatrix(k, X) K
 
+        K = [kernel(k1,x,y) for x in Set_x, y in Set_y] +
+            [kernel(k2,x,y) for x in Set_x, y in Set_y] +
+            [kernel(k3,x,y) for x in Set_x, y in Set_y] .+ one(T)
+
+        @test_approx_eq kernelmatrix(k, X,  Y,  false)  K
+        @test_approx_eq kernelmatrix(k, X', Y', true)   K
+
+        @test_approx_eq kernelmatrix(k, X, Y) K
+
     end
 
     for (kernelobj1, kernelobj2, kernelobj3) in (
@@ -147,83 +156,28 @@ for T in FloatingPointTypes
 
         @test_approx_eq kernelmatrix(k, X) K
 
+        K = [kernel(k1,x,y) for x in Set_x, y in Set_y] .*
+            [kernel(k2,x,y) for x in Set_x, y in Set_y] .*
+            [kernel(k3,x,y) for x in Set_x, y in Set_y] * convert(T,2)
+
+        @test_approx_eq kernelmatrix(k, X,  Y,  false)  K
+        @test_approx_eq kernelmatrix(k, X', Y', true)   K
+
+        @test_approx_eq kernelmatrix(k, X, Y) K
+
     end
 
 end
 
-#=
-    print(" Matrix")
-    K = [kernel(k,x,y) for x in Set_x, y in Set_x]
-    print(" _X!")
-    @test_approx_eq kernelmatrix(k, X, false, true, true) K
-    @test_approx_eq kernelmatrix(k, X, false, false, true) K
-    print(" _Xt!")
-    @test_approx_eq kernelmatrix(k, X', true, true, true) K
-    @test_approx_eq kernelmatrix(k, X', true, false, true) K
+info("Testing ", centerkernelmatrix)
+for T in (Float32, Float64)
+    A = T[1 2 3;
+          2 3 4;
+          3 4 5]
 
-    K = [kernel(ARD(k,w),x,y) for x in Set_x, y in Set_x]
-    print(" w_X!")
-    @test_approx_eq kernelmatrix(ARD(k,w), X, false, true, true) K
-    @test_approx_eq kernelmatrix(ARD(k,w), X, false, false, true) K
-    print(" w_Xt!")
-    @test_approx_eq kernelmatrix(ARD(k,w), X', true, true, true) K
-    @test_approx_eq kernelmatrix(ARD(k,w), X', true, false, true) K
+    a = mean(A,1)
 
-    K = [kernel(k,x,y) for x in Set_x, y in Set_y]
-    print(" _XY!")
-    @test_approx_eq kernelmatrix(k, X, Y, false) K
-    print(" _XtYt!")
-    @test_approx_eq kernelmatrix(k, X', Y', true) K
-
-    K = [kernel(ARD(k,w),x,y) for x in Set_x, y in Set_y]
-    print(" w_XY!")
-    @test_approx_eq kernelmatrix(ARD(k,w), X, Y, false) K
-    print(" w_XtYt!")
-    @test_approx_eq kernelmatrix(ARD(k,w), X', Y', true) K
-    
-    println(" ... Done")
+    @test_approx_eq centerkernelmatrix(A) ((A .- a) .- a') .+ mean(A)
 end
-
-println("Composite Kernel kernel() and kernelmatrix():")
-
-for (kernelobject_comp, kernelobject_base) in (
-                (ExponentialKernel, SquaredDistanceKernel),
-                (RationalQuadraticKernel, SquaredDistanceKernel),
-                #(MaternKernel, SquaredDistanceKernel),
-                (PowerKernel, SquaredDistanceKernel),
-                (LogKernel, SquaredDistanceKernel),
-                (PolynomialKernel, ScalarProductKernel),
-                (ExponentiatedKernel, ScalarProductKernel),
-                (SigmoidKernel, ScalarProductKernel)
-        )
-
-    print(indent_block, kernelobject_comp)
-    k_base = (kernelobject_base)()
-    k_comp = (kernelobject_comp)(k_base)
-
-    print(" Scalar")
-    @test kernel(k_comp, x1[1], y1[1]) == MLKernels.phi(k_comp, MLKernels.pairwise(k_base, x1[1], y1[1]))
-    
-    print(" Vector")
-    @test kernel(k_comp, x1, y1) == MLKernels.phi(k_comp, MLKernels.pairwise(k_base, x1, y1))
-
-    print(" Matrix")
-    K = [kernel(k_comp,x,y) for x in Set_x, y in Set_x]
-    print(" _X!")
-  
-    @test_approx_eq kernelmatrix(k_comp, X, false, true, true) K
-    @test_approx_eq kernelmatrix(k_comp, X, false, false, true) K
-    print(" _Xt!")
-    @test_approx_eq kernelmatrix(k_comp, X', true, true, true) K
-    @test_approx_eq kernelmatrix(k_comp, X', true, false, true) K
-
-    K = [kernel(k_comp,x,y) for x in Set_x, y in Set_y]
-    print(" _XY!")
-    @test_approx_eq kernelmatrix(k_comp, X, Y, false) K
-    print(" _XtYt!")
-    @test_approx_eq kernelmatrix(k_comp, X', Y', true) K
-
-    println(" ... Done")
-=#
 
 T = Float64

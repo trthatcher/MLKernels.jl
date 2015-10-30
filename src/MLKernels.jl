@@ -17,8 +17,8 @@ export
     isnegative,
     kernel,
     kernelmatrix,
-    #center_kernelmatrix!,
-    #center_kernelmatrix,
+    centerkernelmatrix!,
+    centerkernelmatrix,
     nystrom,
 
     # Kernel Types

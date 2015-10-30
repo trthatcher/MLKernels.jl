@@ -59,8 +59,21 @@ for T in FloatingPointTypes
 
 end
 
+A = [1 2;
+     3 4;
+     5 6]
+
+b = [1;
+     2]
+
+c = [1;
+     2;
+     3]
+
 info("Testing ", MLKernels.translate!)
 for T in FloatingPointTypes
     @test MLKernels.translate!(convert(Array{T},A), one(T)) == convert(Array{T}, A .+ one(T))
     @test MLKernels.translate!(one(T), convert(Array{T},A)) == convert(Array{T}, A .+ one(T))
+    @test MLKernels.translate!(convert(Array{T},A), convert(Array{T},b)) == convert(Array{T}, A .+ b')
+    @test MLKernels.translate!(convert(Array{T},c), convert(Array{T},A)) == convert(Array{T}, A .+ c)
 end

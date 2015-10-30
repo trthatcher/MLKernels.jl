@@ -29,14 +29,26 @@ kernel{T<:AbstractFloat}(ψ::KernelProduct{T}, x::Vector{T}, y::Vector{T}) = ψ.
 ==========================================================================#
 
 # Centralize a kernel matrix K
-function center_kernelmatrix!{T<:AbstractFloat}(K::Matrix{T})
+function centerkernelmatrix!{T<:AbstractFloat}(K::Matrix{T})
     (n = size(K, 1)) == size(K, 2) || error("Kernel matrix must be square")
-    row_mean = sum(K, 1)
-    element_mean = sum(row_mean) / (convert(T, n)^2)
-    BLAS.scal!(n, one(T)/convert(T,n), row_mean, 1)
-    ((K .- row_mean) .- row_mean') .+ element_mean
+    μ_row = zeros(T,n)
+    μ = zero(T)
+    @inbounds for j = 1:n
+        @simd for i = 1:n
+            μ_row[j] += K[i,j]
+        end
+        μ += μ_row[j]
+        μ_row[j] /= n
+    end
+    μ /= n^2
+    @inbounds for j = 1:n
+        @simd for i = 1:n
+            K[i,j] += μ - μ_row[i] - μ_row[j]
+        end
+    end
+    K
 end
-center_kernelmatrix{T<:AbstractFloat}(K::Matrix{T}) = center_kernelmatrix!(copy(K))
+centerkernelmatrix{T<:AbstractFloat}(K::Matrix{T}) = centerkernelmatrix!(copy(K))
 
 
 #==========================================================================
