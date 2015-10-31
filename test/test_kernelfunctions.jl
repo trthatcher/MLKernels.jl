@@ -179,5 +179,3 @@ for T in (Float32, Float64)
 
     @test_approx_eq centerkernelmatrix(A) ((A .- a) .- a') .+ mean(A)
 end
-
-T = Float64

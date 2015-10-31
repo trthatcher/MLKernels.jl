@@ -195,6 +195,3 @@ for kernelobj1 in (SquaredDistanceKernel, RationalQuadraticKernel)
         end
     end
 end
-
-
-T = Float64

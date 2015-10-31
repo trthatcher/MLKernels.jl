@@ -4,8 +4,6 @@ importall MLKernels
 
 include("reference.jl")
 
-indent_block = "   "
-
 include("test_common.jl")
 include("test_kernels.jl")
 include("test_pairwise.jl")

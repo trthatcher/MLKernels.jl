@@ -41,7 +41,6 @@ end
 phi_matrix{T<:AbstractFloat}(κ::Kernel{T}, X::Matrix{T}) = phi_matrix!(κ, copy(X))
 
 function phi_square_matrix!{T<:AbstractFloat}(κ::Kernel{T}, X::Matrix{T}, store_upper::Bool)
-
     (n = size(X,1)) == size(X,2) || throw(DimensionMismatch("X must be square."))
     @inbounds for j = 1:n, i = store_upper ? (1:j) : (j:n)
         X[i,j] = phi(κ, X[i,j])
@@ -98,9 +97,20 @@ end
 
 # Default Pairwise Calculation
 
-for (fn_X, fn_XY, dim_n, X_i, X_j, Y_j) in (
-        (:pairwise_X!,  :pairwise_XY!,   1, parse("X[i,:]"), parse("X[j,:]"), parse("Y[j,:]")),
-        (:pairwise_Xt!, :pairwise_XtYt!, 2, parse("X[:,i]"), parse("X[:,j]"), parse("Y[:,j]"))
+pairwise{T<:AbstractFloat}(κ::BaseKernel{T}, x::T, y::T) = phi(κ, [x], [y])
+pairwise{T<:AbstractFloat}(κ::BaseKernel{T}, x::Vector{T}, y::Vector{T}) = phi(κ, x, y)
+
+@inline function subvector_X(X::AbstractMatrix,  i::Int64, n::Int64 = size(X,1), p::Int64 = size(X,2))
+    sub(X, i:n:((p-1)*n + i))
+end
+
+@inline function subvector_Xt(X::AbstractMatrix, i::Int64, n::Int64 = size(X,2), p::Int64 = size(X,1))
+    sub(X,((i-1)*p + 1):1:(i*p))
+end
+
+for (fn_X, fn_XY, fn_subvec, dim_n) in (
+        (:pairwise_X!,  :pairwise_XY!,   :subvector_X,  1),
+        (:pairwise_Xt!, :pairwise_XtYt!, :subvector_Xt, 2)
     )
     dim_p = dim_n == 1 ? 2 : 1
     @eval begin
@@ -108,8 +118,11 @@ for (fn_X, fn_XY, dim_n, X_i, X_j, Y_j) in (
         function ($fn_X){T<:AbstractFloat}(K::Matrix{T}, κ::BaseKernel{T}, X::Matrix{T}, store_upper::Bool)
             (n = size(X,$dim_n)) == size(K,1) == size(K,2) || throw(DimensionMismatch("Kernel matrix must be square and match X."))
             p = size(X,$dim_p)
-            for j = 1:n, i = store_upper ? (1:j) : (j:n)
-                K[i,j] = phi(κ, vec($X_i), vec($X_j))
+            for j = 1:n
+                y = ($fn_subvec)(X,j)
+                for i = store_upper ? (1:j) : (j:n)
+                    K[i,j] = phi(κ, ($fn_subvec)(X,i), y)
+                end
             end
             K
         end
@@ -118,8 +131,11 @@ for (fn_X, fn_XY, dim_n, X_i, X_j, Y_j) in (
             (n = size(X,$dim_n)) == size(K,1) || throw(DimensionMismatch("Dimension $($dim_n) of X must match dimension 1 of K."))
             (m = size(Y,$dim_n)) == size(K,2) || throw(DimensionMismatch("Dimension $($dim_n) of Y must match dimension 2 of K."))
             size(X,$dim_p) == size(Y,$dim_p) || throw(DimensionMismatch("Dimension $($dim_p) of Y must match dimension $($dim_p) of X."))
-            for j = 1:m, i = 1:n
-                K[i,j] = phi(κ, vec($X_i), vec($Y_j))
+            for j = 1:m
+                y = ($fn_subvec)(Y,j)
+                for i = 1:n
+                    K[i,j] = phi(κ, ($fn_subvec)(X,i), y)
+                end
             end
             K
         end
