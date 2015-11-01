@@ -81,7 +81,8 @@ immutable KernelProduct{T<:AbstractFloat} <: CombinationKernel{T}
 end
 KernelProduct{T<:AbstractFloat}(a::T, κ::Vector{Kernel{T}}) = KernelProduct{T}(a, κ)
 
-attainszero(κ::KernelProduct)   = any(attainszero, κ.k)  # Does it attain zero?
+attainszero(κ::KernelProduct) = any(attainszero, κ.k)  # Does it attain zero?
+ispositive(ψ::KernelProduct)  = all(ispositive, ψ.k)
 
 
 immutable KernelSum{T<:AbstractFloat} <: CombinationKernel{T}
@@ -95,7 +96,8 @@ immutable KernelSum{T<:AbstractFloat} <: CombinationKernel{T}
 end
 KernelSum{T<:AbstractFloat}(a::T, κ::Vector{Kernel{T}}) = KernelSum{T}(a, κ)
 
-attainszero(κ::KernelSum)   = all(attainszero, κ.k)  # Does it attain zero?
+attainszero(ψ::KernelSum) = all(attainszero, ψ.k) && ψ.a == 0  # Does it attain zero?
+ispositive(ψ::KernelSum)  = all(isnonnegative, ψ.k) && (ψ.a > 0 || any(ispositive, ψ.k))
 
 
 for (kernel_object, kernel_op, kernel_array_op, identity) in (
@@ -113,7 +115,6 @@ for (kernel_object, kernel_op, kernel_array_op, identity) in (
             $kernel_object(convert(T, ψ.a), Kernel{T}[ψ.k...])
         end
 
-        ispositive(ψ::$kernel_object)    = all(ispositive, ψ.k)
         isnonnegative(ψ::$kernel_object) = all(isnonnegative, ψ.k)
 
         ismercer(ψ::$kernel_object) = all(ismercer, ψ.k)

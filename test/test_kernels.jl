@@ -13,7 +13,9 @@ for kernelobj in (additive_kernels..., composite_kernels...)
             @test eltype(k) == Float64
         end
 
-        @test eltype(convert(kernelobj{T}, (kernelobj)())) == T
+        @test eltype(convert(kernelobj{Float32}, (kernelobj)()))  == Float32
+        @test eltype(convert(kernelobj{Float64}, (kernelobj)()))  == Float64
+        @test eltype(convert(kernelobj{BigFloat}, (kernelobj)())) == BigFloat
 
         fields, default_args, test_args = get(all_kernelargs, kernelobj, (Symbol[],T[],T[]))
 
@@ -76,6 +78,9 @@ for kernelobj in (additive_kernels..., composite_kernels...)
     @test ismercer(k) === ismer
     @test isnegdef(k) === isnd
 
+    @test isa(MLKernels.description_string(k,true), AbstractString)
+    @test isa(MLKernels.description_string(k,false), AbstractString)
+
 end
 
 info("Testing ", ARD)
@@ -86,15 +91,22 @@ for kernelobj in additive_kernels
         k = ARD(k_base, T[w...])
 
         @test eltype(k) == T
-        @test eltype(convert(ARD{T}, ARD((kernelobj)(),Float64[w...]))) == T
+        @test eltype(convert(ARD{Float32}, k))  == Float32
+        @test eltype(convert(ARD{Float64}, k))  == Float64
+        @test eltype(convert(ARD{BigFloat}, k)) == BigFloat
+
         @test getfield(k, :k) == k_base 
         @test getfield(k, :w) == T[w...]
+        
         @test MLKernels.kernelrange(k) == MLKernels.kernelrange(k_base)
         @test attainszero(k) == attainszero(k_base)
         @test ispositive(k) == ispositive(k_base)
         @test isnonnegative(k) == isnonnegative(k_base)
         @test ismercer(k) === ismercer(k_base)
         @test isnegdef(k) === isnegdef(k_base)
+
+        @test isa(MLKernels.description_string(k,true), AbstractString)
+        @test isa(MLKernels.description_string(k,false), AbstractString)
 
     end  # End floating point loop
 end  # End additive kernels loop
@@ -111,9 +123,28 @@ for kernelobj1 in (SquaredDistanceKernel, RationalQuadraticKernel)
             kvec = [k1, k2]
 
             if all(ismercer, kvec) || all(isnegdef, kvec)
-                a = one(T)
 
+                k = k1 + k2
+                @test k.a == zero(T)
+                @test all(k.k .== kvec) || all(k.k .== reverse(kvec))
+
+                @test eltype(convert(KernelSum{Float32}, k))  == Float32
+                @test eltype(convert(KernelSum{Float64}, k))  == Float64
+                @test eltype(convert(KernelSum{BigFloat}, k)) == BigFloat
+
+                @test ismercer(k) == (ismercer(k1) && ismercer(k2))
+                @test isnegdef(k) == (isnegdef(k1) && isnegdef(k2))
+                @test attainszero(k) == (attainszero(k1) && attainszero(k2) && k.a == 0)
+                @test ispositive(k) == (isnonnegative(k1) && isnonnegative(k2) && (ispositive(k1) || ispositive(k2)
+                                                                                                  || k.a > 0)) 
+                @test isnonnegative(k) == (isnonnegative(k1) && isnonnegative(k2))
+
+                @test isa(MLKernels.description_string(k,true), AbstractString)
+                @test isa(MLKernels.description_string(k,false), AbstractString)
+
+                a = one(T)
                 k = a + k1
+
                 @test k.a == a
                 @test k.k[1] == k1
                 @test (k1 + a).k[1] == k.k[1]
@@ -133,12 +164,6 @@ for kernelobj1 in (SquaredDistanceKernel, RationalQuadraticKernel)
                 @test k.a == a
                 @test all(k.k .== kvec) || all(k.k .== reverse(kvec))
 
-                k = k1 + k2
-                @test k.a == zero(T)
-                @test all(k.k .== kvec) || all(k.k .== reverse(kvec))
-
-                @test ismercer(k) == (ismercer(k1) && ismercer(k2))
-                @test isnegdef(k) == (isnegdef(k1) && isnegdef(k2))
             else
 
                 @test_throws ErrorException k1 + k2
@@ -159,6 +184,24 @@ for kernelobj1 in (SquaredDistanceKernel, RationalQuadraticKernel)
             kvec = [k1, k2]
 
             if all(ismercer, kvec)
+
+                k = k1 * k2
+                @test k.a == one(T)
+                @test all(k.k .== kvec) || all(k.k .== reverse(kvec))
+
+                @test eltype(convert(KernelProduct{Float32},  k)) == Float32
+                @test eltype(convert(KernelProduct{Float64},  k)) == Float64
+                @test eltype(convert(KernelProduct{BigFloat}, k)) == BigFloat
+
+                @test ismercer(k) == (ismercer(k1) && ismercer(k2))
+                @test isnegdef(k) == (isnegdef(k1) && isnegdef(k2))
+                @test attainszero(k) == (attainszero(k1) || attainszero(k2))
+                @test ispositive(k) == (ispositive(k1) && ispositive(k2))
+                @test isnonnegative(k) == (isnonnegative(k1) && isnonnegative(k2))
+
+                @test isa(MLKernels.description_string(k,true), AbstractString)
+                @test isa(MLKernels.description_string(k,false), AbstractString)
+
                 a = convert(T,3)
 
                 k = a * k1
@@ -181,12 +224,6 @@ for kernelobj1 in (SquaredDistanceKernel, RationalQuadraticKernel)
                 @test k.a == a
                 @test all(k.k .== kvec) || all(k.k .== reverse(kvec))
 
-                k = k1 * k2
-                @test k.a == one(T)
-                @test all(k.k .== kvec) || all(k.k .== reverse(kvec))
-
-                @test ismercer(k) == (ismercer(k1) && ismercer(k2))
-                @test isnegdef(k) == (isnegdef(k1) && isnegdef(k2))
             else
 
                 @test_throws ErrorException k1 * k2

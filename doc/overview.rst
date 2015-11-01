@@ -133,6 +133,25 @@ Interface
 
     Returns ``true`` if the kernel type is a negative definite kernel.
 
+.. _attainszero:
+
+.. function:: attainszero(::Kernel)
+
+    Returns ``true`` if the kernel can attain zero over its domain.
+
+.. _isnonnegative:
+
+.. function:: isnonnegative(::Kernel)
+
+    Returns ``true`` if the kernel is greater than or equal to zero over its
+    domain.
+
+.. _ispositive:
+
+.. function:: ispositive(::Kernel)
+
+    Returns ``true`` if the kernel is greater than zero over its domain.
+
 .. _kernelmatrix:
 
 .. function:: kernelmatrix(κ::Kernel{T}, X::Matrix{T}; is_trans::Bool, store_upper::Bool, symmetrize::Bool)
@@ -177,6 +196,21 @@ Interface
 
         kernelmatrix!(K, κ, X, Y, is_trans)
 
+.. _center_kernelmatrix:
+
+.. function:: centerkernelmatrix(X::Matrix{T})
+
+    Centers an ``n`` by ``n`` kernel matrix ``K`` according to the following formula:
+
+    .. math:: \mathbf{K}_{ij} = (\phi(\mathbf{x}_i) -\mathbf{\mu}_\phi)^{\intercal} (\phi(\mathbf{x}_j) - \mathbf{\mu}_\phi) \qquad \text{where} \quad \mathbf{\mu}_\phi =  \frac{1}{n} \sum_{i=1}^n \phi(\mathbf{x}_i)
+
+    If the matrix ``K`` has been pre-allocated, the following method may be used to overwrite 
+    ``K`` instead of allocating a new array:
+
+    .. code-block:: julia
+
+        centerkernelmatrix!(K)
+
 .. _nystrom:
 
 .. function:: nystrom(κ::Kernel{T}, X::Matrix{T}, s::Array{U}; is_trans::Bool, store_upper::Bool, symmetrize::Bool)
@@ -204,5 +238,3 @@ Interface
     .. code-block:: julia
 
         nystrom!(K, κ, X, s, is_trans, store_upper, symmetrize)
-
-
