@@ -13,7 +13,7 @@ kernel matrices. The package has no dependencies beyond base Julia.
 ### Getting Started
 
 Consistent with traditional literature on kernels, kernels come in two flavours:
- - **Mercer Kernels** (Positive Definite Kernels)
+ - **Mercer Kernels** (Continuous Positive Definite Kernels)
  - **Negative Definite Kernels**
 
 Negative definite kernels are equivalent to conditionally positive definite kernels that are often found in Machine Learning literature. To convert a negative definite kernel to a conditionally positive definite kernel, simply multiply the result of the kernel function by -1.
