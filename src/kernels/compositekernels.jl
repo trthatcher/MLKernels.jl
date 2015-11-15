@@ -2,6 +2,7 @@
   Exponential Kernel
 ==========================================================================#
 
+doc"ExponentialKernel(κ, α, γ) = exp(-α⋅κ(x,y)ᵞ)"
 immutable ExponentialKernel{T<:AbstractFloat,CASE} <: CompositeKernel{T}
     k::BaseKernel{T}
     alpha::T
@@ -24,8 +25,13 @@ function ExponentialKernel{T<:AbstractFloat}(α::T = 1.0, γ::T = one(T))
     ExponentialKernel(convert(Kernel{T}, SquaredDistanceKernel()), α, γ)
 end
 
+doc"GaussianKernel(α) = exp(α⋅‖x-y‖²)"
 GaussianKernel{T<:AbstractFloat}(α::T = 1.0) = ExponentialKernel(SquaredDistanceKernel(one(T)), α)
+
+doc"RadialBasisKernel(α) = exp(α⋅‖x-y‖²)"
 RadialBasisKernel{T<:AbstractFloat}(α::T = 1.0) = ExponentialKernel(SquaredDistanceKernel(one(T)),α)
+
+doc"LaplacianKernel(α) = exp(α⋅‖x-y‖)"
 LaplacianKernel{T<:AbstractFloat}(α::T = 1.0) = ExponentialKernel(SquaredDistanceKernel(one(T)),α, convert(T, 0.5))
 
 ismercer(::ExponentialKernel) = true
@@ -48,6 +54,7 @@ end
   Rational Quadratic Kernel
 ==========================================================================#
 
+doc"RationalQuadraticKernel(κ, α, β, γ) = exp(1 + α⋅κ(x,y)ᵞ)⁻ᵝ"
 immutable RationalQuadraticKernel{T<:AbstractFloat,CASE} <: CompositeKernel{T}
     k::BaseKernel{T}
     alpha::T
@@ -110,6 +117,7 @@ end
   Matern Kernel
 ==========================================================================#
 
+doc"MatérnKernel(κ, ν, θ) = 2ᵛ⁻¹(√(2ν)κ(x,y)/θ)ᵛKᵥ(√(2ν)κ(x,y)/θ)/Γ(ν)"
 immutable MaternKernel{T<:AbstractFloat,CASE} <: CompositeKernel{T}
     k::BaseKernel{T}
     nu::T
@@ -157,6 +165,7 @@ end
   Power Kernel
 ==========================================================================#
 
+doc"PowerKernel(κ, γ) = κ(x,y)ᵞ"
 immutable PowerKernel{T<:AbstractFloat,CASE} <: CompositeKernel{T}
     k::BaseKernel{T}
     gamma::T
@@ -194,6 +203,7 @@ end
   Log Kernel
 ==========================================================================#
 
+doc"LogKernel(κ, α, γ) = log(1 + α⋅κ(x,y)ᵞ)"
 immutable LogKernel{T<:AbstractFloat,CASE} <: CompositeKernel{T}
     k::BaseKernel{T}
     alpha::T
@@ -233,6 +243,7 @@ end
   Polynomial Kernel
 ==========================================================================#
 
+doc"PolynomialKernel(κ, α, c, d) = (α⋅κ(x,y) + c)ᵈ"
 immutable PolynomialKernel{T<:AbstractFloat,CASE} <: CompositeKernel{T}
     k::BaseKernel{T}
     alpha::T
@@ -273,6 +284,7 @@ end
   Exponentiated Kernel
 ==========================================================================#
 
+doc"ExponentiatedKernel(κ, α) = exp(α⋅κ(x,y))"
 immutable ExponentiatedKernel{T<:AbstractFloat} <: CompositeKernel{T}
     k::BaseKernel{T}
     alpha::T
@@ -305,6 +317,7 @@ end
   Sigmoid Kernel
 ==========================================================================#
 
+doc"SigmoidKernel(κ, α, c) = tanh(α⋅κ(x,y) + c)"
 immutable SigmoidKernel{T<:AbstractFloat} <: CompositeKernel{T}
     k::BaseKernel{T}
     alpha::T
