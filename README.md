@@ -2,6 +2,7 @@
 
 [![Build Status](https://travis-ci.org/trthatcher/MLKernels.jl.svg?branch=master)](https://travis-ci.org/trthatcher/MLKernels.jl)
 [![Coverage Status](https://coveralls.io/repos/trthatcher/MLKernels.jl/badge.svg)](https://coveralls.io/r/trthatcher/MLKernels.jl)
+[![Documentation Status](https://readthedocs.org/projects/mlkernels/badge/?version=latest)](http://mlkernels.readthedocs.org/en/latest/?badge=latest)
 
 **MLKernels.jl** is a Julia package for kernel functions (or covariance functions in Gaussian 
 processes) that are used in the kernel methods of machine learning. The goal is to provide a Julia
