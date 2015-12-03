@@ -29,14 +29,15 @@ n_x = 25
 n_y = 25
 
 using PyPlot
-for (string, kern, lower, upper) in (("test2.svg", GaussianKernel(), (-3.0,-3.0), (3.0,3.0)),)
-                                     #("test3.svg", PolynomialKernel(), (-2.0, -2.0), (2.0, 2.0)),
+for (string, kern, lower, upper) in (("test2", GaussianKernel(), (-3.0,-3.0), (3.0,3.0)),
+                                     ("test3", PolynomialKernel(), (-2.0, -2.0), (2.0, 2.0)))#,
                                      #("test4.svg", RationalQuadraticKernel(), (-2.0, -2.0), (2.0, 2.0)))
     K = kernelmatrix(kern, generate_surface_rect!(lower, upper, (n_y, n_x)))
     W = kpca_project(K)
     X = reshape(W[:,1], (n_y, n_x))
     Y = reshape(W[:,2], (n_y, n_x))
     Z = reshape(W[:,3], (n_y, n_x))
+    PyPlot.figure(string)
     PyPlot.plot_wireframe(X, Y, Z)
 end
 
