@@ -1,9 +1,11 @@
-function generate_surface_rect!{T<:AbstractFloat}(
+function generate_surface{T<:AbstractFloat}(
         lower::Tuple{T,T},
         upper::Tuple{T,T},
         dims::Tuple{Int64,Int64},
-        X::Matrix{T} = Array(T, prod(dims), 2)
     )
+    lower[1] < upper[1] || error("Lower must be less than upper on all dimensions")
+    lower[2] < upper[2] || error("Lower must be less than upper on all dimensions")
+    X = Array(T, prod(dims), 2)
     y_step = (upper[2] - lower[2])/(dims[1]-1)
     x_step = (upper[1] - lower[1])/(dims[2]-1)
     for j = 1:dims[2], i = 1:dims[1]
@@ -14,6 +16,7 @@ function generate_surface_rect!{T<:AbstractFloat}(
     X
 end
 
+# Performs KPCA for 3 dimensions
 function kpca_project{T<:Base.LinAlg.BlasReal}(K::Matrix{T})
     Λ, V = LAPACK.syev!('V', 'U', centerkernelmatrix!(copy(K)))
     W = V[:,end:-1:end-2]
@@ -23,68 +26,62 @@ function kpca_project{T<:Base.LinAlg.BlasReal}(K::Matrix{T})
     scale!(Z, 1 ./ vec(maximum(Z,1)))  # scale to fit in unit square
 end
 
-using MLKernels
+function coordinate_matrices{T<:AbstractFloat}(W::Matrix{T}, dims)
+    size(W,2) == 3 || error("Matrix must be n by 3")
+    (reshape(W[:,1], (n_y, n_x)), reshape(W[:,2], (n_y, n_x)), reshape(W[:,3], (n_y, n_x)))
+end
+
+using MLKernels, PyPlot
 
 n_x = 25
 n_y = 25
 
-using PyPlot
-for (string, kern, lower, upper) in (("test2", GaussianKernel(), (-3.0,-3.0), (3.0,3.0)),
-                                     ("test3", PolynomialKernel(), (-2.0, -2.0), (2.0, 2.0)))#,
-                                     #("test4.svg", RationalQuadraticKernel(), (-2.0, -2.0), (2.0, 2.0)))
-    K = kernelmatrix(kern, generate_surface_rect!(lower, upper, (n_y, n_x)))
-    W = kpca_project(K)
-    X = reshape(W[:,1], (n_y, n_x))
-    Y = reshape(W[:,2], (n_y, n_x))
-    Z = reshape(W[:,3], (n_y, n_x))
-    PyPlot.figure(string)
-    PyPlot.plot_wireframe(X, Y, Z)
-end
+dims = (n_y, n_x)
 
+# Gaussian Kernel
+W = kpca_project(kernelmatrix(GaussianKernel(), generate_surface((-2.0,-2.0), (2.0,2.0), dims)))
+X, Y, Z = coordinate_matrices(W, dims)
+PyPlot.figure("Gaussian Kernel" )
+PyPlot.plot_wireframe(X, Y, Z)
 
+# Laplacian Kernel
+W = kpca_project(kernelmatrix(LaplacianKernel(), generate_surface((-2.0,-2.0), (2.0,2.0), dims)))
+X, Y, Z = coordinate_matrices(W, dims)
+PyPlot.figure("Laplacian Kernel")
+PyPlot.plot_wireframe(X, Y, Z)
 
+# Exponential Kernel with Sine-Squared Kernel
+W = kpca_project(kernelmatrix(ExponentialKernel(SineSquaredKernel()), generate_surface((-π/2,-π/2),(π/2,π/2), dims)))
+X, Y, Z = coordinate_matrices(W, dims)
+PyPlot.figure("Exponential Kernel composed with a Sine-Squared Kernel")
+PyPlot.plot_wireframe(X, Y, Z)
 
-#=
-using Compose
+# Exponential Kernel with Chi-Squared Kernel
+W = kpca_project(kernelmatrix(ExponentialKernel(ChiSquaredKernel()), generate_surface((0.0,0.0), (1.0,1.0), dims)))
+X, Y, Z = coordinate_matrices(W, dims)
+PyPlot.figure("Exponential Kernel composed with a Chi-Squared Kernel")
+PyPlot.plot_wireframe(X, Y, Z)
 
-X = generate_surface_rect!((0.0,0.0), (1.0,1.0), (n_y, n_x))
-X_points = [(X[j*n_y + i,1], X[j*n_y + i,2]) for i = 1:n_y, j = 0:n_x-1]
-lines = [[line(vec(X_points[:,i])) for i = 1:n_x];
-         [line(vec(X_points[i,:])) for i = 1:n_y]]
-draw(SVG("test1.svg", 7inch, 7inch), compose(context(), stroke("black"), lines...))
+# Rational-Quadratic Kernel with SquaredDistance Kernel
+W = kpca_project(kernelmatrix(RationalQuadraticKernel(SquaredDistanceKernel(), 1.0, 0.1, 1.0),generate_surface((-2.0,-2.0), (2.0,2.0), dims)))
+X, Y, Z = coordinate_matrices(W, dims)
+PyPlot.figure("Rational-Quadratic Kernel")
+PyPlot.plot_wireframe(X, Y, Z)
 
-for (string, kernel, lower, upper) in (("test2.svg", GaussianKernel(), (-5.0,-5.0), (5.0,5.0)),
-                                       ("test3.svg", PolynomialKernel(), (-2.0, -2.0), (2.0, 2.0)),
-                                       ("test4.svg", RationalQuadraticKernel(), (-2.0, -2.0), (2.0, 2.0)))
-    K = kernelmatrix(kernel, generate_surface_rect!(lower, upper, (n_y, n_x)))
-    Z = kpca_project(K)
-    Z_points = [(Z[j*n_y + i,1], Z[j*n_y + i,2]) for i = 1:n_y, j = 0:n_x-1]
-    lines = [[line(vec(Z_points[:,i])) for i = 1:n_x];
-             [line(vec(Z_points[i,:])) for i = 1:n_y]]
-    draw(SVG(string, 7inch, 7inch), compose(context(), stroke("black"), lines...))
-end
+# Matern Kernel
+W = kpca_project(kernelmatrix(MaternKernel(),generate_surface((-2.0,-2.0), (2.0,2.0), dims)))
+X, Y, Z = coordinate_matrices(W, dims)
+PyPlot.figure("Exponential Kernel composed with a Chi-Squared Kernel")
+PyPlot.plot_wireframe(X, Y, Z)
 
-=#
-#=
-using MLKernels
+# Exponentiated Kernel
+W = kpca_project(kernelmatrix(ExponentiatedKernel(),generate_surface((-1.25,-1.25), (1.25,1.25), dims)))
+X, Y, Z = coordinate_matrices(W, dims)
+PyPlot.figure("Exponentiated Scalar Product Kernel")
+PyPlot.plot_wireframe(X, Y, Z)
 
-K = kernelmatrix(ExponentiatedKernel(ScalarProductKernel()), X)
-
-Λ, V = LAPACK.syev!('V', 'U', centerkernelmatrix!(copy(K)))
-
-W = V[:,end:-1:end-1]
-
-μ = mean(K,2)
-
-Z = (K .- μ)* W
-
-Z = Z .- minimum(Z,1)
-
-scale!(Z, 1 ./ vec(maximum(Z,1)))
-
-
-using Compose
-
-#line(V[:,2][2:19])))
-
-=#
+# Polynomial Kernel
+W = kpca_project(kernelmatrix(PolynomialKernel(),generate_surface((-1.25,-1.25), (1.25,1.25), dims)))
+X, Y, Z = coordinate_matrices(W, dims)
+PyPlot.figure("Polynomial Kernel")
+PyPlot.plot_wireframe(X, Y, Z)
