@@ -37,7 +37,9 @@ function description_string{T<:AbstractFloat}(κ::SquaredDistanceKernel{T}, elty
     "SquaredDistance" * (eltype ? "{$(T)}" : "") * "(t=$(κ.t))"
 end
 
-convert{T<:AbstractFloat}(::Type{SquaredDistanceKernel{T}}, κ::SquaredDistanceKernel) = SquaredDistanceKernel(convert(T, κ.t))
+function convert{T<:AbstractFloat}(::Type{SquaredDistanceKernel{T}}, κ::SquaredDistanceKernel)
+    SquaredDistanceKernel(convert(T, κ.t))
+end
 
 @inline phi{T<:AbstractFloat}(κ::SquaredDistanceKernel{T,:t1}, x::T, y::T) = (x-y)^2
 @inline phi{T<:AbstractFloat}(κ::SquaredDistanceKernel{T,:t0p5}, x::T, y::T) = abs(x-y)
@@ -46,17 +48,19 @@ convert{T<:AbstractFloat}(::Type{SquaredDistanceKernel{T}}, κ::SquaredDistanceK
 
 #==========================================================================
   Sine Squared Kernel
-  k(x,y) = sin²ᵗ(x-y)    x ∈ ℝ, y ∈ ℝ, t ∈ (0,1]
+  k(x,y) = sin²ᵗ(p(x-y))    x ∈ ℝ, y ∈ ℝ, t ∈ (0,1], p ∈ (0,∞)
 ==========================================================================#
 
 immutable SineSquaredKernel{T<:AbstractFloat,CASE} <: AdditiveKernel{T}
+    p::T
     t::T
-    function SineSquaredKernel(t::T)
+    function SineSquaredKernel(p::T, t::T)
+        0 < p || error("Parameter p = $(p) must be positive.")
         0 < t <= 1 || error("Parameter t = $(t) must be in range (0,1]")
-        new(t)
+        new(p, t)
     end
 end
-function SineSquaredKernel{T<:AbstractFloat}(t::T = 1.0)
+function SineSquaredKernel{T<:AbstractFloat}(p::T = convert(Float64, π), t::T = one(T))
     CASE =  if t == 1
                 :t1
             elseif t == 0.5
@@ -64,7 +68,7 @@ function SineSquaredKernel{T<:AbstractFloat}(t::T = 1.0)
             else
                 :∅
             end
-    SineSquaredKernel{T,CASE}(t)
+    SineSquaredKernel{T,CASE}(p, t)
 end
 
 isnegdef(::SineSquaredKernel) = true
@@ -72,14 +76,16 @@ kernelrange(::SineSquaredKernel) = :Rp
 attainszero(::SineSquaredKernel) = true
 
 function description_string{T<:AbstractFloat}(κ::SineSquaredKernel{T}, eltype::Bool = true)
-    "SineSquared" * (eltype ? "{$(T)}" : "") * "(t=$(κ.t))"
+    "SineSquared" * (eltype ? "{$(T)}" : "") * "(p=$(κ.p),t=$(κ.t))"
 end
 
-convert{T<:AbstractFloat}(::Type{SineSquaredKernel{T}}, κ::SineSquaredKernel) = SineSquaredKernel(convert(T, κ.t))
+function convert{T<:AbstractFloat}(::Type{SineSquaredKernel{T}}, κ::SineSquaredKernel)
+    SineSquaredKernel(convert(T, κ.p), convert(T, κ.t))
+end
 
-@inline phi{T<:AbstractFloat}(κ::SineSquaredKernel{T,:t1}, x::T, y::T) = sin(x-y)^2
-@inline phi{T<:AbstractFloat}(κ::SineSquaredKernel{T,:t0p5}, x::T, y::T) = abs(sin(x-y))
-@inline phi{T<:AbstractFloat}(κ::SineSquaredKernel{T}, x::T, y::T) = (sin(x-y)^2)^κ.t
+@inline phi{T<:AbstractFloat}(κ::SineSquaredKernel{T,:t1}, x::T, y::T) = sin(κ.p*(x-y))^2
+@inline phi{T<:AbstractFloat}(κ::SineSquaredKernel{T,:t0p5}, x::T, y::T) = abs(sin(κ.p*(x-y)))
+@inline phi{T<:AbstractFloat}(κ::SineSquaredKernel{T}, x::T, y::T) = (sin(κ.p*(x-y))^2)^κ.t
 
 
 #==========================================================================
@@ -111,10 +117,16 @@ function description_string{T<:AbstractFloat}(κ::ChiSquaredKernel{T}, eltype::B
     "ChiSquared" * (eltype ? "{$(T)}" : "") * "(t=$(κ.t))"
 end
 
-convert{T<:AbstractFloat}(::Type{ChiSquaredKernel{T}}, κ::ChiSquaredKernel) = ChiSquaredKernel(convert(T, κ.t))
+function convert{T<:AbstractFloat}(::Type{ChiSquaredKernel{T}}, κ::ChiSquaredKernel)
+    ChiSquaredKernel(convert(T, κ.t))
+end
 
-@inline phi{T<:AbstractFloat}(κ::ChiSquaredKernel{T,:t1}, x::T, y::T) = (x == y == zero(T)) ? zero(T) : (x-y)^2/(x+y)
-@inline phi{T<:AbstractFloat}(κ::ChiSquaredKernel{T},x::T, y::T) = (x == y == zero(T)) ? zero(T) : ((x-y)^2/(x+y))^κ.t
+@inline function phi{T<:AbstractFloat}(κ::ChiSquaredKernel{T,:t1}, x::T, y::T)
+    (x == y == zero(T)) ? zero(T) : (x-y)^2/(x+y)
+end
+@inline function phi{T<:AbstractFloat}(κ::ChiSquaredKernel{T},x::T, y::T)
+    (x == y == zero(T)) ? zero(T) : ((x-y)^2/(x+y))^κ.t
+end
 
 
 #==========================================================================
@@ -139,7 +151,9 @@ function description_string{T<:AbstractFloat}(κ::ScalarProductKernel{T}, eltype
     "ScalarProduct" * (eltype ? "{$(T)}" : "") * "()"
 end
 
-convert{T<:AbstractFloat}(::Type{ScalarProductKernel{T}}, κ::ScalarProductKernel) = ScalarProductKernel{T}()
+function convert{T<:AbstractFloat}(::Type{ScalarProductKernel{T}}, κ::ScalarProductKernel)
+    ScalarProductKernel{T}()
+end
 
 @inline phi{T<:AbstractFloat}(κ::ScalarProductKernel{T}, x::T) = x
 
@@ -164,6 +178,8 @@ function description_string{T<:AbstractFloat}(κ::MercerSigmoidKernel{T}, eltype
     "MercerSigmoid" * (eltype ? "{$(T)}" : "") * "(d=$(κ.d),b=$(κ.b))"
 end
 
-convert{T<:AbstractFloat}(::Type{MercerSigmoidKernel{T}}, κ::MercerSigmoidKernel) = MercerSigmoidKernel{T}(convert(T,κ.d), convert(T,κ.b))
+function convert{T<:AbstractFloat}(::Type{MercerSigmoidKernel{T}}, κ::MercerSigmoidKernel)
+    MercerSigmoidKernel{T}(convert(T,κ.d), convert(T,κ.b))
+end
 
 @inline phi{T<:AbstractFloat}(κ::MercerSigmoidKernel{T}, x::T) = tanh((x-κ.d)/κ.b)

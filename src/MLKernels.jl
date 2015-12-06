@@ -4,10 +4,11 @@
 
 module MLKernels
 
-import Base: call, convert, eltype, show, *, +
+import Base: call, convert, eltype, show, *, +, ^, exp, <|, |>
 
 export
     # Functions
+    ∘,
     ismercer,
     isnegdef,
     attainszero,
@@ -21,35 +22,40 @@ export
     centerkernelmatrix,
     nystrom,
 
-    # Kernel Types
+    # Kernel Type
     Kernel,
-        StandardKernel,
-            BaseKernel,
-                AdditiveKernel,
-                    SquaredDistanceKernel,
-                    SineSquaredKernel,
-                    ChiSquaredKernel,
-                    SeparableKernel,
-                        ScalarProductKernel,
-                        MercerSigmoidKernel,
-                ARD,
-            CompositeKernel,
-                ExponentialKernel,
-                RationalQuadraticKernel,
-                MaternKernel,
-                ExponentiatedKernel,
-                PolynomialKernel,
-                LogKernel,
-                PowerKernel,
-                SigmoidKernel,
-        CombinationKernel,
+        # Subtypes
+        BaseKernel,
+            AdditiveKernel,
+                SquaredDistanceKernel,
+                SineSquaredKernel,
+                ChiSquaredKernel,
+                SeparableKernel,
+                    ScalarProductKernel,
+                    MercerSigmoidKernel,
+            ARD,
+        KernelComposition,
+        KernelOperation,
             KernelProduct,
             KernelSum,
+        # Composition Classes
+        CompositionClass,
+            ExponentialClass,
+            RationalQuadraticClass,
+            PolynomialClass,
         # Kernel Constructors
         GaussianKernel,
-        RadialBasisKernel,
+            SquaredExponentialKernel,
+            RadialBasisKernel,
         LaplacianKernel,
-        LinearKernel
+        PeriodicKernel,
+        RationalQuadraticKernel,
+        MaternKernel,
+            MatérnKernel,
+        PolynomialKernel,
+        LinearKernel,
+        SigmoidKernel
+
 
 include("common.jl")
 include("meta.jl")

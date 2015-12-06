@@ -1,7 +1,5 @@
 abstract Kernel{T}
 
-abstract StandardKernel{T<:AbstractFloat} <: Kernel{T}
-
 function show(io::IO, κ::Kernel)
     print(io, description_string(κ))
 end
@@ -25,7 +23,7 @@ isnonnegative(κ::Kernel) = kernelrange(κ) == :Rp
   Base Kernels
 ==========================================================================#
 
-abstract BaseKernel{T<:AbstractFloat} <: StandardKernel{T}
+abstract BaseKernel{T<:AbstractFloat} <: Kernel{T}
 
 include("kernels/additivekernels.jl")
 
@@ -50,25 +48,114 @@ function description_string{T<:AbstractFloat,}(κ::ARD{T}, eltype::Bool = true)
     "ARD" * (eltype ? "{$(T)}" : "") * "(κ=$(description_string(κ.k, false)),w=$(κ.w))"
 end
 
-convert{T<:AbstractFloat}(::Type{ARD{T}}, κ::ARD) = ARD(convert(Kernel{T},κ.k), convert(Vector{T}, κ.w))
+function convert{T<:AbstractFloat}(::Type{ARD{T}}, κ::ARD)
+    ARD(convert(Kernel{T},κ.k), convert(Vector{T}, κ.w))
+end
 
 
 #==========================================================================
-  Composite Kernel
+  Kernel Composition
 ==========================================================================#
 
-abstract CompositeKernel{T<:AbstractFloat} <: StandardKernel{T}
+include("kernels/compositionclasses.jl")
 
-include("kernels/compositekernels.jl")
+# ψ = ϕ(κ(x,y))
+immutable KernelComposition{T<:AbstractFloat,CASE} <: Kernel{T}
+    phi::CompositionClass{T}
+    k::Kernel{T}
+    function KernelComposition(ϕ::CompositionClass{T}, κ::Kernel{T})
+        iscomposable(ϕ, κ) || error("Kernel is not composable.")
+        if CASE == :affine
+            isa(ϕ, AffineClass) || error("Affine case flagged but composition is not affine.")
+        end
+        new(ϕ, κ)
+    end
+end
+function KernelComposition{T<:AbstractFloat}(ϕ::CompositionClass{T}, κ::Kernel{T})
+    KernelComposition{T, isa(ϕ, AffineClass) ? :affine : :Ø}(ϕ, κ)
+end
+
+function description_string{T<:AbstractFloat,}(κ::KernelComposition{T}, eltype::Bool = true)
+    "KernelComposition" * (eltype ? "{$(T)}" : "") * "(ϕ=$(description_string(κ.phi,false))," *
+    "κ=$(description_string(κ.k, false)))"
+end
+
+function convert{T<:AbstractFloat}(::Type{KernelComposition{T}}, ψ::KernelComposition)
+    KernelComposition(convert(CompositionClass{T}, ψ.phi), convert(Kernel{T}, ψ.κ))
+end
+
+# Special Compositions
+
+|>(κ::Kernel, ϕ::CompositionClass) = KernelComposition(ϕ, κ)
+<|(ϕ::CompositionClass, κ::Kernel) = KernelComposition(ϕ, κ)
+∘ = <|
+
+function ^{T<:AbstractFloat}(κ::Kernel{T}, d::Integer)
+    ismercer(κ) || error("Kernel must be Mercer to raise to an integer.")
+    KernelComposition(PolynomialClass(one(T), zero(T), convert(T,d)), κ)
+end
+
+function ^{T<:AbstractFloat}(κ::Kernel{T}, γ::T)
+    isnegdef(κ) || error("Kernel must be negative definite to raise to γ=$(γ)")
+    KernelComposition(PowerClass(one(T), zero(T), γ), κ)
+end
+
+#function exp{T<:AbstractFloat}(
+
+
+# Special Kernel Constructors
+
+doc"`GaussianKernel(α)` = exp(-α⋅‖x-y‖²)"
+function GaussianKernel{T<:AbstractFloat}(α::T = 1.0)
+    KernelComposition(ExponentialClass(α, one(T)), SquaredDistanceKernel(one(T)))
+end
+SquaredExponentialKernel = GaussianKernel
+RadialBasisKernel = GaussianKernel
+
+doc"`LaplacianKernel(α)` = exp(α⋅‖x-y‖)"
+function LaplacianKernel{T<:AbstractFloat}(α::T = 1.0)
+    KernelComposition(ExponentialClass(α, one(T)/2), SquaredDistanceKernel(one(T)))
+end
+
+doc"`PeriodicKernel(α,p)` = exp(-α⋅Σᵢsin²(p(xᵢ-yᵢ)))"
+function PeriodicKernel{T<:AbstractFloat}(α::T = 1.0, p::T = convert(T, π))
+    KernelComposition(ExponentialClass(α, one(T)), SineSquaredKernel(p, one(T)))
+end
+
+doc"'RationalQuadraticKernel(α,β)` = (1 + α⋅‖x-y‖²)⁻ᵝ"
+function RationalQuadraticKernel{T<:AbstractFloat}(α::T = 1.0, β::T = one(T), γ::T = one(T))
+    KernelComposition(RationalQuadraticClass(α, β), SquaredDistanceKernel(one(T)))
+end
+
+doc"`MatérnKernel(ν,θ)` = 2ᵛ⁻¹(√(2ν)‖x-y‖²/θ)ᵛKᵥ(√(2ν)‖x-y‖²/θ)/Γ(ν)"
+function MaternKernel{T<:AbstractFloat}(ν::T = 1.0, θ::T = one(T))
+    KernelComposition(RationalQuadraticClass(α, β), SquaredDistanceKernel(one(T)))
+end
+MatérnKernel = MaternKernel
+
+doc"`PolynomialKernel(α,c,d)` = (α⋅xᵀy + c)ᵈ"
+function PolynomialKernel{T<:AbstractFloat}(α::T = 1.0, c = one(T), d = 3one(T))
+    KernelComposition(PolynomialClass(α, c, d), ScalarProductKernel(one(T)))
+end
+
+doc"`LinearKernel(α,c,d)` = α⋅xᵀy + c"
+function LinearKernel{T<:AbstractFloat}(α::T = 1.0, c = one(T))
+    KernelComposition(TranslationScaleClass(α, c), ScalarProductKernel(one(T)))
+end
+
+doc"`SigmoidKernel(α,c)` = tanh(α⋅xᵀy + c)"
+function SigmoidKernel{T<:AbstractFloat}(α::T = 1.0, c::T = one(T))
+    KernelComposition(SigmoidClass(α, c), ScalarProductKernel(one(T)))
+end
 
 
 #===================================================================================================
   Composite Kernels
 ===================================================================================================#
 
-abstract CombinationKernel{T<:AbstractFloat} <: Kernel{T}
+abstract KernelOperator{T<:AbstractFloat} <: Kernel{T}
 
-immutable KernelProduct{T<:AbstractFloat} <: CombinationKernel{T}
+immutable KernelProduct{T<:AbstractFloat} <: KernelOperator{T}
     a::T
     k::Vector{Kernel{T}}
     function KernelProduct(a::T, κ::Vector{Kernel{T}})
@@ -85,7 +172,7 @@ attainszero(κ::KernelProduct) = any(attainszero, κ.k)  # Does it attain zero?
 ispositive(ψ::KernelProduct)  = all(ispositive, ψ.k)
 
 
-immutable KernelSum{T<:AbstractFloat} <: CombinationKernel{T}
+immutable KernelSum{T<:AbstractFloat} <: KernelOperator{T}
     a::T
     k::Vector{Kernel{T}}
     function KernelSum(a::T, κ::Vector{Kernel{T}})
@@ -158,12 +245,16 @@ end
   Conversions
 ===================================================================================================#
 
-for kernel in (concrete_subtypes(AdditiveKernel)..., ARD, concrete_subtypes(CompositeKernel)..., 
-               KernelSum, KernelProduct)
+for kernel in (
+        concrete_subtypes(AdditiveKernel)..., 
+        ARD, 
+        concrete_subtypes(CompositionClass)..., 
+        KernelSum,
+        KernelProduct
+    )
     kernel_sym = kernel.name.name  # symbol for concrete kernel type
     for parent in supertypes(kernel)
         parent_sym = parent.name.name  # symbol for abstract supertype
-
         @eval begin
             function convert{T<:AbstractFloat}(::Type{$parent_sym{T}}, κ::$kernel_sym)
                 convert($kernel_sym{T}, κ)

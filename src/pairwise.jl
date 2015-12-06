@@ -2,7 +2,6 @@
   Pairwise Computation
 ===================================================================================================#
 
-
 # Calculate the gramian matrix of X
 function gramian_X!{T<:Base.LinAlg.BlasReal}(G::Matrix{T}, X::Matrix{T}, store_upper::Bool)
     (n = size(G, 1)) == size(G, 2) == size(X, 1) || throw(DimensionMismatch("Supplied kernel matrix must be square and have same number of rows as X."))
@@ -13,7 +12,6 @@ function gramian_Xt!{T<:Base.LinAlg.BlasReal}(G::Matrix{T}, X::Matrix{T}, store_
     (n = size(G, 1)) == size(G, 2) == size(X, 2) || throw(DimensionMismatch("Supplied kernel matrix must be square and have the same number of colums as X."))
     BLAS.syrk!(store_upper ? 'U' : 'L', 'T', one(T), X, zero(T), G)  # 'T' -> C := αA'A + βC
 end
-
 
 # Returns the upper right corner of the gramian of [X Y] or [Xᵀ Yᵀ]ᵀ
 function gramian_XY!{T<:Base.LinAlg.BlasReal}(G::Matrix{T}, X::Matrix{T}, Y::Matrix{T})
@@ -38,8 +36,6 @@ function phi_matrix!{T<:AbstractFloat}(κ::Kernel{T}, X::Matrix{T})
     X
 end
 
-phi_matrix{T<:AbstractFloat}(κ::Kernel{T}, X::Matrix{T}) = phi_matrix!(κ, copy(X))
-
 function phi_square_matrix!{T<:AbstractFloat}(κ::Kernel{T}, X::Matrix{T}, store_upper::Bool)
     (n = size(X,1)) == size(X,2) || throw(DimensionMismatch("X must be square."))
     @inbounds for j = 1:n, i = store_upper ? (1:j) : (j:n)
@@ -47,8 +43,6 @@ function phi_square_matrix!{T<:AbstractFloat}(κ::Kernel{T}, X::Matrix{T}, store
     end
     X
 end
-
-phi_square_matrix{T<:AbstractFloat}(κ::Kernel{T}, X::Matrix{T}, store_upper::Bool) = phi_matrix!(κ, copy(X), store_upper)
 
 
 #===================================================================================================
@@ -69,26 +63,17 @@ function init_pairwise{T<:AbstractFloat}(X::Matrix{T}, Y::Matrix{T}, is_trans::B
     Array(T, n, m)
 end
 
-
 # Pairwise definition
 
 function pairwise!{T<:AbstractFloat}(K::Matrix{T}, κ::BaseKernel{T}, X::Matrix{T}, is_trans::Bool, store_upper::Bool)
-    if is_trans
-        pairwise_Xt!(K, κ, X, store_upper)
-    else
-        pairwise_X!(K, κ, X, store_upper)
-    end
+    is_trans ? pairwise_Xt!(K, κ, X, store_upper) : pairwise_X!(K, κ, X, store_upper)
 end
 function pairwise{T<:AbstractFloat}(κ::BaseKernel{T}, X::Matrix{T}, is_trans::Bool, store_upper::Bool)
     pairwise!(init_pairwise(X, is_trans), κ, X, is_trans, store_upper)
 end
 
 function pairwise!{T<:AbstractFloat}(K::Matrix{T}, κ::BaseKernel{T}, X::Matrix{T}, Y::Matrix{T}, is_trans::Bool)
-    if is_trans
-        pairwise_XtYt!(K, κ, X, Y)
-    else
-        pairwise_XY!(K, κ, X, Y)
-    end
+    is_trans ? pairwise_XtYt!(K, κ, X, Y) : pairwise_XY!(K, κ, X, Y)
 end
 function pairwise{T<:AbstractFloat}(κ::BaseKernel{T}, X::Matrix{T}, Y::Matrix{T}, is_trans::Bool)
     pairwise!(init_pairwise(X, Y, is_trans), κ, X, Y, is_trans)
@@ -276,42 +261,42 @@ pairwise_XtYt!{T<:Base.LinAlg.BlasReal}(K::Matrix{T}, κ::ScalarProductKernel{T}
 # Separable Kernel
 
 function pairwise_X!{T<:Base.LinAlg.BlasReal}(K::Matrix{T}, κ::SeparableKernel{T}, X::Matrix{T}, store_upper::Bool)
-    Z = phi_matrix(κ, X)
+    Z = phi_matrix!(κ, X)
     gramian_X!(K, Z, store_upper)
 end
 function pairwise_Xt!{T<:Base.LinAlg.BlasReal}(K::Matrix{T}, κ::SeparableKernel{T}, X::Matrix{T}, store_upper::Bool)
-    Z = phi_matrix(κ, X)
+    Z = phi_matrix!(κ, X)
     gramian_Xt!(K, Z, store_upper)
 end
 
 function pairwise_X!{T<:Base.LinAlg.BlasReal}(K::Matrix{T}, κ::SeparableKernel{T}, X::Matrix{T}, w::Vector{T}, store_upper::Bool)
-    Z = scale!(phi_matrix(κ, X), w)
+    Z = scale!(phi_matrix!(κ, X), w)
     gramian_X!(K, Z, store_upper)
 end
 function pairwise_Xt!{T<:Base.LinAlg.BlasReal}(K::Matrix{T}, κ::SeparableKernel{T}, X::Matrix{T}, w::Vector{T}, store_upper::Bool)
-    Z = scale!(w, phi_matrix(κ, X))
+    Z = scale!(w, phi_matrix!(κ, X))
     gramian_Xt!(K, Z, store_upper)
 end
 
 function pairwise_XY!{T<:Base.LinAlg.BlasReal}(K::Matrix{T}, κ::SeparableKernel{T}, X::Matrix{T}, Y::Matrix{T})
-    Z = phi_matrix(κ, X)
-    V = phi_matrix(κ, Y)
+    Z = phi_matrix!(κ, X)
+    V = phi_matrix!(κ, Y)
     gramian_XY!(K, Z, V)
 end
 function pairwise_XtYt!{T<:Base.LinAlg.BlasReal}(K::Matrix{T}, κ::SeparableKernel{T}, X::Matrix{T}, Y::Matrix{T})
-    Z = phi_matrix(κ, X)
-    V = phi_matrix(κ, Y)
+    Z = phi_matrix!(κ, X)
+    V = phi_matrix!(κ, Y)
     gramian_XtYt!(K, Z, V)
 end
 
 function pairwise_XY!{T<:Base.LinAlg.BlasReal}(K::Matrix{T}, κ::SeparableKernel{T}, X::Matrix{T}, Y::Matrix{T}, w::Vector{T})
-    Z = scale!(phi_matrix(κ, X), w)
-    V = scale!(phi_matrix(κ, Y), w)
+    Z = scale!(phi_matrix!(κ, X), w)
+    V = scale!(phi_matrix!(κ, Y), w)
     gramian_XY!(K, Z, V)
 end
 function pairwise_XtYt!{T<:Base.LinAlg.BlasReal}(K::Matrix{T}, κ::SeparableKernel{T}, X::Matrix{T}, Y::Matrix{T}, w::Vector{T})
-    Z = scale!(w, phi_matrix(κ, X))
-    V = scale!(w, phi_matrix(κ, Y))
+    Z = scale!(w, phi_matrix!(κ, X))
+    V = scale!(w, phi_matrix!(κ, Y))
     gramian_XtYt!(K, Z, V)
 end
 
