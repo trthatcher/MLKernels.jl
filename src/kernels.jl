@@ -1,3 +1,7 @@
+#===================================================================================================
+  Kernels
+===================================================================================================#
+
 abstract Kernel{T}
 
 function show(io::IO, κ::Kernel)
@@ -19,13 +23,34 @@ ispositive(κ::Kernel)    = kernelrange(κ) == :Rp && !attainszero(κ)
 isnonnegative(κ::Kernel) = kernelrange(κ) == :Rp
 
 
-#==========================================================================
+#===================================================================================================
   Base Kernels
-==========================================================================#
+===================================================================================================#
 
 abstract BaseKernel{T<:AbstractFloat} <: Kernel{T}
 
+
+#==========================================================================
+  Additive Kernel: k(x,y) = sum(k(x_i,y_i))    x ∈ ℝⁿ, y ∈ ℝⁿ
+==========================================================================#
+
+abstract AdditiveKernel{T<:AbstractFloat} <: BaseKernel{T}
+
 include("kernels/additivekernels.jl")
+
+for kernel_obj in concrete_subtypes(AdditiveKernel)
+    kernel_name = kernel_obj.name.name  # symbol for concrete kernel type
+    field_conversions = [:(convert(T, κ.$field)) for field in fieldnames(kernel_obj)]
+    constructorcall = Expr(:call, kernel_name, field_conversions...)
+    @eval begin
+        convert{T<:AbstractFloat}(::Type{$kernel_name{T}}, κ::$kernel_name) = $constructorcall
+    end
+end
+
+
+#==========================================================================
+  ARD Kernel
+==========================================================================#
 
 immutable ARD{T<:AbstractFloat} <: BaseKernel{T}
     k::AdditiveKernel{T}
@@ -54,25 +79,42 @@ end
 
 
 #==========================================================================
-  Kernel Composition
+  Composition Classes
 ==========================================================================#
+
+abstract CompositionClass{T<:AbstractFloat}
+
+iscomposable(::CompositionClass, ::Kernel) = true
+ismercer(ϕ::CompositionClass, ::Kernel) = ismercer(ϕ)
+kernelrange(ϕ::CompositionClass, ::Kernel) = kernelrange(ϕ)
+attainszero(ϕ::CompositionClass, ::Kernel) = attainszero(ϕ)
 
 include("kernels/compositionclasses.jl")
 
-# ψ = ϕ(κ(x,y))
-immutable KernelComposition{T<:AbstractFloat,CASE} <: Kernel{T}
+for class_obj in concrete_subtypes(CompositionClass)
+    class_name = class_obj.name.name  # symbol for concrete kernel type
+    field_conversions = [:(convert(T, κ.$field)) for field in fieldnames(class_obj)]
+    constructorcall = Expr(:call, class_name, field_conversions...)
+    @eval begin
+        convert{T<:AbstractFloat}(::Type{$class_name{T}}, κ::$class_name) = $constructorcall
+    end
+end
+
+
+#==========================================================================
+  Kernel Composition ψ = ϕ(κ(x,y))
+==========================================================================#
+
+immutable KernelComposition{T<:AbstractFloat} <: Kernel{T}
     phi::CompositionClass{T}
     k::Kernel{T}
     function KernelComposition(ϕ::CompositionClass{T}, κ::Kernel{T})
         iscomposable(ϕ, κ) || error("Kernel is not composable.")
-        if CASE == :affine
-            isa(ϕ, AffineClass) || error("Affine case flagged but composition is not affine.")
-        end
         new(ϕ, κ)
     end
 end
 function KernelComposition{T<:AbstractFloat}(ϕ::CompositionClass{T}, κ::Kernel{T})
-    KernelComposition{T, isa(ϕ, AffineClass) ? :affine : :Ø}(ϕ, κ)
+    KernelComposition{T}(ϕ, κ)
 end
 
 function description_string{T<:AbstractFloat,}(κ::KernelComposition{T}, eltype::Bool = true)
@@ -100,7 +142,10 @@ function ^{T<:AbstractFloat}(κ::Kernel{T}, γ::T)
     KernelComposition(PowerClass(one(T), zero(T), γ), κ)
 end
 
-#function exp{T<:AbstractFloat}(
+function exp{T<:AbstractFloat}(κ::Kernel{T})
+    ismercer(κ) || error("Kernel must be Mercer to exponentiate.")
+    KernelComposition(ExponentiatedClass(one(T), zero(T)), κ)
+end
 
 
 # Special Kernel Constructors
@@ -133,35 +178,105 @@ function MaternKernel{T<:AbstractFloat}(ν::T = 1.0, θ::T = one(T))
 end
 MatérnKernel = MaternKernel
 
-doc"`PolynomialKernel(α,c,d)` = (α⋅xᵀy + c)ᵈ"
-function PolynomialKernel{T<:AbstractFloat}(α::T = 1.0, c = one(T), d = 3one(T))
-    KernelComposition(PolynomialClass(α, c, d), ScalarProductKernel(one(T)))
+doc"`PolynomialKernel(a,c,d)` = (a⋅xᵀy + c)ᵈ"
+function PolynomialKernel{T<:AbstractFloat}(a::T = 1.0, c = one(T), d = 3one(T))
+    KernelComposition(PolynomialClass(a, c, d), ScalarProductKernel{T}())
 end
 
 doc"`LinearKernel(α,c,d)` = α⋅xᵀy + c"
 function LinearKernel{T<:AbstractFloat}(α::T = 1.0, c = one(T))
-    KernelComposition(TranslationScaleClass(α, c), ScalarProductKernel(one(T)))
+    KernelComposition(TranslationScaleClass(α, c), ScalarProductKernel{T}())
 end
 
 doc"`SigmoidKernel(α,c)` = tanh(α⋅xᵀy + c)"
 function SigmoidKernel{T<:AbstractFloat}(α::T = 1.0, c::T = one(T))
-    KernelComposition(SigmoidClass(α, c), ScalarProductKernel(one(T)))
+    KernelComposition(SigmoidClass(α, c), ScalarProductKernel{T}())
 end
 
 
 #===================================================================================================
-  Composite Kernels
+  Kernel Operations
 ===================================================================================================#
 
-abstract KernelOperator{T<:AbstractFloat} <: Kernel{T}
+abstract KernelOperation{T<:AbstractFloat} <: Kernel{T}
 
-immutable KernelProduct{T<:AbstractFloat} <: KernelOperator{T}
+#==========================================================================
+  Kernel Affinity
+==========================================================================#
+
+doc"KernelAffinity(κ;a,c) = a⋅κ + c"
+immutable KernelAffinity{T<:AbstractFloat} <: KernelOperation{T}
+    a::T
+    c::T
+    k::Kernel{T}
+    function KernelAffinity(a::T, c::T, κ::Kernel{T})
+        a > 0 || error("a = $(a) must be greater than zero.")
+        c >= 0 || error("c = $(c) must be greater than or equal to zero.")
+        new(a, c, κ)
+    end
+end
+KernelAffinity{T<:AbstractFloat}(a::T, c::T, κ::Kernel{T}) = KernelAffinity{T}(a, c, κ)
+
+ismercer(ψ::KernelAffinity)    = ismercer(ψ.k)
+kernelrange(ψ::KernelAffinity) = kernelrange(ψ.k)
+attainszero(ψ::KernelAffinity) = attainszero(ψ.k)
+
+function description_string{T<:AbstractFloat}(ψ::KernelAffinity{T}, eltype::Bool = true)
+    "Affine" * (eltype ? "{$(T)}" : "") * "(a=$(ψ.a),c=$(ψ.c),κ=" * 
+    description_string(ψ.k) * ")"
+end
+
+function convert{T<:AbstractFloat}(::Type{KernelAffinity{T}}, ψ::KernelAffinity)
+    KernelAffinity(convert(T, ψ.a), convert(T, ψ.c), convert(Kernel{T}, ψ.k))
+end
+
+@inline phi{T<:AbstractFloat}(ψ::KernelAffinity{T}, z::T) = ψ.a*z + ψ.c
+
+# Operations
+
++{T<:AbstractFloat}(κ::Kernel{T}, c::Real) = KernelAffinity(one(T), convert(T, c), κ)
++(c::Real, κ::Kernel) = +(κ, c)
+
+*{T<:AbstractFloat}(κ::Kernel{T}, a::Real) = KernelAffinity(convert(T, a), zero(T), κ)
+*(a::Real, κ::Kernel) = +(κ, a)
+
++{T<:AbstractFloat}(κ::KernelAffinity{T}, c::Real) = KernelAffinity(κ.a, κ.c + convert(T, c), κ.k)
++(c::Real, κ::KernelAffinity) = +(κ, c)
+
+function *{T<:AbstractFloat}(κ::KernelAffinity{T}, a::Real)
+    a = convert(T, a)
+    KernelAffinity(a * κ.a, a * κ.c, κ.k)
+end
+*(a::Real, κ::KernelAffinity) = +(κ, a)
+
+function ^{T<:AbstractFloat}(ψ::KernelAffinity{T}, d::Integer)
+    ismercer(ψ.k) || error("Kernel must be Mercer to raise to an integer.")
+    KernelComposition(PolynomialClass(ψ.a, ψ.c, convert(T,d)), ψ.k)
+end
+
+function ^{T<:AbstractFloat}(ψ::KernelAffinity{T}, γ::AbstractFloat)
+    isnegdef(ψ.k) || error("Kernel must be negative definite to raise to γ=$(γ)")
+    KernelComposition(PowerClass(ψ.a, ψ.c, convert(T,γ)), ψ.k)
+end
+
+function exp{T<:AbstractFloat}(ψ::KernelAffinity{T})
+    ismercer(ψ.k) || error("Kernel must be Mercer to raise to exponentiate.")
+    KernelComposition(ExponentiatedClass(ψ.a, ψ.c), ψ.k)
+end
+
+
+#==========================================================================
+  Kernel Product
+==========================================================================#
+
+#=
+immutable KernelProduct{T<:AbstractFloat} <: KernelOperation{T}
     a::T
     k::Vector{Kernel{T}}
     function KernelProduct(a::T, κ::Vector{Kernel{T}})
         a > 0 || error("a = $(a) must be greater than zero.")
         if length(κ) > 1
-            all(ismercer, κ) || error("All kernels must be Mercer for closure under multiplication.")
+            all(ismercer, κ) || error("Kernels must be Mercer for closure under multiplication.")
         end
         new(a, κ)
     end
@@ -172,24 +287,26 @@ attainszero(κ::KernelProduct) = any(attainszero, κ.k)  # Does it attain zero?
 ispositive(ψ::KernelProduct)  = all(ispositive, ψ.k)
 
 
-immutable KernelSum{T<:AbstractFloat} <: KernelOperator{T}
-    a::T
+immutable KernelSum{T<:AbstractFloat} <: KernelOperation{T}
+    c::T
     k::Vector{Kernel{T}}
-    function KernelSum(a::T, κ::Vector{Kernel{T}})
-        a >= 0 || error("a = $(a) must be greater than or equal to zero.")
-        all(ismercer, κ) || all(isnegdef, κ) || error("All kernels must be Mercer or negative definite for closure under addition")
-        new(a, κ)
+    function KernelSum(c::T, κ::Vector{Kernel{T}})
+        c >= 0 || error("c = $(c) must be greater than or equal to zero.")
+        if !(all(ismercer, κ) || all(isnegdef, κ))
+            error("All kernels must be Mercer or negative definite for closure under addition")
+        end
+        new(c, κ)
     end
 end
-KernelSum{T<:AbstractFloat}(a::T, κ::Vector{Kernel{T}}) = KernelSum{T}(a, κ)
+KernelSum{T<:AbstractFloat}(c::T, κ::Vector{Kernel{T}}) = KernelSum{T}(c, κ)
 
-attainszero(ψ::KernelSum) = all(attainszero, ψ.k) && ψ.a == 0  # Does it attain zero?
-ispositive(ψ::KernelSum)  = all(isnonnegative, ψ.k) && (ψ.a > 0 || any(ispositive, ψ.k))
+attainszero(ψ::KernelSum) = all(attainszero, ψ.k) && ψ.c == 0  # Does it attain zero?
+ispositive(ψ::KernelSum)  = all(isnonnegative, ψ.k) && (ψ.c > 0 || any(ispositive, ψ.k))
 
 
-for (kernel_object, kernel_op, kernel_array_op, identity) in (
-        (:KernelProduct, :*, :prod, :1),
-        (:KernelSum,     :+, :sum,  :0)
+for (kernel_object, kernel_op, kernel_array_op, identity, variable) in (
+        (:KernelProduct, :*, :prod, :1, :a),
+        (:KernelSum,     :+, :sum,  :0, :c)
     )
     @eval begin
 
@@ -210,7 +327,7 @@ for (kernel_object, kernel_op, kernel_array_op, identity) in (
         function description_string{T<:AbstractFloat}(ψ::$kernel_object{T}, eltype::Bool = true)
             descs = map(κ -> description_string(κ, false), ψ.k)
             if eltype
-                $(string(kernel_object)) * (eltype ? "{$(T)}" : "") * "($(ψ.a), $(join(descs, ", ")))"
+                $(string(kernel_object)) * (eltype ? "{$(T)}" : "") * "($(variable)=$(ψ.a), $(join(descs, ", ")))"
             else
                 if $kernel_op !== (*) && ψ.a != $identity
                     insert!(descs, 1, string(ψ.a))
@@ -240,11 +357,12 @@ for (kernel_object, kernel_op, kernel_array_op, identity) in (
     end
 end
 
-
+=#
 #===================================================================================================
   Conversions
 ===================================================================================================#
 
+#=
 for kernel in (
         concrete_subtypes(AdditiveKernel)..., 
         ARD, 
@@ -262,3 +380,4 @@ for kernel in (
         end
     end
 end
+=#

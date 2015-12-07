@@ -8,20 +8,27 @@ call{T<:AbstractFloat}(κ::Kernel{T}, x::Vector{T}, y::Vector{T}) = kernel(κ, x
 call{T<:AbstractFloat}(κ::Kernel{T}, X::Matrix{T}) = kernelmatrix(κ, X)
 call{T<:AbstractFloat}(κ::Kernel{T}, X::Matrix{T}, Y::Matrix{T}) = kernelmatrix(κ, X, Y)
 
-kernel{T<:AbstractFloat}(κ::BaseKernel{T}, x::T, y::T) = pairwise(κ, x, y)
-kernel{T<:AbstractFloat}(κ::BaseKernel{T}, x::Vector{T}, y::Vector{T}) = pairwise(κ, x, y)
+@inline kernel{T<:AbstractFloat}(κ::BaseKernel{T}, x::T, y::T) = pairwise(κ, x, y)
+@inline kernel{T<:AbstractFloat}(κ::BaseKernel{T}, x::Vector{T}, y::Vector{T}) = pairwise(κ, x, y)
 
-kernel{T<:AbstractFloat}(κ::ARD{T}, x::T, y::T) = pairwise(κ.k, x, y, κ.w[1])
-kernel{T<:AbstractFloat}(κ::ARD{T}, x::Vector{T}, y::Vector{T}) = pairwise(κ.k, x, y, κ.w)
+@inline kernel{T<:AbstractFloat}(κ::ARD{T}, x::T, y::T) = pairwise(κ.k, x, y, κ.w[1])
+@inline kernel{T<:AbstractFloat}(κ::ARD{T}, x::Vector{T}, y::Vector{T}) = pairwise(κ.k, x, y, κ.w)
 
-kernel{T<:AbstractFloat}(κ::KernelComposition{T}, x::T, y::T) = phi(κ.phi, kernel(κ.k, x, y))
-function kernel{T<:AbstractFloat}(κ::KernelComposition{T}, x::Vector{T}, y::Vector{T})
+@inline function kernel{T<:AbstractFloat}(κ::KernelComposition{T}, x::T, y::T)
+    phi(κ.phi, kernel(κ.k, x, y))
+end
+@inline function kernel{T<:AbstractFloat}(κ::KernelComposition{T}, x::Vector{T}, y::Vector{T})
     phi(κ.phi, kernel(κ.k, x, y))
 end
 
-kernel{T<:AbstractFloat}(ψ::KernelSum{T}, x::T, y::T) = ψ.a + sum(map(κ -> kernel(κ,x,y), ψ.k))
+@inline kernel{T<:AbstractFloat}(ψ::KernelAffinity{T}, x::T, y::T) = ψ.a*kernel(ψ.k, x, y) + ψ.c
+@inline function kernel{T<:AbstractFloat}(ψ::KernelAffinity{T}, x::Vector{T}, y::Vector{T})
+    ψ.a*kernel(ψ.k, x, y) + ψ.c
+end
+
+kernel{T<:AbstractFloat}(ψ::KernelSum{T}, x::T, y::T) = sum(map(κ -> kernel(κ,x,y), ψ.k)) + ψ.c
 function kernel{T<:AbstractFloat}(ψ::KernelSum{T}, x::Vector{T}, y::Vector{T})
-    ψ.a + sum(map(κ -> kernel(κ,x,y), ψ.k))
+    sum(map(κ -> kernel(κ,x,y), ψ.k)) + ψ.c
 end
 
 kernel{T<:AbstractFloat}(ψ::KernelProduct{T}, x::T, y::T) = ψ.a * prod(map(κ -> kernel(κ,x,y), ψ.k))
@@ -100,9 +107,6 @@ end
   Composite Kernel Matrix Functions
 ==========================================================================#
 
-
-
-
 function kernelmatrix!{T<:AbstractFloat}(K::Matrix{T}, κ::KernelComposition{T}, X::Matrix{T}, 
                                          is_trans::Bool, store_upper::Bool, symmetrize::Bool)
     kernelmatrix!(K, κ.k, X, is_trans, store_upper)
@@ -120,6 +124,7 @@ end
 #==========================================================================
   Kernel Operation Matrix Functions
 ==========================================================================#
+
 
 for (kernel_object, matrix_op, array_op, identity) in (
         (:KernelProduct, :matrix_prod!, :scale!,     :1),

@@ -43,6 +43,11 @@ export
             ExponentialClass,
             RationalQuadraticClass,
             PolynomialClass,
+            MaternClass,
+            ExponentiatedClass,
+            SigmoidClass,
+            PowerClass,
+            LogClass,
         # Kernel Constructors
         GaussianKernel,
             SquaredExponentialKernel,
@@ -60,8 +65,8 @@ export
 include("common.jl")
 include("meta.jl")
 include("kernels.jl")
-include("pairwise.jl")
-include("kernelfunctions.jl")
-include("kernelapproximation.jl")
+#include("pairwise.jl")
+#include("kernelfunctions.jl")
+#include("kernelapproximation.jl")
 
 end # MLKernels
