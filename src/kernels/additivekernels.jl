@@ -110,19 +110,10 @@ end
 
 
 #==========================================================================
-  Separable Kernel
-  k(x,y) = k(x)k(y)    x ∈ ℝ, y ∈ ℝ
-==========================================================================#
-
-abstract SeparableKernel{T<:AbstractFloat} <: AdditiveKernel{T}
-
-phi{T<:AbstractFloat}(κ::SeparableKernel{T}, x::T, y::T) = phi(κ,x) * phi(κ,y)
-
-#==========================================================================
   Scalar Product Kernel
 ==========================================================================#
 
-immutable ScalarProductKernel{T<:AbstractFloat} <: SeparableKernel{T} end
+immutable ScalarProductKernel{T<:AbstractFloat} <: AdditiveKernel{T} end
 ScalarProductKernel() = ScalarProductKernel{Float64}()
 
 ismercer(::ScalarProductKernel) = true
@@ -131,27 +122,4 @@ function description_string{T<:AbstractFloat}(κ::ScalarProductKernel{T}, eltype
     "ScalarProduct" * (eltype ? "{$(T)}" : "") * "()"
 end
 
-@inline phi{T<:AbstractFloat}(κ::ScalarProductKernel{T}, x::T) = x
-
-
-#==========================================================================
-  Mercer Sigmoid Kernel
-==========================================================================#
-
-immutable MercerSigmoidKernel{T<:AbstractFloat} <: SeparableKernel{T}
-    d::T
-    b::T
-    function MercerSigmoidKernel(d::T, b::T)
-        b > 0 || error("b = $(b) must be greater than zero.")
-        new(d, b)
-    end
-end
-MercerSigmoidKernel{T<:AbstractFloat}(d::T = 0.0, b::T = one(T)) = MercerSigmoidKernel{T}(d, b)
-
-ismercer(::MercerSigmoidKernel) = true
-
-function description_string{T<:AbstractFloat}(κ::MercerSigmoidKernel{T}, eltype::Bool = true)
-    "MercerSigmoid" * (eltype ? "{$(T)}" : "") * "(d=$(κ.d),b=$(κ.b))"
-end
-
-@inline phi{T<:AbstractFloat}(κ::MercerSigmoidKernel{T}, x::T) = tanh((x-κ.d)/κ.b)
+@inline phi{T<:AbstractFloat}(κ::ScalarProductKernel{T}, x::T, y::T) = x*y

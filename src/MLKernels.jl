@@ -30,9 +30,7 @@ export
                 SquaredDistanceKernel,
                 SineSquaredKernel,
                 ChiSquaredKernel,
-                SeparableKernel,
-                    ScalarProductKernel,
-                    MercerSigmoidKernel,
+                ScalarProductKernel,
             ARD,
         KernelComposition,
         KernelOperation,
@@ -65,7 +63,7 @@ export
 include("common.jl")
 include("meta.jl")
 include("kernels.jl")
-#include("pairwise.jl")
+include("pairwise.jl")
 #include("kernelfunctions.jl")
 #include("kernelapproximation.jl")
 

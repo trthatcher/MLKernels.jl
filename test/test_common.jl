@@ -23,10 +23,14 @@ wdotc = sum((A .* A) .* w , 1)
 wdotr = sum((A .* A) .* w', 2)
 
 info("Testing ", MLKernels.syml)
-for T in FloatingPointTypes @test MLKernels.syml(convert(Array{T},A)) == convert(Array{T}, AL) end
+for T in FloatingPointTypes 
+    @test MLKernels.syml(convert(Array{T},A)) == convert(Array{T}, AL)
+end
 
 info("Testing ", MLKernels.symu)
-for T in FloatingPointTypes @test MLKernels.symu(convert(Array{T},A)) == convert(Array{T}, AU) end
+for T in FloatingPointTypes
+    @test MLKernels.symu(convert(Array{T},A)) == convert(Array{T}, AU) 
+end
 
 info("Testing ", MLKernels.dot_columns)
 for T in FloatingPointTypes 

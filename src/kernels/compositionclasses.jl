@@ -265,7 +265,7 @@ function description_string{T<:AbstractFloat}(ϕ::PowerClass{T}, eltype::Bool = 
     "Power" * (eltype ? "{$(T)}" : "") * "(a=$(ϕ.a),c=$(ϕ.c),γ=$(ϕ.gamma))"
 end
 
-@inline phi{T<:AbstractFloat}(ϕ::PowerClass{T}, z::T) = ϕ.a*z^(ϕ.gamma) + ϕ.c
+@inline phi{T<:AbstractFloat}(ϕ::PowerClass{T}, z::T) = (ϕ.a*z + ϕ.c)^(ϕ.gamma)
 @inline phi{T<:AbstractFloat}(ϕ::PowerClass{T,:γ1}, z::T) = ϕ.a*z + ϕ.c
 
 

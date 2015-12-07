@@ -107,6 +107,22 @@ end
   Composite Kernel Matrix Functions
 ==========================================================================#
 
+# Apply phi to matrix elements
+function phi_matrix!{T<:AbstractFloat}(κ::KernelComposition{T}, X::Matrix{T})
+    @inbounds @simd for i = 1:length(X)
+        X[i] = phi(κ, X[i])
+    end
+    X
+end
+
+function phi_square_matrix!{T<:AbstractFloat}(κ::KernelComposition{T}, X::Matrix{T}, store_upper::Bool)
+    (n = size(X,1)) == size(X,2) || throw(DimensionMismatch("X must be square."))
+    @inbounds for j = 1:n, i = store_upper ? (1:j) : (j:n)
+        X[i,j] = phi(κ, X[i,j])
+    end
+    X
+end
+
 function kernelmatrix!{T<:AbstractFloat}(K::Matrix{T}, κ::KernelComposition{T}, X::Matrix{T}, 
                                          is_trans::Bool, store_upper::Bool, symmetrize::Bool)
     kernelmatrix!(K, κ.k, X, is_trans, store_upper)

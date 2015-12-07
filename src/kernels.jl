@@ -40,10 +40,16 @@ include("kernels/additivekernels.jl")
 
 for kernel_obj in concrete_subtypes(AdditiveKernel)
     kernel_name = kernel_obj.name.name  # symbol for concrete kernel type
-    field_conversions = [:(convert(T, κ.$field)) for field in fieldnames(kernel_obj)]
-    constructorcall = Expr(:call, kernel_name, field_conversions...)
-    @eval begin
-        convert{T<:AbstractFloat}(::Type{$kernel_name{T}}, κ::$kernel_name) = $constructorcall
+    if length(fieldnames(kernel_obj)) == 0
+        @eval begin
+            convert{T<:AbstractFloat}(::Type{$kernel_name{T}}, κ::$kernel_name) = $kernel_name{T}()
+        end
+    else 
+        field_conversions = [:(convert(T, κ.$field)) for field in fieldnames(kernel_obj)]
+        constructor_call = Expr(:call, kernel_name, field_conversions...)
+        @eval begin
+            convert{T<:AbstractFloat}(::Type{$kernel_name{T}}, κ::$kernel_name) = $constructor_call
+        end
     end
 end
 
@@ -84,10 +90,16 @@ end
 
 abstract CompositionClass{T<:AbstractFloat}
 
+eltype{T}(κ::CompositionClass{T}) = T
+
 iscomposable(::CompositionClass, ::Kernel) = true
-ismercer(ϕ::CompositionClass, ::Kernel) = ismercer(ϕ)
-kernelrange(ϕ::CompositionClass, ::Kernel) = kernelrange(ϕ)
-attainszero(ϕ::CompositionClass, ::Kernel) = attainszero(ϕ)
+
+ismercer(::CompositionClass) = false
+isnegdef(::CompositionClass) = false
+kernelrange(::CompositionClass) = :R
+attainszero(::CompositionClass) = true  # Does it attain zero?
+ispositive(κ::CompositionClass)    = kernelrange(κ) == :Rp && !attainszero(κ)
+isnonnegative(κ::CompositionClass) = kernelrange(κ) == :Rp
 
 include("kernels/compositionclasses.jl")
 
@@ -238,7 +250,7 @@ end
 +(c::Real, κ::Kernel) = +(κ, c)
 
 *{T<:AbstractFloat}(κ::Kernel{T}, a::Real) = KernelAffinity(convert(T, a), zero(T), κ)
-*(a::Real, κ::Kernel) = +(κ, a)
+*(a::Real, κ::Kernel) = *(κ, a)
 
 +{T<:AbstractFloat}(κ::KernelAffinity{T}, c::Real) = KernelAffinity(κ.a, κ.c + convert(T, c), κ.k)
 +(c::Real, κ::KernelAffinity) = +(κ, c)
@@ -247,7 +259,7 @@ function *{T<:AbstractFloat}(κ::KernelAffinity{T}, a::Real)
     a = convert(T, a)
     KernelAffinity(a * κ.a, a * κ.c, κ.k)
 end
-*(a::Real, κ::KernelAffinity) = +(κ, a)
+*(a::Real, κ::KernelAffinity) = *(κ, a)
 
 function ^{T<:AbstractFloat}(ψ::KernelAffinity{T}, d::Integer)
     ismercer(ψ.k) || error("Kernel must be Mercer to raise to an integer.")
@@ -362,13 +374,12 @@ end
   Conversions
 ===================================================================================================#
 
-#=
 for kernel in (
         concrete_subtypes(AdditiveKernel)..., 
         ARD, 
-        concrete_subtypes(CompositionClass)..., 
-        KernelSum,
-        KernelProduct
+        concrete_subtypes(CompositionClass)... 
+        #KernelSum,
+        #KernelProduct
     )
     kernel_sym = kernel.name.name  # symbol for concrete kernel type
     for parent in supertypes(kernel)
@@ -380,4 +391,3 @@ for kernel in (
         end
     end
 end
-=#

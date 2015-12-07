@@ -1,4 +1,4 @@
-info("Testing ", MLKernels.pairwise)
+info("Testing ", MOD.pairwise)
 for kernelobj in additive_kernels
     for T in FloatingPointTypes
         x1 = T[1; 2]
@@ -17,40 +17,39 @@ for kernelobj in additive_kernels
 
         k = convert(Kernel{T}, (kernelobj)())
        
-        @test MLKernels.pairwise(k, x1[1], y1[1])             == MLKernels.phi(k, x1[1], y1[1])
-        @test MLKernels.pairwise(ARD(k,w[1:1]), x1[1], y1[1]) == MLKernels.phi(k, x1[1], y1[1]) * w[1]^2
+        @test MOD.pairwise(k, x1[1], y1[1])             == MOD.phi(k, x1[1], y1[1])
+        @test MOD.pairwise(ARD(k,w[1:1]), x1[1], y1[1]) == MOD.phi(k, x1[1], y1[1]) * w[1]^2
 
-        @test MLKernels.pairwise(k, x1, y1)        == MLKernels.phi(k, x1[1], y1[1]) + 
-                                                      MLKernels.phi(k, x1[2], y1[2])
-        @test MLKernels.pairwise(ARD(k,w), x1, y1) == MLKernels.phi(k, x1[1], y1[1]) * w[1]^2 + 
-                                                      MLKernels.phi(k, x1[2], y1[2]) * w[2]^2
+        @test MOD.pairwise(k, x1, y1)        == MOD.phi(k, x1[1], y1[1]) + MOD.phi(k, x1[2], y1[2])
+        @test MOD.pairwise(ARD(k,w), x1, y1) == MOD.phi(k, x1[1], y1[1]) * w[1]^2 + 
+                                                MOD.phi(k, x1[2], y1[2]) * w[2]^2
         
-        P = [MLKernels.pairwise(k,x,y) for x in Set_x, y in Set_x]
+        P = [MOD.pairwise(k,x,y) for x in Set_x, y in Set_x]
         #K = Array(T,length(Set_x),length(Set_x))
 
-        @test_approx_eq MLKernels.syml!(MLKernels.pairwise(k, X,false,true))  P
-        @test_approx_eq MLKernels.symu!(MLKernels.pairwise(k, X,false,false)) P
+        @test_approx_eq MOD.syml!(MOD.pairwise(k, X,false,true))  P
+        @test_approx_eq MOD.symu!(MOD.pairwise(k, X,false,false)) P
 
-        @test_approx_eq MLKernels.syml!(MLKernels.pairwise(k, X',true,true))  P
-        @test_approx_eq MLKernels.symu!(MLKernels.pairwise(k, X',true,false)) P
+        @test_approx_eq MOD.syml!(MOD.pairwise(k, X',true,true))  P
+        @test_approx_eq MOD.symu!(MOD.pairwise(k, X',true,false)) P
 
-        P = [MLKernels.pairwise(k,x,y,w) for x in Set_x, y in Set_x]
+        P = [MOD.pairwise(k,x,y,w) for x in Set_x, y in Set_x]
 
-        @test_approx_eq MLKernels.syml!(MLKernels.pairwise(ARD(k,w), X,false,true))  P
-        @test_approx_eq MLKernels.symu!(MLKernels.pairwise(ARD(k,w), X,false,false)) P
+        @test_approx_eq MOD.syml!(MOD.pairwise(ARD(k,w), X,false,true))  P
+        @test_approx_eq MOD.symu!(MOD.pairwise(ARD(k,w), X,false,false)) P
 
-        @test_approx_eq MLKernels.syml!(MLKernels.pairwise(ARD(k,w), X',true,true))  P
-        @test_approx_eq MLKernels.symu!(MLKernels.pairwise(ARD(k,w), X',true,false)) P
+        @test_approx_eq MOD.syml!(MOD.pairwise(ARD(k,w), X',true,true))  P
+        @test_approx_eq MOD.symu!(MOD.pairwise(ARD(k,w), X',true,false)) P
 
-        P = [MLKernels.pairwise(k,x,y) for x in Set_x, y in Set_y]
+        P = [MOD.pairwise(k,x,y) for x in Set_x, y in Set_y]
 
-        @test_approx_eq MLKernels.pairwise(k, X, Y, false)  P
-        @test_approx_eq MLKernels.pairwise(k, X', Y', true) P
+        @test_approx_eq MOD.pairwise(k, X, Y, false)  P
+        @test_approx_eq MOD.pairwise(k, X', Y', true) P
 
-        P = [MLKernels.pairwise(k,x,y,w) for x in Set_x, y in Set_y]
+        P = [MOD.pairwise(k,x,y,w) for x in Set_x, y in Set_y]
 
-        @test_approx_eq MLKernels.pairwise(ARD(k,w), X, Y, false)  P
-        @test_approx_eq MLKernels.pairwise(ARD(k,w), X', Y', true) P
+        @test_approx_eq MOD.pairwise(ARD(k,w), X, Y, false)  P
+        @test_approx_eq MOD.pairwise(ARD(k,w), X', Y', true) P
 
     end
 end
@@ -60,9 +59,9 @@ immutable TestKernel{T<:AbstractFloat} <: BaseKernel{T}
     a::T
 end
 
-MLKernels.phi{T<:AbstractFloat}(κ::TestKernel, x::AbstractVector{T}, y::AbstractVector{T}) = sum(x) + sum(y) + κ.a
+MOD.phi{T<:AbstractFloat}(κ::TestKernel, x::AbstractVector{T}, y::AbstractVector{T}) = sum(x) + sum(y) + κ.a
 
-function MLKernels.description_string{T<:AbstractFloat}(κ::TestKernel{T}, eltype::Bool = true)
+function MOD.description_string{T<:AbstractFloat}(κ::TestKernel{T}, eltype::Bool = true)
     "Test" * (eltype ? "{$(T)}" : "") * "(a=$(κ.a))"
 end
 
@@ -82,17 +81,17 @@ for T in (Float32, Float64)
 
     k = TestKernel(100*one(T))
 
-    P = [MLKernels.pairwise(k,x,y) for x in Set_x, y in Set_x]
+    P = [MOD.pairwise(k,x,y) for x in Set_x, y in Set_x]
 
-    @test_approx_eq MLKernels.syml!(MLKernels.pairwise(k, X,false,true))  P
-    @test_approx_eq MLKernels.symu!(MLKernels.pairwise(k, X,false,false)) P
+    @test_approx_eq MOD.syml!(MOD.pairwise(k, X,false,true))  P
+    @test_approx_eq MOD.symu!(MOD.pairwise(k, X,false,false)) P
 
-    @test_approx_eq MLKernels.syml!(MLKernels.pairwise(k, X',true,true))  P
-    @test_approx_eq MLKernels.symu!(MLKernels.pairwise(k, X',true,false)) P
+    @test_approx_eq MOD.syml!(MOD.pairwise(k, X',true,true))  P
+    @test_approx_eq MOD.symu!(MOD.pairwise(k, X',true,false)) P
 
-    P = [MLKernels.pairwise(k,x,y) for x in Set_x, y in Set_y]
+    P = [MOD.pairwise(k,x,y) for x in Set_x, y in Set_y]
 
-    @test_approx_eq MLKernels.pairwise(k, X,  Y,  false)  P
-    @test_approx_eq MLKernels.pairwise(k, X', Y', true)   P
+    @test_approx_eq MOD.pairwise(k, X,  Y,  false)  P
+    @test_approx_eq MOD.pairwise(k, X', Y', true)   P
 
 end
