@@ -1,9 +1,3 @@
-using Base.Test
-
-importall MLKernels
-
-# Test Base Kernels
-
 for kernel_obj in (additive_kernels..., composition_classes...)
     info("Testing ", kernel_obj)
     for T in FloatingPointTypes
@@ -43,7 +37,7 @@ for kernel_obj in (additive_kernels..., composition_classes...)
             k = convert(kernel_obj{T}, (kernel_obj)(arg_values...))
             for test_input in get(all_testinputs, kernel_obj, "error")
                 z = T[test_input...]
-                a = MLKernels.phi(k, z...)
+                a = MOD.phi(k, z...)
                 b = f(arg_values..., z...)
                 if T == BigFloat
                     @test_approx_eq convert(Float64,a) convert(Float64,b)
@@ -59,16 +53,15 @@ for kernel_obj in (additive_kernels..., composition_classes...)
 
     k = (kernel_obj)()
 
-    (kr,az,pos,nn,ismer,isnd) = get(all_kernelproperties, kernel_obj, "error")
-    @test MLKernels.kernelrange(k) == kr
-    @test attainszero(k) == az
-    @test ispositive(k) == pos
-    @test isnonnegative(k) == nn
+    (atzero,atpos,atneg,ismer,isnd) = get(all_kernelproperties, kernel_obj, "error")
+    @test MOD.attainszero(k) == atzero
+    @test MOD.attainspositive(k) == atpos
+    @test MOD.attainsnegative(k) == atneg
     @test ismercer(k) === ismer
     @test isnegdef(k) === isnd
 
-    @test isa(MLKernels.description_string(k,true), AbstractString)
-    @test isa(MLKernels.description_string(k,false), AbstractString)
+    @test isa(MOD.description_string(k,true), AbstractString)
+    @test isa(MOD.description_string(k,false), AbstractString)
 
 end
 
@@ -87,15 +80,14 @@ for kernelobj in additive_kernels
         @test getfield(k, :k) == k_base 
         @test getfield(k, :w) == T[w...]
         
-        @test MLKernels.kernelrange(k) == MLKernels.kernelrange(k_base)
-        @test attainszero(k) == attainszero(k_base)
-        @test ispositive(k) == ispositive(k_base)
-        @test isnonnegative(k) == isnonnegative(k_base)
+        @test MOD.attainszero(k) == MOD.attainszero(k_base)
+        @test MOD.attainspositive(k) == MOD.attainspositive(k_base)
+        @test MOD.attainsnegative(k) == MOD.attainsnegative(k_base)
         @test ismercer(k) === ismercer(k_base)
         @test isnegdef(k) === isnegdef(k_base)
 
-        @test isa(MLKernels.description_string(k,true), AbstractString)
-        @test isa(MLKernels.description_string(k,false), AbstractString)
+        @test isa(MOD.description_string(k,true), AbstractString)
+        @test isa(MOD.description_string(k,false), AbstractString)
 
     end  # End floating point loop
 end  # End additive kernels loop
@@ -128,8 +120,8 @@ for kernelobj1 in (SquaredDistanceKernel, RationalQuadraticKernel)
                                                                                                   || k.a > 0)) 
                 @test isnonnegative(k) == (isnonnegative(k1) && isnonnegative(k2))
 
-                @test isa(MLKernels.description_string(k,true), AbstractString)
-                @test isa(MLKernels.description_string(k,false), AbstractString)
+                @test isa(MOD.description_string(k,true), AbstractString)
+                @test isa(MOD.description_string(k,false), AbstractString)
 
                 a = one(T)
                 k = a + k1
@@ -189,8 +181,8 @@ for kernelobj1 in (SquaredDistanceKernel, RationalQuadraticKernel)
                 @test ispositive(k) == (ispositive(k1) && ispositive(k2))
                 @test isnonnegative(k) == (isnonnegative(k1) && isnonnegative(k2))
 
-                @test isa(MLKernels.description_string(k,true), AbstractString)
-                @test isa(MLKernels.description_string(k,false), AbstractString)
+                @test isa(MOD.description_string(k,true), AbstractString)
+                @test isa(MOD.description_string(k,false), AbstractString)
 
                 a = convert(T,3)
 

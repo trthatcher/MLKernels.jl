@@ -22,8 +22,8 @@ function SquaredDistanceKernel{T<:AbstractFloat}(t::T = 1.0)
 end
 
 isnegdef(::SquaredDistanceKernel) = true
-kernelrange(::SquaredDistanceKernel) = :Rp
-attainszero(::SquaredDistanceKernel) = true
+
+attainsnegative(::SquaredDistanceKernel) = false
 
 function description_string{T<:AbstractFloat}(κ::SquaredDistanceKernel{T}, eltype::Bool = true)
     "SquaredDistance" * (eltype ? "{$(T)}" : "") * "(t=$(κ.t))"
@@ -60,8 +60,8 @@ function SineSquaredKernel{T<:AbstractFloat}(p::T = convert(Float64, π), t::T =
 end
 
 isnegdef(::SineSquaredKernel) = true
-kernelrange(::SineSquaredKernel) = :Rp
-attainszero(::SineSquaredKernel) = true
+
+attainsnegative(::SineSquaredKernel) = false
 
 function description_string{T<:AbstractFloat}(κ::SineSquaredKernel{T}, eltype::Bool = true)
     "SineSquared" * (eltype ? "{$(T)}" : "") * "(p=$(κ.p),t=$(κ.t))"
@@ -94,8 +94,8 @@ function ChiSquaredKernel{T<:AbstractFloat}(t::T = 1.0)
 end
 
 isnegdef(::ChiSquaredKernel) = true
-kernelrange(::ChiSquaredKernel) = :Rp
-attainszero(::ChiSquaredKernel) = true
+
+attainsnegative(::ChiSquaredKernel) = false
 
 function description_string{T<:AbstractFloat}(κ::ChiSquaredKernel{T}, eltype::Bool = true)
     "ChiSquared" * (eltype ? "{$(T)}" : "") * "(t=$(κ.t))"

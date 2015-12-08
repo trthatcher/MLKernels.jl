@@ -64,19 +64,19 @@ all_kernelfunctions = Dict(
 
 )
 
-all_kernelproperties = Dict( #|range|zero  |pos   |nonneg|mercer|negdef|
-    SquaredDistanceKernel  => (:Rp, true,  false, true,  false, true), 
-    SineSquaredKernel      => (:Rp, true,  false, true,  false, true),
-    ChiSquaredKernel       => (:Rp, true,  false, true,  false, true),
-    ScalarProductKernel    => (:R,  true,  false, false, true,  false),
-    ExponentialClass       => (:Rp, false, true,  true,  true,  false),
-    RationalQuadraticClass => (:Rp, false, true,  true,  true,  false),
-    MaternClass            => (:Rp, false, true,  true,  true,  false),
-    PowerClass             => (:Rp, true,  false, true,  false, true),
-    LogClass               => (:Rp, true,  false, true,  false, true),
-    PolynomialClass        => (:R,  true,  false, false, true,  false),
-    ExponentiatedClass     => (:Rp, false, true,  true,  true,  false),
-    SigmoidClass           => (:R,  true,  false, false, false, false)
+all_kernelproperties = Dict( #|atzero|atpos|atneg |mercer|negdef|
+    SquaredDistanceKernel  => (true,  true, false, false, true), 
+    SineSquaredKernel      => (true,  true, false, false, true),
+    ChiSquaredKernel       => (true,  true, false, false, true),
+    ScalarProductKernel    => (true,  true, true,  true,  false),
+    ExponentialClass       => (false, true, false, true,  false),
+    RationalQuadraticClass => (false, true, false, true,  false),
+    MaternClass            => (false, true, false, true,  false),
+    PowerClass             => (true,  true, false, false, true),
+    LogClass               => (true,  true, false, false, true),
+    PolynomialClass        => (true,  true, true,  true,  false),
+    ExponentiatedClass     => (false, true, false, true,  false),
+    SigmoidClass           => (true,  true, true,  false, false)
 )
 
 all_testinputs = Dict(

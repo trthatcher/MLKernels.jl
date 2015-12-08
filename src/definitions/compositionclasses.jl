@@ -37,9 +37,11 @@ function ExponentialClass{T<:AbstractFloat}(α::T = 1.0, γ::T = one(T))
 end
 
 iscomposable(::ExponentialClass, κ::Kernel) = is_nonneg_and_negdef(κ)
+
 ismercer(::ExponentialClass) = true
-kernelrange(::ExponentialClass) = :Rp
+
 attainszero(::ExponentialClass) = false
+attainsnegative(::ExponentialClass) = false
 
 function description_string{T<:AbstractFloat}(ϕ::ExponentialClass{T}, eltype::Bool = true)
     "Exponential" * (eltype ? "{$(T)}" : "") * "(α=$(ϕ.alpha),γ=$(ϕ.gamma))"
@@ -89,9 +91,11 @@ function RationalQuadraticClass{T<:AbstractFloat}(α::T = 1.0, β::T = one(T), �
 end
 
 iscomposable(::RationalQuadraticClass, κ::Kernel) = is_nonneg_and_negdef(κ)
+
 ismercer(::RationalQuadraticClass) = true
-kernelrange(::RationalQuadraticClass) = :Rp
+
 attainszero(::RationalQuadraticClass) = false
+attainsnegative(::RationalQuadraticClass) = false
 
 function description_string{T<:AbstractFloat}(ϕ::RationalQuadraticClass{T}, eltype::Bool = true)
     "RationalQuadratic" * (eltype ? "{$(T)}" : "") *"(α=$(ϕ.alpha),β=$(ϕ.beta),γ=$(ϕ.gamma))"
@@ -125,9 +129,11 @@ end
 MaternClass{T<:AbstractFloat}(ν::T = 1.0, θ::T = one(T)) = MaternClass{T, ν == 1 ? :ν1 : :Ø}(ν, θ)
 
 iscomposable(::MaternClass, κ::Kernel) = is_nonneg_and_negdef(κ)
+
 ismercer(::MaternClass) = true
-kernelrange(::MaternClass) = :Rp
+
 attainszero(::MaternClass) = false
+attainsnegative(::MaternClass) = false
 
 function description_string{T<:AbstractFloat}(ϕ::MaternClass{T}, eltype::Bool = true)
     "Matérn" * (eltype ? "{$(T)}" : "") * "(ν=$(ϕ.nu),θ=$(ϕ.theta))"
@@ -171,6 +177,7 @@ end
 function iscomposable(::PolynomialClass, κ::Kernel)
     ismercer(κ) || error("Composed class must be a Mercer class.")
 end
+
 ismercer(::PolynomialClass) = true
 
 function description_string{T<:AbstractFloat}(ϕ::PolynomialClass{T}, eltype::Bool = true) 
@@ -198,11 +205,13 @@ end
 ExponentiatedClass{T<:AbstractFloat}(a::T = 1.0, c::T = zero(T)) = ExponentiatedClass{T}(a, c)
 
 function iscomposable(::ExponentiatedClass, κ::Kernel)
-    ismercer(κ) || error("Composed class must be a Mercer class.")
+    ismercer(κ) || error("Composed kernel must be a Mercer class.")
 end
+
 ismercer(::ExponentiatedClass) = true
-kernelrange(::ExponentiatedClass) = :Rp
+
 attainszero(::ExponentiatedClass) = false
+attainsnegative(::ExponentiatedClass) = false
 
 function description_string{T<:AbstractFloat}(ϕ::ExponentiatedClass{T}, eltype::Bool = true)
     "Exponentiated" * (eltype ? "{$(T)}" : "") * "(a=$(ϕ.a),c=$(ϕ.c))"
@@ -226,6 +235,10 @@ immutable SigmoidClass{T<:AbstractFloat} <: CompositionClass{T}
 end
 
 SigmoidClass{T<:AbstractFloat}(a::T = 1.0, c::T = one(T)) = SigmoidClass{T}(a, c)
+
+function iscomposable(::SigmoidClass, κ::Kernel)
+    ismercer(κ) || error("Composed class must be a Mercer class.")
+end
 
 function description_string{T<:AbstractFloat}(ϕ::SigmoidClass{T}, eltype::Bool = true)
     "Sigmoid" * (eltype ? "{$(T)}" : "") * "(a=$(ϕ.a),c=$(ϕ.c))"
@@ -257,9 +270,11 @@ function PowerClass{T<:AbstractFloat}(a::T = 1.0, c = zero(T), γ::T = one(T)/2)
 end
 
 iscomposable(::PowerClass, κ::Kernel) = is_nonneg_and_negdef(κ)
+
 isnegdef(::PowerClass) = true
-kernelrange(::PowerClass) = :Rp
+
 attainszero(::PowerClass) = true
+attainsnegative(::PowerClass) = false
 
 function description_string{T<:AbstractFloat}(ϕ::PowerClass{T}, eltype::Bool = true)
     "Power" * (eltype ? "{$(T)}" : "") * "(a=$(ϕ.a),c=$(ϕ.c),γ=$(ϕ.gamma))"
@@ -289,9 +304,11 @@ end
 LogClass{T<:AbstractFloat}(α::T = 1.0, γ::T = one(T)) = LogClass{T, γ == 1 ? :γ1 : :Ø}(α, γ)
 
 iscomposable(::LogClass, κ::Kernel) = is_nonneg_and_negdef(κ)
+
 isnegdef(::LogClass) = true
-kernelrange(::LogClass) = :Rp
+
 attainszero(::LogClass) = true
+attainsnegative(::LogClass) = false
 
 function description_string{T<:AbstractFloat}(ϕ::LogClass{T}, eltype::Bool = true)
     "Log" * (eltype ? "{$(T)}" : "") * "(α=$(ϕ.alpha),γ=$(ϕ.gamma))"

@@ -108,17 +108,17 @@ end
 ==========================================================================#
 
 # Apply phi to matrix elements
-function phi_matrix!{T<:AbstractFloat}(κ::KernelComposition{T}, X::Matrix{T})
+function phi_matrix!{T<:AbstractFloat}(ϕ::CompositionClass{T}, K::Matrix{T})
     @inbounds @simd for i = 1:length(X)
-        X[i] = phi(κ, X[i])
+        K[i] = phi(ϕ, K[i])
     end
     X
 end
 
-function phi_square_matrix!{T<:AbstractFloat}(κ::KernelComposition{T}, X::Matrix{T}, store_upper::Bool)
-    (n = size(X,1)) == size(X,2) || throw(DimensionMismatch("X must be square."))
+function phi_square_matrix!{T<:AbstractFloat}(ϕ::CompositionClass{T}, K::Matrix{T}, store_upper::Bool)
+    (n = size(K,1)) == size(K,2) || throw(DimensionMismatch("K must be square."))
     @inbounds for j = 1:n, i = store_upper ? (1:j) : (j:n)
-        X[i,j] = phi(κ, X[i,j])
+        X[i,j] = phi(ϕ, X[i,j])
     end
     X
 end
