@@ -46,10 +46,12 @@ end
 
 
 #===================================================================================================
-  Base Kernels
+  Standard Kernels
 ===================================================================================================#
 
-abstract BaseKernel{T<:AbstractFloat} <: Kernel{T}
+abstract StandardKernel{T<:AbstractFloat} <: Kernel{T}
+
+abstract BaseKernel{T<:AbstractFloat} <: StandardKernel{T}
 
 
 #==========================================================================
@@ -111,7 +113,7 @@ end
   Kernel Composition ψ = ϕ(κ(x,y))
 ==========================================================================#
 
-immutable KernelComposition{T<:AbstractFloat} <: Kernel{T}
+immutable KernelComposition{T<:AbstractFloat} <: StandardKernel{T}
     phi::CompositionClass{T}
     k::Kernel{T}
     function KernelComposition(ϕ::CompositionClass{T}, κ::Kernel{T})
@@ -136,7 +138,7 @@ function description_string{T<:AbstractFloat,}(κ::KernelComposition{T}, eltype:
 end
 
 function convert{T<:AbstractFloat}(::Type{KernelComposition{T}}, ψ::KernelComposition)
-    KernelComposition(convert(CompositionClass{T}, ψ.phi), convert(Kernel{T}, ψ.κ))
+    KernelComposition(convert(CompositionClass{T}, ψ.phi), convert(Kernel{T}, ψ.k))
 end
 
 # Special Compositions
@@ -191,11 +193,11 @@ end
 KernelAffinity{T<:AbstractFloat}(a::T, c::T, κ::Kernel{T}) = KernelAffinity{T}(a, c, κ)
 
 ismercer(ψ::KernelAffinity) = ismercer(ψ.k)
+isnegdef(ψ::KernelAffinity) = isnegdef(ψ.k)
 
 attainszero(ψ::KernelAffinity) = attainszero(ψ.k)
 attainspositive(ψ::KernelAffinity) = attainspositive(ψ.k)
 attainsnegative(ψ::KernelAffinity) = attainsnegative(ψ.k)
-
 
 function description_string{T<:AbstractFloat}(ψ::KernelAffinity{T}, eltype::Bool = true)
     "Affine" * (eltype ? "{$(T)}" : "") * "(a=$(ψ.a),c=$(ψ.c),κ=" * 
@@ -243,8 +245,10 @@ end
 
 
 #==========================================================================
-  Kernel Product
+  Kernel Product & Kernel Sum
 ==========================================================================#
+
+# Kernel Product
 
 immutable KernelProduct{T<:AbstractFloat} <: KernelOperation{T}
     a::T
@@ -257,23 +261,14 @@ immutable KernelProduct{T<:AbstractFloat} <: KernelOperation{T}
         new(a, κ)
     end
 end
-KernelProduct{T<:AbstractFloat}(a::T, κ::Vector{Kernel{T}}) = KernelProduct{T}(a, κ)
-KernelProduct{T<:AbstractFloat}(a::T, κ::Kernel{T}...) = KernelProduct{T}(a, Kernel{T}[κ...])
 
-attainszero(κ::KernelProduct) = any(attainszero, κ.k)  # Does it attain zero?
-ispositive(ψ::KernelProduct)  = all(ispositive, ψ.k)
-
-function description_string{T<:AbstractFloat}(ψ::KernelProduct{T}, eltype::Bool = true)
-    descs = map(κ -> description_string(κ, false), ψ.k)
-    "Product" * (eltype ? "{$(T)}" : "") * (ψ.a == 1 ? "(" : "(a=$(ψ.a),") * join(descs, ", ") * ")"
-end
+attainszero(κ::KernelProduct) = any(attainszero, κ.k)
+attainspositive(ψ::KernelProduct) = all(attainspositive, ψ.k)
+attainsnegative(Ψ::KernelProduct) = any(attainsnegative, ψ.k)
 
 
+# Kernel Sum
 
-#==========================================================================
-  Kernel Sum
-==========================================================================#
-#=
 immutable KernelSum{T<:AbstractFloat} <: KernelOperation{T}
     c::T
     k::Vector{Kernel{T}}
@@ -285,47 +280,54 @@ immutable KernelSum{T<:AbstractFloat} <: KernelOperation{T}
         new(c, κ)
     end
 end
-KernelSum{T<:AbstractFloat}(c::T, κ::Vector{Kernel{T}}) = KernelSum{T}(c, κ)
 
-attainszero(ψ::KernelSum) = all(attainszero, ψ.k) && ψ.c == 0  # Does it attain zero?
-ispositive(ψ::KernelSum)  = all(isnonnegative, ψ.k) && (ψ.c > 0 || any(ispositive, ψ.k))
+attainszero(ψ::KernelSum) = all(attainszero, ψ.k) && ψ.c == 0
+attainspositive(ψ::KernelSum) = all(attainsnegative, ψ.k) && (ψ.c > 0 || any(ispositive, ψ.k))
+attainsnegative(ψ::KernelSum) = any(attainsnegative, ψ.k)
 
+function +(κ1::KernelAffinity, κ2::KernelAffinity)
+    κ1.a == 1 && κ2.a == 1 ? KernelSum(κ1.c + κ2.c, κ1.k, κ2.k) : KernelSum(0, κ1, κ2)
+end
+
+function +(κ1::KernelAffinity, κ2::StandardKernel)
+    κ1.a == 1 ? KernelSum(κ1.c, κ1.k, κ2) : KernelSum(0, κ1, κ2)
+end
++(κ1::StandardKernel, κ2::KernelAffinity) = +(κ2, κ1)
+
+
+# Common Functions
 
 for (kernel_object, kernel_op, kernel_array_op, identity, scalar) in (
         (:KernelProduct, :*, :prod, :1, :a),
         (:KernelSum,     :+, :sum,  :0, :c)
     )
     @eval begin
-
-        function $kernel_object{T<AbstractFloat}($scalar::Real, κ::Kernel{T}...)
-            $kernel_object{T}(convert(T, $scalar), Kernel{T}[κ...])
+        
+        function $kernel_object{T<:AbstractFloat}($scalar::T, κ::Vector{Kernel{T}})
+            ($kernel_object){T}($scalar, κ)
         end
 
-        function convert{T<:AbstractFloat}(::Type{$kernel_object{T}}, ψ::$kernel_object)
-            $kernel_object(convert(T, ψ.$scalar), Kernel{T}[ψ.k...])
+        function $kernel_object{T<:AbstractFloat}($scalar::T, κ::Kernel{T}...)
+            ($kernel_object){T}($scalar, Kernel{T}[κ...])
         end
-
-        isnonnegative(ψ::$kernel_object) = all(isnonnegative, ψ.k)
-
-        ismercer(ψ::$kernel_object) = all(ismercer, ψ.k)
-        isnegdef(ψ::$kernel_object) = all(isnegdef, ψ.k)
+        
+        function $kernel_object{T<:AbstractFloat}($scalar::Real, κ::Kernel{T}...)
+            ($kernel_object){T}(convert(T, $scalar), Kernel{T}[κ...])
+        end
 
         function description_string{T<:AbstractFloat}(ψ::$kernel_object{T}, eltype::Bool = true)
             descs = map(κ -> description_string(κ, false), ψ.k)
-            if eltype
-                $(string(kernel_object)) * (eltype ? "{$(T)}" : "") * "($(variable)=$(ψ.a), $(join(descs, ", ")))"
-            else
-                if $kernel_op !== (*) && ψ.a != $identity
-                    insert!(descs, 1, string(ψ.a))
-                end
-                desc_str = string("(", join(descs, $(string(" ", kernel_op, " "))), ")")
-                if $kernel_op === (*) && ψ.a != $identity
-                    string(ψ.a, desc_str)
-                else
-                    desc_str
-                end
-            end
+            ($(string(kernel_object)) * (eltype ? "{$(T)}" : "") * 
+                "(" * (ψ.$scalar == $identity ? "" : $(string(scalar)) * "=" * string(ψ.$scalar) * 
+                ",") * join(descs, ", ") * ")")
         end
+
+        function convert{T<:AbstractFloat}(::Type{($kernel_object){T}}, ψ::$kernel_object)
+            $kernel_object(convert(T, ψ.$scalar), Kernel{T}[ψ.k...])
+        end
+
+        ismercer(ψ::$kernel_object) = all(ismercer, ψ.k)
+        isnegdef(ψ::$kernel_object) = all(isnegdef, ψ.k)
 
         function $kernel_op($scalar::Real, ψ::$kernel_object) 
             $kernel_object($kernel_op($scalar, ψ.$scalar), ψ.k...)
@@ -344,7 +346,7 @@ for (kernel_object, kernel_op, kernel_array_op, identity, scalar) in (
     end
 end
 
-=#
+
 #===================================================================================================
   Conversions
 ===================================================================================================#
@@ -352,9 +354,11 @@ end
 for kernel in (
         concrete_subtypes(AdditiveKernel)..., 
         ARD, 
-        concrete_subtypes(CompositionClass)... 
-        #KernelSum,
-        #KernelProduct
+        concrete_subtypes(CompositionClass)...,
+        KernelComposition,
+        KernelAffinity,
+        KernelSum,
+        KernelProduct
     )
     kernel_sym = kernel.name.name  # symbol for concrete kernel type
     for parent in supertypes(kernel)

@@ -92,10 +92,9 @@ for kernelobj in additive_kernels
     end  # End floating point loop
 end  # End additive kernels loop
 
-#=
 info("Testing ", KernelSum)
 for kernelobj1 in (SquaredDistanceKernel, RationalQuadraticKernel)
-    for kernelobj2 in (ScalarProductKernel, PowerKernel)
+    for kernelobj2 in (ScalarProductKernel, ChiSquaredKernel)
         for T in FloatingPointTypes
 
             k1 = convert(Kernel{T}, (kernelobj1)())
@@ -106,7 +105,7 @@ for kernelobj1 in (SquaredDistanceKernel, RationalQuadraticKernel)
             if all(ismercer, kvec) || all(isnegdef, kvec)
 
                 k = k1 + k2
-                @test k.a == zero(T)
+                @test k.c == zero(T)
                 @test all(k.k .== kvec) || all(k.k .== reverse(kvec))
 
                 @test eltype(convert(KernelSum{Float32}, k))  == Float32
@@ -115,34 +114,26 @@ for kernelobj1 in (SquaredDistanceKernel, RationalQuadraticKernel)
 
                 @test ismercer(k) == (ismercer(k1) && ismercer(k2))
                 @test isnegdef(k) == (isnegdef(k1) && isnegdef(k2))
-                @test attainszero(k) == (attainszero(k1) && attainszero(k2) && k.a == 0)
-                @test ispositive(k) == (isnonnegative(k1) && isnonnegative(k2) && (ispositive(k1) || ispositive(k2)
-                                                                                                  || k.a > 0)) 
-                @test isnonnegative(k) == (isnonnegative(k1) && isnonnegative(k2))
+                @test MOD.attainszero(k) == (MOD.attainszero(k1) && MOD.attainszero(k2) && k.c == 0)
+                @test MOD.ispositive(k) == (MOD.isnonnegative(k1) && MOD.isnonnegative(k2) && (
+                                            MOD.ispositive(k1) || MOD.ispositive(k2) || k.c > 0))
+                @test MOD.isnonnegative(k) == (MOD.isnonnegative(k1) && MOD.isnonnegative(k2))
 
                 @test isa(MOD.description_string(k,true), AbstractString)
                 @test isa(MOD.description_string(k,false), AbstractString)
 
-                a = one(T)
-                k = a + k1
+                c = 2one(T)
 
-                @test k.a == a
-                @test k.k[1] == k1
-                @test (k1 + a).k[1] == k.k[1]
-                @test (k1 + a).a == k.a
-                @test (k + a).a == 2a
-                @test (a + k).a == 2a
-
-                k = (k1 + a) + (k2 + a)
-                @test k.a == 2a
+                k = (k1 + c) + (k2 + c)
+                @test k.c == 2c
                 @test all(k.k .== kvec) || all(k.k .== reverse(kvec))
 
-                k = (k1 + a) + k2
-                @test k.a == a
+                k = (k1 + c) + k2
+                @test k.c == c
                 @test all(k.k .== kvec) || all(k.k .== reverse(kvec))
 
-                k = k1 + (k2 + a)
-                @test k.a == a
+                k = k1 + (k2 + c)
+                @test k.c == c
                 @test all(k.k .== kvec) || all(k.k .== reverse(kvec))
 
             else
@@ -153,7 +144,6 @@ for kernelobj1 in (SquaredDistanceKernel, RationalQuadraticKernel)
         end
     end
 end
-=#
 #=
 info("Testing ", KernelProduct)
 for kernelobj1 in (SquaredDistanceKernel, RationalQuadraticKernel)
