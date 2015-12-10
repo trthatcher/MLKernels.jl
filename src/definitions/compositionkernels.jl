@@ -10,7 +10,7 @@ function LaplacianKernel{T<:AbstractFloat}(α::T = 1.0)
     KernelComposition(ExponentialClass(α, one(T)/2), SquaredDistanceKernel(one(T)))
 end
 
-doc"`PeriodicKernel(α,p)` = exp(-α⋅Σᵢsin²(p(xᵢ-yᵢ)))"
+doc"`PeriodicKernel(α,p)` = exp(-α⋅Σⱼsin²(p(xⱼ-yⱼ)))"
 function PeriodicKernel{T<:AbstractFloat}(α::T = 1.0, p::T = convert(T, π))
     KernelComposition(ExponentialClass(α, one(T)), SineSquaredKernel(p, one(T)))
 end
@@ -22,7 +22,7 @@ end
 
 doc"`MatérnKernel(ν,θ)` = 2ᵛ⁻¹(√(2ν)‖x-y‖²/θ)ᵛKᵥ(√(2ν)‖x-y‖²/θ)/Γ(ν)"
 function MaternKernel{T<:AbstractFloat}(ν::T = 1.0, θ::T = one(T))
-    KernelComposition(RationalQuadraticClass(α, β), SquaredDistanceKernel(one(T)))
+    KernelComposition(MaternClass(ν, θ), SquaredDistanceKernel(one(T)))
 end
 MatérnKernel = MaternKernel
 
@@ -31,12 +31,12 @@ function PolynomialKernel{T<:AbstractFloat}(a::T = 1.0, c = one(T), d = 3one(T))
     KernelComposition(PolynomialClass(a, c, d), ScalarProductKernel{T}())
 end
 
-doc"`LinearKernel(α,c,d)` = α⋅xᵀy + c"
-function LinearKernel{T<:AbstractFloat}(α::T = 1.0, c = one(T))
-    KernelComposition(TranslationScaleClass(α, c), ScalarProductKernel{T}())
+doc"`LinearKernel(α,c,d)` = a⋅xᵀy + c"
+function LinearKernel{T<:AbstractFloat}(a::T = 1.0, c = one(T))
+    KernelComposition(PolynomialClass(a, c, one(T)), ScalarProductKernel{T}())
 end
 
-doc"`SigmoidKernel(α,c)` = tanh(α⋅xᵀy + c)"
-function SigmoidKernel{T<:AbstractFloat}(α::T = 1.0, c::T = one(T))
-    KernelComposition(SigmoidClass(α, c), ScalarProductKernel{T}())
+doc"`SigmoidKernel(α,c)` = tanh(a⋅xᵀy + c)"
+function SigmoidKernel{T<:AbstractFloat}(a::T = 1.0, c::T = one(T))
+    KernelComposition(SigmoidClass(a, c), ScalarProductKernel{T}())
 end

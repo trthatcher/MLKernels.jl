@@ -29,6 +29,20 @@ composition_pairs = Dict(
     SigmoidClass           => (ScalarProductKernel,)
 )
 
+composition_kernels = (
+    GaussianKernel,
+    SquaredExponentialKernel,
+    RadialBasisKernel,
+    LaplacianKernel,
+    PeriodicKernel,
+    RationalQuadraticKernel,
+    MaternKernel,
+    MatérnKernel,
+    PolynomialKernel,
+    LinearKernel,
+    SigmoidKernel
+)
+
 all_args = Dict(
     SquaredDistanceKernel  => ([:t],[1],[0.5]),
     SineSquaredKernel      => ([:p, :t],[π,1],[2π,0.5]),

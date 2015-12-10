@@ -30,6 +30,7 @@ export
                 ARD,
             KernelComposition,
         KernelOperation,
+            KernelAffinity,
             KernelProduct,
             KernelSum,
         # Composition Classes

@@ -2,7 +2,13 @@
   Kernels & Composition Classes
 ===================================================================================================#
 
+doc"
+`Kernel`: `κ` such that `κ` is a Mercer kernel or a continuous symmetric 
+negative-definite kernel.
+"
 abstract Kernel{T<:AbstractFloat}
+
+doc"`CompositionClass`: `ϕ` such that `ϕ(κ(x,y))` is a kernel for some kernel `κ`."
 abstract CompositionClass{T<:AbstractFloat}
 
 function show(io::IO, κ::Union{Kernel,CompositionClass})
@@ -11,7 +17,10 @@ end
 
 eltype{T}(::Union{Kernel{T},CompositionClass{T}}) = T
 
+doc"`ismercer(κ)`: tests whether a kernel `κ` is a Mercer kernel."
 ismercer(::Union{Kernel,CompositionClass}) = false
+
+doc"`isnegdef(κ)`: tests whether a kernel `κ` is a continuous symmetric negative-definite kernel."
 isnegdef(::Union{Kernel,CompositionClass}) = false
 
 attainszero(::Union{Kernel,CompositionClass})     = true
@@ -49,8 +58,10 @@ end
   Standard Kernels
 ===================================================================================================#
 
+doc"`StandardKernel`: informally, `κ` such that `κ` is not an affine combination of kernels."
 abstract StandardKernel{T<:AbstractFloat} <: Kernel{T}
 
+doc"`BaseKernel`: informally, `κ` such that `κ` is not a composition of vector functions."
 abstract BaseKernel{T<:AbstractFloat} <: StandardKernel{T}
 
 
@@ -58,6 +69,7 @@ abstract BaseKernel{T<:AbstractFloat} <: StandardKernel{T}
   Additive Kernel: k(x,y) = sum(k(x_i,y_i))    x ∈ ℝⁿ, y ∈ ℝⁿ
 ==========================================================================#
 
+doc"`AdditiveKernel`: `κ` such that `κ` may be expressed as `κ(x,y) = Σⱼ ϕ(xⱼ,yⱼ)`."
 abstract AdditiveKernel{T<:AbstractFloat} <: BaseKernel{T}
 
 include("definitions/additivekernels.jl")

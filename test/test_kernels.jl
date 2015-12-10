@@ -115,6 +115,50 @@ for comp_obj in composition_classes
     end
 end
 
+info("Testing ", KernelAffinity)
+for kernelobj in (additive_kernels..., composition_kernels...)
+    for T in FloatingPointTypes
+
+        k1 = convert(Kernel{T}, (kernelobj)())
+        a = 2one(T)
+        c = 3one(T)
+
+        k = k1 + c
+        @test k.a == one(T)
+        @test k.c == c
+
+        k = c + ((c + k1) + c)
+        @test k.a == one(T)
+        @test k.c == 3c
+
+        k = k1 * a
+        @test k.a == a
+        @test k.c == zero(T)
+
+        k = a * ((a * k1) * a)
+        @test k.a == a^3
+        @test k.c == zero(T)
+
+        k = (a * k1) + c
+        @test k.a == a
+        @test k.c == c
+
+        k = c + (k1 * a)
+        @test k.a == a
+        @test k.c == c
+
+        k = a * (a * k1 + c)
+        @test k.a == a^2
+        @test k.c == a*c
+
+        k = (a * k1 + c) * a
+        @test k.a == a^2
+        @test k.c == a*c
+
+    end
+end
+
+
 info("Testing ", KernelSum)
 for kernelobj1 in (SquaredDistanceKernel, RationalQuadraticKernel)
     for kernelobj2 in (ScalarProductKernel, ChiSquaredKernel)
