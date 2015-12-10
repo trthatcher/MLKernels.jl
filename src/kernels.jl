@@ -263,9 +263,8 @@ immutable KernelProduct{T<:AbstractFloat} <: KernelOperation{T}
 end
 
 attainszero(κ::KernelProduct) = any(attainszero, κ.k)
-attainspositive(ψ::KernelProduct) = all(attainspositive, ψ.k)
+attainspositive(ψ::KernelProduct) = any(attainspositive, ψ.k)
 attainsnegative(Ψ::KernelProduct) = any(attainsnegative, ψ.k)
-
 
 # Kernel Sum
 
@@ -281,26 +280,19 @@ immutable KernelSum{T<:AbstractFloat} <: KernelOperation{T}
     end
 end
 
-attainszero(ψ::KernelSum) = all(attainszero, ψ.k) && ψ.c == 0
-attainspositive(ψ::KernelSum) = all(attainsnegative, ψ.k) && (ψ.c > 0 || any(ispositive, ψ.k))
+attainszero(ψ::KernelSum) = (all(attainszero, ψ.k) && ψ.c == 0) || (any(attainspositive, ψ.k) &&
+                                                                    any(attainsnegative, ψ.k))
+attainspositive(ψ::KernelSum) = any(attainspositive, ψ.k)
 attainsnegative(ψ::KernelSum) = any(attainsnegative, ψ.k)
-
-function +(κ1::KernelAffinity, κ2::KernelAffinity)
-    κ1.a == 1 && κ2.a == 1 ? KernelSum(κ1.c + κ2.c, κ1.k, κ2.k) : KernelSum(0, κ1, κ2)
-end
-
-function +(κ1::KernelAffinity, κ2::StandardKernel)
-    κ1.a == 1 ? KernelSum(κ1.c, κ1.k, κ2) : KernelSum(0, κ1, κ2)
-end
-+(κ1::StandardKernel, κ2::KernelAffinity) = +(κ2, κ1)
 
 
 # Common Functions
 
-for (kernel_object, kernel_op, kernel_array_op, identity, scalar) in (
-        (:KernelProduct, :*, :prod, :1, :a),
-        (:KernelSum,     :+, :sum,  :0, :c)
+for (kernel_object, kernel_op, identity, scalar) in (
+        (:KernelProduct, :*, :1, :a),
+        (:KernelSum,     :+, :0, :c)
     )
+    other_identity = identity == :1 ? :0 : :1
     @eval begin
         
         function $kernel_object{T<:AbstractFloat}($scalar::T, κ::Vector{Kernel{T}})
@@ -345,6 +337,31 @@ for (kernel_object, kernel_op, kernel_array_op, identity, scalar) in (
 
     end
 end
+
+for (kernel_object, kernel_op, identity, scalar, op2_identity, op2_scalar) in (
+        (:KernelProduct, :*, :1, :a, :0, :c),
+        (:KernelSum,     :+, :0, :c, :1, :a)
+    )
+    @eval begin
+        function $kernel_op(κ1::KernelAffinity, κ2::KernelAffinity)
+            if κ1.$op2_scalar == $op2_identity && κ2.$op2_scalar == $op2_identity
+                $kernel_object($kernel_op(κ1.$scalar, κ2.$scalar), κ1.k, κ2.k)
+            else
+                $kernel_object($identity, κ1, κ2)
+            end
+        end
+
+        function $kernel_op(κ1::KernelAffinity, κ2::StandardKernel)
+            if κ1.$op2_scalar == $op2_identity
+                $kernel_object(κ1.$scalar, κ1.k, κ2)
+            else
+                $kernel_object($identity, κ1, κ2)
+            end
+        end
+        $kernel_op(κ1::StandardKernel, κ2::KernelAffinity) = $kernel_op(κ2, κ1)
+    end
+end
+
 
 
 #===================================================================================================

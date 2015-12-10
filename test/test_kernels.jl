@@ -92,6 +92,29 @@ for kernelobj in additive_kernels
     end  # End floating point loop
 end  # End additive kernels loop
 
+info("Testing ", KernelComposition)
+for comp_obj in composition_classes
+    for kernel_obj in get(composition_pairs, comp_obj, "Error")
+        for T in FloatingPointTypes
+            kc = convert(CompositionClass{T}, (comp_obj)())
+            k = KernelComposition(kc, convert(Kernel{T}, kernel_obj()))
+            @test eltype(k) == T
+            @test eltype(convert(Kernel{Float32}, k))  == Float32
+            @test eltype(convert(Kernel{Float64}, k))  == Float64
+            @test eltype(convert(Kernel{BigFloat}, k)) == BigFloat
+            
+            @test MOD.attainszero(k) == MOD.attainszero(kc)
+            @test MOD.attainspositive(k) == MOD.attainspositive(kc)
+            @test MOD.attainsnegative(k) == MOD.attainsnegative(kc)
+            @test ismercer(k) === ismercer(kc)
+            @test isnegdef(k) === isnegdef(kc)
+
+            @test isa(MOD.description_string(k,true), AbstractString)
+            @test isa(MOD.description_string(k,false), AbstractString)
+        end
+    end
+end
+
 info("Testing ", KernelSum)
 for kernelobj1 in (SquaredDistanceKernel, RationalQuadraticKernel)
     for kernelobj2 in (ScalarProductKernel, ChiSquaredKernel)
@@ -108,16 +131,12 @@ for kernelobj1 in (SquaredDistanceKernel, RationalQuadraticKernel)
                 @test k.c == zero(T)
                 @test all(k.k .== kvec) || all(k.k .== reverse(kvec))
 
-                @test eltype(convert(KernelSum{Float32}, k))  == Float32
-                @test eltype(convert(KernelSum{Float64}, k))  == Float64
-                @test eltype(convert(KernelSum{BigFloat}, k)) == BigFloat
+                @test eltype(convert(Kernel{Float32}, k))  == Float32
+                @test eltype(convert(Kernel{Float64}, k))  == Float64
+                @test eltype(convert(Kernel{BigFloat}, k)) == BigFloat
 
                 @test ismercer(k) == (ismercer(k1) && ismercer(k2))
                 @test isnegdef(k) == (isnegdef(k1) && isnegdef(k2))
-                @test MOD.attainszero(k) == (MOD.attainszero(k1) && MOD.attainszero(k2) && k.c == 0)
-                @test MOD.ispositive(k) == (MOD.isnonnegative(k1) && MOD.isnonnegative(k2) && (
-                                            MOD.ispositive(k1) || MOD.ispositive(k2) || k.c > 0))
-                @test MOD.isnonnegative(k) == (MOD.isnonnegative(k1) && MOD.isnonnegative(k2))
 
                 @test isa(MOD.description_string(k,true), AbstractString)
                 @test isa(MOD.description_string(k,false), AbstractString)
@@ -144,10 +163,11 @@ for kernelobj1 in (SquaredDistanceKernel, RationalQuadraticKernel)
         end
     end
 end
-#=
+
+
 info("Testing ", KernelProduct)
 for kernelobj1 in (SquaredDistanceKernel, RationalQuadraticKernel)
-    for kernelobj2 in (ExponentialKernel, PolynomialKernel, LogKernel)
+    for kernelobj2 in (ScalarProductKernel, ChiSquaredKernel)
         for T in FloatingPointTypes
 
             k1 = convert(Kernel{T}, (kernelobj1)())
@@ -161,28 +181,16 @@ for kernelobj1 in (SquaredDistanceKernel, RationalQuadraticKernel)
                 @test k.a == one(T)
                 @test all(k.k .== kvec) || all(k.k .== reverse(kvec))
 
-                @test eltype(convert(KernelProduct{Float32},  k)) == Float32
-                @test eltype(convert(KernelProduct{Float64},  k)) == Float64
-                @test eltype(convert(KernelProduct{BigFloat}, k)) == BigFloat
+                @test eltype(convert(Kernel{Float32}, k))  == Float32
+                @test eltype(convert(Kernel{Float64}, k))  == Float64
+                @test eltype(convert(Kernel{BigFloat}, k)) == BigFloat
 
                 @test ismercer(k) == (ismercer(k1) && ismercer(k2))
-                @test isnegdef(k) == (isnegdef(k1) && isnegdef(k2))
-                @test attainszero(k) == (attainszero(k1) || attainszero(k2))
-                @test ispositive(k) == (ispositive(k1) && ispositive(k2))
-                @test isnonnegative(k) == (isnonnegative(k1) && isnonnegative(k2))
 
                 @test isa(MOD.description_string(k,true), AbstractString)
                 @test isa(MOD.description_string(k,false), AbstractString)
 
-                a = convert(T,3)
-
-                k = a * k1
-                @test k.a == a
-                @test k.k[1] == k1
-                @test (k1 * a).k[1] == k.k[1]
-                @test (k1 * a).a == k.a
-                @test (k * a).a == a^2
-                @test (a * k).a == a^2
+                a = 2one(T)
 
                 k = (k1 * a) * (k2 * a)
                 @test k.a == a^2
@@ -204,4 +212,3 @@ for kernelobj1 in (SquaredDistanceKernel, RationalQuadraticKernel)
         end
     end
 end
-=#
