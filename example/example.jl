@@ -2,12 +2,10 @@ using MLKernels
 
 GaussianKernel()
 
-κ = SquaredDistanceKernel()
+SquaredDistanceKernel()
 
-ϕ = ExponentialClass(2.0, 1.0)
-
-κ = SquaredDistanceKernel(1.0)
-
+ϕ = ExponentialClass(2.0, 1.0);
+κ = SquaredDistanceKernel(1.0);
 ψ = ϕ ∘ κ   # use \circ for '∘'
 
 ismercer(κ)

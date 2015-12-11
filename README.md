@@ -38,55 +38,30 @@ KernelComposition{Float64}(ϕ=Exponential(α=2.0,γ=1.0),κ=SquaredDistance(t=1.
 ```
 
 The Gaussian kernel is actually a specific case of a more general class of
-kernel. It is composition of scalar function and the square (Euclidean) 
-distance. The squared distance is itself a kernel:
+kernel. It is composition of scalar function and the squared (Euclidean) 
+distance, `SquaredDistanceKernel`, which itself is a kernel. The scalar function
+ referenced is referred to as the `ExponentialClass`, a subtype of the 
+`CompositionClass` type. Composition classes may be composed with a kernel to 
+yield a new kernel using the `∘` operator (shorthand for `KernelComposition`):
 
 ```julia
-help?> SquaredDistanceKernel
-search: SquaredDistanceKernel
+julia> ϕ = ExponentialClass(2.0, 1.0);
 
-  SquaredDistanceKernel(t) = Σⱼ(xⱼ-yⱼ)²ᵗ
+julia> κ = SquaredDistanceKernel(1.0);
 
-julia> κ = SquaredDistanceKernel(1.0)
-SquaredDistance{Float64}(t=1.0)
-```
-The scalar function referenced is referred to as the `ExponentialClass`, a
-subtype of the `KernelClass` abstract type:
-
-```julia
-julia> ExponentialClass <: CompositionClass
-true
-
-help?> CompositionClass
-search: CompositionClass KernelComposition CompositeException
-
-  CompositionClass: ϕ such that ϕ(κ(x,y)) is a kernel for some kernel κ.
-
-help?> ExponentialClass
-search: ExponentialClass ExponentiatedClass SquaredExponentialKernel
-
-  ExponentialClass(z;α,γ) = exp(-α⋅zᵞ)
-
-julia> ϕ = ExponentialClass(2.0, 1.0)
-Exponential{Float64}(α=2.0,γ=1.0)
-```
-
-Composition classes may be composed with an existing kernel to yield a brand new
-kernel using the ∘ which is shorthand for `KernelComposition`:
-
-```julia
-julia> ψ = ϕ ∘ κ
-KernelComposition{Float64}(ϕ=Exponential(α=2.0,γ=1.0),κ=SquaredDistance(t=1.0))
-
-julia> KernelComposition(ϕ, κ)
+julia> ψ = ϕ ∘ κ   # use \circ for '∘'
 KernelComposition{Float64}(ϕ=Exponential(α=2.0,γ=1.0),κ=SquaredDistance(t=1.0))
 ```
 
-MLKernels.jl focuses on the implementation of symmetric real-valued continuous
-kernel functions (a subset of the kernels studied in the literature). These 
-kernels fall into two groups:
+MLKernels.jl implements only symmetric real-valued continuous kernel functions 
+(a subset of the kernels studied in the literature). These kernels fall into two
+groups:
  - **Mercer Kernels** (positive definite kernels)
  - **Negative Definite Kernels**
+
+A negative definite kernels is equivalent to the conditionally positive definite
+kernels that are often discussed in machine learning literature. A conditionally
+positive definite kernel is simply the negation of a negative definite kernel.
 
 Returning to the example, the squared distance kernel is not a Mercer kernel 
 although the resulting Gaussian kernel *is* Mercer. Kernels may be inspected 
@@ -106,9 +81,7 @@ julia> isnegdef(ψ)
 false
 ```
 
-A negative definite kernels is equivalent to the conditionally positive definite
-kernels that are often discussed in machine learning literature. A conditionally
-positive definite kernel is simply the negation of a negative definite kernel.
+
 
 
 
