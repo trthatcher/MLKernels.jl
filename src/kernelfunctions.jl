@@ -72,19 +72,19 @@ function kernelmatrix{T<:AbstractFloat}(κ::Kernel{T}, X::Matrix{T}, is_trans::B
                                         store_upper::Bool = true, symmetrize::Bool = true)
     kernelmatrix!(init_pairwise(X, is_trans), κ, X, is_trans, store_upper, symmetrize)
 end
-function kernelmatrix{T<:AbstractFloat}(κ::Kernel{T}, X::Matrix{T}; is_trans::Bool = false, 
-                                        store_upper::Bool = true, symmetrize::Bool = true)
-    kernelmatrix(κ, X, is_trans, store_upper, symmetrize)
-end
+#function kernelmatrix{T<:AbstractFloat}(κ::Kernel{T}, X::Matrix{T}, is_trans::Bool = false, 
+#                                        store_upper::Bool = true, symmetrize::Bool = true)
+#    kernelmatrix(κ, X, is_trans, store_upper, symmetrize)
+#end
 
 function kernelmatrix{T<:AbstractFloat}(κ::Kernel{T}, X::Matrix{T}, Y::Matrix{T}, 
                                         is_trans::Bool = false)
     kernelmatrix!(init_pairwise(X, Y, is_trans), κ, X, Y, is_trans)
 end
-function kernelmatrix{T<:AbstractFloat}(κ::Kernel{T}, X::Matrix{T}, Y::Matrix{T},
-                                        is_trans::Bool = false)
-    kernelmatrix(κ, X, Y, is_trans)
-end
+#function kernelmatrix{T<:AbstractFloat}(κ::Kernel{T}, X::Matrix{T}, Y::Matrix{T},
+#                                        is_trans::Bool = false)
+#    kernelmatrix(κ, X, Y, is_trans)
+#end
 
 
 #==========================================================================
@@ -109,23 +109,23 @@ end
 
 # Apply phi to matrix elements
 function phi_matrix!{T<:AbstractFloat}(ϕ::CompositionClass{T}, K::Matrix{T})
-    @inbounds @simd for i = 1:length(X)
+    @inbounds @simd for i = 1:length(K)
         K[i] = phi(ϕ, K[i])
     end
-    X
+    K
 end
 
 function phi_square_matrix!{T<:AbstractFloat}(ϕ::CompositionClass{T}, K::Matrix{T}, store_upper::Bool)
     (n = size(K,1)) == size(K,2) || throw(DimensionMismatch("K must be square."))
     @inbounds for j = 1:n, i = store_upper ? (1:j) : (j:n)
-        X[i,j] = phi(ϕ, X[i,j])
+        K[i,j] = phi(ϕ, K[i,j])
     end
-    X
+    K
 end
 
 function kernelmatrix!{T<:AbstractFloat}(K::Matrix{T}, κ::KernelComposition{T}, X::Matrix{T}, 
                                          is_trans::Bool, store_upper::Bool, symmetrize::Bool)
-    kernelmatrix!(K, κ.k, X, is_trans, store_upper)
+    kernelmatrix!(K, κ.k, X, is_trans, store_upper, false)
     phi_square_matrix!(κ.phi, K, store_upper)
     symmetrize ? (store_upper ? syml!(K) : symu!(K)) : K
 end
@@ -142,38 +142,38 @@ end
 ==========================================================================#
 
 
-for (kernel_object, matrix_op, array_op, identity) in (
-        (:KernelProduct, :matrix_prod!, :scale!,     :1),
-        (:KernelSum,     :matrix_sum!,  :translate!, :0)
+for (kernel_object, matrix_op, array_op, identity, scalar) in (
+        (:KernelProduct, :matrix_prod!, :scale!,     :1, :a),
+        (:KernelSum,     :matrix_sum!,  :translate!, :0, :c)
     )
     @eval begin
 
         function kernelmatrix!{T<:AbstractFloat}(K::Matrix{T}, κ::$kernel_object{T}, X::Matrix{T}, 
                                                  is_trans::Bool, store_upper::Bool, 
                                                  symmetrize::Bool)
-            c = length(κ.k)
+            nk = length(κ.k)
             kernelmatrix!(K, κ.k[1], X, is_trans, store_upper, false)
-            if c > 1
+            if nk > 1
                 K_factor = similar(K)
-                for i = 2:c
+                for i = 2:nk
                     ($matrix_op)(K, kernelmatrix!(K_factor, κ.k[i], X, is_trans, store_upper, false), store_upper, false)
                 end
             end
             K = symmetrize ? (store_upper ? syml!(K) : symu!(K)) : K
-            κ.a == $identity ? K : ($array_op)(κ.a, K)
+            κ.$scalar == $identity ? K : ($array_op)(κ.$scalar, K)
         end
 
         function kernelmatrix!{T<:AbstractFloat}(K::Matrix{T}, κ::$kernel_object{T}, X::Matrix{T},
                                                  Y::Matrix{T}, is_trans::Bool)
-            c = length(κ.k)
+            nk = length(κ.k)
             kernelmatrix!(K, κ.k[1], X, Y, is_trans)
-            if c > 1
+            if nk > 1
                 K_factor = similar(K)
-                for i = 2:c
+                for i = 2:nk
                     ($matrix_op)(K, kernelmatrix!(K_factor, κ.k[i], X, Y, is_trans))
                 end
             end
-            κ.a == $identity ? K : ($array_op)(κ.a, K)
+            κ.$scalar == $identity ? K : ($array_op)(κ.$scalar, K)
         end
 
     end

@@ -11,6 +11,6 @@ end
 =#
 
 info("Testing ", nystrom)
-k = ExponentialKernel()
+k = GaussianKernel()
 X = rand(5,3)
 @test_approx_eq nystrom(k, X, collect(1:5)) kernelmatrix(k, X)

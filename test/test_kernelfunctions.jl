@@ -1,4 +1,3 @@
-
 info("Testing ", kernel)
 for T in FloatingPointTypes
 
@@ -22,48 +21,41 @@ for T in FloatingPointTypes
         @test (ARD(k,w))(x, y)       == MLKernels.pairwise(ARD(k,w), x, y)
     end
 
-    for kernelobj in composite_kernels
-        for base_kernelobj in get(composite_pairs, kernelobj, "error")
+    for kernel_comp in composition_classes
+        for kernel_obj in get(composition_pairs, kernel_comp, "error")
 
-            k_base = convert(Kernel{T}, (base_kernelobj)())
-            k = (kernelobj)(k_base)
+            k_base = convert(Kernel{T}, kernel_obj())
+            k_comp = convert(CompositionClass{T}, kernel_comp())
+            k =  KernelComposition(k_comp, k_base)
 
-            @test kernel(k, x[1], y[1]) == MLKernels.phi(k, MLKernels.pairwise(k_base, x[1], y[1]))
-            @test (k)(x[1], y[1])       == MLKernels.phi(k, MLKernels.pairwise(k_base, x[1], y[1]))
+            @test kernel(k, x[1], y[1]) == MLKernels.phi(k_comp, kernel(k_base, x[1], y[1]))
+            @test (k)(x[1], y[1])       == MLKernels.phi(k_comp, kernel(k_base, x[1], y[1]))
 
-            @test kernel(k, x, y) == MLKernels.phi(k, MLKernels.pairwise(k_base, x, y))
-            @test (k)(x, y)       == MLKernels.phi(k, MLKernels.pairwise(k_base, x, y))
+            @test kernel(k, x, y) == MLKernels.phi(k_comp, kernel(k_base, x, y))
+            @test (k)(x, y)       == MLKernels.phi(k_comp, kernel(k_base, x, y))
         end
     end
 
-    for kernelobj1 in (RationalQuadraticKernel, ExponentialKernel)
+    for kernelobj1 in (RationalQuadraticKernel, GaussianKernel)
         for kernelobj2 in (PolynomialKernel, MaternKernel)
             k1 = convert(Kernel{T}, (kernelobj1)())
             k2 = convert(Kernel{T}, (kernelobj2)())
 
             k = one(T) + k1 + k2
 
-            @test kernel(k, x[1], y[1]) == (MLKernels.phi(k1, MLKernels.pairwise(k1.k, x[1], y[1])) +
-                                            MLKernels.phi(k2, MLKernels.pairwise(k2.k, x[1], y[1])) + one(T))
-            @test (k)(x[1], y[1])       == (MLKernels.phi(k1, MLKernels.pairwise(k1.k, x[1], y[1])) +
-                                            MLKernels.phi(k2, MLKernels.pairwise(k2.k, x[1], y[1])) + one(T))
-
-            @test kernel(k, x, y) == (MLKernels.phi(k1, MLKernels.pairwise(k1.k, x, y)) +
-                                      MLKernels.phi(k2, MLKernels.pairwise(k2.k, x, y)) + one(T))
-            @test (k)(x, y)       == (MLKernels.phi(k1, MLKernels.pairwise(k1.k, x, y)) +
-                                      MLKernels.phi(k2, MLKernels.pairwise(k2.k, x, y)) + one(T))
+            @test kernel(k, x[1], y[1]) == kernel(k1, x[1], y[1]) + kernel(k2, x[1], y[1]) + one(T)
+            @test (k)(x[1], y[1])       == kernel(k1, x[1], y[1]) + kernel(k2, x[1], y[1]) + one(T)
+            
+            @test kernel(k, x, y) == kernel(k1, x, y) + kernel(k2, x, y) + one(T)
+            @test (k)(x, y)       == kernel(k1, x, y) + kernel(k2, x, y) + one(T)
 
             k = convert(T,2) * k1 * k2
 
-            @test kernel(k, x[1], y[1]) == (MLKernels.phi(k1, MLKernels.pairwise(k1.k, x[1], y[1])) *
-                                            MLKernels.phi(k2, MLKernels.pairwise(k2.k, x[1], y[1])) * convert(T,2))
-            @test (k)(x[1], y[1])       == (MLKernels.phi(k1, MLKernels.pairwise(k1.k, x[1], y[1])) *
-                                            MLKernels.phi(k2, MLKernels.pairwise(k2.k, x[1], y[1])) * convert(T,2))
+            @test kernel(k, x[1], y[1]) == kernel(k1, x[1], y[1]) * kernel(k2, x[1], y[1]) * 2one(T)
+            @test (k)(x[1], y[1])       == kernel(k1, x[1], y[1]) * kernel(k2, x[1], y[1]) * 2one(T)
 
-            @test kernel(k, x, y) == (MLKernels.phi(k1, MLKernels.pairwise(k1.k, x, y)) *
-                                      MLKernels.phi(k2, MLKernels.pairwise(k2.k, x, y)) * convert(T,2))
-            @test (k)(x, y)       == (MLKernels.phi(k1, MLKernels.pairwise(k1.k, x, y)) *
-                                      MLKernels.phi(k2, MLKernels.pairwise(k2.k, x, y)) * convert(T,2))
+            @test kernel(k, x, y) == kernel(k1, x, y) * kernel(k2, x, y) * (2*one(T))
+            @test (k)(x, y)       == kernel(k1, x, y) * kernel(k2, x, y) * (2*one(T))
         end
     end
 end
@@ -107,8 +99,9 @@ for T in FloatingPointTypes
     end
 
     for (kernelobj1, kernelobj2, kernelobj3) in (
-            (RationalQuadraticKernel, PolynomialKernel, ExponentialKernel),
-            (ChiSquaredKernel,        LogKernel,        PowerKernel)
+            (RationalQuadraticKernel, PolynomialKernel, GaussianKernel),
+            (ScalarProductKernel, MaternKernel, LaplacianKernel),
+            (ChiSquaredKernel, SquaredDistanceKernel, SineSquaredKernel)
         )
         k1 = convert(Kernel{T},(kernelobj1)())
         k2 = convert(Kernel{T},(kernelobj2)())
@@ -138,7 +131,7 @@ for T in FloatingPointTypes
     end
 
     for (kernelobj1, kernelobj2, kernelobj3) in (
-            (RationalQuadraticKernel, PolynomialKernel, ExponentialKernel),
+            (RationalQuadraticKernel, PolynomialKernel, GaussianKernel),
         )
         k1 = convert(Kernel{T},(kernelobj1)())
         k2 = convert(Kernel{T},(kernelobj2)())

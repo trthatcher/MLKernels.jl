@@ -76,7 +76,9 @@ end
 ===================================================================================================#
 
 # Nystrom method for Kernel Matrix approximation
-function nystrom!{T<:AbstractFloat,U<:Integer}(K::Matrix{T}, κ::Kernel{T}, X::Matrix{T}, s::Vector{U}, is_trans::Bool, store_upper::Bool, symmetrize::Bool)
+function nystrom!{T<:LinAlg.BlasReal,U<:Integer}(K::Matrix{T}, κ::Kernel{T}, X::Matrix{T}, 
+                                                 s::Vector{U}, is_trans::Bool, store_upper::Bool, 
+                                                 symmetrize::Bool)
     c = length(s)
     n = size(X, 1)
     C = is_trans ? kernelmatrix(κ, X[:,s], X, true) : kernelmatrix(κ, X[s,:], X, false)
@@ -85,14 +87,18 @@ function nystrom!{T<:AbstractFloat,U<:Integer}(K::Matrix{T}, κ::Kernel{T}, X::M
     @inbounds for i = 1:c
         D[i] = D[i] < tol ? zero(T) : 1/sqrt(D[i])
     end
-    BLAS.syrk!(store_upper ? 'U' : 'L', 'N', one(T), BLAS.gemm('T', 'N', C, scale!(V, D)), zero(T), K)
+    BLAS.syrk!(store_upper ? 'U' : 'L', 'N', one(T), C'scale!(V, D), zero(T), K)
     symmetrize ? (store_upper ?  syml!(K) : symu!(K)) : K
 end
 
-function nystrom{T<:AbstractFloat,U<:Integer}(κ::Kernel{T}, X::Matrix{T}, s::Array{U}, is_trans::Bool = false, store_upper::Bool = true, symmetrize::Bool = true)
+function nystrom{T<:AbstractFloat,U<:Integer}(κ::Kernel{T}, X::Matrix{T}, s::Array{U}, 
+                                              is_trans::Bool = false, store_upper::Bool = true, 
+                                              symmetrize::Bool = true)
     nystrom!(init_pairwise(X, is_trans), κ, X, s, is_trans, store_upper, symmetrize)
 end
 
-function nystrom{T<:AbstractFloat,U<:Integer}(κ::Kernel{T}, X::Matrix{T}, s::Array{U}; is_trans::Bool = false, store_upper::Bool = true, symmetrize::Bool = true)
+function nystrom{T<:AbstractFloat,U<:Integer}(κ::Kernel{T}, X::Matrix{T}, s::Array{U}; 
+                                              is_trans::Bool = false, store_upper::Bool = true, 
+                                              symmetrize::Bool = true)
     nystrom(κ, X, s, is_trans, store_upper, symmetrize)
 end
