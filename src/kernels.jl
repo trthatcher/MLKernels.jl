@@ -252,7 +252,7 @@ function exp{T<:AbstractFloat}(ψ::KernelAffinity{T})
 end
 
 function tanh{T<:AbstractFloat}(ψ::KernelAffinity{T})
-    KernelComposition(SigmoidClass(ψ.a, ψ.c), κ)
+    KernelComposition(SigmoidClass(ψ.a, ψ.c), ψ.k)
 end
 
 
@@ -274,9 +274,9 @@ immutable KernelProduct{T<:AbstractFloat} <: KernelOperation{T}
     end
 end
 
-attainszero(κ::KernelProduct) = any(attainszero, κ.k)
+attainszero(ψ::KernelProduct) = any(attainszero, ψ.k)
 attainspositive(ψ::KernelProduct) = any(attainspositive, ψ.k)
-attainsnegative(Ψ::KernelProduct) = any(attainsnegative, ψ.k)
+attainsnegative(ψ::KernelProduct) = any(attainsnegative, ψ.k)
 
 # Kernel Sum
 

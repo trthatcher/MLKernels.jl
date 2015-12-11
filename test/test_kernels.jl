@@ -123,6 +123,24 @@ for kernelobj in (additive_kernels..., composition_kernels...)
         a = 2one(T)
         c = 3one(T)
 
+        k = KernelAffinity(a, c, k1)
+        @test k.a == a
+        @test k.c == c
+
+        @test eltype(convert(KernelAffinity{Float16},  k)) == Float16
+        @test eltype(convert(KernelAffinity{Float32},  k)) == Float32
+        @test eltype(convert(KernelAffinity{Float64},  k)) == Float64
+        @test eltype(convert(KernelAffinity{BigFloat}, k)) == BigFloat
+
+        @test MOD.attainszero(k) == MOD.attainszero(k.k)
+        @test MOD.attainspositive(k) == MOD.attainspositive(k.k)
+        @test MOD.attainsnegative(k) == MOD.attainsnegative(k.k)
+        @test ismercer(k) === ismercer(k.k)
+        @test isnegdef(k) === isnegdef(k.k)
+
+        @test isa(MOD.description_string(k,true), AbstractString)
+        @test isa(MOD.description_string(k,false), AbstractString)
+
         k = k1 + c
         @test k.a == one(T)
         @test k.c == c
@@ -155,6 +173,14 @@ for kernelobj in (additive_kernels..., composition_kernels...)
         @test k.a == a^2
         @test k.c == a*c
 
+        k = a * convert(Kernel{T}, SquaredDistanceKernel()) + c
+        @test k^(one(T)/2) == KernelComposition(PowerClass(a, c, one(T)/2), k.k)
+        
+        k = a * convert(Kernel{T}, ScalarProductKernel()) + c
+        @test k^3     == KernelComposition(PolynomialClass(a, c, 3one(T)), k.k)
+        @test exp(k)  == KernelComposition(ExponentiatedClass(a, c), k.k)
+        @test tanh(k) == KernelComposition(SigmoidClass(a, c), k.k)
+
     end
 end
 
@@ -181,6 +207,11 @@ for kernelobj1 in (SquaredDistanceKernel, RationalQuadraticKernel)
 
                 @test ismercer(k) == (ismercer(k1) && ismercer(k2))
                 @test isnegdef(k) == (isnegdef(k1) && isnegdef(k2))
+
+                @test MOD.attainszero(k) == (all(MOD.attainszero, kvec) && k.c == 0) || (
+                                         any(MOD.attainspositive, kvec) && any(MOD.attainsnegative, kvec))
+                @test MOD.attainspositive(k) == any(MOD.attainspositive, kvec)
+                @test MOD.attainsnegative(k) == any(MOD.attainsnegative, kvec)
 
                 @test isa(MOD.description_string(k,true), AbstractString)
                 @test isa(MOD.description_string(k,false), AbstractString)
@@ -230,6 +261,10 @@ for kernelobj1 in (SquaredDistanceKernel, RationalQuadraticKernel)
                 @test eltype(convert(Kernel{BigFloat}, k)) == BigFloat
 
                 @test ismercer(k) == (ismercer(k1) && ismercer(k2))
+
+                @test MOD.attainszero(k) == any(MOD.attainszero, kvec)
+                @test MOD.attainspositive(k) == any(MOD.attainspositive, kvec)
+                @test MOD.attainsnegative(k) == any(MOD.attainsnegative, kvec)
 
                 @test isa(MOD.description_string(k,true), AbstractString)
                 @test isa(MOD.description_string(k,false), AbstractString)

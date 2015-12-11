@@ -2,7 +2,7 @@
 using Base.Test
 importall MLKernels
 
-FloatingPointTypes = (Float32, Float64, BigFloat)
+FloatingPointTypes = (Float32, Float64)
 MOD = MLKernels
 
 include("reference.jl")
