@@ -1,110 +1,127 @@
 # Machine Learning Kernels
 
+[![Documentation Status](https://readthedocs.org/projects/mlkernels/badge/?version=latest)](http://mlkernels.readthedocs.org/en/latest/?badge=latest)
 [![Build Status](https://travis-ci.org/trthatcher/MLKernels.jl.svg?branch=master)](https://travis-ci.org/trthatcher/MLKernels.jl)
 [![Coverage Status](https://coveralls.io/repos/trthatcher/MLKernels.jl/badge.svg)](https://coveralls.io/r/trthatcher/MLKernels.jl)
-[![Documentation Status](https://readthedocs.org/projects/mlkernels/badge/?version=latest)](http://mlkernels.readthedocs.org/en/latest/?badge=latest)
 
-**MLKernels.jl** is a Julia package for kernel functions (or covariance functions in Gaussian 
-processes) that are used in the kernel methods of machine learning. The goal is to provide a Julia
-datatype for machine learning kernels and an efficient set of methods to calculate or approximate 
-kernel matrices. The package has no dependencies beyond base Julia.
+**MLKernels.jl** is a Julia package for Mercer kernel functions (or the 
+covariance functions used in Gaussian processes) that are used in the kernel 
+methods of machine learning. This package provides a flexible datatype for 
+representing and constructing machine learning kernelsas well as an efficient
+set of methods to compute or approximate kernel matrices. The package has no 
+dependencies beyond base Julia.
 
  - **Documentation:** http://mlkernels.readthedocs.org/
 
 ### Getting Started
 
-Consistent with traditional literature on kernels, kernels come in two flavours:
- - **Mercer Kernels** (Continuous Positive Definite Kernels)
+MLKernels.jl comes with a number of pre-defined kernel functions. For example, 
+one of the most popular kernels is the Gaussian kernel (also known as the radial
+basis kernel or squared exponential covariance function). The code documentation
+can be used to learn more about the parametric forms of kernels using the `?` 
+command and searching for the kernel name:
+
+```julia
+julia> using MLKernels
+
+help?> GaussianKernel
+search: GaussianKernel
+
+  GaussianKernel(α) = exp(-α⋅‖x-y‖²)
+```
+The Gaussian Kernel has one scaling parameter `α`. We may instantiate the kernel
+using:
+
+```julia
+julia> GaussianKernel(2.0)
+KernelComposition{Float64}(ϕ=Exponential(α=2.0,γ=1.0),κ=SquaredDistance(t=1.0))
+```
+
+The Gaussian kernel is actually a specific case of a more general class of
+kernel. It is composition of scalar function and the square (Euclidean) 
+distance. The squared distance is itself a kernel:
+
+```julia
+help?> SquaredDistanceKernel
+search: SquaredDistanceKernel
+
+  SquaredDistanceKernel(t) = Σⱼ(xⱼ-yⱼ)²ᵗ
+
+julia> κ = SquaredDistanceKernel(1.0)
+SquaredDistance{Float64}(t=1.0)
+```
+The scalar function referenced is referred to as the `ExponentialClass`, a
+subtype of the `KernelClass` abstract type:
+
+```julia
+julia> ExponentialClass <: CompositionClass
+true
+
+help?> CompositionClass
+search: CompositionClass KernelComposition CompositeException
+
+  CompositionClass: ϕ such that ϕ(κ(x,y)) is a kernel for some kernel κ.
+
+help?> ExponentialClass
+search: ExponentialClass ExponentiatedClass SquaredExponentialKernel
+
+  ExponentialClass(z;α,γ) = exp(-α⋅zᵞ)
+
+julia> ϕ = ExponentialClass(2.0, 1.0)
+Exponential{Float64}(α=2.0,γ=1.0)
+```
+
+Composition classes may be composed with an existing kernel to yield a brand new
+kernel using the ∘ which is shorthand for `KernelComposition`:
+
+```julia
+julia> ψ = ϕ ∘ κ
+KernelComposition{Float64}(ϕ=Exponential(α=2.0,γ=1.0),κ=SquaredDistance(t=1.0))
+
+julia> KernelComposition(ϕ, κ)
+KernelComposition{Float64}(ϕ=Exponential(α=2.0,γ=1.0),κ=SquaredDistance(t=1.0))
+```
+
+MLKernels.jl focuses on the implementation of symmetric real-valued continuous
+kernel functions (a subset of the kernels studied in the literature). These 
+kernels fall into two groups:
+ - **Mercer Kernels** (positive definite kernels)
  - **Negative Definite Kernels**
 
-Negative definite kernels are equivalent to conditionally positive definite kernels that are often found in Machine Learning literature. To convert a negative definite kernel to a conditionally positive definite kernel, simply multiply the result of the kernel function by -1.
+Returning to the example, the squared distance kernel is not a Mercer kernel 
+although the resulting Gaussian kernel *is* Mercer. Kernels may be inspected 
+using the `ismercer` and `isnegdef` functions:
 
-Kernels are further broken into three main types:
+```julia
+julia> ismercer(κ)
+false
 
- - **Base Kernels**: These are simple kernels that serve as building blocks for more complex kernels. They are easily extended.
- - **Composite Kernels**: These kernels are a scalar transformation of a Base Kernel. As a result, they are not standalone; they require a base kernel. Most kernels with widespread usage fall into this category.
- - **Combination Kernels**: These kernels are the result of addition or multiplication of Base or Composite kernels.
+julia> isnegdef(κ)
+true
 
-Base kernels can be instantiated on their own. The following chart illustrates the possible base kernel and composite kernel combinations:
+julia> ismercer(ψ)
+true
 
-<table>
-  <tr>
-    <th rowspan="2">Composite Kernels</th>
-    <th align="center" colspan="5">Base Kernels</th>
-  </tr>
-  <tr>
-    <td align="center">Squared Distance</td>
-    <td align="center">Chi Squared</td>
-    <td align="center">Sine Squared</td>
-    <td align="center">Scalar Product</td>
-    <td align="center">Mercer Sigmoid</td>
-  </tr>
-  <tr>
-    <td align="center">Power Kernel</td>
-    <td align="center">&#10004;</td>
-    <td align="center">&#10004;</td>
-    <td align="center">&#10004;</td>
-    <td align="center"></td>
-    <td align="center"></td>
-  </tr>
-  <tr>
-    <td align="center">Log Kernel</td>
-    <td align="center">&#10004;</td>
-    <td align="center">&#10004;</td>
-    <td align="center">&#10004;</td>
-    <td align="center"></td>
-    <td align="center"></td>
-  </tr>
-  <tr>
-    <td align="center">Exponential Kernel</td>
-    <td align="center">&#10004;</td>
-    <td align="center">&#10004;</td>
-    <td align="center">&#10004;</td>
-    <td align="center"></td>
-    <td align="center"></td>
-  </tr>
-  <tr>
-    <td align="center">Rational Quadratic Kernel</td>
-    <td align="center">&#10004;</td>
-    <td align="center">&#10004;</td>
-    <td align="center">&#10004;</td>
-    <td align="center"></td>
-    <td align="center"></td>
-  </tr>
-  <tr>
-    <td align="center">Matern Kernel</td>
-    <td align="center">&#10004;</td>
-    <td align="center">&#10004;</td>
-    <td align="center">&#10004;</td>
-    <td align="center"></td>
-    <td align="center"></td>
-  </tr>
-  <tr>
-    <td align="center">Polynomial Kernel</td>
-    <td align="center"></td>
-    <td align="center"></td>
-    <td align="center"></td>
-    <td align="center">&#10004;</td>
-    <td align="center">&#10004;</td>
-  </tr>
-  <tr>
-    <td align="center">ExponentiatedKernel</td>
-    <td align="center"></td>
-    <td align="center"></td>
-    <td align="center"></td>
-    <td align="center">&#10004;</td>
-    <td align="center">&#10004;</td>
-  </tr>
-  <tr>
-    <td align="center">Sigmoid Kernel*</td>
-    <td align="center"></td>
-    <td align="center"></td>
-    <td align="center"></td>
-    <td align="center">&#10004;</td>
-    <td align="center">&#10004;</td>
-  </tr>
-</table>
-\**Not a true kernel*
+julia> isnegdef(ψ)
+false
+```
+
+A negative definite kernels is equivalent to the conditionally positive definite
+kernels that are often discussed in machine learning literature. A conditionally
+positive definite kernel is simply the negation of a negative definite kernel.
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 Base Kernels are available as **Automatic Relevance Determination** (ARD) Kernels which act as a separate scaling constant for each element-wise operation on the inputs. For the dot product and the squared distance kernel, this corresponds to a linear scaling of each of the dimensions.
 

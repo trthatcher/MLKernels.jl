@@ -3,6 +3,7 @@
   k(x,y) = (x-y)²ᵗ    x ∈ ℝ, y ∈ ℝ, t ∈ (0,1]
 ==========================================================================#
 
+doc"`SquaredDistanceKernel(t)` = Σⱼ(xⱼ-yⱼ)²ᵗ"
 immutable SquaredDistanceKernel{T<:AbstractFloat,CASE} <: AdditiveKernel{T} 
     t::T
     function SquaredDistanceKernel(t::T)
