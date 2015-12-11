@@ -155,9 +155,7 @@ end
 
 # Special Compositions
 
-|>(κ::Kernel, ϕ::CompositionClass) = KernelComposition(ϕ, κ)
-<|(ϕ::CompositionClass, κ::Kernel) = KernelComposition(ϕ, κ)
-∘ = <|
+∘(ϕ::CompositionClass, κ::Kernel) = KernelComposition(ϕ, κ)
 
 function ^{T<:AbstractFloat}(κ::Kernel{T}, d::Integer)
     KernelComposition(PolynomialClass(one(T), zero(T), convert(T,d)), κ)

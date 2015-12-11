@@ -96,23 +96,40 @@ info("Testing ", KernelComposition)
 for comp_obj in composition_classes
     for kernel_obj in get(composition_pairs, comp_obj, "Error")
         for T in FloatingPointTypes
-            kc = convert(CompositionClass{T}, (comp_obj)())
-            k = KernelComposition(kc, convert(Kernel{T}, kernel_obj()))
+            k_comp = convert(CompositionClass{T}, (comp_obj)())
+            k_base = convert(Kernel{T}, kernel_obj())
+            k = KernelComposition(k_comp, k_base)
+
+            @test k == k_comp ∘ k_base
+
             @test eltype(k) == T
             @test eltype(convert(Kernel{Float32}, k))  == Float32
             @test eltype(convert(Kernel{Float64}, k))  == Float64
             @test eltype(convert(Kernel{BigFloat}, k)) == BigFloat
             
-            @test MOD.attainszero(k) == MOD.attainszero(kc)
-            @test MOD.attainspositive(k) == MOD.attainspositive(kc)
-            @test MOD.attainsnegative(k) == MOD.attainsnegative(kc)
-            @test ismercer(k) === ismercer(kc)
-            @test isnegdef(k) === isnegdef(kc)
+            @test MOD.attainszero(k) == MOD.attainszero(k_comp)
+            @test MOD.attainspositive(k) == MOD.attainspositive(k_comp)
+            @test MOD.attainsnegative(k) == MOD.attainsnegative(k_comp)
+            @test ismercer(k) === ismercer(k_comp)
+            @test isnegdef(k) === isnegdef(k_comp)
 
             @test isa(MOD.description_string(k,true), AbstractString)
             @test isa(MOD.description_string(k,false), AbstractString)
+
         end
     end
+end
+
+for T in FloatingPointTypes
+
+    k = convert(Kernel{T}, ScalarProductKernel())
+    @test k^3     == KernelComposition(PolynomialClass(one(T), zero(T), 3one(T)), k)
+    @test exp(k)  == KernelComposition(ExponentiatedClass(one(T), zero(T)), k)
+    @test tanh(k) == KernelComposition(SigmoidClass(one(T), zero(T)), k)
+
+    k = convert(Kernel{T}, SquaredDistanceKernel())
+    @test k^(one(T)/2) == KernelComposition(PowerClass(one(T), zero(T), one(T)/2), k)
+
 end
 
 info("Testing ", KernelAffinity)
