@@ -111,14 +111,15 @@ n_points = 50
 n_contours = 20
 
 # Gaussian Kernel
-U = generate_circles((0.0,0.0), 2.0, n_points, n_contours)
-K = kernelmatrix(GaussianKernel(), U)
+U = generate_circles((0.0,0.0), 1.0, n_points, n_contours)
+κ = PeriodicKernel() + GaussianKernel()
+K = kernelmatrix(κ, U)
 W = kpca_3d(centerkernelmatrix(K))
 X, Y, Z = coordinate_matrices(K*W, n_points, n_contours)
 PyPlot.figure("Gaussian Kernel")
 tick_params(axis="both", which="both", bottom="off", top="off")
 PyPlot.plot_surface(X, Y, Z, rstride=1, cstride=1, cmap=PyPlot.ColorMap("Greys"))
-C2 = kernelmatrix(GaussianKernel(), generate_points(150, (.5,.5), 1.0), U) * W
+C2 = kernelmatrix(κ, generate_points(150, (.0,.0), 1.0), U) * W
 PyPlot.scatter3D(vec(C2[:,1]), vec(C2[:,2]), vec(C2[:,3]), c="r")
 
 # Polynomial Kernel
