@@ -11,14 +11,19 @@ representing and constructing machine learning kernels as well as an efficient
 set of methods to compute or approximate kernel matrices. The package has no 
 dependencies beyond base Julia.
 
+<p align="center"><img alt="Original Data" src="example/img/original.png"  /></p>
+
 Through the use of kernel functions, kernel-based methods may operate in a high
 (potentially infinite) dimensional implicit feature space without explicitly
-mapping data from the original feature space to the new feature space. The
-following example illustrates how kernel PCA may be utilised to transform 
-non-linearly separable data to linearly separable data:
+mapping data from the original feature space to the new feature space. For
+example, through the use of Kernel PCA, the non linearly separable data above
+may be projected from the implicit kernel feature space onto a lower dimensional
+space:
 
-<p align="center"><img alt="Original Data" src="example/img/original.png"  /></p>
 <p align="center"><img alt="Transformed Data" src="example/img/wireframe.png"  /></p>
+
+This allows for the data to be linearly separated using a hyperplane:
+
 <p align="center"><img alt="Separating Hyperplane" src="example/img/separatinghyperplane.png"  /></p>
 
 The above plots were generated using PyPlot.jl and the code is available in
