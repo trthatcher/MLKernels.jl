@@ -11,27 +11,28 @@ representing and constructing machine learning kernels as well as an efficient
 set of methods to compute or approximate kernel matrices. The package has no 
 dependencies beyond base Julia.
 
-<p align="center"><img alt="Original Data" src="example/img/original.png"  /></p>
+## Getting Started
+
+#### Visualization
 
 Through the use of kernel functions, kernel-based methods may operate in a high
 (potentially infinite) dimensional implicit feature space without explicitly
-mapping data from the original feature space to the new feature space. For
+mapping data from the original feature space to the new feature space. For 
 example, through the use of Kernel PCA, the non linearly separable data above
-may be projected from the implicit kernel feature space onto a lower dimensional
-space:
+may be mapped to another space where it is linearly separable:
 
+<p align="center"><img alt="Original Data" src="example/img/original.png"  /></p>
 <p align="center"><img alt="Transformed Data" src="example/img/wireframe.png"  /></p>
 
 This allows for the data to be linearly separated using a hyperplane:
 
 <p align="center"><img alt="Separating Hyperplane" src="example/img/separatinghyperplane.png"  /></p>
 
-The above plots were generated using PyPlot.jl and the code is available in
-visualization.jl.
+The above plots were generated using
+[PyPlot.jl](https://github.com/stevengj/PyPlot.jl). The visualization code is
+available in [visualization.jl](/example/visualization.jl).
 
-## Getting Started
-
-### Constructing Kernels
+#### Constructing Kernels
 
 **MLKernels.jl** comes with a number of pre-defined kernel functions. For 
 example, one of the most popular kernels is the Gaussian kernel (also known as 
