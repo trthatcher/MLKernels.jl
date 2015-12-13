@@ -33,7 +33,7 @@ The above plots were generated using
 [PyPlot.jl](https://github.com/stevengj/PyPlot.jl). The visualization code is
 available in [visualization.jl](/example/visualization.jl).
 
-## Getting Started
+## Getting Started ([example.jl](example/example.j))
 
 #### Constructing Kernels
 
@@ -198,3 +198,57 @@ julia> kernelmatrix(ψ, [X; Y])[1:5, 6:9]
 ```
 
 #### Kernel Operations
+
+All kernels may be translated and scaled by positive real numbers. Scaling or
+translating a `Kernel` object will create a `KernelAffinity` object:
+
+```julia
+julia> κ1 = GaussianKernel();
+
+julia> 2κ1 + 3
+Affine{Float64}(a=2.0,c=3.0,κ=KernelComposition{Float64}(ϕ=Exponential(α=1.0,γ=1.0),κ=SquaredDistance(t=1.0)))
+```
+
+*Mercer* and *negative definite kernels* may be added together to construct a
+`KernelSum` object that may be used like any other kernel:
+
+```julia
+julia> κ2 = PolynomialKernel();
+
+julia> κ1 + κ2
+KernelSum{Float64}(KernelComposition(ϕ=Exponential(α=1.0,γ=1.0),κ=SquaredDistance(t=1.0)), KernelComposition(ϕ=Polynomial(a=1.0,c=1.0,d=3),κ=ScalarProduct()))
+```
+
+*Mercer kernels* may also be multiplied together to create a `KernelProduct`
+object:
+
+```julia
+julia> κ1 * κ2
+KernelProduct{Float64}(KernelComposition(ϕ=Exponential(α=1.0,γ=1.0),κ=SquaredDistance(t=1.0)), KernelComposition(ϕ=Polynomial(a=1.0,c=1.0,d=3),κ=ScalarProduct()))
+```
+
+Several other operations are defined that act as shortcuts for pre-defined
+kernels:
+
+```julia
+julia> κ3 = SineSquaredKernel();
+
+julia> κ3^0.5
+KernelComposition{Float64}(ϕ=Power(a=1.0,c=0.0,γ=0.5),κ=SineSquared(p=3.141592653589793,t=1.0))
+
+julia> κ4 = 2ScalarProductKernel() + 3;
+
+julia> κ4^3
+KernelComposition{Float64}(ϕ=Polynomial(a=2.0,c=3.0,d=3),κ=ScalarProduct())
+
+julia> exp(κ4)
+KernelComposition{Float64}(ϕ=Exponentiated(a=2.0,c=3.0),κ=ScalarProduct())
+
+julia> tanh(κ4)
+KernelComposition{Float64}(ϕ=Sigmoid(a=2.0,c=3.0),κ=ScalarProduct())
+```
+
+#### Documentation
+
+Further [**Documentation**](http://http://mlkernels.readthedocs.org/en/latest/)
+is available on Read the Docs. 

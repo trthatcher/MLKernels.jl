@@ -53,6 +53,6 @@ kernelmatrix(ψ, [X; Y])[1:5, 6:9]
 
 κ4^3
 
-exp(k4)
+exp(κ4)
 
 tanh(κ4)
