@@ -250,5 +250,5 @@ KernelComposition{Float64}(ϕ=Sigmoid(a=2.0,c=3.0),κ=ScalarProduct())
 
 #### Documentation
 
-Further [**Documentation**](http://http://mlkernels.readthedocs.org/en/latest/)
+Further [**Documentation**](http://mlkernels.readthedocs.org/en/latest/)
 is available on Read the Docs. 
