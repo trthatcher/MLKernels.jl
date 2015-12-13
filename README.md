@@ -7,19 +7,26 @@
 **MLKernels.jl** is a Julia package for Mercer kernel functions (or the 
 covariance functions used in Gaussian processes) that are used in the kernel 
 methods of machine learning. This package provides a flexible datatype for 
-representing and constructing machine learning kernelsas well as an efficient
+representing and constructing machine learning kernels as well as an efficient
 set of methods to compute or approximate kernel matrices. The package has no 
 dependencies beyond base Julia.
 
+Through the use of kernel functions, kernel-based methods may operate in a high
+(potentially infinite) dimensional implicit feature space without explicitly
+mapping data from the original feature space to the new feature space. The
+following example illustrates how kernel PCA may be utilised to transform 
+non-linearly separable data to linearly separable data:
 
-<p align="center"><img src="example/img/original.png"  /></p>
-<p align="center">![Transformed Data](example/img/wireframe.png)</p>
-<p align="center">![Separating Hyperplane](example/img/separatinghyperplane.png)</p>
+<p align="center"><img alt="Original Data" src="example/img/original.png"  /></p>
+<p align="center"><img alt="Transformed Data" src="example/img/wireframe.png"  /></p>
+<p align="center"><img alt="Separating Hyperplane" src="example/img/separatinghyperplane.png"  /></p>
 
+The above plots were generated using PyPlot.jl and the code is available in
+visualization.jl.
 
-### Getting Started
+## Getting Started
 
-##### Constructing Kernels
+### Constructing Kernels
 
 **MLKernels.jl** comes with a number of pre-defined kernel functions. For 
 example, one of the most popular kernels is the Gaussian kernel (also known as 
@@ -102,131 +109,7 @@ julia> ARD(κ, w)
 ARD{Float64}(κ=SquaredDistance(t=1.0),w=[0.358,0.924,0.034,0.11,0.21])
 ```
 
-##### Kernel Functions
+#### Kernel Functions
 
 
-##### Kernel Operations
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
- A kernel can be constructed using one of the many predefined kernels. Once a kernel has been constructed, it can be passed to the `kernel` function and used to compute kernel function of two vectors. For example, the simplest base kernel is the scalar (dot) product kernel:
-
-```julia
-julia> κ = ScalarProductKernel()
-ScalarProductKernel{Float64}()
-
-julia> x,y = (10rand(3),10rand(3))
-([4.5167,7.60119,0.692922],[7.46812,0.605204,9.39787])
-
-julia> kernel(κ,x,y)
-44.843518824558856
-
-julia> dot(x,y)
-44.843518824558856
-```
-
-Several other base kernels have been defined. For example, the squared distance kernel is the squared l2 norm:
-
-```julia
-julia> κ = SquaredDistanceKernel()
-SquaredDistanceKernel{Float64}(t=1.0)
-
-julia> kernel(κ,x,y)
-133.43099175980925
-
-julia> dot(x.-y,x.-y)
-133.43099175980925
-```
-A subset of the base kernels, known as Additive Kernels, are also available as Automatic Relevance Determination kernels. If the kernel function consists of a sum of elementwise functions applied to each dimension, then it is amenable to automatic relevance determination. Continuing on with the squared distance kernel:
-
-```julia
-julia> SquaredDistanceKernel <: AdditiveKernel
-true
-
-julia> w = 10rand(3)
-3-element Array{Float64,1}:
- 9.29903
- 1.24022
- 3.21233
-
-julia> ψ = ARD(κ,w)
-ARD{Float64}(κ=SquaredDistanceKernel(t=1.0),w=[9.29903,1.24022,3.21233])
-
-julia> kernel(ψ,x,y)
-1610.469072503976
-
-julia> dot((x.-y).*w,(x.-y).*w)
-1610.4690725039757
-```
-
-Base kernels can be extended using composite kernels. These kernels are a function of a base kernel. For example, the Gaussian Kernel (Radial Basis Kernel) may be constructed in the following way:
-
-```julia
-julia> ϕ = ExponentialKernel(κ)
-ExponentialKernel{Float64}(κ=SquaredDistanceKernel(t=1.0),α=1.0,γ=1.0)
-
-julia> GaussianKernel()
-ExponentialKernel{Float64}(κ=SquaredDistanceKernel(t=1.0),α=1.0,γ=1.0)
-```
-
-To compute a kernel matrix:
-
-```
-julia> X = rand(5,3);
-
-julia> kernelmatrix(ϕ, X)
-5x5 Array{Float64,2}:
- 1.0       0.710224  0.353483  0.858427  0.704625
- 0.710224  1.0       0.743461  0.799072  0.713864
- 0.353483  0.743461  1.0       0.584813  0.284877
- 0.858427  0.799072  0.584813  1.0       0.526931
- 0.704625  0.713864  0.284877  0.526931  1.0     
-```
-
-This assumes that each row of X is an observation. If observations are stored as columns, use `'T'` (default is `'N'`) for the first argument:
-
-```julia
-julia> kernelmatrix(ϕ, X, 'T')
-3x3 Array{Float64,2}:
- 1.0       0.617104  0.245039
- 0.617104  1.0       0.408998
- 0.245039  0.408998  1.0   
-```
-
-One key property of kernels is whether or not they are Mercer kernels or negative definite kernels. The functions `ismercer` and `isnegdef` can be used to test whether or not a kernel is Mercer or negative definite:
-
-```julia
-julia> ismercer(SquaredDistanceKernel())
-false
-
-julia> isnegdef(SquaredDistanceKernel())
-true
-
-julia> ismercer(ScalarProductKernel())
-true
-
-julia> isnegdef(ScalarProductKernel())
-false
-```
-
-Note that the definity of a base kernel does not imply anything about the definity of the composite kernel. For example, the Gaussian Kernel is Mercer but the underlying Squared Distance base kernel is negative definite:
-
-```julia
-julia> ismercer(GaussianKernel())
-true
-
-julia> isnegdef(GaussianKernel())
-false
-```
+#### Kernel Operations
