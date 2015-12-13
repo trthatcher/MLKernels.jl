@@ -12,7 +12,7 @@ set of methods to compute or approximate kernel matrices. The package has no
 dependencies beyond base Julia.
 
 
-<p align="center">![Original Data](example/img/original.png)</p>
+<p align="center"><img src="example/img/original.png"  /></p>
 <p align="center">![Transformed Data](example/img/wireframe.png)</p>
 <p align="center">![Separating Hyperplane](example/img/separatinghyperplane.png)</p>
 
