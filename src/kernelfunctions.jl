@@ -72,19 +72,11 @@ function kernelmatrix{T<:AbstractFloat}(κ::Kernel{T}, X::Matrix{T}, is_trans::B
                                         store_upper::Bool = true, symmetrize::Bool = true)
     kernelmatrix!(init_pairwise(X, is_trans), κ, X, is_trans, store_upper, symmetrize)
 end
-#function kernelmatrix{T<:AbstractFloat}(κ::Kernel{T}, X::Matrix{T}, is_trans::Bool = false, 
-#                                        store_upper::Bool = true, symmetrize::Bool = true)
-#    kernelmatrix(κ, X, is_trans, store_upper, symmetrize)
-#end
 
 function kernelmatrix{T<:AbstractFloat}(κ::Kernel{T}, X::Matrix{T}, Y::Matrix{T}, 
                                         is_trans::Bool = false)
     kernelmatrix!(init_pairwise(X, Y, is_trans), κ, X, Y, is_trans)
 end
-#function kernelmatrix{T<:AbstractFloat}(κ::Kernel{T}, X::Matrix{T}, Y::Matrix{T},
-#                                        is_trans::Bool = false)
-#    kernelmatrix(κ, X, Y, is_trans)
-#end
 
 
 #==========================================================================

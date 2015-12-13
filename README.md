@@ -11,15 +11,21 @@ representing and constructing machine learning kernelsas well as an efficient
 set of methods to compute or approximate kernel matrices. The package has no 
 dependencies beyond base Julia.
 
- - **Documentation:** http://mlkernels.readthedocs.org/
+
+![Original Data](example/img/original.png)
+![Transformed Data](example/img/wireframe.png)
+![Separating Hyperplane](example/img/separatinghyperplane.png)
+
 
 ### Getting Started
 
-MLKernels.jl comes with a number of pre-defined kernel functions. For example, 
-one of the most popular kernels is the Gaussian kernel (also known as the radial
-basis kernel or squared exponential covariance function). The code documentation
-can be used to learn more about the parametric forms of kernels using the `?` 
-command and searching for the kernel name:
+##### Constructing Kernels
+
+**MLKernels.jl** comes with a number of pre-defined kernel functions. For 
+example, one of the most popular kernels is the Gaussian kernel (also known as 
+the radial basis kernel or squared exponential covariance function). The code 
+documentation may be used to learn more about the parametric forms of kernels 
+using the `?` command and searching for the kernel name:
 
 ```julia
 julia> using MLKernels
@@ -37,6 +43,9 @@ julia> GaussianKernel(2.0)
 KernelComposition{Float64}(ϕ=Exponential(α=2.0,γ=1.0),κ=SquaredDistance(t=1.0))
 ```
 
+The `Kernel` data type is parametric - any subtype of `AbstractFloat`, though
+only `Float32` and `Float64` are recommended. The default type is `Float64`.
+
 The Gaussian kernel is actually a specific case of a more general class of
 kernel. It is composition of scalar function and the squared (Euclidean) 
 distance, `SquaredDistanceKernel`, which itself is a kernel. The scalar function
@@ -53,11 +62,11 @@ julia> ψ = ϕ ∘ κ   # use \circ for '∘'
 KernelComposition{Float64}(ϕ=Exponential(α=2.0,γ=1.0),κ=SquaredDistance(t=1.0))
 ```
 
-MLKernels.jl implements only symmetric real-valued continuous kernel functions 
-(a subset of the kernels studied in the literature). These kernels fall into two
-groups:
- - **Mercer Kernels** (positive definite kernels)
- - **Negative Definite Kernels**
+**MLKernels.jl** implements only symmetric real-valued continuous kernel 
+functions (a subset of the kernels studied in the literature). These kernels 
+fall into two groups:
+ - *Mercer Kernels* (positive definite kernels)
+ - *Negative Definite Kernels*
 
 A negative definite kernels is equivalent to the conditionally positive definite
 kernels that are often discussed in machine learning literature. A conditionally
@@ -81,6 +90,22 @@ julia> isnegdef(ψ)
 false
 ```
 
+`AdditiveKernel` types are available as **Automatic Relevance Determination** 
+(ARD) Kernels. Weights may be applied to each element-wise function applied to
+the input vectors. For the scalar product and squared distance kernel, this 
+corresponds to a linear scaling of each of the dimensions.
+
+```julia
+julia> w = round(rand(5),3);
+
+julia> ARD(κ, w)
+ARD{Float64}(κ=SquaredDistance(t=1.0),w=[0.358,0.924,0.034,0.11,0.21])
+```
+
+##### Kernel Functions
+
+
+##### Kernel Operations
 
 
 
@@ -96,9 +121,7 @@ false
 
 
 
-Base Kernels are available as **Automatic Relevance Determination** (ARD) Kernels which act as a separate scaling constant for each element-wise operation on the inputs. For the dot product and the squared distance kernel, this corresponds to a linear scaling of each of the dimensions.
-
-The `Kernel` data type is parametric - either `Float32`, `Float64` or `BigFloat` depending on the input arguments. The default is `Float64`. A kernel can be constructed using one of the many predefined kernels. Once a kernel has been constructed, it can be passed to the `kernel` function and used to compute kernel function of two vectors. For example, the simplest base kernel is the scalar (dot) product kernel:
+ A kernel can be constructed using one of the many predefined kernels. Once a kernel has been constructed, it can be passed to the `kernel` function and used to compute kernel function of two vectors. For example, the simplest base kernel is the scalar (dot) product kernel:
 
 ```julia
 julia> κ = ScalarProductKernel()
