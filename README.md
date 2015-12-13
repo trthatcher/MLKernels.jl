@@ -4,6 +4,8 @@
 [![Build Status](https://travis-ci.org/trthatcher/MLKernels.jl.svg?branch=master)](https://travis-ci.org/trthatcher/MLKernels.jl)
 [![Coverage Status](https://coveralls.io/repos/trthatcher/MLKernels.jl/badge.svg)](https://coveralls.io/r/trthatcher/MLKernels.jl)
 
+#### Summary
+
 **MLKernels.jl** is a Julia package for Mercer kernel functions (or the 
 covariance functions used in Gaussian processes) that are used in the kernel 
 methods of machine learning. This package provides a flexible datatype for 
@@ -16,13 +18,14 @@ dependencies beyond base Julia.
 Through the use of kernel functions, kernel-based methods may operate in a high
 (potentially infinite) dimensional implicit feature space without explicitly
 mapping data from the original feature space to the new feature space. For 
-example, through the use of Kernel PCA, the non linearly separable data above
-may be mapped to another space where it is linearly separable:
+example, through the use of Kernel PCA, non linearly separable data may be 
+mapped to another space where it is linearly separable:
 
 <p align="center"><img alt="Original Data" src="example/img/original.png"  /></p>
 <p align="center"><img alt="Transformed Data" src="example/img/wireframe.png"  /></p>
 
-This allows for the data to be linearly separated using a hyperplane:
+This allows for the transformed data to be linearly separated using a 
+hyperplane:
 
 <p align="center"><img alt="Separating Hyperplane" src="example/img/separatinghyperplane.png"  /></p>
 
@@ -117,5 +120,81 @@ ARD{Float64}(κ=SquaredDistance(t=1.0),w=[0.358,0.924,0.034,0.11,0.21])
 
 #### Kernel Functions
 
+The `kernel` function may be used to evaluate the kernel function for a pair of
+scalar values or a pair of vectors for a given kernel:
+
+```julia
+julia> x = rand(3); y = rand(3);
+
+julia> kernel(ψ, x[1], y[1])
+0.9111186233655084
+
+julia> kernel(ψ, x, y)
+0.4149629934770782
+```
+
+Given a data matrix `X` (one observation/input per row), the kernel matrix
+([Gramian matrix](https://en.wikipedia.org/wiki/Gramian_matrix) in the implicit 
+feature space) for the set of vectors may be computed using the `kernelmatrix`
+function:
+
+```julia
+julia> X = rand(5,3);
+
+julia> kernelmatrix(ψ, X)
+5x5 Array{Float64,2}:
+ 1.0       0.183858  0.511987  0.438051  0.265336
+ 0.183858  1.0       0.103226  0.345788  0.193466
+ 0.511987  0.103226  1.0       0.25511   0.613017
+ 0.438051  0.345788  0.25511   1.0       0.115458
+ 0.265336  0.193466  0.613017  0.115458  1.0     
+```
+
+where `kernelmatrix(ψ, X)[i,j]` is `kernel(ψ, vec(X[i,:]), vec(X[j,:]))`. If the
+data matrix has one observation/input per column instead, an additional argument
+`is_trans` may be supplied to instead operate on the columns:
+
+```julia
+julia> kernelmatrix(ψ, X', true)
+5x5 Array{Float64,2}:
+ 1.0       0.183858  0.511987  0.438051  0.265336
+ 0.183858  1.0       0.103226  0.345788  0.193466
+ 0.511987  0.103226  1.0       0.25511   0.613017
+ 0.438051  0.345788  0.25511   1.0       0.115458
+ 0.265336  0.193466  0.613017  0.115458  1.0     
+```
+
+Similarly, given two data matrices, `X` and `Y`, the pairwise kernel matrix may
+be computed using:
+
+```julia
+julia> kernelmatrix(ψ, X, Y)
+5x4 Array{Float64,2}:
+ 0.805077  0.602521  0.166728  0.503091
+ 0.110309  0.121443  0.487499  0.711981
+ 0.692844  0.987933  0.24032   0.404972
+ 0.505462  0.30802   0.114626  0.641405
+ 0.248455  0.580033  0.678817  0.423386
+
+julia> kernelmatrix(ψ, X', Y', true)
+5x4 Array{Float64,2}:
+ 0.805077  0.602521  0.166728  0.503091
+ 0.110309  0.121443  0.487499  0.711981
+ 0.692844  0.987933  0.24032   0.404972
+ 0.505462  0.30802   0.114626  0.641405
+ 0.248455  0.580033  0.678817  0.423386
+```
+
+This is equivalent to the upper right corner of the kernel matrix of `[X;Y]`:
+
+```julia
+julia> kernelmatrix(ψ, [X; Y])[1:5, 6:9]
+5x4 Array{Float64,2}:
+ 0.805077  0.602521  0.166728  0.503091
+ 0.110309  0.121443  0.487499  0.711981
+ 0.692844  0.987933  0.24032   0.404972
+ 0.505462  0.30802   0.114626  0.641405
+ 0.248455  0.580033  0.678817  0.423386
+```
 
 #### Kernel Operations

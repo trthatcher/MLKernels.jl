@@ -25,11 +25,13 @@ kernel(ψ, x, y)
 
 X = rand(5,3);
 kernelmatrix(ψ, X)
-kernelmatrix(ψ, X', is_trans = true)
+kernelmatrix(ψ, X', true)
 
 Y = rand(4,3);
 kernelmatrix(ψ, X, Y)
-kernelmatrix(ψ, X', Y')
+kernelmatrix(ψ, X', Y', true)
+
+kernelmatrix(ψ, [X; Y])[1:5, 6:9]
 
 # Kernel Operations
 
