@@ -33,7 +33,12 @@ The above plots were generated using
 [PyPlot.jl](https://github.com/stevengj/PyPlot.jl). The visualization code is
 available in [visualization.jl](/example/visualization.jl).
 
-## Getting Started ([example.jl](example/example.j))
+#### Documentation
+
+Full [**Documentation**](http://mlkernels.readthedocs.org/en/latest/) is 
+available on Read the Docs. 
+
+## Getting Started ([example.jl](example/example.jl))
 
 #### Constructing Kernels
 
@@ -200,7 +205,8 @@ julia> kernelmatrix(ψ, [X; Y])[1:5, 6:9]
 #### Kernel Operations
 
 All kernels may be translated and scaled by positive real numbers. Scaling or
-translating a `Kernel` object will create a `KernelAffinity` object:
+translating a `Kernel` object by a real number will construct a `KernelAffinity`
+object, a wrapper to track scaling and translation constants:
 
 ```julia
 julia> κ1 = GaussianKernel();
@@ -209,8 +215,10 @@ julia> 2κ1 + 3
 Affine{Float64}(a=2.0,c=3.0,κ=KernelComposition{Float64}(ϕ=Exponential(α=1.0,γ=1.0),κ=SquaredDistance(t=1.0)))
 ```
 
-*Mercer* and *negative definite kernels* may be added together to construct a
-`KernelSum` object that may be used like any other kernel:
+Both *Mercer kernels* and *negative definite kernels* are closed under addition.
+A `KernelSum` type may be used to sum groups of *Mercer kernels* or *negative 
+definite kernels* (though the two types of kernel may not be mixed). The `+`
+operator will automatically construct a `KernelSum` object:
 
 ```julia
 julia> κ2 = PolynomialKernel();
@@ -219,16 +227,18 @@ julia> κ1 + κ2
 KernelSum{Float64}(KernelComposition(ϕ=Exponential(α=1.0,γ=1.0),κ=SquaredDistance(t=1.0)), KernelComposition(ϕ=Polynomial(a=1.0,c=1.0,d=3),κ=ScalarProduct()))
 ```
 
-*Mercer kernels* may also be multiplied together to create a `KernelProduct`
-object:
+*Mercer kernels* are also closed under multiplication. Similarly, a
+`KernelProduct` tpye may be used to sum groups of *Mercer kernels*. The `*` 
+operator will automatically construct a `KernelProduct` type:
 
 ```julia
 julia> κ1 * κ2
 KernelProduct{Float64}(KernelComposition(ϕ=Exponential(α=1.0,γ=1.0),κ=SquaredDistance(t=1.0)), KernelComposition(ϕ=Polynomial(a=1.0,c=1.0,d=3),κ=ScalarProduct()))
 ```
 
-Several other operations are defined that act as shortcuts for pre-defined
-kernels:
+The power `^`, exponentiation `exp` and hyperbolic tangent `tanh` functions may
+be applied to certain types of kernels. These act as shortcuts for composition
+kernel types:
 
 ```julia
 julia> κ3 = SineSquaredKernel();
@@ -247,8 +257,3 @@ KernelComposition{Float64}(ϕ=Exponentiated(a=2.0,c=3.0),κ=ScalarProduct())
 julia> tanh(κ4)
 KernelComposition{Float64}(ϕ=Sigmoid(a=2.0,c=3.0),κ=ScalarProduct())
 ```
-
-#### Documentation
-
-Further [**Documentation**](http://mlkernels.readthedocs.org/en/latest/)
-is available on Read the Docs. 
