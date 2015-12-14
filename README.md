@@ -13,6 +13,11 @@ representing and constructing machine learning kernels as well as an efficient
 set of methods to compute or approximate kernel matrices. The package has no 
 dependencies beyond base Julia.
 
+#### Documentation
+
+Full [documentation](http://mlkernels.readthedocs.org/en/latest/) is available 
+on Read the Docs.
+
 #### Visualization
 
 Through the use of kernel functions, kernel-based methods may operate in a high
@@ -32,11 +37,6 @@ hyperplane:
 The above plots were generated using
 [PyPlot.jl](https://github.com/stevengj/PyPlot.jl). The visualization code is
 available in [visualization.jl](/example/visualization.jl).
-
-#### Documentation
-
-Full [**Documentation**](http://mlkernels.readthedocs.org/en/latest/) is 
-available on Read the Docs. 
 
 ## Getting Started ([example.jl](example/example.jl))
 
