@@ -2,12 +2,6 @@
 Kernels
 -------
 
-The ``BaseKernel`` types serve as the building blocks of more complex kernels. 
-Each base kernel is defined by a ``phi`` function (this is not exported by the 
-package) which is applied in a specific way depending on the subtype of the 
-base kernel. Below are the implemented base kernels.
-
-
 +---------------------+--------+-------------------+
 | Kernel              | Mercer | Negative Definite |
 +=====================+========+===================+
@@ -39,17 +33,19 @@ base kernel. Below are the implemented base kernels.
 Scalar Product Kernel
 .....................
 
-.. function:: ScalarProductKernel()
-
-This is the dot product of two vectors:
+The scalar product kernel is the dot product of two vectors:
 
 .. math::
     
     \kappa(\mathbf{x},\mathbf{y}) = \mathbf{x}^{\intercal} \mathbf{y}
 
+The scalar product is a Mercer kernel [berg]_ - it can be used to construct 
+kernels such as the Polynomial Kernel. The kernel may be constructed using:
+
 .. code-block:: julia
 
-    ScalarProductKernel{T<:AbstractFloat}()
+    ScalarProductKernel()           # Construct 64 bit kernel (default)
+    ScalarProductKernel{Float32}()  # Construct 32 bit kernel
 
 
 .. _kern-sqdist:
@@ -57,55 +53,75 @@ This is the dot product of two vectors:
 Squared Distance Kernel
 .......................
 
-.. function:: SquaredDistanceKernel(t=1.0)
-..........................................
-
-Construct a squared distance kernel type:
+The squared distance kernel is a modification of the squared Euclidean distance
+with an additional shape parameter:
 
 .. math::
     
     \kappa(\mathbf{x},\mathbf{y}) = \sum_{i=1}^n (x_i - y_i)^{2t} \qquad 0 < t \leq 1
 
-The squared distance is a **negative definite** kernel [berg]_. The radial 
-basis kernel is a scalar transformation of this kernel.
+The squared distance is a **negative definite** stationary kernel [berg]_. The 
+Gaussian kernel is a scalar transformation of this kernel. The kernel may be
+constructed using:
 
 .. code-block:: julia
 
     SquaredDistanceKernel()   # Squared distance kernel with t = 1.0
     SquaredDistanceKernel(t)  # Squared distance kernel specified t value
 
+
 .. _kern-sinsq:
 
 Sine Squared Kernel
 ...................
     
-The sine squared kernel is a **negative definite** kernel [berg]_. It can be used to construct the
-periodic kernel:
+The sine squared kernel is another **negative definite** stationary kernel
+[berg]_. It can be used to construct the periodic kernel which is useful in
+situations where data may be periodic:
 
 .. math::
     
-    \kappa(\mathbf{x},\mathbf{y}) = \sum_{i=1}^n \sin^{2t}(x_i - y_i) \qquad 0 < t \leq 1
+    \kappa(\mathbf{x},\mathbf{y}) = \sum_{i=1}^n \sin^{2t}(p(x_i - y_i)) \qquad p >0, \;0 < t \leq 1
+
+A sine squared kernel may be constructed using:
 
 .. code-block:: julia
 
-    SineSquaredKernel()   # Sine Squared kernel with t = 1.0
-    SineSquaredKernel(t)  # Sine Squared kernel specified t value
+    SineSquaredKernel()     # Sine Squared kernel with p = π, t = 1.0
+    SineSquaredKernel(p,t)  # Sine Squared kernel specified p & t values
+
+The first three components of KPCA with a sine squared kernel:
+
+.. image:: images/kernels/sine-squared_kernel.png
+    :alt: The first three components of KPCA with a sine-squared kernel.
+
+Over a larger range, the projected surface can be seen to fold in on itself and
+repeat the shape.
+
 
 .. _kern-chisq:
 
 Chi-Squared Kernel
 ..................
 
-The Chi-Squared kernel is often used with bag-of-words models.
+The Chi-Squared kernel is a **negative definite** most often used with 
+bag-of-words models:
 
 .. math::
     
     \kappa(\mathbf{x},\mathbf{y}) = \sum_{i=1}^n \left(\frac{(x_i - y_i)^2}{x_i + y_i}\right)^t \qquad 0 < t \leq 1, \; x_i > 0 \; \forall i, \; y_i > 0 \; \forall i
 
+The Chi-Squared kernel may be constructed using:
+
 .. code-block:: julia
 
     ChiSquaredKernel()   # Sine Squared kernel with t = 1.0
     ChiSquaredKernel(t)  # Sine Squared kernel specified t value
+
+The first three components of KPCA with a Chi-Squared kernel:
+
+.. image:: images/kernels/chi-squared_kernel.png
+    :alt: The first three components of KPCA with a chi-squared kernel.
 
     
 .. _kern-gauss:

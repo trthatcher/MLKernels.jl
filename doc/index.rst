@@ -3,56 +3,22 @@ Machine Learning Kernels
 ========================
 
 `MLKernels.jl`_ is a Julia package for Mercer kernel functions (or the 
-covariance functions used in Gaussian processes) that are used in the kernel 
+covariance functions of Gaussian processes) that are used in the kernel 
 methods of machine learning. This package provides a flexible datatype for 
 representing and constructing machine learning kernels as well as an efficient 
 set of methods to compute or approximate kernel matrices. The package has no 
 dependencies beyond base Julia.
 
-Overview
+Contents
 ========
-
-The following lists the functions exported by `MLKernels.jl`_:
 
 .. toctree::
     :maxdepth: 1
 
     interface
-
-A number of kernels common to various domains have been pre-defined for ease of
-use. A list of the pre-defined kernels is available below: 
-
-.. toctree::
-    :maxdepth: 1
-
     kernels
-
-Kernel classes composed with the preceding kernels can be used to construct new
-kernels. Affine combinations and point-wise products may also be used to
-further construct kernels with various properties. See below for a list of the
-pre-defined kernel classes as well as descriptions of the allowed kernel
-operations:
-
-.. toctree::
-    :maxdepth: 1
-
     kernelclasses
-
-Lastly, a basic introduction to the kernel methods is available on the page
-below:
-
-.. toctree::
-    :maxdepth: 1
-
     theory
-
-Kernels
-=======
-
-For quick reference, a list of default kernels is available below:
-
-* :ref:`kern-scprod`
-* :ref:`kern-sqdist`
 
 Citations
 =========
