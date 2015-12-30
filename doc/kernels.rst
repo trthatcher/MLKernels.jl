@@ -129,7 +129,7 @@ The first three components of KPCA with a Chi-Squared kernel:
 Gaussian Kernel
 ...............
 
-The Gaussian kernel is given by:
+The Gaussian kernel is an isotropic Mercer kernel given by:
 
 .. math::
 
@@ -149,6 +149,7 @@ The first three components of KPCA with a Gaussian Kernel:
 
 .. image:: images/kernels/gaussian_kernel.png
     :alt: The first three components of KPCA with a Gaussian Kernel.
+
 
 .. _kern-lapla:
 
@@ -207,8 +208,6 @@ The first three components of KPCA with a Periodic Kernel:
 Rational-Quadratic Kernel
 .........................
 
-.. function:: RationalQuadraticKernel{T}(α::T = 1.0, β::T = one(T), γ::T = one(T))
-
 The rational-quadratic kernel is given by:
 
 .. math::
@@ -230,12 +229,13 @@ The first three components of KPCA with a Rational-Quadratic Kernel:
 .. image:: images/kernels/rational-quadratic_kernel.png
     :alt: The first three components of KPCA with a Rational-Quadratic Kernel.
     
+
 .. _kern-matern:
 
 Matern Kernel
 .............
 
-The Matern kernel is given by:
+The Matern kernel is a Mercer Kernel [ras]_ given by:
 
 .. math::
 
@@ -243,12 +243,18 @@ The Matern kernel is given by:
 
 where :math:`\kappa` is a non-negative negative definite kernel, :math:`\Gamma` is the gamma
 function, :math:`K_{\nu}` is the modified Bessel function of the second kind, :math:`\nu > 0`
-and :math:`\theta > 0`. The Matern kernel is a Mercer kernel. 
+and :math:`\theta > 0`.  
 
 .. code-block:: julia
 
     MaternKernel{T<:AbstractFloat}(ν::T = 1.0, θ::T = one(T))
     MatérnKernel{T<:AbstractFloat}(ν::T = 1.0, θ::T = one(T))
+
+The first three components of KPCA with a Matern Kernel:
+
+.. image:: images/kernels/matern_kernel.png
+    :alt: The first three components of KPCA with a Matern Kernel.
+
 
 .. _kern-poly:
 
@@ -267,6 +273,11 @@ where :math:`\kappa` is a Mercer kernel. The polynomial kernel is a Mercer kerne
 
     LinearKernel{T<:AbstractFloat}(a::T = 1.0, c = one(T))
     PolynomialKernel{T<:AbstractFloat}(a::T = 1.0, c = one(T), d = 3one(T))
+
+The first three components of KPCA with a Polynomial Kernel:
+
+.. image:: images/kernels/polynomial_kernel.png
+    :alt: The first three components of KPCA with a Polynomial Kernel.
 
 
 .. _kern-sigmoid:

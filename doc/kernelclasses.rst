@@ -2,9 +2,6 @@
 Kernel Classes
 --------------
 
-Mercer Classes
---------------
-
 Exponential Class
 .................
 
@@ -46,9 +43,6 @@ Exponentiated Class
 where :math:`\kappa` is a Mercer kernel. An exponentiated kernel is a Mercer kernel.
 
 
-Negative Definite Classes
--------------------------
-
 Power Kernel
 ............
 
@@ -70,9 +64,6 @@ where :math:`\kappa` is a non-negative negative definite kernel. The power kerne
 negative definite kernel.
 
 
-Other Classes
--------------
-
 Sigmoid Kernel
 ..............
 
@@ -90,10 +81,10 @@ Kernel Operations
 -----------------
 
 Kernel Affinity
----------------
+...............
 
 Kernel Sum
-----------
+..........
 
 Kernel Product
---------------
+..............
