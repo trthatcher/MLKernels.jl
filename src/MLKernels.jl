@@ -9,13 +9,17 @@ import Base: call, convert, eltype, show, *, +, ^, exp, tanh
 export
     # Functions
     ∘,
-    ismercer,
-    isnegdef,
     kernel,
     kernelmatrix,
     centerkernelmatrix!,
     centerkernelmatrix,
     nystrom,
+
+    ismercer,
+    isnegdef,
+    ispositive,
+    isnonnegative,
+
 
     # Kernel Type
     Kernel,

@@ -26,13 +26,13 @@ mapping data from the original feature space to the new feature space. For
 example, through the use of Kernel PCA, non linearly separable data may be 
 mapped to another space where it is linearly separable:
 
-<p align="center"><img alt="Original Data" src="example/img/original.png"  /></p>
-<p align="center"><img alt="Transformed Data" src="example/img/wireframe.png"  /></p>
+<p align="center"><img alt="Original Data" src="doc/images/kerneltrick/original.png"  /></p>
+<p align="center"><img alt="Transformed Data" src="doc/images/kerneltrick/wireframe.png"  /></p>
 
 This allows for the transformed data to be linearly separated using a 
 hyperplane:
 
-<p align="center"><img alt="Separating Hyperplane" src="example/img/separatinghyperplane.png"  /></p>
+<p align="center"><img alt="Separating Hyperplane" src="doc/images/kerneltrick/separatinghyperplane.png"  /></p>
 
 The above plots were generated using
 [PyPlot.jl](https://github.com/stevengj/PyPlot.jl). The visualization code is

@@ -40,6 +40,7 @@ end
   k(x,y) = sin²ᵗ(p(x-y))    x ∈ ℝ, y ∈ ℝ, t ∈ (0,1], p ∈ (0,∞)
 ==========================================================================#
 
+doc"`SineSquaredKernel(p,t)` = Σⱼ(p(xⱼ-yⱼ))²ᵗ"
 immutable SineSquaredKernel{T<:AbstractFloat,CASE} <: AdditiveKernel{T}
     p::T
     t::T

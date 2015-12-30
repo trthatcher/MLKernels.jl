@@ -16,7 +16,7 @@ function PeriodicKernel{T<:AbstractFloat}(α::T = 1.0, p::T = convert(T, π))
 end
 
 doc"'RationalQuadraticKernel(α,β)` = (1 + α⋅‖x-y‖²)⁻ᵝ"
-function RationalQuadraticKernel{T<:AbstractFloat}(α::T = 1.0, β::T = one(T), γ::T = one(T))
+function RationalQuadraticKernel{T<:AbstractFloat}(α::T = 1.0, β::T = one(T))
     KernelComposition(RationalQuadraticClass(α, β), SquaredDistanceKernel(one(T)))
 end
 

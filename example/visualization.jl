@@ -64,7 +64,7 @@ end
 using MLKernels, PyPlot
 
 #===================================================================================================
-  Kernel Trick Visualization - Classes
+  Kernel Trick Visualization - Linearly Separable Classes
 ===================================================================================================#
 
 n_points = 40
@@ -81,7 +81,7 @@ PyPlot.scatter3D(vec(c2[:,1]), vec(c2[:,2]), c="m")
 
 κ = GaussianKernel()
 K = kernelmatrix(κ, U)
-W = kpca_3d(centerkernelmatrix(K))
+W = kpca_3d(K)
 
 X, Y, Z = coordinate_matrices(K*W, n_points, n_contours)
 
@@ -106,73 +106,24 @@ PyPlot.plot_surface([-7.0 7; -7 7], [7.0 7; -7 -7], 3.5ones(2,2),
                      rstride=1, cstride=1, alpha=0.25)
 
 
-#=
-# Gaussian Kernel
-W = kpca_project(kernelmatrix(GaussianKernel(), generate_surface((-2.0,-2.0), (2.0,2.0), dims)))
-X, Y, Z = coordinate_matrices(W, dims)
-PyPlot.figure("Gaussian Kernel" )
-PyPlot.plot_wireframe(X, Y, Z)
+#===================================================================================================
+  Kernel Trick Visualization 
+===================================================================================================#
 
-# Laplacian Kernel
-W = kpca_project(kernelmatrix(LaplacianKernel(), generate_surface((-2.0,-2.0), (2.0,2.0), dims)))
-X, Y, Z = coordinate_matrices(W, dims)
-PyPlot.figure("Laplacian Kernel")
-PyPlot.plot_wireframe(X, Y, Z)
-
-# Exponential Kernel with Sine-Squared Kernel
-W = kpca_project(kernelmatrix(ExponentialKernel(SineSquaredKernel()), generate_surface((-π/2,-π/2),(π/2,π/2), dims)))
-X, Y, Z = coordinate_matrices(W, dims)
-PyPlot.figure("Exponential Kernel composed with a Sine-Squared Kernel")
-PyPlot.plot_wireframe(X, Y, Z)
-
-# Exponential Kernel with Chi-Squared Kernel
-W = kpca_project(kernelmatrix(ExponentialKernel(ChiSquaredKernel()), generate_surface((0.0,0.0), (1.0,1.0), dims)))
-X, Y, Z = coordinate_matrices(W, dims)
-PyPlot.figure("Exponential Kernel composed with a Chi-Squared Kernel")
-PyPlot.plot_wireframe(X, Y, Z)
-
-# Rational-Quadratic Kernel with SquaredDistance Kernel
-W = kpca_project(kernelmatrix(RationalQuadraticKernel(SquaredDistanceKernel(), 1.0, 0.1, 1.0),generate_surface((-2.0,-2.0), (2.0,2.0), dims)))
-X, Y, Z = coordinate_matrices(W, dims)
-PyPlot.figure("Rational-Quadratic Kernel")
-PyPlot.plot_wireframe(X, Y, Z)
-
-# Matern Kernel
-W = kpca_project(kernelmatrix(MaternKernel(),generate_surface((-2.0,-2.0), (2.0,2.0), dims)))
-X, Y, Z = coordinate_matrices(W, dims)
-PyPlot.figure("Exponential Kernel composed with a Chi-Squared Kernel")
-PyPlot.plot_wireframe(X, Y, Z)
-
-# Exponentiated Kernel
-W = kpca_project(kernelmatrix(ExponentiatedKernel(),generate_surface((-1.25,-1.25), (1.25,1.25), dims)))
-X, Y, Z = coordinate_matrices(W, dims)
-PyPlot.figure("Exponentiated Scalar Product Kernel")
-PyPlot.plot_wireframe(X, Y, Z)
-
-# Polynomial Kernel
-W = kpca_project(kernelmatrix(PolynomialKernel(),generate_surface((-1.25,-1.25), (1.25,1.25), dims)))
-X, Y, Z = coordinate_matrices(W, dims)
-PyPlot.figure("Polynomial Kernel")
-PyPlot.plot_wireframe(X, Y, Z)
-
-=#
-
-
-
-# Polynomial Kernel
-#=
-U = generate_circles((0.0,0.0), 1.0, n_points, n_contours)
-K = kernelmatrix(PolynomialKernel(), U)
-W = kpca_3d(centerkernelmatrix(K))
-X, Y, Z = coordinate_matrices(K*W, n_points, n_contours)
-PyPlot.figure("Polynomial Kernel" )
-PyPlot.plot_surface(X, Y, Z, rstride=1, cstride=1)
-=#
-
-#=
-W = kpca_project(kernelmatrix(PolynomialKernel(), ))
-X, Y, Z = coordinate_matrices(W, n_points, n_contours)
-PyPlot.figure("Polynomial Kernel")
-PyPlot.plot_surface(X, Y, Z, rstride=1, cstride=1)
-=#
-
+for (κ, title, n_points, n_contours, center, radius) in (
+        (SineSquaredKernel(), "Sine-Squared Kernel", 40, 15, (0.0, 0.0), 0.5),
+        (ChiSquaredKernel(), "Chi-Squared Kernel", 40, 15, (0.5, 0.5), 0.5),
+        (GaussianKernel(), "Gaussian Kernel", 40, 15, (0.0, 0.0), 1.0),
+        (LaplacianKernel(), "Laplacian Kernel", 40, 15, (0.0, 0.0), 1.0),
+        (PeriodicKernel(), "Periodic Kernel", 40, 15, (0.0, 0.0), 0.5),
+        (RationalQuadraticKernel(), "Rational-Quadratic Kernel", 40, 15, (0.0, 0.0), 1.0),
+        (MaternKernel(), "Matern Kernel", 40, 15, (0.0, 0.0), 1.0),
+        (PolynomialKernel(), "Polynomial Kernel", 40, 15, (0.0, 0.0), 1.0),
+        (SigmoidKernel(), "Sigmoid Kernel", 40, 15, (0.0, 0.0), 1.0)
+    )
+    U = generate_circles(center, radius, n_points, n_contours)
+    W = kpca_3d((isnegdef(κ) ? -1 : 1) * kernelmatrix(κ, U))
+    X, Y, Z = coordinate_matrices(W, n_points, n_contours)
+    PyPlot.figure(title)
+    PyPlot.plot_wireframe(X, Y, Z)
+end
