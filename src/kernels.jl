@@ -58,10 +58,7 @@ end
   Standard Kernels
 ===================================================================================================#
 
-doc"`StandardKernel`: informally, `κ` such that `κ` is not an affine combination of kernels."
 abstract StandardKernel{T<:AbstractFloat} <: Kernel{T}
-
-doc"`BaseKernel`: informally, `κ` such that `κ` is not a composition of vector functions."
 abstract BaseKernel{T<:AbstractFloat} <: StandardKernel{T}
 
 
@@ -69,7 +66,6 @@ abstract BaseKernel{T<:AbstractFloat} <: StandardKernel{T}
   Additive Kernel: k(x,y) = sum(k(x_i,y_i))    x ∈ ℝⁿ, y ∈ ℝⁿ
 ==========================================================================#
 
-doc"`AdditiveKernel`: `κ` such that `κ` may be expressed as `κ(x,y) = Σⱼ ϕ(xⱼ,yⱼ)`."
 abstract AdditiveKernel{T<:AbstractFloat} <: BaseKernel{T}
 
 include("definitions/additivekernels.jl")
@@ -94,6 +90,7 @@ end
   ARD Kernel
 ==========================================================================#
 
+doc"`ARD(κ,w)` where `κ <: AdditiveKernel`"
 immutable ARD{T<:AbstractFloat} <: BaseKernel{T}
     k::AdditiveKernel{T}
     w::Vector{T}
@@ -125,6 +122,7 @@ end
   Kernel Composition ψ = ϕ(κ(x,y))
 ==========================================================================#
 
+doc"KernelComposition(ϕ,κ) = ϕ∘κ"
 immutable KernelComposition{T<:AbstractFloat} <: StandardKernel{T}
     phi::CompositionClass{T}
     k::Kernel{T}

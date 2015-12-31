@@ -1,66 +1,84 @@
-.. _pageinterface:
+------------------
+Exported Functions
+------------------
 
-Interface
-=========
-
-.. _kernel:
-
-.. function:: kernel(κ::BaseKernel{T}, x::Vector{T}, y::Vector{T})
-
-    Evaluate the kernel of two vectors. Type ``T`` may be any subtype of ``FloatingPoint``.
+Kernel Properties
+-----------------
 
 .. _ismercer:
 
 .. function:: ismercer(::Kernel)
 
-    Returns ``true`` if the kernel type is a Mercer kernel.
+    Returns ``true`` if the kernel is a Mercer kernel; ``false`` otherwise.
 
 .. _isnegdef:
 
 .. function:: isnegdef(::Kernel)
 
-    Returns ``true`` if the kernel type is a negative definite kernel.
-
-.. _attainszero:
-
-.. function:: attainszero(::Kernel)
-
-    Returns ``true`` if the kernel can attain zero over its domain.
+    Returns ``true`` if the kernel is a negative definite kernel; ``false``
+    otherwise.
 
 .. _isnonnegative:
 
 .. function:: isnonnegative(::Kernel)
 
-    Returns ``true`` if the kernel is greater than or equal to zero over its
-    domain.
+    Returns ``true`` if the kernel is always greater than or equal to zero over
+    its domain and parameter space; ``false`` otherwise.
 
 .. _ispositive:
 
 .. function:: ispositive(::Kernel)
 
-    Returns ``true`` if the kernel is greater than zero over its domain.
+    Returns ``true`` if the kernel is always greater than zero over its domain
+    and parameter space; ``false`` otherwise.
+
+Kernel Arithmetic
+-----------------
+
+.. _arithmetic:
+
+.. function:: +(κ::Kernel{T},c::T)
+              +(c::T,κ::Kernel{T})
+              +(κ1::Kernel{T},κ::Kernel{T})
+
+    Returns ``true`` if the kernel is always greater than zero over its domain
+    and parameter space; ``false`` otherwise.
+
+
+Kernel Computation
+------------------
+
+.. _kernel:
+
+.. function:: kernel(κ::Kernel{T}, x::Vector{T}, y::Vector{T})
+              kernel(κ::Kernel{T}, x::T, y::T)    
+
+    Evaluate the kernel function of two vectors or two scalars. Type ``T`` may 
+    be any subtype of ``AbstractFloat``. Returns a scalar of type ``T``.
 
 .. _kernelmatrix:
 
 .. function:: kernelmatrix(κ::Kernel{T}, X::Matrix{T}; is_trans::Bool, store_upper::Bool, symmetrize::Bool)
 
-    Compute the square kernel matrix of ``X``. Returns kernel matrix ``K``. Type ``T`` may be any
-    subtype of ``FloatingPoint``. The following optional arguments may be used positionally or as 
-    keyword arguments:
+    Compute the square kernel matrix of ``X``. Returns kernel matrix ``K``. 
+    Type ``T`` may be any subtype of ``AbstractFloat``. The following optional 
+    arguments may be used positionally or as keyword arguments:
 
-     ``is_trans = false``
-       Set ``is_trans = true`` when each column of ``X`` corresponds to a vector of variables.
-       Otherwise, each row of ``X`` is treated as a vector of variables.
-     ``store_upper = true``
-       Set ``store_upper = true`` to compute the upper triangle of the kernel matrix of ``X``. 
-       Otherwise, the lower triangle will be computed. This argument will have no impact on the 
-       output matrix when ``symmetrize = true``.
-     ``symmetrize = true``
-       Set ``symmetrize = true`` to copy the contents of the computed triangle to the uncomputed
-       triangle.
+     is_trans = false
+       Set ``is_trans = true`` when each column of ``X`` corresponds to a vector
+       of variables. Otherwise, each row of ``X`` is treated as a vector of 
+       variables.
+     store_upper = true
+       Set ``store_upper = true`` to compute the upper triangle of the kernel 
+       matrix of ``X``. Otherwise, the lower triangle will be computed. This 
+       argument will have no impact on the output matrix when 
+       ``symmetrize = true``.
+     symmetrize = true
+       Set ``symmetrize = true`` to copy the contents of the computed triangle
+       to the uncomputed triangle.
 
-    If the matrix ``K`` has been pre-allocated, the following method may be used to overwrite 
-    ``K`` instead of allocating a new array:
+    If the matrix ``K`` has been pre-allocated, the following method may be 
+    used to overwrite ``K`` instead of allocating a new array:
 
     .. code-block:: julia
 
@@ -70,7 +88,7 @@ Interface
 .. function:: kernelmatrix(κ::Kernel{T}, X::Matrix{T}, Y::Matrix{T}, is_trans::Bool)
 
     Compute the rectangular kernel matrix of ``X`` and ``Y``. Returns kernel matrix ``K``. Type 
-    ``T`` may be any subtype of ``FloatingPoint``. The following optional argument may be used 
+    ``T`` may be any subtype of ``AbstractFloat``. The following optional argument may be used 
     positionally or as a keyword argument:
 
      ``is_trans = false``
