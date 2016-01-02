@@ -15,10 +15,10 @@ Contents
 .. toctree::
     :maxdepth: 2
 
-    interface
-    kernels
+    exportedfunctions
+    kernelfunctions
     kernelclasses
-    theory
+    kernelmethods
 
 Citations
 =========

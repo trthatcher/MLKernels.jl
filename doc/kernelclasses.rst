@@ -1,3 +1,5 @@
+.. _kernelclasses:
+
 --------------
 Kernel Classes
 --------------
@@ -80,11 +82,18 @@ it has been used in application.
 Kernel Operations
 -----------------
 
+
+.. _kernelaffinity:
+
 Kernel Affinity
 ...............
 
+.. _kernelsum:
+
 Kernel Sum
 ..........
+
+.. _kernelproduct:
 
 Kernel Product
 ..............
