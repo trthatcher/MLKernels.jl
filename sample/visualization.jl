@@ -67,43 +67,82 @@ using MLKernels, PyPlot
   Kernel Trick Visualization - Linearly Separable Classes
 ===================================================================================================#
 
-n_points = 40
-n_contours = 15
-n_sample = 100
+n_c1 = 60
+n_c2 = 180
 
-U  = generate_circles((0.0,0.0), 1.5, n_points, n_contours)
-c1 = generate_point_cluster(n_sample, (0.0, 0.0), 0.5)
-c2 = generate_point_ring(n_sample, (0.0, 0.0), 1.15, 0.3)
+cluster = 0.55
+ring    = (0.725, 0.975)  # radius 1 & 2
 
-PyPlot.figure("Original")
-PyPlot.scatter3D(vec(c1[:,1]), vec(c1[:,2]), c="r")
-PyPlot.scatter3D(vec(c2[:,1]), vec(c2[:,2]), c="m")
+xy_mid = (cluster^2 + ring[1]^2)/2
+z_lim  = ring[2] * cluster * sqrt(2)
 
-κ = GaussianKernel()
-K = kernelmatrix(κ, U)
-W = kpca_3d(K)
+# Class Sampling
+srand(1234)
+c1 = generate_point_cluster(n_c1, (0.0, 0.0), cluster)
+c2 = generate_point_ring(n_c2, (0.0, 0.0), sum(ring)/2, ring[2]-ring[1])
 
-X, Y, Z = coordinate_matrices(K*W, n_points, n_contours)
+# Plot points in original feature space
+PyPlot.figure("FeatureSpace")
+PyPlot.scatter(vec(c1[:,1]), vec(c1[:,2]), c="r", marker="D")
+PyPlot.scatter(vec(c2[:,1]), vec(c2[:,2]), c="m", marker="o")
+PyPlot.xlim([-1.05,1.05])
+PyPlot.ylim([-1.05,1.05])
+PyPlot.title("Original Feature Space")
+PyPlot.xlabel("Feature 1") 
+PyPlot.ylabel("Feature 2")
 
-PyPlot.figure("Wireframe")
-PyPlot.plot_wireframe(X, Y, Z, rstride=1, cstride=1)
+# Explicit Feature Map  (x,y) -> (x^2, y^2, √2*x*y)
+ϕ(x,y) = [x^2 y^2 √2*x*y]
+c1_ϕ = vcat([ϕ(c1[i,:]...) for i = 1:size(c1,1)]...)
+c2_ϕ = vcat([ϕ(c2[i,:]...) for i = 1:size(c2,1)]...)
 
-κ_c1 = kernelmatrix(κ, c1, U) * W
-PyPlot.scatter3D(vec(κ_c1[:,1]), vec(κ_c1[:,2]), vec(κ_c1[:,3]), c="r")
+# Plot points in kernel Hilbert space
+PyPlot.figure("HilbertSpace")
+PyPlot.scatter3D(vec(c1_ϕ[:,1]), vec(c1_ϕ[:,2]), vec(c1_ϕ[:,3]), c="r", marker="D")
+PyPlot.scatter3D(vec(c2_ϕ[:,1]), vec(c2_ϕ[:,2]), vec(c2_ϕ[:,3]), c="m", marker="o")
+PyPlot.xlim([-0.05,1.05])
+PyPlot.ylim([-0.05,1.05])
+PyPlot.zlim([-z_lim - 0.05, z_lim + 0.05])
+PyPlot.title("Kernel Hilbert Space")
+PyPlot.xlabel("Dimension 1") 
+PyPlot.ylabel("Dimension 2")
+PyPlot.zlabel("Dimension 3")
 
-κ_c2 = kernelmatrix(κ, c2, U) * W
-PyPlot.scatter3D(vec(κ_c2[:,1]), vec(κ_c2[:,2]), vec(κ_c2[:,3]), c="m")
+# Add Hyperplane
+X = [ 0.0    0.0   ;  xy_mid xy_mid]
+Y = [ xy_mid xy_mid;  0.0    0.0   ]
+Z = [-z_lim  z_lim ; -z_lim  z_lim ]
+PyPlot.plot_surface(X, Y, Z, rstride=1, cstride=1, alpha=0.5, color="b")
 
-PyPlot.figure("SeparatingHyperplane")
+# Add Circular Intersection
+v = linspace(0, 2π, 360)
+X = xy_mid*(cos(v).+1)/2
+Y = xy_mid .- X
+Z = √2 * sqrt(X) .* sqrt(Y) .* sign(sin(v))
+PyPlot.plot(X, Y, Z, color="k", ls="-")
 
-κ_c1 = kernelmatrix(κ, c1, U) * W
-PyPlot.scatter3D(vec(κ_c1[:,1]), vec(κ_c1[:,2]), vec(κ_c1[:,3]), c="r")
+# Kernel Geometry
+U = generate_circles((0.0,0.0),ring[2],60,2)
+W = vcat([ϕ(U[i,:]...) for i = 1:size(U,1)]...)
+X, Y, Z = coordinate_matrices(W, 60, 2)
+PyPlot.figure("KernelGeometry")
+PyPlot.plot_surface(X, Y, Z, rstride=1, cstride=1, alpha=0.5, linewidth=0, 
+                    cmap=ColorMap("coolwarm"))
+PyPlot.title("Kernel Geometry")
+PyPlot.xlabel("Dimension 1") 
+PyPlot.ylabel("Dimension 2")
+PyPlot.zlabel("Dimension 3")
 
-κ_c2 = kernelmatrix(κ, c2, U) * W
-PyPlot.scatter3D(vec(κ_c2[:,1]), vec(κ_c2[:,2]), vec(κ_c2[:,3]), c="m")
+# Add Circular Intersection
+v = linspace(0, 2π, 360)
+X = xy_mid*(cos(v).+1)/2
+Y = xy_mid .- X
+Z = √2 * sqrt(X) .* sqrt(Y) .* sign(sin(v))
+PyPlot.plot(X, Y, Z, color="k", ls="-")
 
-PyPlot.plot_surface([-7.0 7; -7 7], [7.0 7; -7 -7], 3.5ones(2,2), 
-                     rstride=1, cstride=1, alpha=0.25)
+# Add Intersection to original space
+PyPlot.figure("FeatureSpace")
+PyPlot.plot(sqrt(xy_mid)*sin(v), sqrt(xy_mid)*cos(v), c="b", ls="-")
 
 
 #===================================================================================================
@@ -125,5 +164,6 @@ for (κ, title, n_points, n_contours, center, radius) in (
     W = kpca_3d((isnegdef(κ) ? -1 : 1) * kernelmatrix(κ, U))
     X, Y, Z = coordinate_matrices(W, n_points, n_contours)
     PyPlot.figure(title)
-    PyPlot.plot_wireframe(X, Y, Z)
+    PyPlot.plot_surface(X, Y, Z, rstride=1, cstride=1, alpha=0.75, linewidth=0, 
+                        cmap=ColorMap("coolwarm"))
 end
