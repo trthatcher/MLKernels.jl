@@ -91,7 +91,8 @@ PyPlot.title("Original Feature Space")
 PyPlot.xlabel("Feature 1") 
 PyPlot.ylabel("Feature 2")
 
-# Explicit Feature Map  (x,y) -> (x^2, y^2, √2*x*y)
+# Explicit Feature Map (Polynomial with d = 2, c = 0)
+#   (x,y) -> (x^2, y^2, √2*x*y)
 ϕ(x,y) = [x^2 y^2 √2*x*y]
 c1_ϕ = vcat([ϕ(c1[i,:]...) for i = 1:size(c1,1)]...)
 c2_ϕ = vcat([ϕ(c2[i,:]...) for i = 1:size(c2,1)]...)
@@ -128,6 +129,9 @@ X, Y, Z = coordinate_matrices(W, 60, 2)
 PyPlot.figure("KernelGeometry")
 PyPlot.plot_surface(X, Y, Z, rstride=1, cstride=1, alpha=0.5, linewidth=0, 
                     cmap=ColorMap("coolwarm"))
+PyPlot.xlim([-0.05,1.05])
+PyPlot.ylim([-0.05,1.05])
+PyPlot.zlim([-z_lim - 0.05, z_lim + 0.05])
 PyPlot.title("Kernel Geometry")
 PyPlot.xlabel("Dimension 1") 
 PyPlot.ylabel("Dimension 2")
@@ -149,6 +153,7 @@ PyPlot.plot(sqrt(xy_mid)*sin(v), sqrt(xy_mid)*cos(v), c="b", ls="-")
   Kernel Trick Visualization 
 ===================================================================================================#
 
+#=
 for (κ, title, n_points, n_contours, center, radius) in (
         (SineSquaredKernel(), "Sine-Squared Kernel", 40, 15, (0.0, 0.0), 0.5),
         (ChiSquaredKernel(), "Chi-Squared Kernel", 40, 15, (0.5, 0.5), 0.5),
@@ -167,3 +172,4 @@ for (κ, title, n_points, n_contours, center, radius) in (
     PyPlot.plot_surface(X, Y, Z, rstride=1, cstride=1, alpha=0.75, linewidth=0, 
                         cmap=ColorMap("coolwarm"))
 end
+=#

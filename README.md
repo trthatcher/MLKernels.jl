@@ -16,29 +16,39 @@ dependencies beyond base Julia.
 #### Documentation
 
 Full [documentation](http://mlkernels.readthedocs.org/en/latest/) is available 
-on Read the Docs.
+on **Read the Docs**.
 
 #### Visualization
 
 Through the use of kernel functions, kernel-based methods may operate in a high
 (potentially infinite) dimensional implicit feature space without explicitly
-mapping data from the original feature space to the new feature space. For 
-example, through the use of Kernel PCA, non linearly separable data may be 
-mapped to another space where it is linearly separable:
+mapping data from the original feature space to the new feature space.
+Non-linearly separable data may be linearly separable in the transformed space.
+For example, the following data set is not linearly separable:
 
-<p align="center"><img alt="Original Data" src="doc/images/kerneltrick/original.png"  /></p>
-<p align="center"><img alt="Transformed Data" src="doc/images/kerneltrick/wireframe.png"  /></p>
+<p align="center"><img alt="Feature Space" src="doc/images/kerneltrick/featurespace.png"  /></p>
 
-This allows for the transformed data to be linearly separated using a 
-hyperplane:
+Using a Polynomial Kernel of degree 2, the points are mapped to a 3-dimensional
+space where a plane can be used to linearly separate the data:
+
+<p align="center"><img alt="Transformed Data" src="doc/images/kerneltrick/hilbertspace.png"  /></p>
+
+Explicitly, the Polynomial Kernel of degree 2 maps the data to a cone in
+3-dimensional space. The intersecting hyperplane forms a conic section with the
+cone:
+
+<p align="center"><img alt="Transformed Data" src="doc/images/kerneltrick/kernelgeometry.png"  /></p>
+
+When translated back to the original feature space, the conic section
+corresponds to a circle which can be used to perfectly separate the data:
 
 <p align="center"><img alt="Separating Hyperplane" src="doc/images/kerneltrick/separatinghyperplane.png"  /></p>
 
 The above plots were generated using
 [PyPlot.jl](https://github.com/stevengj/PyPlot.jl). The visualization code is
-available in [visualization.jl](/example/visualization.jl).
+available in [visualization.jl](/sample/visualization.jl).
 
-## Getting Started ([example.jl](example/example.jl))
+## Getting Started ([gettingstarted.jl](sample/gettingstarted.jl))
 
 #### Constructing Kernels
 
