@@ -42,7 +42,7 @@ cone:
 When translated back to the original feature space, the conic section
 corresponds to a circle which can be used to perfectly separate the data:
 
-<p align="center"><img alt="Separating Hyperplane" src="doc/images/kerneltrick/separatinghyperplane.png"  /></p>
+<p align="center"><img alt="Separating Hyperplane" src="doc/images/kerneltrick/featurespaceseparated.png"  /></p>
 
 The above plots were generated using
 [PyPlot.jl](https://github.com/stevengj/PyPlot.jl). The visualization code is
