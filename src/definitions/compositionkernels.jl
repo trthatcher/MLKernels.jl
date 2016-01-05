@@ -1,42 +1,60 @@
-doc"`GaussianKernel(α)` = exp(-α⋅‖x-y‖²)"
-function GaussianKernel{T<:AbstractFloat}(α::T = 1.0)
-    KernelComposition(ExponentialClass(α, one(T)), SquaredDistanceKernel(one(T)))
+doc"GaussianKernel(α) = exp(-α⋅‖x-y‖²)"
+function GaussianKernel{T<:Real}(α::T = 1.0)
+    U = T <: AbstractFloat ? T : Float64
+    KernelComposition(ExponentialClass(convert(U, α), one(U)), SquaredDistanceKernel(one(U)))
 end
 SquaredExponentialKernel = GaussianKernel
 RadialBasisKernel = GaussianKernel
 
-doc"`LaplacianKernel(α)` = exp(α⋅‖x-y‖)"
-function LaplacianKernel{T<:AbstractFloat}(α::T = 1.0)
-    KernelComposition(ExponentialClass(α, one(T)/2), SquaredDistanceKernel(one(T)))
+doc"LaplacianKernel(α) = exp(α⋅‖x-y‖)"
+function LaplacianKernel{T<:Real}(α::T = 1.0)
+    U = T <: AbstractFloat ? T : Float64
+    KernelComposition(ExponentialClass(convert(U, α), one(U)/2), SquaredDistanceKernel(one(U)))
 end
 
-doc"`PeriodicKernel(α,p)` = exp(-α⋅Σⱼsin²(p(xⱼ-yⱼ)))"
-function PeriodicKernel{T<:AbstractFloat}(α::T = 1.0, p::T = convert(T, π))
-    KernelComposition(ExponentialClass(α, one(T)), SineSquaredKernel(p, one(T)))
+doc"PeriodicKernel(α,p) = exp(-α⋅Σⱼsin²(p(xⱼ-yⱼ)))"
+function PeriodicKernel{T<:Real}(α::T = 1.0, p::Real = convert(T, π))
+    U = promote_type(T, typeof(p))
+    U = T <: AbstractFloat ? T : Float64
+    KernelComposition(ExponentialClass(convert(U, α), one(T)), SineSquaredKernel(convert(U, p), 
+                      one(T)))
 end
 
-doc"'RationalQuadraticKernel(α,β)` = (1 + α⋅‖x-y‖²)⁻ᵝ"
-function RationalQuadraticKernel{T<:AbstractFloat}(α::T = 1.0, β::T = one(T))
-    KernelComposition(RationalQuadraticClass(α, β), SquaredDistanceKernel(one(T)))
+doc"RationalQuadraticKernel(α,β) = (1 + α⋅‖x-y‖²)⁻ᵝ"
+function RationalQuadraticKernel{T<:Real}(α::T = 1.0, β::Real = one(T))
+    U = promote_type(T, typeof(β))
+    U = T <: AbstractFloat ? T : Float64
+    KernelComposition(RationalQuadraticClass(convert(U, α), convert(U, β)), 
+                      SquaredDistanceKernel(one(T)))
 end
 
-doc"`MatérnKernel(ν,θ)` = 2ᵛ⁻¹(√(2ν)‖x-y‖²/θ)ᵛKᵥ(√(2ν)‖x-y‖²/θ)/Γ(ν)"
-function MaternKernel{T<:AbstractFloat}(ν::T = 1.0, θ::T = one(T))
-    KernelComposition(MaternClass(ν, θ), SquaredDistanceKernel(one(T)))
+doc"MatérnKernel(ν,θ) = 2ᵛ⁻¹(√(2ν)‖x-y‖²/θ)ᵛKᵥ(√(2ν)‖x-y‖²/θ)/Γ(ν)"
+function MaternKernel{T<:Real}(ν::T = 1.0, θ::Real = one(T))
+    U = promote_type(T, typeof(θ))
+    U = T <: AbstractFloat ? T : Float64
+    KernelComposition(MaternClass(convert(U, ν), convert(U, θ)), SquaredDistanceKernel(one(U)))
 end
 MatérnKernel = MaternKernel
 
-doc"`PolynomialKernel(a,c,d)` = (a⋅xᵀy + c)ᵈ"
-function PolynomialKernel{T<:AbstractFloat}(a::T = 1.0, c = one(T), d = 3one(T))
-    KernelComposition(PolynomialClass(a, c, d), ScalarProductKernel{T}())
+doc"PolynomialKernel(a,c,d) = (a⋅xᵀy + c)ᵈ"
+function PolynomialKernel{T<:Real}(a::T = 1.0, c::Real = one(T), d::Real = 3one(T))
+    U = promote_type(T, typeof(c), typeof(d))
+    U = T <: AbstractFloat ? T : Float64
+    KernelComposition(PolynomialClass(convert(U, a), convert(U, c), convert(U, d)), 
+                      ScalarProductKernel{U}())
 end
 
-doc"`LinearKernel(α,c,d)` = a⋅xᵀy + c"
-function LinearKernel{T<:AbstractFloat}(a::T = 1.0, c = one(T))
-    KernelComposition(PolynomialClass(a, c, one(T)), ScalarProductKernel{T}())
+doc"LinearKernel(α,c,d) = a⋅xᵀy + c"
+function LinearKernel{T<:Real}(a::T = 1.0, c::Real = one(T))
+    U = promote_type(T, typeof(c))
+    U = T <: AbstractFloat ? T : Float64
+    KernelComposition(PolynomialClass(convert(U, a), convert(U, c), one(U)), 
+                      ScalarProductKernel{U}())
 end
 
-doc"`SigmoidKernel(α,c)` = tanh(a⋅xᵀy + c)"
-function SigmoidKernel{T<:AbstractFloat}(a::T = 1.0, c::T = one(T))
-    KernelComposition(SigmoidClass(a, c), ScalarProductKernel{T}())
+doc"SigmoidKernel(α,c) = tanh(a⋅xᵀy + c)"
+function SigmoidKernel{T<:Real}(a::T = 1.0, c::Real = one(T))
+    U = promote_type(T, typeof(c))
+    U = T <: AbstractFloat ? T : Float64
+    KernelComposition(SigmoidClass(convert(U, a), convert(U, c)), ScalarProductKernel{U}())
 end

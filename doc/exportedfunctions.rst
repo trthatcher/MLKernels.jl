@@ -149,30 +149,38 @@ Kernel Computation
 
     Same as ``centerkernelmatrix!`` but makes a copy of ``X``.
 
+Kernel Approximation
+--------------------
+
 .. _nystrom:
 
-.. function:: nystrom(κ, X, s [; is_trans, store_upper, symmetrize])
+.. function:: nystrom!(K, κ, X, s, is_trans, store_upper, symmetrize)
 
-    Compute the Nystrom approximation of the square kernel matrix of ``X``. Returns kernel matrix
-    ``K``. Type ``T`` may be any subtype of ``FloatingPoint`` and ``U`` may be any subtype of 
-    ``Integer``. The array ``S`` must be a list of observations that have been selected as a 
-    sample. The sample may be selected with replacement. The following optional arguments may be 
-    used positionally or as keyword arguments:
+    Overwrite the pre-allocated square matrix ``K`` with the Nystrom 
+    approximation of the kernel matrix of ``X``. Returns matrix ``K``. Type 
+    ``T`` may be any  subtype of ``AbstractFloat`` and ``U`` may be any subtype 
+    of ``Integer``. The array ``S`` must be a 1-indexed sample of the 
+    observations of ``X`` (with replacement). When ``is_trans`` is set to 
+    ``true``, then ``K`` must match the dimensions of ``X'X`` and ``S`` must 
+    sample the columns of ``X``. Otherwise, ``K`` must match the dimensions of 
+    ``X * X'`` and ``S`` must sample the rows of ``X``.
 
-     ``is_trans = false``
-       Set ``is_trans = true`` when each column of ``X`` corresponds to a vector of variables.
-       Otherwise, each row of ``X`` is treated as a vector of variables.
-     ``store_upper = true``
-       Set ``store_upper = true`` to compute the upper triangle of the kernel matrix of ``X``. 
-       Otherwise, the lower triangle will be computed. This argument will have no impact on the 
-       output matrix when ``symmetrize = true``.
-     ``symmetrize = true``
-       Set ``symmetrize = true`` to copy the contents of the computed triangle to the uncomputed
-       triangle.
+    Set ``store_upper`` to ``true`` to compute the upper triangle of the kernel 
+    matrix of ``X`` or ``false`` to compute the lower triangle. If
+    ``symmetrize`` is set to ``false``, then only the specified triangle will be
+    computed.
 
-    If the matrix ``K`` has been pre-allocated, the following method may be used to overwrite 
-    ``K`` instead of allocating a new array:
+    .. note::
 
-    .. code-block:: julia
+        The Nystrom method uses an eigendecomposition of the sample of ``X`` to
+        estimate ``K``. Generally, the order of ``K`` must be quite large and 
+        the sampling ratio small (ex. 15% or less) for the cost of the computing 
+        the full kernel matrix to exceed that of the eigendecomposition. This
+        method will be more effective for kernels that are not a direct function
+        of the dot product (Chi-Squared, Sine-Squared, etc.) as they are not
+        able to make use of BLAS in computing the full ``K`` and the cross-over
+        point will occur for smaller ``K``.
 
-        nystrom!(K, κ, X, s, is_trans, store_upper, symmetrize)
+.. function:: nystrom(κ, X, s, [; is_trans, store_upper, symmetrize])
+
+    The same as ``nystrom!`` with matrix ``K`` automatically allocated.
