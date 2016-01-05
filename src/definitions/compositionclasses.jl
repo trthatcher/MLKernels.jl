@@ -19,7 +19,7 @@ end
   Exponential Class
 ==========================================================================#
 
-doc"ExponentialClass(z;α,γ) = exp(-α⋅zᵞ)"
+doc"ExponentialClass(κ;α,γ) = exp(-α⋅κᵞ)"
 immutable ExponentialClass{T<:AbstractFloat,CASE} <: CompositionClass{T}
     alpha::T
     gamma::T
@@ -32,8 +32,10 @@ immutable ExponentialClass{T<:AbstractFloat,CASE} <: CompositionClass{T}
         new(α, γ)
     end
 end
-function ExponentialClass{T<:AbstractFloat}(α::T = 1.0, γ::T = one(T))
-    ExponentialClass{T, γ == 1 ? :γ1 : :Ø}(α, γ)
+function ExponentialClass{T<:Real}(α::T = 1.0, γ::Real = one(T))
+    U = promote_type(T, typeof(γ))
+    U = U <: AbstractFloat ? U : Float64
+    ExponentialClass{U, γ == 1 ? :γ1 : :Ø}(convert(U, α), convert(U, γ))
 end
 
 iscomposable(::ExponentialClass, κ::Kernel) = is_nonneg_and_negdef(κ)
@@ -55,7 +57,7 @@ end
   Rational Quadratic Class
 ==========================================================================#
 
-doc"RationalQuadraticClass(z;α,β,γ) = (1 + α⋅zᵞ)⁻ᵝ"
+doc"RationalQuadraticClass(κ;α,β,γ) = (1 + α⋅κᵞ)⁻ᵝ"
 immutable RationalQuadraticClass{T<:AbstractFloat,CASE} <: CompositionClass{T}
     alpha::T
     beta::T
@@ -75,7 +77,9 @@ immutable RationalQuadraticClass{T<:AbstractFloat,CASE} <: CompositionClass{T}
     end
 end
 
-function RationalQuadraticClass{T<:AbstractFloat}(α::T = 1.0, β::T = one(T), γ::T = one(T))
+function RationalQuadraticClass{T<:Real}(α::T = 1.0, β::Real = one(T), γ::Real = one(T))
+    U = promote_type(T, typeof(β), typeof(γ))
+    U = U <: AbstractFloat ? U : Float64
     β1 = β == 1
     γ1 = γ == 1
     CASE =  if β1 && γ1
@@ -87,7 +91,7 @@ function RationalQuadraticClass{T<:AbstractFloat}(α::T = 1.0, β::T = one(T), �
             else
                 :Ø
             end    
-    RationalQuadraticClass{T,CASE}(α, β, γ)
+    RationalQuadraticClass{U,CASE}(convert(U, α), convert(U, β), convert(U, γ))
 end
 
 iscomposable(::RationalQuadraticClass, κ::Kernel) = is_nonneg_and_negdef(κ)
@@ -113,7 +117,7 @@ end
   Matern Class
 ==========================================================================#
 
-doc"MatérnClass(z;ν,θ) = 2ᵛ⁻¹(√(2ν)z/θ)ᵛKᵥ(√(2ν)z/θ)/Γ(ν)"
+doc"MatérnClass(κ;ν,θ) = 2ᵛ⁻¹(√(2ν)κ/θ)ᵛKᵥ(√(2ν)κ/θ)/Γ(ν)"
 immutable MaternClass{T<:AbstractFloat,CASE} <: CompositionClass{T}
     nu::T
     theta::T
@@ -126,7 +130,11 @@ immutable MaternClass{T<:AbstractFloat,CASE} <: CompositionClass{T}
         new(ν, θ)
     end
 end
-MaternClass{T<:AbstractFloat}(ν::T = 1.0, θ::T = one(T)) = MaternClass{T, ν == 1 ? :ν1 : :Ø}(ν, θ)
+function MaternClass{T<:Real}(ν::T = 1.0, θ::Real = one(T))
+    U = promote_type(T, typeof(θ))
+    U = U <: AbstractFloat ? U : Float64
+    MaternClass{U, ν == 1 ? :ν1 : :Ø}(convert(U, ν), convert(U, θ))
+end
 
 iscomposable(::MaternClass, κ::Kernel) = is_nonneg_and_negdef(κ)
 
@@ -156,7 +164,7 @@ end
   Polynomial Class
 ==========================================================================#
 
-doc"PolynomialClass(z;a,c,d) = (a⋅z + c)ᵈ"
+doc"PolynomialClass(κ;a,c,d) = (a⋅κ + c)ᵈ"
 immutable PolynomialClass{T<:AbstractFloat,CASE} <: CompositionClass{T}
     a::T
     c::T
@@ -170,8 +178,10 @@ immutable PolynomialClass{T<:AbstractFloat,CASE} <: CompositionClass{T}
         new(a, c, d)
     end
 end
-function PolynomialClass{T<:AbstractFloat}(a::T = 1.0, c::T = one(T), d::T = 3one(T))
-    PolynomialClass{T, d == 1 ? :d1 : :Ø}(a, c, d)
+function PolynomialClass{T<:Real}(a::T = 1.0, c::Real = one(T), d::Real = 3one(T))
+    U = promote_type(T, typeof(c), typeof(d))
+    U = U <: AbstractFloat ? U : Float64
+    PolynomialClass{U, d == 1 ? :d1 : :Ø}(convert(U, a), convert(U, c), convert(U, d))
 end
 
 function iscomposable(::PolynomialClass, κ::Kernel)
@@ -192,7 +202,7 @@ end
   Exponentiated Class
 ==========================================================================#
 
-doc"ExponentiatedClass(z;α) = exp(a⋅z + c)"
+doc"ExponentiatedClass(κ;α) = exp(a⋅κ + c)"
 immutable ExponentiatedClass{T<:AbstractFloat} <: CompositionClass{T}
     a::T
     c::T
@@ -201,8 +211,11 @@ immutable ExponentiatedClass{T<:AbstractFloat} <: CompositionClass{T}
         new(a, c)
     end
 end
-
-ExponentiatedClass{T<:AbstractFloat}(a::T = 1.0, c::T = zero(T)) = ExponentiatedClass{T}(a, c)
+function ExponentiatedClass{T<:Real}(a::T = 1.0, c::Real = zero(T))
+    U = promote_type(T, typeof(c))
+    U = U <: AbstractFloat ? U : Float64
+    ExponentiatedClass{U}(convert(U, a), convert(U, c))
+end
 
 function iscomposable(::ExponentiatedClass, κ::Kernel)
     ismercer(κ) || error("Composed kernel must be a Mercer class.")
@@ -224,7 +237,7 @@ end
   Sigmoid Class
 ==========================================================================#
 
-doc"SigmoidClass(z;α,c) = tanh(a⋅z + c)"
+doc"SigmoidClass(κ;α,c) = tanh(a⋅κ + c)"
 immutable SigmoidClass{T<:AbstractFloat} <: CompositionClass{T}
     a::T
     c::T
@@ -233,8 +246,11 @@ immutable SigmoidClass{T<:AbstractFloat} <: CompositionClass{T}
         new(a, c)
     end
 end
-
-SigmoidClass{T<:AbstractFloat}(a::T = 1.0, c::T = one(T)) = SigmoidClass{T}(a, c)
+function SigmoidClass{T<:Real}(a::T = 1.0, c::Real = one(T))
+    U = promote_type(T, typeof(c))
+    U = U <: AbstractFloat ? U : Float64
+    SigmoidClass{U}(convert(U, a), convert(U, c))
+end
 
 function iscomposable(::SigmoidClass, κ::Kernel)
     ismercer(κ) || error("Composed class must be a Mercer class.")
@@ -265,8 +281,10 @@ immutable PowerClass{T<:AbstractFloat,CASE} <: CompositionClass{T}
         new(a, c, γ)
     end
 end
-function PowerClass{T<:AbstractFloat}(a::T = 1.0, c = zero(T), γ::T = one(T)/2)
-    PowerClass{T, γ == 1 ? :γ1 : :Ø}(a, c, γ)
+function PowerClass{T<:Real}(a::T = 1.0, c::Real = zero(T), γ::Real = one(T)/2)
+    U = promote_type(T, typeof(c), typeof(γ))
+    U = U <: AbstractFloat ? U : Float64
+    PowerClass{U, γ == 1 ? :γ1 : :Ø}(convert(U, a), convert(U, c), convert(U, γ))
 end
 
 iscomposable(::PowerClass, κ::Kernel) = is_nonneg_and_negdef(κ)
@@ -301,7 +319,11 @@ immutable LogClass{T<:AbstractFloat,CASE} <: CompositionClass{T}
         new(α,γ)
     end
 end
-LogClass{T<:AbstractFloat}(α::T = 1.0, γ::T = one(T)) = LogClass{T, γ == 1 ? :γ1 : :Ø}(α, γ)
+function LogClass{T<:Real}(α::T = 1.0, γ::Real = one(T))
+    U = promote_type(T, typeof(γ))
+    U = U <: AbstractFloat ? U : Float64
+    LogClass{U, γ == 1 ? :γ1 : :Ø}(convert(U, α), convert(U, γ))
+end
 
 iscomposable(::LogClass, κ::Kernel) = is_nonneg_and_negdef(κ)
 

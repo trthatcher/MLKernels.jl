@@ -2,6 +2,8 @@
 Kernels
 -------
 
+A number of popular kernels have been pre-defined for ease of use. 
+
 =================== ======== =================
 Kernel               Mercer  Negative Definite
 =================== ======== =================
@@ -32,10 +34,12 @@ The scalar product kernel is the dot product of two vectors:
 The scalar product is a Mercer kernel [berg]_ - it can be used to construct 
 kernels such as the Polynomial Kernel. The kernel may be constructed using:
 
-.. code-block:: julia
+.. function:: ScalarProductKernel()
 
-    ScalarProductKernel()           # Construct 64 bit kernel (default)
-    ScalarProductKernel{Float32}()  # Construct 32 bit kernel
+  .. code-block:: julia
+
+      ScalarProductKernel()           # Construct 64 bit kernel (default)
+      ScalarProductKernel{Float32}()  # Construct 32 bit kernel
 
 
 .. _kern-sqdist:
@@ -54,10 +58,14 @@ The squared distance is a **negative definite** stationary kernel [berg]_. The
 Gaussian kernel is a scalar transformation of this kernel. The kernel may be
 constructed using:
 
-.. code-block:: julia
+.. function:: SquaredDistanceKernel(t)
 
-    SquaredDistanceKernel()   # Squared distance kernel with t = 1.0
-    SquaredDistanceKernel(t)  # Squared distance kernel specified t value
+  Construct a Squared Distance Kernel.
+
+  .. code-block:: julia
+
+      SquaredDistanceKernel()   # Squared distance kernel with t = 1.0
+      SquaredDistanceKernel(t)  # Squared distance kernel specified t value
 
 
 .. _kern-sinsq:
@@ -73,13 +81,6 @@ situations where data may be periodic:
     
     \kappa(\mathbf{x},\mathbf{y}) = \sum_{i=1}^n \sin^{2t}(p(x_i - y_i)) \qquad p >0, \;0 < t \leq 1
 
-A sine squared kernel may be constructed using:
-
-.. code-block:: julia
-
-    SineSquaredKernel()     # Sine Squared kernel with p = π, t = 1.0
-    SineSquaredKernel(p,t)  # Sine Squared kernel specified p & t values
-
 The first three components of KPCA with a sine squared kernel:
 
 .. image:: images/kernels/sine-squared_kernel.png
@@ -87,6 +88,15 @@ The first three components of KPCA with a sine squared kernel:
 
 Over a larger range, the projected surface can be seen to fold in on itself and
 repeat the shape.
+
+.. function:: SineSquaredKernel(p,t)
+
+  Construct a Sine-Squared Kernel.
+
+  .. code-block:: julia
+
+      SineSquaredKernel()     # Sine Squared kernel with p = π, t = 1.0
+      SineSquaredKernel(p,t)  # Sine Squared kernel specified p & t values
 
 
 .. _kern-chisq:

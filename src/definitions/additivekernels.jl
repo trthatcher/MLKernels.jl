@@ -3,7 +3,7 @@
   k(x,y) = (x-y)²ᵗ    x ∈ ℝ, y ∈ ℝ, t ∈ (0,1]
 ==========================================================================#
 
-doc"`SquaredDistanceKernel(t)` = Σⱼ(xⱼ-yⱼ)²ᵗ"
+doc"SquaredDistanceKernel(t) = Σⱼ(xⱼ-yⱼ)²ᵗ"
 immutable SquaredDistanceKernel{T<:AbstractFloat,CASE} <: AdditiveKernel{T} 
     t::T
     function SquaredDistanceKernel(t::T)
@@ -11,7 +11,8 @@ immutable SquaredDistanceKernel{T<:AbstractFloat,CASE} <: AdditiveKernel{T}
         new(t)
     end
 end
-function SquaredDistanceKernel{T<:AbstractFloat}(t::T = 1.0)
+function SquaredDistanceKernel{T<:Real}(t::T = 1.0)
+    U = T <: AbstractFloat ? T : Float64
     CASE =  if t == 1
                 :t1
             elseif t == 0.5
@@ -19,7 +20,7 @@ function SquaredDistanceKernel{T<:AbstractFloat}(t::T = 1.0)
             else
                 :∅
             end
-    SquaredDistanceKernel{T,CASE}(t)
+    SquaredDistanceKernel{U,CASE}(convert(U,t))
 end
 
 isnegdef(::SquaredDistanceKernel) = true
@@ -40,7 +41,7 @@ end
   k(x,y) = sin²ᵗ(p(x-y))    x ∈ ℝ, y ∈ ℝ, t ∈ (0,1], p ∈ (0,∞)
 ==========================================================================#
 
-doc"`SineSquaredKernel(p,t)` = Σⱼ(p(xⱼ-yⱼ))²ᵗ"
+doc"SineSquaredKernel(p,t) = Σⱼ(p(xⱼ-yⱼ))²ᵗ"
 immutable SineSquaredKernel{T<:AbstractFloat,CASE} <: AdditiveKernel{T}
     p::T
     t::T
@@ -50,7 +51,9 @@ immutable SineSquaredKernel{T<:AbstractFloat,CASE} <: AdditiveKernel{T}
         new(p, t)
     end
 end
-function SineSquaredKernel{T<:AbstractFloat}(p::T = convert(Float64, π), t::T = one(T))
+function SineSquaredKernel{T<:Real}(p::T = convert(Float64, π), t::Real = one(T))
+    U = promote_type(T, typeof(t))
+    U = U <: AbstractFloat ? U : Float64
     CASE =  if t == 1
                 :t1
             elseif t == 0.5
@@ -58,7 +61,7 @@ function SineSquaredKernel{T<:AbstractFloat}(p::T = convert(Float64, π), t::T =
             else
                 :∅
             end
-    SineSquaredKernel{T,CASE}(p, t)
+    SineSquaredKernel{U,CASE}(convert(U, p), convert(U, t))
 end
 
 isnegdef(::SineSquaredKernel) = true
@@ -79,6 +82,7 @@ end
   k(x,y) = ((x-y)²/(x+y))ᵗ    x ∈ ℝ⁺, y ∈ ℝ⁺, t ∈ (0,1]
 ==========================================================================#
 
+doc"ChiSquaredKernel(t) = Σⱼ((xⱼ-yⱼ)²/(xⱼ+yⱼ))ᵗ"
 immutable ChiSquaredKernel{T<:AbstractFloat,CASE} <: AdditiveKernel{T}
     t::T
     function ChiSquaredKernel(t::T)
@@ -86,13 +90,14 @@ immutable ChiSquaredKernel{T<:AbstractFloat,CASE} <: AdditiveKernel{T}
         new(t)
     end
 end
-function ChiSquaredKernel{T<:AbstractFloat}(t::T = 1.0)
+function ChiSquaredKernel{T<:Real}(t::T = 1.0)
+    U = T <: AbstractFloat ? T : Float64
     CASE =  if t == 1
                 :t1
             else
                 :∅
             end
-    ChiSquaredKernel{T,CASE}(t)
+    ChiSquaredKernel{U,CASE}(convert(U,t))
 end
 
 isnegdef(::ChiSquaredKernel) = true
@@ -115,6 +120,7 @@ end
   Scalar Product Kernel
 ==========================================================================#
 
+doc"ScalarProductKernel() = xᵀy"
 immutable ScalarProductKernel{T<:AbstractFloat} <: AdditiveKernel{T} end
 ScalarProductKernel() = ScalarProductKernel{Float64}()
 

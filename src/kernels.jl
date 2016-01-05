@@ -45,12 +45,12 @@ iscomposable(::CompositionClass, ::Kernel) = true
 include("definitions/compositionclasses.jl")
 
 for class_obj in concrete_subtypes(CompositionClass)
-  class_name = class_obj.name.name  # symbol for concrete kernel type
-  field_conversions = [:(convert(T, κ.$field)) for field in fieldnames(class_obj)]
-  constructorcall = Expr(:call, class_name, field_conversions...)
-  @eval begin
-      convert{T<:AbstractFloat}(::Type{$class_name{T}}, κ::$class_name) = $constructorcall
-  end
+    class_name = class_obj.name.name  # symbol for concrete kernel type
+    field_conversions = [:(convert(T, κ.$field)) for field in fieldnames(class_obj)]
+    constructorcall = Expr(:call, class_name, field_conversions...)
+    @eval begin
+        convert{T<:AbstractFloat}(::Type{$class_name{T}}, κ::$class_name) = $constructorcall
+    end
 end
 
 
@@ -84,6 +84,8 @@ for kernel_obj in concrete_subtypes(AdditiveKernel)
         end
     end
 end
+
+
 
 
 #==========================================================================
@@ -133,6 +135,10 @@ immutable KernelComposition{T<:AbstractFloat} <: StandardKernel{T}
 end
 function KernelComposition{T<:AbstractFloat}(ϕ::CompositionClass{T}, κ::Kernel{T})
     KernelComposition{T}(ϕ, κ)
+end
+function KernelComposition{T<:AbstractFloat,U<:AbstractFloat}(ϕ::CompositionClass{T}, κ::Kernel{U})
+    V = promote_type(T, U)
+    KernelComposition{V}(convert(CompositionClass{V}, ϕ), convert(Kernel{V}, κ))
 end
 
 ismercer(κ::KernelComposition) = ismercer(κ.phi)
