@@ -1,38 +1,42 @@
--------
-Kernels
--------
+----------------
+Kernel Functions
+----------------
 
-A number of popular kernels have been pre-defined for ease of use. 
+A number of popular kernels have been pre-defined for ease of use. Below is a
+summary table for quick reference:
 
-=================== ======== =================
-Kernel               Mercer  Negative Definite
-=================== ======== =================
-:ref:`kern-scprod`     ✓      ✗
-:ref:`kern-sqdist`     ✗      ✓
-:ref:`kern-sinsq`      ✗      ✓
-:ref:`kern-chisq`      ✗      ✓
-:ref:`kern-gauss`      ✓      ✗
-:ref:`kern-lapla`      ✓      ✗
-:ref:`kern-period`     ✓      ✗
-:ref:`kern-ratquad`    ✓      ✗
-:ref:`kern-matern`     ✓      ✗
-:ref:`kern-poly`       ✓      ✗
-:ref:`kern-sigmoid`    ✗      ✗
-=================== ======== =================
+=================== ================================== ======= =================
+Kernel              Constructor                        Mercer  Negative Definite
+=================== ================================== ======= =================
+:ref:`kern-scprod`  ``ScalarProductKernel()``          ✓       ✗
+:ref:`kern-sqdist`  ``SquaredDistanceKernel(t)``       ✗       ✓
+:ref:`kern-sinsq`   ``SineSquaredKernel(p,t)``         ✗       ✓
+:ref:`kern-chisq`   ``ChiSquaredKernel(t)``            ✗       ✓
+:ref:`kern-gauss`   ``GaussianKernel(α)``              ✓       ✗
+:ref:`kern-lapla`   ``LaplacianKernel(α)``             ✓       ✗
+:ref:`kern-period`  ``PeriodicKernel(α,p)``            ✓       ✗
+:ref:`kern-ratquad` ``RationalQuadraticKernel(α,β,γ)`` ✓       ✗
+:ref:`kern-matern`  ``MaternKernel(ν,θ)``              ✓       ✗
+:ref:`kern-poly`    ``PolynomialKernel(a,c,d)``        ✓       ✗
+:ref:`kern-sigmoid` ``SigmoidKernel(α,c)``             ✗       ✗
+=================== ================================== ======= =================
 
 .. _kern-scprod:
 
 Scalar Product Kernel
 .....................
 
-The scalar product kernel is the dot product of two vectors:
+The scalar product kernel, or linear kernel, is the dot product of two vectors:
 
 .. math::
     
     \kappa(\mathbf{x},\mathbf{y}) = \mathbf{x}^{\intercal} \mathbf{y}
 
-The scalar product is a Mercer kernel [berg]_ - it can be used to construct 
-kernels such as the Polynomial Kernel. The kernel may be constructed using:
+The scalar product is a Mercer kernel [berg]_. This kernel is provided primarily
+for constructing new kernels (ex. polynomial kernel) since usage of this kernel
+in a kernel-based algorithm will often be equivalent to the non-kernelized
+version of the algorithm. For example, kernel principal components analysis with
+a scalar product kernel is equivalent to normal principal components analysis.
 
 .. function:: ScalarProductKernel()
 
@@ -55,8 +59,12 @@ with an additional shape parameter:
     \kappa(\mathbf{x},\mathbf{y}) = \sum_{i=1}^n (x_i - y_i)^{2t} \qquad 0 < t \leq 1
 
 The squared distance is a **negative definite** stationary kernel [berg]_. The 
-Gaussian kernel is a scalar transformation of this kernel. The kernel may be
-constructed using:
+first three components of kernel PCA over an ellipse in :math:`\mathbb{R}^2`
+with a squared distance kernel (:math:`t=0.5`) are visualized below:
+
+.. image:: images/kernels/squared-distance_kernel.png
+    :alt: The first three components of KPCA with a squared distance kernel.
+
 
 .. function:: SquaredDistanceKernel(t)
 
@@ -111,17 +119,19 @@ bag-of-words models:
     
     \kappa(\mathbf{x},\mathbf{y}) = \sum_{i=1}^n \left(\frac{(x_i - y_i)^2}{x_i + y_i}\right)^t \qquad 0 < t \leq 1, \; x_i > 0 \; \forall i, \; y_i > 0 \; \forall i
 
-The Chi-Squared kernel may be constructed using:
-
-.. code-block:: julia
-
-    ChiSquaredKernel()   # Sine Squared kernel with t = 1.0
-    ChiSquaredKernel(t)  # Sine Squared kernel specified t value
-
 The first three components of KPCA with a Chi-Squared kernel:
 
 .. image:: images/kernels/chi-squared_kernel.png
     :alt: The first three components of KPCA with a chi-squared kernel.
+
+.. function:: ChiSquaredKernel(t)
+
+  Construct a Chi-Squared kernel.
+
+  .. code-block:: julia
+
+    ChiSquaredKernel()   # Sine Squared kernel with t = 1.0
+    ChiSquaredKernel(t)  # Sine Squared kernel specified t value
 
     
 .. _kern-gauss:
@@ -135,20 +145,24 @@ The Gaussian kernel is an isotropic Mercer kernel given by:
 
     k(\mathbf{x},\mathbf{y}) = \exp\left(-\alpha ||\mathbf{x} - \mathbf{y}||^2\right) \qquad \alpha > 0
 
-where :math:`a` is a scaling parameter of the squared distance. The Gaussian
-kernel often goes by two other names - the radial basis Kernel and the squared
-exponential Kernel (Gaussian processes).
+where :math:`\alpha` is a scaling parameter of the squared distance. The 
+Gaussian kernel often goes by two other names - the radial basis kernel and the 
+squared exponential covariance function (Gaussian processes).
 
-.. code-block:: julia
-
-    GaussianKernel{T<:AbstractFloat}(α::T = 1.0)
-    RadialBasisKernel{T<:AbstractFloat}(α::T = 1.0)
-    SquaredExponentialKernel{T<:AbstractFloat}(α::T = 1.0)
-
-The first three components of KPCA with a Gaussian Kernel:
+The first three components of kernel PCA over an ellipse in :math:`\mathbb{R}^2`
+with a Gaussian kernel are visualized below:
 
 .. image:: images/kernels/gaussian_kernel.png
     :alt: The first three components of KPCA with a Gaussian Kernel.
+
+.. function:: GaussianKernel(α)
+  
+  Construct a Gaussian Kernel. The following two functions are equivalent:
+
+  .. code-block:: julia
+
+      RadialBasisKernel(α)
+      SquaredExponentialKernel(α)
 
 
 .. _kern-lapla:
@@ -162,7 +176,8 @@ The Laplacian kernel is given by:
 
     k(\mathbf{x},\mathbf{y}) = \exp\left(-\alpha ||\mathbf{x} - \mathbf{y}||\right) \qquad \alpha > 0
 
-where :math:`a` is a scaling parameter of the Euclidean distance. The Laplacian
+where :math:`\alpha` is a scaling parameter of the Euclidean distance. The 
+Laplacian
 kernel is closely related to the Gaussian kernel; the difference is that the
 Laplacian kernel makes use of the Euclidean distance and the Gaussian kernel
 uses the squared Euclidean distance.
@@ -293,3 +308,8 @@ Construct a sigmoid kernel:
 
 where :math:`\kappa` is a Mercer kernel. The sigmoid kernel is a not a true kernel, although
 it has been used in application.
+
+The first three components of KPCA with a Sigmoid Kernel:
+
+.. image:: images/kernels/sigmoid_kernel.png
+    :alt: The first three components of KPCA with a Polynomial Kernel.

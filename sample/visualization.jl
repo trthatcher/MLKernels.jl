@@ -57,7 +57,7 @@ end
 # Performs a form of KPCA for 3 dimensions
 function kpca_3d{T<:Base.LinAlg.BlasReal}(K::Matrix{T})
     Λ, V = LAPACK.syev!('V', 'U', centerkernelmatrix!(copy(K)))
-    W = V[:,end:-1:end-2]  # eigenvalues are in ascending order
+    W = V[:,end:-1:end-2] * 10  # eigenvalues are in ascending order
 end
 
 
@@ -153,8 +153,8 @@ PyPlot.plot(sqrt(xy_mid)*sin(v), sqrt(xy_mid)*cos(v), c="b", ls="-")
   Kernel Trick Visualization 
 ===================================================================================================#
 
-#=
 for (κ, title, n_points, n_contours, center, radius) in (
+        (SquaredDistanceKernel(0.5), "Squared-Distance Kernel", 40, 15, (0.0, 0.0), 1.0),
         (SineSquaredKernel(), "Sine-Squared Kernel", 40, 15, (0.0, 0.0), 0.5),
         (ChiSquaredKernel(), "Chi-Squared Kernel", 40, 15, (0.5, 0.5), 0.5),
         (GaussianKernel(), "Gaussian Kernel", 40, 15, (0.0, 0.0), 1.0),
@@ -169,7 +169,10 @@ for (κ, title, n_points, n_contours, center, radius) in (
     W = kpca_3d((isnegdef(κ) ? -1 : 1) * kernelmatrix(κ, U))
     X, Y, Z = coordinate_matrices(W, n_points, n_contours)
     PyPlot.figure(title)
-    PyPlot.plot_surface(X, Y, Z, rstride=1, cstride=1, alpha=0.75, linewidth=0, 
+    PyPlot.plot_surface(X, Y, Z, rstride=1, cstride=1, alpha=1.0, linewidth=0, 
                         cmap=ColorMap("coolwarm"))
+    PyPlot.title(title)
+    PyPlot.xlabel("Component 1") 
+    PyPlot.ylabel("Component 2")
+    PyPlot.zlabel("Component 3")
 end
-=#
