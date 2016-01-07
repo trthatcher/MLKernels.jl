@@ -60,9 +60,9 @@ Operation   Description
 ``κ + ψ``   Addition; see :ref:`kernelaffinity` and :ref:`kernelsum`
 ``κ * ψ``   Multiplication; see :ref:`kernelaffinity` and :ref:`kernelproduct`
 ``ϕ ∘ κ``   Function composition; see :ref:`kernelclasses` for combinations.
-``exp(κ)``  Exponentiation;
-``κ^t``     Power;
-``tanh(κ)`` Hyperbolic tangent;
+``exp(κ)``  Exponentiation; see exponentiated kernel class.
+``κ^t``     Power; see power and polynomial kernel class.
+``tanh(κ)`` Hyperbolic tangent; see sigmoid kernel class.
 =========== =
 
 

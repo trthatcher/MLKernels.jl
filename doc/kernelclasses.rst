@@ -1,99 +1,124 @@
 .. _kernelclasses:
 
---------------
-Kernel Classes
---------------
+--------------------------
+Kernel Composition Classes
+--------------------------
 
-Exponential Class
-.................
+.. function:: KernelComposition(ϕ,κ)
 
-.. math::
+  The ``KernelComposition`` type is used to construct new kernels. The composite
+  type consists of two objects: ``ϕ``, a composition class, and ``κ``, an 
+  existing kernel. Mathematically, it constructs a new kernel such that if
+  :math:`\phi` is the function composing the kernel :math:`\kappa`, then:
 
-    k(\mathbf{x},\mathbf{y}) = \exp\left(-\alpha \kappa(\mathbf{x},\mathbf{y})^{\gamma}\right) \qquad \alpha > 0, \; 0 < \gamma \leq 1
+  .. math::
 
-Rational-Quadratic Class
-........................
+    \Psi(\mathbf{x}, \mathbf{y}) = \phi(\kappa(\mathbf{y}, \mathbf{x}))
 
-.. math::
+The implemented ``CompositionClass`` types are listed below:
 
-    k(\mathbf{x},\mathbf{y}) = \left(1 +\alpha \kappa(\mathbf{x},\mathbf{y})^{\gamma}\right)^{-\beta} \qquad \alpha > 0, \; \beta > 0, \; 0 < \gamma \leq 1
+.. function:: ExponentialClass(α,γ)
 
-Matern Class
-.............
+  .. math::
 
-.. math::
-
-    k(\mathbf{x},\mathbf{y}) = \frac{1}{2^{\nu-1}\Gamma(\nu)} \left(\frac{2\sqrt{\nu}\kappa(\mathbf{x},\mathbf{y})}{\theta}\right)^{\nu} K_{\nu}\left(\frac{2\sqrt{\nu}\kappa(\mathbf{x},\mathbf{y})}{\theta}\right)
-
-Polynomial Class
-................
-
-The polynomial kernel is given by:
-
-.. math::
-
-    k(\mathbf{x},\mathbf{y}) = (\alpha\kappa(\mathbf{x},\mathbf{y}) + c)^d \qquad \alpha > 0, \; c \geq 0, \; d \in \mathbb{Z}_{+}
+    \Psi(\mathbf{x},\mathbf{y}) = \exp\left(-\alpha \kappa(\mathbf{x},\mathbf{y})^{\gamma}\right) \qquad \alpha > 0, \; 0 < \gamma \leq 1
 
 
-Exponentiated Class
-...................
+.. function:: RationalQuadraticClass(α,β,γ)
+  
+  .. math::
 
-.. math::
+    \Psi(\mathbf{x},\mathbf{y}) = \left(1 +\alpha \kappa(\mathbf{x},\mathbf{y})^{\gamma}\right)^{-\beta} \qquad \alpha > 0, \; \beta > 0, \; 0 < \gamma \leq 1
 
-    k(\mathbf{x},\mathbf{y}) = \exp(\alpha\kappa(\mathbf{x},\mathbf{y}) + c) \qquad \alpha > 0, \; c \geq 0
+.. function:: MaternClass(ν,θ)
+  
+  .. math::
 
-where :math:`\kappa` is a Mercer kernel. An exponentiated kernel is a Mercer kernel.
+    \Psi(\mathbf{x},\mathbf{y}) = \frac{1}{2^{\nu-1}\Gamma(\nu)} \left(\frac{2\sqrt{\nu}\kappa(\mathbf{x},\mathbf{y})}{\theta}\right)^{\nu} K_{\nu}\left(\frac{2\sqrt{\nu}\kappa(\mathbf{x},\mathbf{y})}{\theta}\right)
 
+.. _polynomialclass:
 
-Power Kernel
-............
+.. function:: PolynomialClass(a,c,d)
 
-.. math::
+  .. math::
 
-    k(\mathbf{x},\mathbf{y}) = \kappa(\mathbf{x},\mathbf{y})^{\gamma} \qquad 0 < \gamma \leq 1
+    \Psi(\mathbf{x},\mathbf{y}) = (\alpha\kappa(\mathbf{x},\mathbf{y}) + c)^d \qquad \alpha > 0, \; c \geq 0, \; d \in \mathbb{Z}_{+}
 
-where :math:`\kappa` is a non-negative negative definite kernel. The power kernel is a
-negative definite kernel.
+.. _exponentiatedclass:
 
-Log Kernel
-..........
+.. function:: ExponentiatedClass(a,c)
 
-.. math::
+  .. math::
 
-    k(\mathbf{x},\mathbf{y}) = \log(1 + \alpha\kappa(\mathbf{x},\mathbf{y})^{\gamma}) \qquad \alpha > 0, \; 0 < \gamma \leq 1
+    \Psi(\mathbf{x},\mathbf{y}) = \exp(\alpha\kappa(\mathbf{x},\mathbf{y}) + c) \qquad \alpha > 0, \; c \geq 0
 
-where :math:`\kappa` is a non-negative negative definite kernel. The power kernel is a
-negative definite kernel.
+.. _powerclass:
 
+.. function:: PowerClass(a,c,γ)
 
-Sigmoid Kernel
-..............
+  .. math::
 
-Construct a sigmoid kernel:
+    \Psi(\mathbf{x},\mathbf{y}) = \kappa(\mathbf{x},\mathbf{y})^{\gamma} \qquad 0 < \gamma \leq 1
+
+.. function:: LogClass(α,γ)
 
 .. math::
 
-    k(\mathbf{x},\mathbf{y}) = \tanh(\alpha\kappa(\mathbf{x},\mathbf{y}) + c) \qquad \alpha > 0, \; c \geq 0
+    \Psi(\mathbf{x},\mathbf{y}) = \log(1 + \alpha\kappa(\mathbf{x},\mathbf{y})^{\gamma}) \qquad \alpha > 0, \; 0 < \gamma \leq 1
 
-where :math:`\kappa` is a Mercer kernel. The sigmoid kernel is a not a true kernel, although
-it has been used in application.
+.. _sigmoidclass:
+
+.. function:: SigmoidClass(a,c)
+
+  .. math::
+
+    \Psi(\mathbf{x},\mathbf{y}) = \tanh(\alpha\kappa(\mathbf{x},\mathbf{y}) + c) \qquad \alpha > 0, \; c \geq 0
 
 -----------------
 Kernel Operations
 -----------------
 
-
 .. _kernelaffinity:
 
-Kernel Affinity
-...............
+.. function:: KernelAffinity(a,c,κ)
+
+  The kernel affinity object is an affine transformation of a kernel (both
+  Mercer and negative definite):
+
+  .. math::
+
+    \Psi(\mathbf{x}, \mathbf{y}) = a \cdot \kappa(\mathbf{x}, \mathbf{y}) + c
+
+  Given a kernel ``κ``, a ``KernelAffinity`` may be constructed by translating
+  or scaling by a positive real number:
+
+  .. code-block:: julia
+  
+    2 * κ + 1  # Constructs a KernelAffinity(2, 1, κ) object
+
 
 .. _kernelsum:
 
-Kernel Sum
-..........
+.. function:: KernelSum(c,κ...)
+
+  The kernel sum corresponds to the following form:
+
+  .. math::
+
+    \Psi(\mathbf{x}, \mathbf{y}) = c + \sum_{i=1}^n \kappa_i(\mathbf{x},\mathbf{y})
+
+ Both Mercer and negative definite kernels are closed under addition. However,
+ Mercer kernels may not be mixed with negative definite kernels.
 
 .. _kernelproduct:
 
-Kernel Product
-..............
+.. function:: KernelProduct(a,κ...)
+
+  The kernel product corresponds to the following form:
+
+  .. math::
+
+    \Psi(\mathbf{x}, \mathbf{y}) = a \prod_{i=1}^n \kappa_i(\mathbf{x},\mathbf{y})
+
+  Only Mercer kernels are closed under multiplication.
+
