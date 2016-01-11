@@ -128,7 +128,7 @@ doc"KernelComposition(ϕ,κ) = ϕ∘κ"
 immutable KernelComposition{T<:AbstractFloat} <: StandardKernel{T}
     phi::CompositionClass{T}
     k::Kernel{T}
-    function KernelComposition(ϕ::CompositionClass{T}, κ::Kernel{T})
+    function KernelComposition(ϕ::CompositionClass{T}, κ::BaseKernel{T})
         iscomposable(ϕ, κ) || error("Kernel is not composable.")
         new(ϕ, κ)
     end

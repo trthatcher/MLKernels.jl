@@ -16,6 +16,7 @@ dependencies beyond base Julia.
     kernelfunctions
     kernelclasses
     kernelmethods
+    kerneloperations
     references
 
 .. _MLKernels.jl: https://github.com/trthatcher/MLKernels.jl

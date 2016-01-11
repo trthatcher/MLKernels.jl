@@ -37,28 +37,30 @@ export
             KernelAffinity,
             KernelProduct,
             KernelSum,
-        # Composition Classes
-        CompositionClass,
-            ExponentialClass,
-            RationalQuadraticClass,
-            PolynomialClass,
-            MaternClass,
-            ExponentiatedClass,
-            SigmoidClass,
-            PowerClass,
-            LogClass,
-        # Kernel Constructors
-        GaussianKernel,
-            SquaredExponentialKernel,
-            RadialBasisKernel,
-        LaplacianKernel,
-        PeriodicKernel,
-        RationalQuadraticKernel,
-        MaternKernel,
-            MatérnKernel,
-        PolynomialKernel,
-        LinearKernel,
-        SigmoidKernel
+    
+    # Composition Classes
+    CompositionClass,
+        ExponentialClass,
+        RationalQuadraticClass,
+        PolynomialClass,
+        MaternClass,
+        ExponentiatedClass,
+        SigmoidClass,
+        PowerClass,
+        LogClass,
+    
+    # Kernel Constructors
+    GaussianKernel,
+        SquaredExponentialKernel,
+        RadialBasisKernel,
+    LaplacianKernel,
+    PeriodicKernel,
+    RationalQuadraticKernel,
+    MaternKernel,
+        MatérnKernel,
+    PolynomialKernel,
+    LinearKernel,
+    SigmoidKernel
 
 
 include("common.jl")
