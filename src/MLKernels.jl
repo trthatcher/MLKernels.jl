@@ -20,6 +20,13 @@ export
     ispositive,
     isnonnegative,
 
+    # Hyper Parameters
+    HyperParameter,
+    Bound,
+    NullBound,
+    LowerBound,
+    UpperBound,
+    Interval,
 
     # Kernel Type
     Kernel,
@@ -65,6 +72,7 @@ export
 
 include("common.jl")
 include("meta.jl")
+include("hyperparameters.jl")
 include("kernels.jl")
 include("pairwise.jl")
 include("kernelfunctions.jl")
