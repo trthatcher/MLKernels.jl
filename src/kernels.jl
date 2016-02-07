@@ -41,6 +41,7 @@ Composition Classes
 ==========================================================================#
 
 iscomposable(::CompositionClass, ::Kernel) = true
+phi{T<:AbstractFloat}(ϕ::CompositionClass{T}, x::T) = phi(ϕ, Val{:∅}, x) # Val{checkcase(κ)}, x)
 
 include("definitions/compositionclasses.jl")
 

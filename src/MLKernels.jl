@@ -21,12 +21,13 @@ export
     isnonnegative,
 
     # Hyper Parameters
-    HyperParameter,
     Bound,
     NullBound,
     LowerBound,
     UpperBound,
     Interval,
+    ℝ,
+    Parameter,
 
     # Kernel Type
     Kernel,

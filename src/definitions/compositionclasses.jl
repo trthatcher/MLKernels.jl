@@ -14,43 +14,45 @@ macro assert_locationscale_ok()
     end
 end
 
+function promote_arguments(θ::Real...)
+    T = typeof(θ[1])
+    if (n = length(θ)) > 1
+        for i = 2:n
+            T = promote_type(T, typeof(θ[i]))
+        end
+    end
+    T = T <: AbstractFloat ? T : Float64
+    tuple(T[θ...]...)
+end
+
 
 #==========================================================================
   Exponential Class
 ==========================================================================#
 
 doc"ExponentialClass(κ;α,γ) = exp(-α⋅κᵞ)"
-immutable ExponentialClass{T<:AbstractFloat,CASE} <: CompositionClass{T}
-    alpha::T
-    gamma::T
-    function ExponentialClass(α::T, γ::T)
-        α > 0 || error("α = $(α) must be greater than zero.")
-        0 < γ <= 1 || error("γ = $(γ) must be in the interval (0,1].")
-        if CASE == :γ1 &&  γ != 1 
-            error("Special case γ = 1 flagged but γ = $(γ)")
-        end
-        new(α, γ)
-    end
+immutable ExponentialClass{T<:AbstractFloat} <: CompositionClass{T}
+    α::Parameter{T}
+    γ::Parameter{T}
+    ExponentialClass(α::T, α_fixed::Bool, γ::T, γ_fixed::Bool) = new(
+        Parameter(:α, α_fixed, α, ℝ(:>,zero(T))),
+        Parameter(:γ, γ_fixed, γ, ℝ(:>, zero(T), :(<=), one(T)))
+    )
 end
-function ExponentialClass{T<:Real}(α::T = 1.0, γ::Real = one(T))
-    U = promote_type(T, typeof(γ))
-    U = U <: AbstractFloat ? U : Float64
-    ExponentialClass{U, γ == 1 ? :γ1 : :Ø}(convert(U, α), convert(U, γ))
-end
+ExponentialClass{T<:AbstractFloat}(α::T, γ::T) = ExponentialClass{T}(α, false, γ, false)
+ExponentialClass(α::Real=1, γ::Real=1) = ExponentialClass(promote_arguments(α, γ)...)
 
 iscomposable(::ExponentialClass, κ::Kernel) = is_nonneg_and_negdef(κ)
-
 ismercer(::ExponentialClass) = true
-
 attainszero(::ExponentialClass) = false
 attainsnegative(::ExponentialClass) = false
 
 function description_string{T<:AbstractFloat}(ϕ::ExponentialClass{T}, eltype::Bool = true)
-    "Exponential" * (eltype ? "{$(T)}" : "") * "(α=$(ϕ.alpha),γ=$(ϕ.gamma))"
+    "Exponential" * (eltype ? "{$(T)}" : "") * "(" * valstring(ϕ.α) * "," * valstring(ϕ.γ) * ")"
 end
 
-@inline phi{T<:AbstractFloat}(ϕ::ExponentialClass{T}, z::T) = exp(-ϕ.alpha * z^ϕ.gamma)
-@inline phi{T<:AbstractFloat}(ϕ::ExponentialClass{T,:γ1}, z::T) = exp(-ϕ.alpha * z)
+@inline phi{T<:AbstractFloat}(ϕ::ExponentialClass{T}, z::T) = exp(-ϕ.α * z^ϕ.γ)
+#@inline phi{T<:AbstractFloat}(ϕ::ExponentialClass{T,:γ1}, z::T) = exp(-ϕ.α * z)
 
 
 #==========================================================================

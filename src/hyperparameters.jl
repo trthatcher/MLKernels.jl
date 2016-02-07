@@ -1,5 +1,33 @@
 abstract Bounds{T<:Real}
 
+
+#====================
+  Hypervalue Object
+====================#
+
+type ParameterValue{T<:Real}
+    v::T
+end
+ParameterValue{T<:Real}(v::T) = ParameterValue{T}(v)
+
+@inline *(a::Real, v::ParameterValue) = *(a, v.v)
+@inline *(v::ParameterValue, a::Real) = *(v.v, a)
+
+@inline +(a::Real, v::ParameterValue) = +(a, v.v)
+@inline +(v::ParameterValue, a::Real) = +(v.v, a)
+
+@inline ^(a::Real, v::ParameterValue)          = ^(a, v.v)
+#@inline ^(v::ParameterValue, a::Integer)       = ^(v.v, a)
+#@inline ^(v::ParameterValue, a::AbstractFloat) = ^(v.v, a)
+
+@inline exp(v::ParameterValue)  = exp(v.v)
+@inline tanh(v::ParameterValue) = tanh(v.v)
+
+
+#=================
+  Bounds Objects
+=================#
+
 immutable NullBound{T<:Real} <: Bounds{T} end
 
 immutable LowerBound{T<:Real} <: Bounds{T}
@@ -19,6 +47,12 @@ immutable Interval{T<:Real} <: Bounds{T}
     lower::T
     ustrict::Bool
     upper::T
+    function Interval(lstrict, lower, ustrict, upper)
+        if (lower > upper) || ((lstrict || ustrict) && lower == upper)
+            error("Invalid bounds.")
+        end
+        new(lstrict, lower, ustrict, upper)
+    end
 end
 function Interval{T<:Real}(lstrict::Bool, lower::T, ustrict::Bool, upper::T)
     Interval{T}(lstrict, lower, ustrict, upper)
@@ -36,8 +70,12 @@ function show(io::IO, I::Bounds)
 end
 
 @inline checkbounds{T<:AbstractFloat}(I::NullBound{T}, x::T) = true
-@inline checkbounds{T<:AbstractFloat}(I::LowerBound{T}, x::T) = I.lstrict ? (I.lower < x) : (I.lower <= x)
-@inline checkbounds{T<:AbstractFloat}(I::UpperBound{T}, x::T) = I.ustrict ? (x < I.upper) : (x <= I.upper)
+@inline function checkbounds{T<:AbstractFloat}(I::LowerBound{T}, x::T)
+    I.lstrict ? (I.lower < x) : (I.lower <= x)
+end
+@inline function checkbounds{T<:AbstractFloat}(I::UpperBound{T}, x::T)
+    I.ustrict ? (x < I.upper) : (x <= I.upper)
+end
 @inline function checkbounds{T<:AbstractFloat}(I::Interval{T}, x::T)
     if I.lstrict
         I.ustrict ? (I.lower < x < I.upper) : (I.lower < x <= I.upper)
@@ -46,33 +84,72 @@ end
     end
 end
 
-type HyperValue{T<:Real}
-    v::T
-end
-HyperValue{T<:Real}(v::T) = HyperValue{T}(v)
+checkbounds{T<:AbstractFloat}(I::Bounds{T}, x::ParameterValue{T}) = checkbounds(I, x.v)
 
-immutable HyperParameter{T<:Real}
+# \BbbR
+function ℝ{T<:AbstractFloat}(bound::Symbol, value::T)
+    if bound == :<
+        UpperBound(true, value)
+    elseif bound == :(<=)
+        UpperBound(false, value)
+    elseif bound == :>
+        LowerBound(true, value)
+    elseif bound == :(>=)
+        LowerBound(false, value)
+    else
+        error("Unrecognized symbol; only :<, :>, :(>=) and :(<=) are accepted.")
+    end
+end
+
+function ℝ{T<:AbstractFloat}(lbound::Symbol, lower::T, ubound::Symbol, upper::T)
+    if lbound == :>
+        if ubound == :<
+            Interval(true, lower, true, upper)
+        elseif ubound == :(<=)
+            Interval(true, lower, false, upper)
+        else
+            error("Unrecognized symbol; only :< and :(<=) are accepted for upper bound.")
+        end
+    elseif bound == :(>=)
+        error("IMPLEMENT ME")
+    else
+        error("Unrecognized symbol; only :> and :(>=) are accepted for lower bound.")
+    end
+end
+
+
+#========================
+  Hyperparameter Object
+========================#
+
+immutable Parameter{T<:Real}
     sym::Symbol
     fixed::Bool
-    value::HyperValue{T}
+    val::ParameterValue{T}
     bound::Bounds{T}
+    function Parameter(sym::Symbol, fixed::Bool, value::ParameterValue{T}, bound::Bounds{T})
+        if !checkbounds(bound, value)
+            error("$(sym) = $(value.v) must be in range " * boundstring(bound))
+        end
+        new(sym, fixed, value, bound)
+    end
 end
-function HyperParameter{T<:Real}(sym::Symbol, fixed::Bool, value::HyperValue{T}, bounds::Bounds{T})
-    HyperParameter{T}(sym, fixed, value, bounds)
+function Parameter{T<:Real}(sym::Symbol, fixed::Bool, value::ParameterValue{T}, bounds::Bounds{T})
+    Parameter{T}(sym, fixed, value, bounds)
 end
-function HyperParameter{T<:Real}(sym::Symbol, fixed::Bool, value::T, bounds::Bounds{T})
-    HyperParameter{T}(sym, fixed, HyperValue(value), bounds)
+function Parameter{T<:Real}(sym::Symbol, fixed::Bool, value::T, bounds::Bounds{T})
+    Parameter{T}(sym, fixed, ParameterValue(value), bounds)
 end
-function HyperParameter{T<:Real}(sym::Symbol, fixed::Bool, value::T)
-    HyperParameter{T}(sym, fixed, HyperValue(value), NullBound{T}())
+function Parameter{T<:Real}(sym::Symbol, fixed::Bool, value::T)
+    Parameter{T}(sym, fixed, ParameterValue(value), NullBound{T}())
 end
 
-
-function show(io::IO, θ::HyperParameter)
-    print(io, string(θ.sym) * " = " * string(θ.value.v) * " ∈ " * boundstring(θ.bound))
+function show(io::IO, θ::Parameter)
+    print(io, string(θ.sym) * " = " * string(θ.val.v) * " ∈ " * boundstring(θ.bound))
 end
 
-#function ℝ{T<:AbstractFloat}
+valstring(θ::Parameter) = string(θ.sym) * "=" * string(θ.val.v)
+
 
 #=
 
