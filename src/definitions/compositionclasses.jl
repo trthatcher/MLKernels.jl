@@ -35,7 +35,7 @@ immutable ExponentialClass{T<:AbstractFloat} <: CompositionClass{T}
     α::Parameter{T}
     γ::Parameter{T}
     ExponentialClass(α::T, α_fixed::Bool, γ::T, γ_fixed::Bool) = new(
-        Parameter(:α, α_fixed, α, ℝ(:>,zero(T))),
+        Parameter(:α, α_fixed, α, ℝ(:>, zero(T))),
         Parameter(:γ, γ_fixed, γ, ℝ(:>, zero(T), :(<=), one(T)))
     )
 end
@@ -60,59 +60,37 @@ end
 ==========================================================================#
 
 doc"RationalQuadraticClass(κ;α,β,γ) = (1 + α⋅κᵞ)⁻ᵝ"
-immutable RationalQuadraticClass{T<:AbstractFloat,CASE} <: CompositionClass{T}
-    alpha::T
-    beta::T
-    gamma::T
-    function RationalQuadraticClass(α::T, β::T, γ::T)
-        α > 0 || error("α = $(α) must be greater than zero.")
-        β > 0 || error("β = $(β) must be greater than zero.")
-        0 < γ <= 1 || error("γ = $(γ) must be in the interval (0,1].")
-        if CASE == :β1γ1 && (β != 1 || γ != 1)
-            error("Special case β = 1 and γ1 flagged but β = $(β) and γ = $(γ)")
-        elseif CASE == :β1 && β != 1
-            error("Special case β = 1 flagged but β = $(β)")
-        elseif CASE == :γ1 && γ != 1
-            error("Special case γ = 1 flagged but γ = $(γ)")
-        end
-        new(α, β, γ)
-    end
+immutable RationalQuadraticClass{T<:AbstractFloat} <: CompositionClass{T}
+    α::Parameter{T}
+    β::Parameter{T}
+    γ::Parameter{T}
+    RationalQuadraticClass(α::T, α_fixed::Bool, β::T, β_fixed::Bool, γ::T, γ_fixed::Bool) = new(
+        Parameter(:α, α_fixed, α, ℝ(:>, zero(T))),
+        Parameter(:β, β_fixed, β, ℝ(:>, zero(T))),
+        Parameter(:γ, γ_fixed, γ, ℝ(:>, zero(T), :(<=), one(T)))
+    )
 end
-
-function RationalQuadraticClass{T<:Real}(α::T = 1.0, β::Real = one(T), γ::Real = one(T))
-    U = promote_type(T, typeof(β), typeof(γ))
-    U = U <: AbstractFloat ? U : Float64
-    β1 = β == 1
-    γ1 = γ == 1
-    CASE =  if β1 && γ1
-                :β1γ1
-            elseif β1
-                :β1
-            elseif γ1
-                :γ1
-            else
-                :Ø
-            end    
-    RationalQuadraticClass{U,CASE}(convert(U, α), convert(U, β), convert(U, γ))
+function RationalQuadraticClass{T<:AbstractFloat}(α::T, β::T, γ::T)
+    RationalQuadraticClass{T}(α, false, β, false, γ, false)
+end
+function RationalQuadraticClass(α::Real=1, β::Real=1, γ::Real=1)
+    RationalQuadraticClass(promote_arguments(α, β, γ)...)
 end
 
 iscomposable(::RationalQuadraticClass, κ::Kernel) = is_nonneg_and_negdef(κ)
-
 ismercer(::RationalQuadraticClass) = true
-
 attainszero(::RationalQuadraticClass) = false
 attainsnegative(::RationalQuadraticClass) = false
 
 function description_string{T<:AbstractFloat}(ϕ::RationalQuadraticClass{T}, eltype::Bool = true)
-    "RationalQuadratic" * (eltype ? "{$(T)}" : "") *"(α=$(ϕ.alpha),β=$(ϕ.beta),γ=$(ϕ.gamma))"
+    "RationalQuadratic" * (eltype ? "{$(T)}" : "") * "(" * valstring(ϕ.α) * "," * valstring(ϕ.β) *
+    "," * valstring(ϕ.γ) * ")"
 end
 
-@inline function phi{T<:AbstractFloat}(ϕ::RationalQuadraticClass{T}, z::T)
-    (1 + ϕ.alpha*z^ϕ.gamma)^(-ϕ.beta)
-end
-@inline phi{T<:AbstractFloat}(ϕ::RationalQuadraticClass{T,:β1γ1}, z::T) = 1/(1 + ϕ.alpha*z)
-@inline phi{T<:AbstractFloat}(ϕ::RationalQuadraticClass{T,:β1}, z::T) = 1/(1 + ϕ.alpha*z^ϕ.gamma)
-@inline phi{T<:AbstractFloat}(ϕ::RationalQuadraticClass{T,:γ1}, z::T) = (1 + ϕ.alpha*z)^(-ϕ.beta)
+@inline phi{T<:AbstractFloat}(ϕ::RationalQuadraticClass{T}, z::T) = (1 + ϕ.α*z^ϕ.γ)^(-ϕ.β)
+#@inline phi{T<:AbstractFloat}(ϕ::RationalQuadraticClass{T,:β1γ1}, z::T) = 1/(1 + ϕ.alpha*z)
+#@inline phi{T<:AbstractFloat}(ϕ::RationalQuadraticClass{T,:β1}, z::T) = 1/(1 + ϕ.alpha*z^ϕ.gamma)
+#@inline phi{T<:AbstractFloat}(ϕ::RationalQuadraticClass{T,:γ1}, z::T) = (1 + ϕ.alpha*z)^(-ϕ.beta)
 
 
 #==========================================================================
@@ -121,45 +99,36 @@ end
 
 doc"MatérnClass(κ;ν,θ) = 2ᵛ⁻¹(√(2ν)κ/θ)ᵛKᵥ(√(2ν)κ/θ)/Γ(ν)"
 immutable MaternClass{T<:AbstractFloat,CASE} <: CompositionClass{T}
-    nu::T
-    theta::T
-    function MaternClass(ν::T, θ::T)
-        ν > 0 || error("ν = $(ν) must be greater than zero.")
-        θ > 0 || error("θ = $(θ) must be greater than zero.")
-        if CASE == :ν1 && ν != 1
-            error("Special case ν = 1 flagged but ν = $(ν)")
-        end
-        new(ν, θ)
-    end
+    ν::Parameter{T}
+    ρ::Parameter{T}
+    MaternClass(ν::T, ν_fixed::Bool, ρ::T, ρ_fixed::Bool) = new(
+        Parameter(:ν, ν, ν_fixed, ℝ(:>, zero(T))),
+        Parameter(:ρ, ρ, ρ_fixed, ℝ(:>, zero(T)))
+    )
 end
-function MaternClass{T<:Real}(ν::T = 1.0, θ::Real = one(T))
-    U = promote_type(T, typeof(θ))
-    U = U <: AbstractFloat ? U : Float64
-    MaternClass{U, ν == 1 ? :ν1 : :Ø}(convert(U, ν), convert(U, θ))
-end
+MaternClass{T<:AbstractFloat}(ν::T, ρ::T) = MaternClass{T}(ν, false, ρ, false)
+MaternClass(ν::Real=1, ρ::Real=1) = MaternClass{T}(promote_arguments(ν, ρ)...)
 
 iscomposable(::MaternClass, κ::Kernel) = is_nonneg_and_negdef(κ)
-
 ismercer(::MaternClass) = true
-
 attainszero(::MaternClass) = false
 attainsnegative(::MaternClass) = false
 
 function description_string{T<:AbstractFloat}(ϕ::MaternClass{T}, eltype::Bool = true)
-    "Matérn" * (eltype ? "{$(T)}" : "") * "(ν=$(ϕ.nu),θ=$(ϕ.theta))"
+    "Matérn" * (eltype ? "{$(T)}" : "") * "(" valstring(ϕ.ν) * "," * valstring(ϕ.ρ) * ")"
 end
 
 @inline function phi{T<:AbstractFloat}(ϕ::MaternClass{T}, z::T)
-    v1 = sqrt(2ϕ.nu) * z / ϕ.theta
+    v1 = sqrt(2ϕ.ν) * z / ϕ.ρ
     v1 = v1 < eps(T) ? eps(T) : v1  # Overflow risk, z -> Inf
-    2 * (v1/2)^(ϕ.nu) * besselk(ϕ.nu, v1) / gamma(ϕ.nu)
+    2 * (v1/2)^(ϕ.ν) * besselk(ϕ.ν, v1) / gamma(ϕ.ν)
 end
 
-@inline function phi{T<:AbstractFloat}(ϕ::MaternClass{T,:ν1}, z::T)
+#= @inline function phi{T<:AbstractFloat}(ϕ::MaternClass{T,:ν1}, z::T)
     v1 = sqrt(2) * z / ϕ.theta
     v1 = v1 < eps(T) ? eps(T) : v1  # Overflow risk, z -> Inf
     2 * (v1/2) * besselk(one(T), v1)
-end
+end =#
 
 
 #==========================================================================
