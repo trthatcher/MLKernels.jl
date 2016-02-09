@@ -69,14 +69,14 @@ function show(io::IO, I::Bounds)
     print(io, "Interval" * boundstring(I))
 end
 
-@inline checkbounds{T<:AbstractFloat}(I::NullBound{T}, x::T) = true
-@inline function checkbounds{T<:AbstractFloat}(I::LowerBound{T}, x::T)
+@inline checkbounds{T<:Real}(I::NullBound{T}, x::T) = true
+@inline function checkbounds{T<:Real}(I::LowerBound{T}, x::T)
     I.lstrict ? (I.lower < x) : (I.lower <= x)
 end
-@inline function checkbounds{T<:AbstractFloat}(I::UpperBound{T}, x::T)
+@inline function checkbounds{T<:Real}(I::UpperBound{T}, x::T)
     I.ustrict ? (x < I.upper) : (x <= I.upper)
 end
-@inline function checkbounds{T<:AbstractFloat}(I::Interval{T}, x::T)
+@inline function checkbounds{T<:Real}(I::Interval{T}, x::T)
     if I.lstrict
         I.ustrict ? (I.lower < x < I.upper) : (I.lower < x <= I.upper)
     else
@@ -84,39 +84,44 @@ end
     end
 end
 
-checkbounds{T<:AbstractFloat}(I::Bounds{T}, x::ParameterValue{T}) = checkbounds(I, x.v)
+checkbounds{T<:Real}(I::Bounds{T}, x::ParameterValue{T}) = checkbounds(I, x.v)
 
 # \BbbR
-function ℝ{T<:AbstractFloat}(bound::Symbol, value::T)
-    if bound == :<
-        UpperBound(true, value)
-    elseif bound == :(<=)
-        UpperBound(false, value)
-    elseif bound == :>
-        LowerBound(true, value)
-    elseif bound == :(>=)
-        LowerBound(false, value)
-    else
-        error("Unrecognized symbol; only :<, :>, :(>=) and :(<=) are accepted.")
-    end
-end
+# \BbbZ
 
-function ℝ{T<:AbstractFloat}(lbound::Symbol, lower::T, ubound::Symbol, upper::T)
-    if lbound == :>
-        if ubound == :<
-            Interval(true, lower, true, upper)
-        elseif ubound == :(<=)
-            Interval(true, lower, false, upper)
-        else
-            error("Unrecognized symbol; only :< and :(<=) are accepted for upper bound.")
+for (sym, data) in ((:ℝ, AbstractFloat), (:ℤ, Integer))
+    @eval begin
+        function ($sym){T<:$data}(bound::Symbol, value::T)
+            if bound == :<
+                UpperBound(true, value)
+            elseif bound == :(<=)
+                UpperBound(false, value)
+            elseif bound == :>
+                LowerBound(true, value)
+            elseif bound == :(>=)
+                LowerBound(false, value)
+            else
+                error("Unrecognized symbol; only :<, :>, :(>=) and :(<=) are accepted.")
+            end
         end
-    elseif bound == :(>=)
-        error("IMPLEMENT ME")
-    else
-        error("Unrecognized symbol; only :> and :(>=) are accepted for lower bound.")
+
+        function ($sym){T<:$data}(lbound::Symbol, lower::T, ubound::Symbol, upper::T)
+            if lbound == :>
+                if ubound == :<
+                    Interval(true, lower, true, upper)
+                elseif ubound == :(<=)
+                    Interval(true, lower, false, upper)
+                else
+                    error("Unrecognized symbol; only :< and :(<=) are accepted for upper bound.")
+                end
+            elseif bound == :(>=)
+                error("IMPLEMENT ME")
+            else
+                error("Unrecognized symbol; only :> and :(>=) are accepted for lower bound.")
+            end
+        end
     end
 end
-
 
 #========================
   Hyperparameter Object

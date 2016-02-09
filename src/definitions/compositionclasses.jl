@@ -98,16 +98,16 @@ end
 ==========================================================================#
 
 doc"MatérnClass(κ;ν,θ) = 2ᵛ⁻¹(√(2ν)κ/θ)ᵛKᵥ(√(2ν)κ/θ)/Γ(ν)"
-immutable MaternClass{T<:AbstractFloat,CASE} <: CompositionClass{T}
+immutable MaternClass{T<:AbstractFloat} <: CompositionClass{T}
     ν::Parameter{T}
     ρ::Parameter{T}
     MaternClass(ν::T, ν_fixed::Bool, ρ::T, ρ_fixed::Bool) = new(
-        Parameter(:ν, ν, ν_fixed, ℝ(:>, zero(T))),
-        Parameter(:ρ, ρ, ρ_fixed, ℝ(:>, zero(T)))
+        Parameter(:ν, ν_fixed, ν, ℝ(:>, zero(T))),
+        Parameter(:ρ, ρ_fixed, ρ, ℝ(:>, zero(T)))
     )
 end
 MaternClass{T<:AbstractFloat}(ν::T, ρ::T) = MaternClass{T}(ν, false, ρ, false)
-MaternClass(ν::Real=1, ρ::Real=1) = MaternClass{T}(promote_arguments(ν, ρ)...)
+MaternClass(ν::Real=1, ρ::Real=1) = MaternClass(promote_arguments(ν, ρ)...)
 
 iscomposable(::MaternClass, κ::Kernel) = is_nonneg_and_negdef(κ)
 ismercer(::MaternClass) = true
@@ -115,7 +115,7 @@ attainszero(::MaternClass) = false
 attainsnegative(::MaternClass) = false
 
 function description_string{T<:AbstractFloat}(ϕ::MaternClass{T}, eltype::Bool = true)
-    "Matérn" * (eltype ? "{$(T)}" : "") * "(" valstring(ϕ.ν) * "," * valstring(ϕ.ρ) * ")"
+    "Matérn" * (eltype ? "{$(T)}" : "") * "(" * valstring(ϕ.ν) * "," * valstring(ϕ.ρ) * ")"
 end
 
 @inline function phi{T<:AbstractFloat}(ϕ::MaternClass{T}, z::T)
@@ -136,24 +136,18 @@ end =#
 ==========================================================================#
 
 doc"PolynomialClass(κ;a,c,d) = (a⋅κ + c)ᵈ"
-immutable PolynomialClass{T<:AbstractFloat,CASE} <: CompositionClass{T}
-    a::T
-    c::T
-    d::T
-    function PolynomialClass(a::T, c::T, d::T)
-        @assert_locationscale_ok
-        (d > 0 && trunc(d) == d) || error("d = $(d) must be an integer greater than zero.")
-        if CASE == :d1 && d != 1
-            error("Special case d = 1 flagged but d = $(convert(Int64,d))")
-        end
-        new(a, c, d)
-    end
+immutable PolynomialClass{T<:AbstractFloat} <: CompositionClass{T}
+    a::Parameter{T}
+    c::Parameter{T}
+    d::Parameter
+    PolynomialClass(a::T, a_fixed::Bool, c::T, c_fixed::Bool, d::Integer) = new(
+        Parameter(:a, a_fixed, a, ℝ(:>, zero(T))),
+        Parameter(:c, c_fixed, c, ℝ(:>, zero(T))),
+        Parameter(:d, true, d, ℤ(:(>=), one(d)))
+    )
 end
-function PolynomialClass{T<:Real}(a::T = 1.0, c::Real = one(T), d::Real = 3one(T))
-    U = promote_type(T, typeof(c), typeof(d))
-    U = U <: AbstractFloat ? U : Float64
-    PolynomialClass{U, d == 1 ? :d1 : :Ø}(convert(U, a), convert(U, c), convert(U, d))
-end
+PolynomialClass{T<:AbstractFloat}(a::T, b::T, d::Integer) = PolynomialClass{T}(a, false, b, false, d)
+PolynomialClass(a::Real=1, b::Real=1, d::Integer=3) = PolynomialClass(promote_arguments(a, b)..., d)
 
 function iscomposable(::PolynomialClass, κ::Kernel)
     ismercer(κ) || error("Composed class must be a Mercer class.")
@@ -162,11 +156,12 @@ end
 ismercer(::PolynomialClass) = true
 
 function description_string{T<:AbstractFloat}(ϕ::PolynomialClass{T}, eltype::Bool = true) 
-    "Polynomial" * (eltype ? "{$(T)}" : "") * "(a=$(ϕ.a),c=$(ϕ.c),d=$(convert(Int64,ϕ.d)))"
+    "Polynomial" * (eltype ? "{$(T)}" : "") * "(" * valstring(ϕ.a) * "," * valstring(ϕ.c) * "," * 
+    valstring(ϕ.d) * ")"
 end
 
 @inline phi{T<:AbstractFloat}(ϕ::PolynomialClass{T}, z::T) = (ϕ.a*z + ϕ.c)^ϕ.d
-@inline phi{T<:AbstractFloat}(ϕ::PolynomialClass{T,:d1}, z::T) = ϕ.a*z + ϕ.c
+#@inline phi{T<:AbstractFloat}(ϕ::PolynomialClass{T,:d1}, z::T) = ϕ.a*z + ϕ.c
 
 
 #==========================================================================
