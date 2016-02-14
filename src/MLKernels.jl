@@ -4,7 +4,7 @@
 
 module MLKernels
 
-import Base: call, convert, eltype, show, *, +, ^, exp, tanh
+import Base: call, convert, eltype, show, *, /, +, -, ^, exp, tanh
 
 export
     # Functions
@@ -26,8 +26,10 @@ export
     LowerBound,
     UpperBound,
     Interval,
-    ℝ,
     Parameter,
+    Value,
+    Variable,
+    Fixed,
 
     # Kernel Type
     Kernel,

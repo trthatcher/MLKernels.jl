@@ -7,22 +7,21 @@ function is_nonneg_and_negdef(κ::Kernel)
     isnonnegative(κ) || error("Composed class must attain only non-negative values.")
 end
 
-macro assert_locationscale_ok()
-    quote
-        a >  0 || error("a = $(a) must be greater than zero.")
-        c >= 0 || error("c = $(c) must be non-negative.")
-    end
-end
+abstract PositiveMercerClass{T<:AbstractFloat} <: CompositionClass{T}
 
-function promote_arguments(θ::Real...)
-    T = typeof(θ[1])
+ismercer(::PositiveMercerClass) = true
+attainszero(::PositiveMercerClass) = false
+attainsnegative(::PositiveMercerClass) = false
+
+function promote_arguments(θ::Variable{Real}...)
+    T = eltype(θ[1])
     if (n = length(θ)) > 1
         for i = 2:n
-            T = promote_type(T, typeof(θ[i]))
+            T = promote_type(T, eltype(θ[i]))
         end
     end
     T = T <: AbstractFloat ? T : Float64
-    tuple(T[θ...]...)
+    tuple(Variable{T}[isa(x, Fixed) ? convert(Fixed{T}, x) : convert(T, x) for x in θ]...)
 end
 
 
@@ -32,75 +31,87 @@ end
 
 doc"ExponentialClass(κ;α,γ) = exp(-α⋅κᵞ)"
 immutable ExponentialClass{T<:AbstractFloat} <: CompositionClass{T}
-    α::Parameter{T}
-    γ::Parameter{T}
-    ExponentialClass(α::T, α_fixed::Bool, γ::T, γ_fixed::Bool) = new(
-        Parameter(:α, α_fixed, α, ℝ(:>, zero(T))),
-        Parameter(:γ, γ_fixed, γ, ℝ(:>, zero(T), :(<=), one(T)))
-    )
+    alpha::Parameter{T}
+    ExponentialClass(α::Variable{T}, γ::Variable{T}) = new(Parameter(α, ℝ(:>, zero(T))))
 end
-ExponentialClass{T<:AbstractFloat}(α::T, γ::T) = ExponentialClass{T}(α, false, γ, false)
-ExponentialClass(α::Real=1, γ::Real=1) = ExponentialClass(promote_arguments(α, γ)...)
+ExponentialClass{T<:AbstractFloat}(α::Variable{T}) = ExponentialClass{T}(α)
+ExponentialClass(α::Variable{Real}=1) = ExponentialClass(promote_arguments(α)...)
 
 iscomposable(::ExponentialClass, κ::Kernel) = is_nonneg_and_negdef(κ)
-ismercer(::ExponentialClass) = true
-attainszero(::ExponentialClass) = false
-attainsnegative(::ExponentialClass) = false
 
 function description_string{T<:AbstractFloat}(ϕ::ExponentialClass{T}, eltype::Bool = true)
-    "Exponential" * (eltype ? "{$(T)}" : "") * "(" * valstring(ϕ.α) * "," * valstring(ϕ.γ) * ")"
+    "Exponential" * (eltype ? "{$(T)}" : "") * "(α=$(ϕ.alpha.value))"
 end
 
-@inline phi{T<:AbstractFloat}(ϕ::ExponentialClass{T}, z::T) = exp(-ϕ.α * z^ϕ.γ)
-#@inline phi{T<:AbstractFloat}(ϕ::ExponentialClass{T,:γ1}, z::T) = exp(-ϕ.α * z)
+@inline phi{T<:AbstractFloat}(ϕ::ExponentialClass{T}, z::T) = exp(-ϕ.alpha * z)
+
+
+#==========================================================================
+  Gamma Exponential Class
+==========================================================================#
+
+doc"GammaExponentialClass(κ;α,γ) = exp(-α⋅κᵞ)"
+immutable GammaExponentialClass{T<:AbstractFloat} <: PositiveMercerClass{T}
+    alpha::Parameter{T}
+    gamma::Parameter{T}
+    GammaExponentialClass(α::Variable{T}, γ::Variable{T}) = new(
+        Parameter(α, ℝ(:>, zero(T))),
+        Parameter(γ, ℝ(:>, zero(T), :(<=), one(T)))
+    )
+end
+GammaExponentialClass{T<:AbstractFloat}(α::Variable{T}, γ::Variable{T}) = ExponentialClass{T}(α, γ)
+function GammaExponentialClass(α::Variable{Real}=1, γ::Variable{Real}=1)
+    GammaExponentialClass(promote_arguments(α, γ)...)
+end
+
+iscomposable(::ExponentialClass, κ::Kernel) = is_nonneg_and_negdef(κ)
+
+function description_string{T<:AbstractFloat}(ϕ::GammaExponentialClass{T}, eltype::Bool = true)
+    "GammaExponential" * (eltype ? "{$(T)}" : "") * "(α=$(ϕ.alpha.value),γ=$(ϕ.gamma.value))"
+end
+
+@inline phi{T<:AbstractFloat}(ϕ::GammaExponentialClass{T}, z::T) = exp(-ϕ.alpha * z^ϕ.gamma)
 
 
 #==========================================================================
   Rational Quadratic Class
 ==========================================================================#
 
-doc"RationalQuadraticClass(κ;α,β,γ) = (1 + α⋅κᵞ)⁻ᵝ"
-immutable RationalQuadraticClass{T<:AbstractFloat} <: CompositionClass{T}
-    α::Parameter{T}
-    β::Parameter{T}
-    γ::Parameter{T}
-    RationalQuadraticClass(α::T, α_fixed::Bool, β::T, β_fixed::Bool, γ::T, γ_fixed::Bool) = new(
-        Parameter(:α, α_fixed, α, ℝ(:>, zero(T))),
-        Parameter(:β, β_fixed, β, ℝ(:>, zero(T))),
-        Parameter(:γ, γ_fixed, γ, ℝ(:>, zero(T), :(<=), one(T)))
+doc"RationalClass(κ;α,β,γ) = (1 + α⋅κᵞ)⁻ᵝ"
+immutable RationalClass{T<:AbstractFloat} <: PositiveMercerClass{T}
+    alpha::Parameter{T}
+    beta::Parameter{T}
+    gamma::Parameter{T}
+    RationalClass(α::Variable{T}, β::Variable{T}, γ::Variable{T}) = new(
+        Parameter(α, ℝ(:>, zero(T))),
+        Parameter(β, ℝ(:>, zero(T))),
+        Parameter(γ, ℝ(:>, zero(T), :(<=), one(T)))
     )
 end
-function RationalQuadraticClass{T<:AbstractFloat}(α::T, β::T, γ::T)
-    RationalQuadraticClass{T}(α, false, β, false, γ, false)
+function RationalClass{T<:AbstractFloat}(α::Variable{T}, β::Variable{T}, γ::Variable{T})
+    RationalClass{T}(α, β, γ)
 end
-function RationalQuadraticClass(α::Real=1, β::Real=1, γ::Real=1)
-    RationalQuadraticClass(promote_arguments(α, β, γ)...)
+function RationalClass(α::Variable{Real}=1, β::Variable{Real}=1, γ::Variable{Real}=1)
+    RationalClass(promote_arguments(α, β, γ)...)
 end
 
 iscomposable(::RationalQuadraticClass, κ::Kernel) = is_nonneg_and_negdef(κ)
-ismercer(::RationalQuadraticClass) = true
-attainszero(::RationalQuadraticClass) = false
-attainsnegative(::RationalQuadraticClass) = false
 
 function description_string{T<:AbstractFloat}(ϕ::RationalQuadraticClass{T}, eltype::Bool = true)
-    "RationalQuadratic" * (eltype ? "{$(T)}" : "") * "(" * valstring(ϕ.α) * "," * valstring(ϕ.β) *
-    "," * valstring(ϕ.γ) * ")"
+    "GammaRational" * (eltype ? "{$(T)}" : "") * "(α=$(ϕ.alpha),β=$(ϕ.beta),γ=$(ϕ.gamma))"
 end
 
 @inline phi{T<:AbstractFloat}(ϕ::RationalQuadraticClass{T}, z::T) = (1 + ϕ.α*z^ϕ.γ)^(-ϕ.β)
-#@inline phi{T<:AbstractFloat}(ϕ::RationalQuadraticClass{T,:β1γ1}, z::T) = 1/(1 + ϕ.alpha*z)
-#@inline phi{T<:AbstractFloat}(ϕ::RationalQuadraticClass{T,:β1}, z::T) = 1/(1 + ϕ.alpha*z^ϕ.gamma)
-#@inline phi{T<:AbstractFloat}(ϕ::RationalQuadraticClass{T,:γ1}, z::T) = (1 + ϕ.alpha*z)^(-ϕ.beta)
 
 
 #==========================================================================
   Matern Class
 ==========================================================================#
 
-doc"MatérnClass(κ;ν,θ) = 2ᵛ⁻¹(√(2ν)κ/θ)ᵛKᵥ(√(2ν)κ/θ)/Γ(ν)"
+doc"MatérnClass(κ;ν,ρ) = 2ᵛ⁻¹(√(2ν)κ/ρ)ᵛKᵥ(√(2ν)κ/ρ)/Γ(ν)"
 immutable MaternClass{T<:AbstractFloat} <: CompositionClass{T}
-    ν::Parameter{T}
-    ρ::Parameter{T}
+    nu::Parameter{T}
+    rho::Parameter{T}
     MaternClass(ν::T, ν_fixed::Bool, ρ::T, ρ_fixed::Bool) = new(
         Parameter(:ν, ν_fixed, ν, ℝ(:>, zero(T))),
         Parameter(:ρ, ρ_fixed, ρ, ℝ(:>, zero(T)))
@@ -119,16 +130,10 @@ function description_string{T<:AbstractFloat}(ϕ::MaternClass{T}, eltype::Bool =
 end
 
 @inline function phi{T<:AbstractFloat}(ϕ::MaternClass{T}, z::T)
-    v1 = sqrt(2ϕ.ν) * z / ϕ.ρ
+    v1 = sqrt(2ϕ.nu) * z / ϕ.rho
     v1 = v1 < eps(T) ? eps(T) : v1  # Overflow risk, z -> Inf
-    2 * (v1/2)^(ϕ.ν) * besselk(ϕ.ν, v1) / gamma(ϕ.ν)
+    2 * (v1/2)^(ϕ.nu) * besselk(ϕ.nu, v1) / gamma(ϕ.nu)
 end
-
-#= @inline function phi{T<:AbstractFloat}(ϕ::MaternClass{T,:ν1}, z::T)
-    v1 = sqrt(2) * z / ϕ.theta
-    v1 = v1 < eps(T) ? eps(T) : v1  # Overflow risk, z -> Inf
-    2 * (v1/2) * besselk(one(T), v1)
-end =#
 
 
 #==========================================================================

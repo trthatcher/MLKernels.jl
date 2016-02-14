@@ -1,68 +1,43 @@
-abstract Bounds{T<:Real}
-
-
-#====================
-  Hypervalue Object
-====================#
-
-type ParameterValue{T<:Real}
-    v::T
-end
-ParameterValue{T<:Real}(v::T) = ParameterValue{T}(v)
-
-@inline *(a::Real, v::ParameterValue) = *(a, v.v)
-@inline *(v::ParameterValue, a::Real) = *(v.v, a)
-
-@inline +(a::Real, v::ParameterValue) = +(a, v.v)
-@inline +(v::ParameterValue, a::Real) = +(v.v, a)
-
-@inline ^(a::Real, v::ParameterValue)          = ^(a, v.v)
-#@inline ^(v::ParameterValue, a::Integer)       = ^(v.v, a)
-#@inline ^(v::ParameterValue, a::AbstractFloat) = ^(v.v, a)
-
-@inline exp(v::ParameterValue)  = exp(v.v)
-@inline tanh(v::ParameterValue) = tanh(v.v)
-
-
 #=================
   Bounds Objects
 =================#
 
+abstract Bounds{T<:Real}
+
 immutable NullBound{T<:Real} <: Bounds{T} end
 
-immutable LowerBound{T<:Real} <: Bounds{T}
-    lstrict::Bool
+immutable LowerBound{T<:Real,lstrict} <: Bounds{T}
     lower::T
 end
-LowerBound{T<:Real}(lstrict::Bool, lower::T) = LowerBound{T}(lstrict, lower)
+LowerBound{T<:Real}(lstrict::Bool, lower::T) = LowerBound{T,lstrict}(lower)
 
-immutable UpperBound{T<:Real} <: Bounds{T}
-    ustrict::Bool
+immutable UpperBound{T<:Real,ustrict} <: Bounds{T}
     upper::T
 end
-UpperBound{T<:Real}(ustrict::Bool, upper::T) = UpperBound{T}(ustrict, upper)
+UpperBound{T<:Real}(ustrict::Bool, upper::T) = UpperBound{T,ustrict}(upper)
 
-immutable Interval{T<:Real} <: Bounds{T}
-    lstrict::Bool
+immutable Interval{T<:Real,lstrict,ustrict} <: Bounds{T}
     lower::T
-    ustrict::Bool
     upper::T
-    function Interval(lstrict, lower, ustrict, upper)
+    function Interval(lower::T, upper::T)
         if (lower > upper) || ((lstrict || ustrict) && lower == upper)
             error("Invalid bounds.")
         end
-        new(lstrict, lower, ustrict, upper)
+        new(lower, upper)
     end
 end
 function Interval{T<:Real}(lstrict::Bool, lower::T, ustrict::Bool, upper::T)
-    Interval{T}(lstrict, lower, ustrict, upper)
+    Interval{T,lstrict,ustrict}(lower, upper)
 end
 
-@inline boundstring(B::NullBound)  = "(-∞,∞)"
-@inline boundstring(I::LowerBound) = (I.lstrict ? "(" : "[") * string(I.lower) * ",∞)"
-@inline boundstring(I::UpperBound) = "(-∞," * string(I.upper) * (I.ustrict ? ")" : "]")
-@inline function boundstring(I::Interval)
-    (I.lstrict ? "(" : "[") * string(I.lower) * "," * string(I.upper) * (I.ustrict ? ")" : "]")
+@inline boundstring{T<:AbstractFloat}(B::NullBound{T}) = "ℝ"
+@inline boundstring{T<:Integer}(B::NullBound{T}) = "ℤ"
+
+@inline boundstring{T,L}(I::LowerBound{T,L})  = (L ? "(" : "[") * "$(I.lower),∞)"
+@inline boundstring{T,U}(I::UpperBound{T,U})  = "(-∞,$(I.upper)" * (U ? ")" : "]")
+
+@inline function boundstring{T,L,U}(I::Interval{T,L,U})
+    (L ? "(" : "[") * "$(I.lower),$(I.upper)" * (U ? ")" : "]")
 end
 
 function show(io::IO, I::Bounds)
@@ -70,21 +45,17 @@ function show(io::IO, I::Bounds)
 end
 
 @inline checkbounds{T<:Real}(I::NullBound{T}, x::T) = true
-@inline function checkbounds{T<:Real}(I::LowerBound{T}, x::T)
-    I.lstrict ? (I.lower < x) : (I.lower <= x)
-end
-@inline function checkbounds{T<:Real}(I::UpperBound{T}, x::T)
-    I.ustrict ? (x < I.upper) : (x <= I.upper)
-end
-@inline function checkbounds{T<:Real}(I::Interval{T}, x::T)
-    if I.lstrict
-        I.ustrict ? (I.lower < x < I.upper) : (I.lower < x <= I.upper)
-    else
-        I.ustrict ? (I.lower <= x < I.upper) : (I.lower <= x <  I.upper)
-    end
-end
 
-checkbounds{T<:Real}(I::Bounds{T}, x::ParameterValue{T}) = checkbounds(I, x.v)
+@inline checkbounds{T<:Real}(I::LowerBound{T,true},  x::T) = I.lower <  x
+@inline checkbounds{T<:Real}(I::LowerBound{T,false}, x::T) = I.lower <= x
+
+@inline checkbounds{T<:Real}(I::UpperBound{T,true},  x::T) = x <  I.upper
+@inline checkbounds{T<:Real}(I::UpperBound{T,false}, x::T) = x <= I.upper
+
+@inline checkbounds{T<:Real}(I::Interval{T,true,true},   x::T) = I.lower <  x <  I.upper
+@inline checkbounds{T<:Real}(I::Interval{T,true,false},  x::T) = I.lower <  x <= I.upper
+@inline checkbounds{T<:Real}(I::Interval{T,false,true},  x::T) = I.lower <= x <  I.upper
+@inline checkbounds{T<:Real}(I::Interval{T,false,false}, x::T) = I.lower <= x <= I.upper
 
 # \BbbR
 # \BbbZ
@@ -127,75 +98,53 @@ end
   Hyperparameter Object
 ========================#
 
-immutable Parameter{T<:Real}
-    sym::Symbol
-    fixed::Bool
-    val::ParameterValue{T}
-    bound::Bounds{T}
-    function Parameter(sym::Symbol, fixed::Bool, value::ParameterValue{T}, bound::Bounds{T})
-        if !checkbounds(bound, value)
-            error("$(sym) = $(value.v) must be in range " * boundstring(bound))
+immutable Fixed{T<:Real}
+    value::T
+end
+Fixed{T<:Real}(v::T) = Fixed{T}(v)
+
+eltype{T<:Real}(::Fixed{T}) = T
+
+typealias Variable{T<:Real} Union{Fixed{T},T}
+
+type Parameter{T<:Real,fixed}
+    value::T
+    bounds::Bounds{T}
+    function Parameter(value::T, bounds::Bounds{T})
+        if !checkbounds(bounds, value)
+            error("Value $(value) must be in range " * boundstring(bounds))
         end
-        new(sym, fixed, value, bound)
+        new(value, bounds)
     end
 end
-function Parameter{T<:Real}(sym::Symbol, fixed::Bool, value::ParameterValue{T}, bounds::Bounds{T})
-    Parameter{T}(sym, fixed, value, bounds)
-end
-function Parameter{T<:Real}(sym::Symbol, fixed::Bool, value::T, bounds::Bounds{T})
-    Parameter{T}(sym, fixed, ParameterValue(value), bounds)
-end
-function Parameter{T<:Real}(sym::Symbol, fixed::Bool, value::T)
-    Parameter{T}(sym, fixed, ParameterValue(value), NullBound{T}())
+Parameter{T<:Real}(x::T, bounds::Bounds{T} = NullBound{T}()) = Parameter{T,false}(x, bounds)
+function Parameter{T<:Real}(x::Fixed{T}, bounds::Bounds{T} = NullBound{T}())
+    Parameter{T,true}(x.value, bounds)
 end
 
 function show(io::IO, θ::Parameter)
-    print(io, string(θ.sym) * " = " * string(θ.val.v) * " ∈ " * boundstring(θ.bound))
+    print(io, string(θ.value) * " ∈ " * boundstring(θ.bounds))
 end
 
-valstring(θ::Parameter) = string(θ.sym) * "=" * string(θ.val.v)
+isfixed{T<:Real}(::Parameter{T,true})  = true
+isfixed{T<:Real}(::Parameter{T,false}) = false
 
+@inline *(a::Real, v::Parameter) = *(a, v.value)
+@inline *(v::Parameter, a::Real) = *(v.value, a)
 
-#=
+@inline /(a::Real, v::Parameter) = /(a, v.value)
+@inline /(v::Parameter, a::Real) = /(v.value, a)
 
-abstract Kernel{T<:AbstractFloat}
+@inline +(a::Real, v::Parameter) = +(a, v.value)
+@inline +(v::Parameter, a::Real) = +(v.value, a)
 
-immutable TestKernel1{T<:AbstractFloat} <: Kernel{T}
-    alpha::HyperParameter{T}
-    gamma::HyperParameter{T}
-    function TestKernel1(α::T, γ::T)
-        new(HyperParameter{T}(:α, HyperValue{T}(α), LowerBound{T}(true, zero(T))),
-            HyperParameter{T}(:γ, HyperValue{T}(γ), Interval{T}(true, zero(T), false, one(T))))
-    end
-end
-TestKernel1{T<:AbstractFloat}(α::T, γ::T) = TestKernel1{T}(α, γ)
+@inline -(v::Parameter) = -(v.value)
+@inline -(a::Real, v::Parameter) = -(a, v.value)
+@inline -(v::Parameter, a::Real) = -(v.value, a)
 
-@inline checkcase(κ::TestKernel1) = κ.gamma.value.v == 1 ? :γ1 : :∅
+@inline ^(a::Real, v::Parameter)          = ^(a, v.value)
+@inline ^(v::Parameter, a::Integer)       = ^(v.value, a)
+@inline ^(v::Parameter, a::AbstractFloat) = ^(v.value, a)
 
-@inline phi{T<:AbstractFloat}(κ::TestKernel1{T},::Type,x::T)      = exp(κ.alpha.value.v*x^κ.gamma.value.v)
-@inline phi{T<:AbstractFloat}(κ::TestKernel1{T},::Type{Val{:γ1}},x::T) = exp(κ.alpha.value.v*x)
-
-kernel{T<:AbstractFloat}(κ::TestKernel1{T}, x::T) = phi(κ, Val{:∅}, x) # Val{checkcase(κ)}, x)
-
-
-immutable TestKernel2{T<:AbstractFloat} <: Kernel{T}
-    alpha::T
-    gamma::T
-    function TestKernel2(α::T, γ::T)
-        new(α, γ)
-    end
-end
-TestKernel2{T<:AbstractFloat}(α::T, γ::T) = TestKernel2{T}(α, γ)
-
-kernel{T<:AbstractFloat}(κ::TestKernel2{T}, z::T) = exp(κ.alpha*z^κ.gamma)
-
-
-function applykernel!{T<:AbstractFloat}(κ::Kernel{T}, X::Matrix{T})
-    n, p = size(X)
-    for j = 1:p, i = 1:n
-        X[i,j] = kernel(κ, X[i,j])
-    end
-    X
-end
-
-=#
+@inline exp(v::Parameter)  = exp(v.value)
+@inline tanh(v::Parameter) = tanh(v.value)
