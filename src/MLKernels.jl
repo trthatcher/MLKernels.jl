@@ -4,7 +4,7 @@
 
 module MLKernels
 
-import Base: call, convert, eltype, show, *, /, +, -, ^, exp, tanh
+import Base: call, convert, eltype, print, show, string, ==, *, /, +, -, ^, exp, tanh
 
 export
     # Functions
@@ -51,7 +51,7 @@ export
     # Composition Classes
     CompositionClass,
         ExponentialClass,
-        RationalQuadraticClass,
+        RationalClass,
         PolynomialClass,
         MaternClass,
         ExponentiatedClass,
