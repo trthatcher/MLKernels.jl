@@ -23,20 +23,78 @@ attainszero(::NonNegativeNegDefClass) = true
 attainsnegative(::NonNegativeNegDefClass) = false
 
 
-function promote_arguments(U::DataType, θ::Variable{Real}...)
-    T = eltype(θ[1])
-    if (n = length(θ)) > 1
-        for i = 2:n
-            T = promote_type(T, eltype(θ[i]))
-        end
-    end
-    T = T <: AbstractFloat ? T : U
-    tuple(Variable{T}[isa(x, Fixed) ? convert(Fixed{T}, x) : convert(T, x) for x in θ]...)
+
+
+doc"GammaExponentialClass(κ;α,γ) = exp(-α⋅κᵞ)"
+immutable GammaExponentialClass{T<:AbstractFloat} <: PositiveMercerClass{T}
+    alpha::Parameter{T}
+    gamma::Parameter{T}
+    GammaExponentialClass(α::Variable{T}, γ::Variable{T}) = new(
+        Parameter(α, LowerBound(zero(T), :nonstrict)),
+        Parameter(γ, Interval(Bound(zero(T), :strict), Bound(one(T), :nonstrict)))
+    )
 end
+@inline phi{T<:AbstractFloat}(ϕ::GammaExponentialClass{T}, z::T) = exp(-ϕ.alpha * z^ϕ.gamma)
+
+
+doc"ExponentialClass(κ;α) = exp(-α⋅κ²)"
+immutable ExponentialClass{T<:AbstractFloat} <: PositiveMercerClass{T}
+    alpha::Parameter{T}
+    ExponentialClass(α::Variable{T}) = new(
+        Parameter(α, LowerBound(zero(T), :nonstrict))
+    )
+end
+@inline phi{T<:AbstractFloat}(ϕ::ExponentialClass{T}, z::T) = exp(-ϕ.alpha * z)
+
+for (kernelobj, θ) in (
+        (GammaExponentialClass, (1, 0.75)),
+        (ExponentialClass, (1,))
+    )
+
+    def = outer_constructor(kernelobj)
+
+    @eval $def
+
+    def = generic_constructor(kernelobj, θ)
+
+    @eval $def
+
+    #generic_constructor(kernelobj, θ)
+    #=
+    n = length(θ_float)
+    m = length(θ_int)
+    (n+m) == length(fieldnames(eval(symkernel))) || error("Incorrect number of arguments")
+
+    if m == 0
+        fields = fieldnames(eval(symkernel))
+
+        # Kernel{T<:AbstractFloat}(x::Variable{T}...) = Kernel{T}(x...)
+        arguments = [:($arg::Variable{T}) for arg in fields]
+        constructor_ls = Expr(:call, :($symkernel{T<:AbstractFloat}), arguments...)
+        constructor_rs = Expr(:call, :($symkernel{T}), fields...)
+        @eval $constructor_ls = $constructor_rs
+
+        # Kernel(x::Variable=xarg...) = Kernel(promote_arguments(Float64, x...)...)
+        arguments  = [Expr(:kw, :($(fields[i])::Variable), θ_float[i]) for i in eachindex(fields)]
+        promotions = Expr(:call, :promote_arguments, :Float64, fields...)
+        constructor_ls = Expr(:call, symkernel, arguments...)
+        constructor_rs = Expr(:call, symkernel, Expr(:..., promotions))
+        @eval $constructor_ls = $constructor_rs
+    end
+    =#
+end
+
+
+
+
+
+
+
+
 
 #==========================================================================
   Exponential Class
-==========================================================================#
+==========================================================================
 
 doc"ExponentialClass(κ;α,γ) = exp(-α⋅κᵞ)"
 immutable ExponentialClass{T<:AbstractFloat} <: PositiveMercerClass{T}
@@ -63,9 +121,9 @@ end
 @inline phi{T<:AbstractFloat}(ϕ::ExponentialClass{T},::Type{Val{:γ1}}, z::T) = exp(-ϕ.alpha * z)
 
 
-#==========================================================================
+==========================================================================
   Rational Class
-==========================================================================#
+==========================================================================
 
 doc"RationalClass(κ;α,β,γ) = (1 + α⋅κᵞ)⁻ᵝ"
 immutable RationalClass{T<:AbstractFloat} <: PositiveMercerClass{T}
@@ -104,9 +162,9 @@ end
 @inline phi{T<:AbstractFloat}(ϕ::RationalClass{T},::Type{Val{:γ1β1}}, z::T) = 1/(1 + ϕ.alpha * z)
 
 
-#==========================================================================
+==========================================================================
   Matern Class
-==========================================================================#
+==========================================================================
 
 doc"MatérnClass(κ;ν,ρ) = 2ᵛ⁻¹(√(2ν)κ/ρ)ᵛKᵥ(√(2ν)κ/ρ)/Γ(ν)"
 immutable MaternClass{T<:AbstractFloat} <: PositiveMercerClass{T}
@@ -135,9 +193,9 @@ end
 end
 
 
-#==========================================================================
+==========================================================================
   Exponentiated Class
-==========================================================================#
+==========================================================================
 
 doc"ExponentiatedClass(κ;α) = exp(a⋅κ + c)"
 immutable ExponentiatedClass{T<:AbstractFloat} <: PositiveMercerClass{T}
@@ -164,9 +222,9 @@ end
 @inline phi{T<:AbstractFloat}(ϕ::ExponentiatedClass{T}, ::Type{Val}, z::T) = exp(ϕ.a*z + ϕ.c)
 
 
-#==========================================================================
+==========================================================================
   Polynomial Class
-==========================================================================#
+==========================================================================
 
 doc"PolynomialClass(κ;a,c,d) = (a⋅κ + c)ᵈ"
 immutable PolynomialClass{T<:AbstractFloat,U<:Integer} <: CompositionClass{T}
@@ -199,9 +257,9 @@ end
 @inline phi{T<:AbstractFloat}(ϕ::PolynomialClass{T}, ::Type{Val}, z::T) = (ϕ.a*z + ϕ.c)^ϕ.d
 
 
-#==========================================================================
+==========================================================================
   Sigmoid Class
-==========================================================================#
+==========================================================================
 
 doc"SigmoidClass(κ;α,c) = tanh(a⋅κ + c)"
 immutable SigmoidClass{T<:AbstractFloat} <: CompositionClass{T}
@@ -226,9 +284,9 @@ end
 @inline phi{T<:AbstractFloat}(ϕ::SigmoidClass{T}, ::Type{Val}, z::T) = tanh(ϕ.a*z + ϕ.c)
 
 
-#==========================================================================
+==========================================================================
   Power Class
-==========================================================================#
+==========================================================================
 
 doc"PowerClass(z;γ) = (az + c)ᵞ"
 immutable PowerClass{T<:AbstractFloat} <: NonNegativeNegDefClass{T}
@@ -260,9 +318,9 @@ end
 @inline phi{T<:AbstractFloat}(ϕ::PowerClass{T}, ::Type{Val{:γ1}}, z::T) = ϕ.a*z + ϕ.c
 
 
-#==========================================================================
+==========================================================================
   Log Class
-==========================================================================#
+==========================================================================
 
 doc"LogClass(z;α,γ) = log(1 + α⋅zᵞ)"
 immutable LogClass{T<:AbstractFloat} <: NonNegativeNegDefClass{T}
@@ -285,3 +343,5 @@ end
 
 @inline phi{T<:AbstractFloat}(ϕ::LogClass{T}, z::T) = log(ϕ.alpha*z^(ϕ.gamma) + 1)
 @inline phi{T<:AbstractFloat}(ϕ::LogClass{T}, ::Type{Val{:γ1}}, z::T) = log(ϕ.alpha*z + 1)
+
+=#

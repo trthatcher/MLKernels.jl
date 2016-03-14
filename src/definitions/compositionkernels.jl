@@ -1,15 +1,15 @@
 doc"GaussianKernel(α) = exp(-α⋅‖x-y‖²)"
-function GaussianKernel{T<:Real}(α::T = 1.0)
-    U = T <: AbstractFloat ? T : Float64
-    KernelComposition(ExponentialClass(convert(U, α), one(U)), SquaredDistanceKernel(one(U)))
+function GaussianKernel(α::Variable = 1)
+    θ = promote_arguments(Float64, α, 1, 1)
+    KernelComposition(ExponentialClass(θ[1:2]...), SquaredDistanceKernel(θ[3]))
 end
 SquaredExponentialKernel = GaussianKernel
 RadialBasisKernel = GaussianKernel
 
 doc"LaplacianKernel(α) = exp(α⋅‖x-y‖)"
-function LaplacianKernel{T<:Real}(α::T = 1.0)
-    U = T <: AbstractFloat ? T : Float64
-    KernelComposition(ExponentialClass(convert(U, α), one(U)/2), SquaredDistanceKernel(one(U)))
+function LaplacianKernel(α::Variable = 1)
+    θ = promote_arguments(Float64, α, 1//2, 1)
+    KernelComposition(ExponentialClass(θ[1:2]...), SquaredDistanceKernel(θ[3]))
 end
 
 doc"PeriodicKernel(α,p) = exp(-α⋅Σⱼsin²(p(xⱼ-yⱼ)))"

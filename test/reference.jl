@@ -9,7 +9,7 @@ additive_kernels = (
 
 composition_classes = (
     ExponentialClass,
-    RationalQuadraticClass,
+    RationalClass,
     MaternClass,
     PowerClass,
     LogClass,
@@ -20,7 +20,7 @@ composition_classes = (
 
 composition_pairs = Dict(
     ExponentialClass       => (SquaredDistanceKernel,SineSquaredKernel,ChiSquaredKernel),
-    RationalQuadraticClass => (SquaredDistanceKernel,SineSquaredKernel,ChiSquaredKernel),
+    RationalClass => (SquaredDistanceKernel,SineSquaredKernel,ChiSquaredKernel),
     MaternClass            => (SquaredDistanceKernel,SineSquaredKernel,ChiSquaredKernel),
     PowerClass             => (SquaredDistanceKernel,SineSquaredKernel,ChiSquaredKernel),
     LogClass               => (SquaredDistanceKernel,SineSquaredKernel,ChiSquaredKernel),
@@ -35,7 +35,7 @@ composition_kernels = (
     RadialBasisKernel,
     LaplacianKernel,
     PeriodicKernel,
-    RationalQuadraticKernel,
+    RationalKernel,
     MaternKernel,
     MatérnKernel,
     PolynomialKernel,
@@ -49,7 +49,7 @@ all_args = Dict(
     ChiSquaredKernel       => ([:t],[1],[0.5]),
     ScalarProductKernel    => (Symbol[], Int[], Int[]),
     ExponentialClass       => ([:alpha, :gamma], [1,1], [2,0.5]),
-    RationalQuadraticClass => ([:alpha, :beta, :gamma], [1,1,1], [2,2,0.5]),
+    RationalClass => ([:alpha, :beta, :gamma], [1,1,1], [2,2,0.5]),
     MaternClass            => ([:nu, :theta], [1,1], [2,2]),
     PowerClass             => ([:a, :c, :gamma], [1,0,1], [2,1,0.5]),
     LogClass               => ([:alpha, :gamma], [1,1], [2,0.5]),
@@ -64,7 +64,7 @@ all_kernelfunctions = Dict(
     ChiSquaredKernel       => (t,x,y)   -> (x == y == 0) ? zero(typeof(t)) : ((x-y)^2/(x+y))^t,
     ScalarProductKernel    => (x,y)     -> x*y,
     ExponentialClass       => (α,γ,z)   -> exp(-α*z^γ),
-    RationalQuadraticClass => (α,β,γ,z) -> (1 + α*z^γ)^(-β),
+    RationalClass => (α,β,γ,z) -> (1 + α*z^γ)^(-β),
     MaternClass            => (ν,θ,z) -> begin 
                                               v1 = sqrt(2*ν) * z / θ
                                               v1 = v1 < eps(typeof(z)) ? eps(typeof(z)) : v1
@@ -84,7 +84,7 @@ all_kernelproperties = Dict( #|atzero|atpos|atneg |mercer|negdef|
     ChiSquaredKernel       => (true,  true, false, false, true),
     ScalarProductKernel    => (true,  true, true,  true,  false),
     ExponentialClass       => (false, true, false, true,  false),
-    RationalQuadraticClass => (false, true, false, true,  false),
+    RationalClass => (false, true, false, true,  false),
     MaternClass            => (false, true, false, true,  false),
     PowerClass             => (true,  true, false, false, true),
     LogClass               => (true,  true, false, false, true),
@@ -99,7 +99,7 @@ all_testinputs = Dict(
     ChiSquaredKernel       => ([1,1],[1,0],[0,1],[0,0],[2,1],[1,2],[2,0],[0,2]),
     ScalarProductKernel    => ([1,1],[1,0],[0,1],[0,0],[-1,-1],[-1,0],[0,-1]),
     ExponentialClass       => ([0],[1e-10],[0.5],[1]),
-    RationalQuadraticClass => ([0],[1e-10],[0.5],[1]),
+    RationalClass => ([0],[1e-10],[0.5],[1]),
     MaternClass            => ([0],[1e-10],[0.5],[1]),
     PowerClass             => ([0],[1e-10],[0.5],[1]),
     LogClass               => ([0],[1e-10],[0.5],[1]),
@@ -116,7 +116,7 @@ all_phicases = Dict(
     ChiSquaredKernel       => ([0.25],[0.5],[1]),
     ScalarProductKernel    => (Int[],),
     ExponentialClass       => ([1,1], [1,0.5]),
-    RationalQuadraticClass => ([1,1,1], [1,1,0.5], [1,2,1], [2,2,0.5]),
+    RationalClass => ([1,1,1], [1,1,0.5], [1,2,1], [2,2,0.5]),
     MaternClass            => ([1,1], [2,1]),
     PowerClass             => ([1,0,0.5], [1,0,1]),
     LogClass               => ([1,0.5], [1,1]),
@@ -130,7 +130,7 @@ all_errorcases = Dict(
     SineSquaredKernel      => ([π,1.1], [π,0], [0,1]),
     ChiSquaredKernel       => ([1.1], [0]),
     ExponentialClass       => ([0,1], [1,1.1], [1,0]),
-    RationalQuadraticClass => ([0,1,1], [1,0,1], [1,1,0], [1,1,1.1]),
+    RationalClass => ([0,1,1], [1,0,1], [1,1,0], [1,1,1.1]),
     MaternClass            => ([1,0], [0,1]),
     PowerClass             => ([0,1,1], [0,-1,1], [1,0,0], [1,0,1.1]),
     LogClass               => ([0,1], [1,0], [1,1.1]),

@@ -6,7 +6,17 @@ immutable Bound{T<:Real}
     value::T
     is_strict::Bool
 end
-Bound{T<:Real}(value::T, is_strict::Bool = true) = Bound{T}(value, is_strict)
+Bound{T<:Real}(value::T, is_strict::Bool) = Bound{T}(value, is_strict)
+
+function Bound{T<:Real}(value::T, boundtype::Symbol)
+    if boundtype == :strict
+        return Bound(value, true)
+    elseif boundtype == :nonstrict
+        return Bound(value, false)
+    else
+        error("Bound type $boundtype not recognized")
+    end
+end
 
 convert{T<:Real}(::Type{Bound{T}}, B::Bound) = Bound(convert(T, B.value), B.is_strict)
 
@@ -28,15 +38,45 @@ end
 Interval{T<:Real}(lower::Nullable{Bound{T}}, upper::Nullable{Bound{T}}) = Interval{T}(lower, upper)
 Interval{T<:Real}(lower::Bound{T}, upper::Bound{T}) = Interval(Nullable(lower), Nullable(upper))
 
-function Interval{T<:Real}(bound::Bound{T}, is_lower::Bool = true)
-    if is_lower
-        Interval(Nullable(bound), Nullable{Bound{T}}())
+function UpperBound{T<:Real}(value::T, boundtype::Symbol)
+    if boundtype == :strict
+        return Interval(Nullable{Bound{T}}(), Nullable(Bound(value, true)))
+    elseif boundtype == :nonstrict
+        return Interval(Nullable{Bound{T}}(), Nullable(Bound(value, false)))
     else
-        Interval(Nullable{Bound{T}}(), Nullable(bound))
+        error("Bound type $boundtype not recognized")
+    end
+end
+UpperBound{T<:Real}(upper::Bound{T}) = Interval(Nullable{Bound{T}}(), Nullable(upper))
+
+
+function LowerBound{T<:Real}(value::T, boundtype::Symbol)
+    if boundtype == :strict
+        return Interval(Nullable(Bound(value, true)), Nullable{Bound{T}}())
+    elseif boundtype == :nonstrict
+        return Interval(Nullable(Bound(value, false)), Nullable{Bound{T}}())
+    else
+        error("Bound type $boundtype not recognized")
+    end
+end
+LowerBound{T<:Real}(lower::Bound{T}) = Interval(Nullable(lower), Nullable{Bound{T}}())
+
+   
+LowerBound{T<:Real}(x::T) = Interval(Nullable(B), Nullable{Bound{T}}())
+NullBound{T<:Real}(::Type{T})    = Interval(Nullable{Bound{T}}(), Nullable{Bound{T}}())
+
+function convert{T<:Real}(::Type{Interval{T}}, I::Interval)
+    if isnull(I.lower)
+        isnull(I.upper) ? NullBound(T) : UpperBound(convert(Bound{T}, get(I.upper)))
+    else
+        if isnull(I.upper)
+            LowerBound(convert(Bound{T}, get(I.lower)))
+        else
+            Interval(convert(Bound{T}, get(I.lower)), convert(Bound{T}, get(I.upper)))
+        end
     end
 end
 
-unbounded{T<:Real}(::Type{T}) = Interval(Nullable{Bound{T}}(), Nullable{Bound{T}}())
 
 function show{T}(io::IO, I::Interval{T})
     if isnull(I.lower)
@@ -81,15 +121,22 @@ end
   Hyperparameter Object
 ========================#
 
-immutable Fixed{T<:Real}
+immutable Variable{T<:Real}
     value::T
+    isfixed::Bool
 end
-Fixed{T<:Real}(v::T) = Fixed{T}(v)
-Fixed{T<:Real}(v::Fixed{T}) = v
+Variable{T<:AbstractFloat}(value::T, isfixed::Bool=false) = Variable{T}(value, false)
+Fixed{T<:Real}(v::T) = Variable{T}(v, true)
 
-eltype{T<:Real}(::Fixed{T}) = T
+eltype{T<:Real}(::Variable{T}) = T
 
-typealias Variable{T<:Real} Union{Fixed{T},T}
+function convert{T<:Real}(::Type{Variable{T}}, value::Variable)
+    Variable(convert(T, value.fixed), value.isfixed)
+end
+convert{T<:Real}(::Type{Variable{T}}, value::Real) = Variable(convert(T, value), false)
+
+typealias Argument{T<:Real} Union{T,Variable{T}}
+
 
 type Parameter{T<:Real}
     value::T
@@ -100,11 +147,11 @@ type Parameter{T<:Real}
         new(value, bounds, isfixed)
     end
 end
-function Parameter{T<:Real}(x::T, bounds::Interval{T} = unbounded(T), isfixed::Bool=false)
+function Parameter{T<:Real}(x::T, bounds::Interval{T} = NullBound(T), isfixed::Bool=false)
     Parameter{T}(x, bounds, isfixed)
 end
-function Parameter{T<:Real}(x::Fixed{T}, bounds::Interval{T} = unbounded(T))
-    Parameter(x.value, bounds, true)
+function Parameter{T<:Real}(x::Variable{T}, bounds::Interval{T} = NullBound(T))
+    Parameter(x.value, bounds, x.isfixed)
 end
 
 function convert{T<:Real}(::Type{Parameter{T}}, θ::Parameter)

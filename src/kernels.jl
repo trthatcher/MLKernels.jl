@@ -2,10 +2,7 @@
   Kernels & Composition Classes
 ===================================================================================================#
 
-doc"
-`Kernel`: `κ` such that `κ` is a Mercer kernel or a continuous symmetric 
-negative-definite kernel.
-"
+doc"`Kernel`: `κ` such that `κ` is a Mercer kernel or a continuous symmetric negative-definite kernel."
 abstract Kernel{T<:AbstractFloat}
 
 doc"`CompositionClass`: `ϕ` such that `ϕ(κ(x,y))` is a kernel for some kernel `κ`."
@@ -47,7 +44,7 @@ include("definitions/compositionclasses.jl")
 
 for class_obj in concrete_subtypes(CompositionClass)
     class_name = class_obj.name.name  # symbol for concrete kernel type
-    field_conversions = [:(convert(T, κ.$field)) for field in fieldnames(class_obj)]
+    field_conversions = [:(convert(T, κ.$field.value)) for field in fieldnames(class_obj)]
     constructorcall = Expr(:call, class_name, field_conversions...)
     @eval begin
         convert{T<:AbstractFloat}(::Type{$class_name{T}}, κ::$class_name) = $constructorcall
