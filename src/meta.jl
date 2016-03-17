@@ -31,31 +31,98 @@ function get_default(obj::DataType)
     obj <: Integer ? Int64 : Float64
 end
 
-# Ex. Kernel{T,U}(alpha::Variable{T}, beta::Variable{U}) = Kernel{T,U}(alpha,beta)
+#=
 function outer_constructor(obj::DataType)
     fields = fieldnames(obj)
     fieldtypes  = [field => fieldtype(obj, field).parameters[1].name for field in fields]
-    arguments   = [:($field::Variable{$(fieldtypes[field])}) for field in fields]
+    arguments   = [:($field::Argument{$(fieldtypes[field])}) for field in fields]
     parameters  = [parameter.name for parameter in obj.parameters]
     constructor = Expr(:curly, obj.name.name, 
-                       [Expr(:(<:), param.name, param.ub.name.name) for param in obj.parameters]...)
+                       [Expr(:(<:), param.name, param.ub.name.name) 
+                          for param in obj.parameters]...)
     definition_ls = Expr(:call, constructor, arguments...)
-    definition_rs = Expr(:call, Expr(:curly, obj.name.name, parameters...), fields...)
+    definition_rs = Expr(:call, Expr(:curly, obj.name.name, parameters...), 
+                         [Expr(:call, :convert, :(Variable{$(fieldtypes[field])}), field) 
+                            for field in fields]...)
     Expr(:(=), definition_ls, definition_rs)
 end
+=#
+
+function outer_constructor(obj::DataType, defaults::Tuple{Vararg{Real}})
+    fields = fieldnames(obj)
+    length(defaults) == length(fields) || error("wrong size")
+    parameters  = [param.name => param.ub for param in obj.parameters]  # [:T=>Float64, :U=>Int]
+    #println(parameters)
+    fieldparams = Symbol[fieldtype(obj, field).parameters[1].name for field in fields]
+    #println(fieldparams)
+    first_idx   = [param => findfirst(fieldparams, param) for param in keys(parameters)]
+    #println(first_idx)
+    defaultparams = Symbol[if i == first_idx[fieldparams[i]]
+                        get_default(parameters[fieldparams[i]]).name.name
+                    else
+                        fieldparams[i]
+                    end for i in eachindex(fields)]
+
+    arguments = [Expr(:(=), :($(fields[i])::Argument{$(fieldparams[i])}),
+                            :(convert($(defaultparams[i]), $(defaults[i]))))
+                 for i in eachindex(fields)]
+
+    constructor = Expr(:curly, obj.name.name, 
+                       [Expr(:(<:), param.name, param.ub.name.name) for param in obj.parameters]...)
+
+    definition_ls = Expr(:call, constructor, arguments...)
+end
+    
+
+
+#=
+    targettypes = [i == findfirst(fieldtypes, fieldtype) ?
+                       get_default(fieldtype(obj, fields[i]).ub) :
+                       :(convert($(fieldtypes[i]), $(defaults[i])))
+                   for i in eachindex(fieldtypes)]
+    fieldfirst  = [i == findfirst(fieldtypes, fieldtype) for i in eachindex(fieldtypes)]
+    arg_defaults = [fieldfirst[i] ?
+                                  : 
+
+                    for i in eachindex(fieldtypes)]
+    arguments   = [Expr(:(=),
+                        :($field::Argument{$(fieldtypes[i])}),
+                        fieldfirst[fields[i]] == i ? :(convert(
+                                                   : :(convert($(fieldtypes[i]), $(defaults[i]))
+
+                        
+                      for field in fields]
+    parameters  = [parameter.name for parameter in obj.parameters]
+    constructor = Expr(:curly, obj.name.name, 
+                       [Expr(:(<:), param.name, param.ub.name.name) 
+                          for param in obj.parameters]...)
+    definition_ls = Expr(:call, constructor, arguments...)
+    definition_rs = Expr(:call, Expr(:curly, obj.name.name, parameters...), 
+                         [Expr(:call, :convert, :(Variable{$(fieldtypes[field])}), field) 
+                            for field in fields]...)
+    Expr(:(=), definition_ls, definition_rs)
+end
+=#
+# MAke better!
+
 
 function generic_constructor(obj::DataType, defaults::Tuple{Vararg{Real}})
     fields = fieldnames(obj)
     fieldtypes = [field => fieldtype(obj, field).parameters[1] for field in fields]
     arguments = [Expr(:kw, :($(fields[i])::Argument), defaults[i]) for i in eachindex(fields)]
-    conversions = [:(convert(Variable{$(get_default(fieldtypes[field].ub))}, $field)) for field in fields]
+    conversions = [:(convert(Variable{$(get_default(fieldtypes[field].ub))}, $field))
+                   for field in fields]
     definition_ls = Expr(:call, obj.name.name, arguments...)
     definition_rs = Expr(:call, obj.name.name, conversions...)
     Expr(:(=), definition_ls, definition_rs)
 end
 
+function kernel_constructors(obj::DataType, defaults::Tuple{Vararg{Real}})
+    Expr(:block, outer_constructor(eval(obj)), generic_constructor(eval(obj), defaults))
+end
 
 #=
+
 function outerconstructor(obj::DataType, T::DataType)
     T <: Real && !isleaftype(T) || error("Argument T type must be a real bits type")
     fields = fieldnames(obj)
@@ -65,7 +132,6 @@ function outerconstructor(obj::DataType, T::DataType)
     constructor_rs = Expr(:call, :($symobj{T}), fields...)
     Expr(:(=), constructor_ls, constructor_rs)
 end
-=#
 
 function outerconstructor(obj::DataType, T::DataType, n_T::Integer, U::DataType)
     T <: Real && !isleaftype(T) || error("Argument T type must be a real bits type")
@@ -100,4 +166,4 @@ function outerconstructor(obj::DataType, T::DataType, T_args::Tuple{Vararg{Real}
     Expr(:(=), constructor_ls, constructor_rs)
 end
 
-
+=#

@@ -7,9 +7,6 @@ function is_nonneg_and_negdef(κ::Kernel)
     isnonnegative(κ) || error("Composed class must attain only non-negative values.")
 end
 
-@inline checkcase(::CompositionClass) = Val
-@inline phi{T<:AbstractFloat}(ϕ::CompositionClass{T}, z::T) = phi(ϕ, Val, z)
-
 abstract PositiveMercerClass{T<:AbstractFloat} <: CompositionClass{T}
 
 ismercer(::PositiveMercerClass) = true
@@ -34,6 +31,7 @@ immutable GammaExponentialClass{T<:AbstractFloat} <: PositiveMercerClass{T}
         Parameter(γ, Interval(Bound(zero(T), :strict), Bound(one(T), :nonstrict)))
     )
 end
+#@eval $(kernel_constructors(GammaExponentialClass, (1,0.75)))
 @inline phi{T<:AbstractFloat}(ϕ::GammaExponentialClass{T}, z::T) = exp(-ϕ.alpha * z^ϕ.gamma)
 
 
@@ -44,50 +42,76 @@ immutable ExponentialClass{T<:AbstractFloat} <: PositiveMercerClass{T}
         Parameter(α, LowerBound(zero(T), :nonstrict))
     )
 end
+#@eval $(kernel_constructors(ExponentialClass, (1,)))
 @inline phi{T<:AbstractFloat}(ϕ::ExponentialClass{T}, z::T) = exp(-ϕ.alpha * z)
 
-for (kernelobj, θ) in (
-        (GammaExponentialClass, (1, 0.75)),
-        (ExponentialClass, (1,))
+
+doc"GammaRationalClass(κ;α,β,γ) = (1 + α⋅κᵞ)⁻ᵝ"
+immutable GammaRationalClass{T<:AbstractFloat} <: PositiveMercerClass{T}
+    alpha::Parameter{T}
+    beta::Parameter{T}
+    gamma::Parameter{T}
+    GammaRationalClass(α::Variable{T}, β::Variable{T}, γ::Variable{T}) = new(
+        Parameter(α, Interval(Bound(zero(T)))),
+        Parameter(β, Interval(Bound(zero(T)))),
+        Parameter(γ, Interval(Bound(zero(T)), Bound(one(T), false)))
     )
+end
+@inline phi{T<:AbstractFloat}(ϕ::GammaRationalClass{T}, z::T) = (1 + ϕ.alpha)^(-ϕ.beta)
 
-    def = outer_constructor(kernelobj)
 
-    @eval $def
+doc"RationalClass(κ;α,β,γ) = (1 + α⋅κ)⁻ᵝ"
+immutable RationalClass{T<:AbstractFloat} <: PositiveMercerClass{T}
+    alpha::Parameter{T}
+    beta::Parameter{T}
+    RationalClass(α::Variable{T}, β::Variable{T}) = new(
+        Parameter(α, Interval(Bound(zero(T)))),
+        Parameter(β, Interval(Bound(zero(T))))
+    )
+end
+@inline phi{T<:AbstractFloat}(ϕ::RationalClass{T}, z::T) = (1 + ϕ.alpha)^(-ϕ.beta)
 
-    def = generic_constructor(kernelobj, θ)
 
-    @eval $def
-
-    #generic_constructor(kernelobj, θ)
-    #=
-    n = length(θ_float)
-    m = length(θ_int)
-    (n+m) == length(fieldnames(eval(symkernel))) || error("Incorrect number of arguments")
-
-    if m == 0
-        fields = fieldnames(eval(symkernel))
-
-        # Kernel{T<:AbstractFloat}(x::Variable{T}...) = Kernel{T}(x...)
-        arguments = [:($arg::Variable{T}) for arg in fields]
-        constructor_ls = Expr(:call, :($symkernel{T<:AbstractFloat}), arguments...)
-        constructor_rs = Expr(:call, :($symkernel{T}), fields...)
-        @eval $constructor_ls = $constructor_rs
-
-        # Kernel(x::Variable=xarg...) = Kernel(promote_arguments(Float64, x...)...)
-        arguments  = [Expr(:kw, :($(fields[i])::Variable), θ_float[i]) for i in eachindex(fields)]
-        promotions = Expr(:call, :promote_arguments, :Float64, fields...)
-        constructor_ls = Expr(:call, symkernel, arguments...)
-        constructor_rs = Expr(:call, symkernel, Expr(:..., promotions))
-        @eval $constructor_ls = $constructor_rs
-    end
-    =#
+doc"MatérnClass(κ;ν,ρ) = 2ᵛ⁻¹(√(2ν)κ/ρ)ᵛKᵥ(√(2ν)κ/ρ)/Γ(ν)"
+immutable MaternClass{T<:AbstractFloat} <: PositiveMercerClass{T}
+    nu::Parameter{T}
+    rho::Parameter{T}
+    MaternClass(ν::Variable{T}, ρ::Variable{T}) = new(
+        Parameter(ν, Interval(Bound(zero(T)))),
+        Parameter(ρ, Interval(Bound(zero(T))))
+    )
+end
+@inline function phi{T<:AbstractFloat}(ϕ::MaternClass{T}, z::T)
+    v1 = sqrt(2ϕ.nu) * z / ϕ.rho
+    v1 = v1 < eps(T) ? eps(T) : v1  # Overflow risk, z -> Inf
+    2 * (v1/2)^(ϕ.nu) * besselk(ϕ.nu, v1) / gamma(ϕ.nu)
 end
 
 
+doc"ExponentiatedClass(κ;α) = exp(a⋅κ + c)"
+immutable ExponentiatedClass{T<:AbstractFloat} <: PositiveMercerClass{T}
+    a::Parameter{T}
+    c::Parameter{T}
+    ExponentiatedClass(a::Variable{T}, c::Variable{T}) = new(
+        Parameter(a, Interval(Bound(zero(T)))),
+        Parameter(c, Interval(Bound(zero(T), false)))
+    )
+end
+@inline phi{T<:AbstractFloat}(ϕ::ExponentiatedClass{T}, z::T) = exp(ϕ.a*z + ϕ.c)
 
 
-
+doc"PolynomialClass(κ;a,c,d) = (a⋅κ + c)ᵈ"
+immutable PolynomialClass{T<:AbstractFloat,U<:Integer} <: CompositionClass{T}
+    a::Parameter{T}
+    c::Parameter{T}
+    d::Parameter{U}
+    PolynomialClass(a::Variable{T}, c::Variable{T}, d::Variable{U}) = new(
+        Parameter(a, Interval(Bound(zero(T)))),
+        Parameter(c, Interval(Bound(zero(T), false))),
+        Parameter(d, Interval(Bound(one(U))))
+    )
+end
+@inline phi{T<:AbstractFloat}(ϕ::PolynomialClass{T}, z::T) = (ϕ.a*z + ϕ.c)^ϕ.d
 
 
 

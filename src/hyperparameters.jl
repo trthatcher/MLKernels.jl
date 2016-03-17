@@ -130,8 +130,8 @@ Fixed{T<:Real}(v::T) = Variable{T}(v, true)
 
 eltype{T<:Real}(::Variable{T}) = T
 
-function convert{T<:Real}(::Type{Variable{T}}, value::Variable)
-    Variable(convert(T, value.fixed), value.isfixed)
+function convert{T<:Real}(::Type{Variable{T}}, var::Variable)
+    Variable(convert(T, var.value), var.isfixed)
 end
 convert{T<:Real}(::Type{Variable{T}}, value::Real) = Variable(convert(T, value), false)
 
