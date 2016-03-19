@@ -1,3 +1,8 @@
+# MLKernels 0.2.0
+
+* Added `Parameter` type for hyper parameters
+* Redefined all kernels as collections of `Parameter`s internally
+
 # MLKernels 0.1.1 Release Notes
 
 * Added `CompositionClass` type to represent parametric forms of kernels

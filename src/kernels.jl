@@ -1,47 +1,60 @@
 #===================================================================================================
-  Kernels & Composition Classes
+  Kernels
 ===================================================================================================#
 
-doc"`Kernel`: `κ` such that `κ` is a Mercer kernel or a continuous symmetric negative-definite kernel."
 abstract Kernel{T<:AbstractFloat}
 
-doc"`CompositionClass`: `ϕ` such that `ϕ(κ(x,y))` is a kernel for some kernel `κ`."
-abstract CompositionClass{T<:AbstractFloat}
+abstract StandardKernel{T<:AbstractFloat}  <: Kernel{T}  # Either a kernel is atomic or it is a
+abstract KernelOperation{T<:AbstractFloat} <: Kernel{T}  # function of multiple kernels
 
-function show(io::IO, κ::Union{Kernel,CompositionClass})
+eltype{T}(::Kernel{T}) = T 
+
+function show(io::IO, κ::Kernel)
     print(io, description_string(κ))
 end
 
-eltype{T}(::Union{Kernel{T},CompositionClass{T}}) = T
-
 doc"`ismercer(κ)`: tests whether a kernel `κ` is a Mercer kernel."
-ismercer(::Union{Kernel,CompositionClass}) = false
+ismercer(::Kernel) = false
 
 doc"`isnegdef(κ)`: tests whether a kernel `κ` is a continuous symmetric negative-definite kernel."
-isnegdef(::Union{Kernel,CompositionClass}) = false
+isnegdef(::Kernel) = false
 
-attainszero(::Union{Kernel,CompositionClass})     = true
-attainspositive(::Union{Kernel,CompositionClass}) = true
-attainsnegative(::Union{Kernel,CompositionClass}) = true
+attainszero(::Kernel)     = true
+attainspositive(::Kernel) = true
+attainsnegative(::Kernel) = true
 
-isnonnegative(κ::Union{Kernel,CompositionClass}) = !attainsnegative(κ)
-function ispositive(κ::Union{Kernel,CompositionClass})
-    !attainsnegative(κ) && !attainszero(κ) && attainspositive(κ)
+isnonnegative(κ::Kernel) = !attainsnegative(κ)
+ispositive(κ::Kernel)    = !attainsnegative(κ) && !attainszero(κ) &&  attainspositive(κ)
+isnegative(k::Kernel)    =  attainsnegative(κ) && !attainszero(κ) && !attainspositive(κ)
+
+
+#===================================================================================================
+  Composition Classes: Valid kernel transformations
+===================================================================================================#
+
+abstract CompositionClass{T<:AbstractFloat}
+
+eltype{T}(::CompositionClass{T}) = T 
+
+iscomposable(::CompositionClass, ::Kernel) = false
+
+attainszero(::CompositionClass)     = true
+attainspositive(::CompositionClass) = true
+attainsnegative(::CompositionClass) = true
+
+include("definitions/compositionclasses.jl")  # standard CompositionClass definitions
+
+function show(io::IO, θ::CompositionClass)
+    class = typeof(θ)
+    print(io, class.name.name, "(")
+    fields = fieldnames(class)
+    for i in eachindex(fields)
+        print(io, i == 1 ? "" : ",", fields[i], "=", getfield(θ, fields[i]).value)
+    end
+    println(io, ")")
 end
-function isnegative(k::Union{Kernel,CompositionClass})
-    attainsnegative(κ) && !attainszero(κ) && !attainspositive(κ)
-end
 
-
-#==========================================================================
-Composition Classes
-==========================================================================#
-
-iscomposable(::CompositionClass, ::Kernel) = true
-phi{T<:AbstractFloat}(ϕ::CompositionClass{T}, x::T) = phi(ϕ, Val{:∅}, x) # Val{checkcase(κ)}, x)
-
-include("definitions/compositionclasses.jl")
-
+#=
 for class_obj in concrete_subtypes(CompositionClass)
     class_name = class_obj.name.name  # symbol for concrete kernel type
     field_conversions = [:(convert(T, κ.$field.value)) for field in fieldnames(class_obj)]
@@ -50,24 +63,24 @@ for class_obj in concrete_subtypes(CompositionClass)
         convert{T<:AbstractFloat}(::Type{$class_name{T}}, κ::$class_name) = $constructorcall
     end
 end
+=#
 
 
 #===================================================================================================
   Standard Kernels
 ===================================================================================================#
 
-abstract StandardKernel{T<:AbstractFloat} <: Kernel{T}
-abstract BaseKernel{T<:AbstractFloat} <: StandardKernel{T}
-
-
 #==========================================================================
-  Additive Kernel: k(x,y) = sum(k(x_i,y_i))    x ∈ ℝⁿ, y ∈ ℝⁿ
+  Pairwise Kernels: consume two vectors
 ==========================================================================#
 
-abstract AdditiveKernel{T<:AbstractFloat} <: BaseKernel{T}
+abstract PairwiseKernel{T<:AbstractFloat} <: StandardKernel{T}
+
+abstract AdditiveKernel{T<:AbstractFloat} <: PairwiseKernel{T}
 
 include("definitions/additivekernels.jl")
 
+#=
 for kernel_obj in concrete_subtypes(AdditiveKernel)
     kernel_name = kernel_obj.name.name  # symbol for concrete kernel type
     if length(fieldnames(kernel_obj)) == 0
@@ -82,41 +95,7 @@ for kernel_obj in concrete_subtypes(AdditiveKernel)
         end
     end
 end
-
-
-
-
-#==========================================================================
-  ARD Kernel
-==========================================================================#
-
-doc"`ARD(κ,w)` where `κ <: AdditiveKernel`"
-immutable ARD{T<:AbstractFloat} <: BaseKernel{T}
-    k::AdditiveKernel{T}
-    w::Vector{T}
-    function ARD(κ::AdditiveKernel{T}, w::Vector{T})
-        length(w) > 0 || error("Weight vector w must be at least of length 1.")
-        all(w .> 0) || error("Weight vector w must consist of positive values.")
-        new(κ, w)
-    end
-end
-ARD{T<:AbstractFloat}(κ::AdditiveKernel{T}, w::Vector{T}) = ARD{T}(κ, w)
-
-ismercer(κ::ARD) = ismercer(κ.k)
-isnegdef(κ::ARD) = isnegdef(κ.k)
-
-attainszero(κ::ARD) = attainszero(κ.k)
-attainspositive(κ::ARD) = attainspositive(κ.k)
-attainsnegative(κ::ARD) = attainsnegative(κ.k)
-
-function description_string{T<:AbstractFloat,}(κ::ARD{T}, eltype::Bool = true)
-    "ARD" * (eltype ? "{$(T)}" : "") * "(κ=$(description_string(κ.k, false)),w=$(κ.w))"
-end
-
-function convert{T<:AbstractFloat}(::Type{ARD{T}}, κ::ARD)
-    ARD(convert(Kernel{T},κ.k), convert(Vector{T}, κ.w))
-end
-
+=#
 
 #==========================================================================
   Kernel Composition ψ = ϕ(κ(x,y))
@@ -125,16 +104,19 @@ end
 doc"KernelComposition(ϕ,κ) = ϕ∘κ"
 immutable KernelComposition{T<:AbstractFloat} <: StandardKernel{T}
     phi::CompositionClass{T}
-    k::Kernel{T}
-    function KernelComposition(ϕ::CompositionClass{T}, κ::BaseKernel{T})
+    k::PairwiseKernel{T}
+    function KernelComposition(ϕ::CompositionClass{T}, κ::PairwiseKernel{T})
         iscomposable(ϕ, κ) || error("Kernel is not composable.")
         new(ϕ, κ)
     end
 end
-function KernelComposition{T<:AbstractFloat}(ϕ::CompositionClass{T}, κ::Kernel{T})
+function KernelComposition{T<:AbstractFloat}(ϕ::CompositionClass{T}, κ::PairwiseKernel{T})
     KernelComposition{T}(ϕ, κ)
 end
-function KernelComposition{T<:AbstractFloat,U<:AbstractFloat}(ϕ::CompositionClass{T}, κ::Kernel{U})
+function KernelComposition{T<:AbstractFloat,U<:AbstractFloat}(
+        ϕ::CompositionClass{T}, 
+        κ::PairwiseKernel{U}
+    )
     V = promote_type(T, U)
     KernelComposition{V}(convert(CompositionClass{V}, ϕ), convert(Kernel{V}, κ))
 end
@@ -142,7 +124,7 @@ end
 ismercer(κ::KernelComposition) = ismercer(κ.phi)
 isnegdef(κ::KernelComposition) = isnegdef(κ.phi)
 
-attainszero(κ::KernelComposition) = attainszero(κ.phi)
+attainszero(κ::KernelComposition)     = attainszero(κ.phi)
 attainspositive(κ::KernelComposition) = attainspositive(κ.phi)
 attainsnegative(κ::KernelComposition) = attainsnegative(κ.phi)
 
@@ -181,11 +163,46 @@ end
 include("definitions/compositionkernels.jl")
 
 
+
+#==========================================================================
+  ARD Kernel
+==========================================================================#
+
+#=
+doc"`ARD(κ,w)` where `κ <: AdditiveKernel`"
+immutable ARD{T<:AbstractFloat} <: BaseKernel{T}
+    k::AdditiveKernel{T}
+    w::Vector{T}
+    function ARD(κ::AdditiveKernel{T}, w::Vector{T})
+        length(w) > 0 || error("Weight vector w must be at least of length 1.")
+        all(w .> 0) || error("Weight vector w must consist of positive values.")
+        new(κ, w)
+    end
+end
+ARD{T<:AbstractFloat}(κ::AdditiveKernel{T}, w::Vector{T}) = ARD{T}(κ, w)
+
+ismercer(κ::ARD) = ismercer(κ.k)
+isnegdef(κ::ARD) = isnegdef(κ.k)
+
+attainszero(κ::ARD) = attainszero(κ.k)
+attainspositive(κ::ARD) = attainspositive(κ.k)
+attainsnegative(κ::ARD) = attainsnegative(κ.k)
+
+function description_string{T<:AbstractFloat,}(κ::ARD{T}, eltype::Bool = true)
+    "ARD" * (eltype ? "{$(T)}" : "") * "(κ=$(description_string(κ.k, false)),w=$(κ.w))"
+end
+
+function convert{T<:AbstractFloat}(::Type{ARD{T}}, κ::ARD)
+    ARD(convert(Kernel{T},κ.k), convert(Vector{T}, κ.w))
+end
+=#
+
+
+
 #===================================================================================================
   Kernel Operations
 ===================================================================================================#
 
-abstract KernelOperation{T<:AbstractFloat} <: Kernel{T}
 
 #==========================================================================
   Kernel Affinity
@@ -207,7 +224,7 @@ KernelAffinity{T<:AbstractFloat}(a::T, c::T, κ::Kernel{T}) = KernelAffinity{T}(
 ismercer(ψ::KernelAffinity) = ismercer(ψ.k)
 isnegdef(ψ::KernelAffinity) = isnegdef(ψ.k)
 
-attainszero(ψ::KernelAffinity) = attainszero(ψ.k)
+attainszero(ψ::KernelAffinity)     = attainszero(ψ.k)
 attainspositive(ψ::KernelAffinity) = attainspositive(ψ.k)
 attainsnegative(ψ::KernelAffinity) = attainsnegative(ψ.k)
 
@@ -380,6 +397,7 @@ end
   Conversions
 ===================================================================================================#
 
+#=
 for kernel in (
         concrete_subtypes(AdditiveKernel)..., 
         ARD, 
@@ -399,3 +417,4 @@ for kernel in (
         end
     end
 end
+=#

@@ -1,7 +1,56 @@
-#==========================================================================
+doc"SquaredDistanceKernel() = (x-y)ᵀ(x-y)"
+immutable SquaredDistanceKernel{T<:AbstractFloat} <: AdditiveKernel{T} end
+SquaredDistanceKernel() = SquaredDistanceKernel{Float64}()
+@inline phi{T<:AbstractFloat}(κ::SquaredDistanceKernel{T}, x::T, y::T) = (x-y)^2
+
+
+doc"SineSquaredKernel(p) = Σⱼsin²(p(xⱼ-yⱼ))"
+immutable SineSquaredKernel{T<:AbstractFloat} <: AdditiveKernel{T}
+    p::Parameter{T}
+    SineSquaredKernel(p::Variable{T}) = new(
+        Parameter(p, LowerBound(zero(T), :strict))
+    )
+end
+@outer_constructor(SineSquaredKernel, (π,))
+@inline phi{T<:AbstractFloat}(κ::SineSquaredKernel{T}, x::T, y::T) = sin(κ.p*(x-y))^2
+
+
+doc"ChiSquaredKernel() = Σⱼ(xⱼ-yⱼ)²/(xⱼ+yⱼ)"
+immutable ChiSquaredKernel{T<:AbstractFloat} <: AdditiveKernel{T} end
+ChiSquaredKernel() = ChiSquaredKernel{Float64}()
+@inline function phi{T<:AbstractFloat}(κ::ChiSquaredKernel{T}, x::T, y::T)
+    (x == y == zero(T)) ? zero(T) : (x-y)^2/(x+y)
+end
+
+
+doc"ScalarProductKernel() = xᵀy"
+immutable ScalarProductKernel{T<:AbstractFloat} <: AdditiveKernel{T} end
+ScalarProductKernel() = ScalarProductKernel{Float64}()
+@inline phi{T<:AbstractFloat}(κ::ScalarProductKernel{T}, x::T, y::T) = x*y
+
+
+#== Properties of Kernel Classes ==#
+
+for (classobj, properties) in (
+        (SquaredDistanceKernel, (true,  false, false, false, true)),
+        (SineSquaredKernel,     (false, true,  false, true,  true)),
+        (ChiSquaredKernel,      (true,  false, true,  true,  true)),
+        (ScalarProductKernel,   (false, false, true,  true,  true))
+    )
+    ismercer(::classobj) = properties[1]
+    isnegdef(::classobj) = properties[2]
+    attainsnegative(::classobj) = properties[3]
+    attainszero(::classobj)     = properties[4]
+    attainspositive(::classobj) = properties[5]
+end
+
+
+
+#=
+==========================================================================
   Squared Distance Kernel
   k(x,y) = (x-y)²ᵗ    x ∈ ℝ, y ∈ ℝ, t ∈ (0,1]
-==========================================================================#
+==========================================================================
 
 doc"SquaredDistanceKernel(t) = Σⱼ(xⱼ-yⱼ)²ᵗ"
 immutable SquaredDistanceKernel{T<:AbstractFloat,CASE} <: AdditiveKernel{T} 
@@ -36,10 +85,10 @@ end
 @inline phi{T<:AbstractFloat}(κ::SquaredDistanceKernel{T}, x::T, y::T) = ((x-y)^2)^κ.t
 
 
-#==========================================================================
+==========================================================================
   Sine Squared Kernel
   k(x,y) = sin²ᵗ(p(x-y))    x ∈ ℝ, y ∈ ℝ, t ∈ (0,1], p ∈ (0,∞)
-==========================================================================#
+==========================================================================
 
 doc"SineSquaredKernel(p,t) = Σⱼ(p(xⱼ-yⱼ))²ᵗ"
 immutable SineSquaredKernel{T<:AbstractFloat,CASE} <: AdditiveKernel{T}
@@ -77,10 +126,10 @@ end
 @inline phi{T<:AbstractFloat}(κ::SineSquaredKernel{T}, x::T, y::T) = (sin(κ.p*(x-y))^2)^κ.t
 
 
-#==========================================================================
+==========================================================================
   Chi Squared Kernel
   k(x,y) = ((x-y)²/(x+y))ᵗ    x ∈ ℝ⁺, y ∈ ℝ⁺, t ∈ (0,1]
-==========================================================================#
+==========================================================================
 
 doc"ChiSquaredKernel(t) = Σⱼ((xⱼ-yⱼ)²/(xⱼ+yⱼ))ᵗ"
 immutable ChiSquaredKernel{T<:AbstractFloat,CASE} <: AdditiveKernel{T}
@@ -116,9 +165,9 @@ end
 end
 
 
-#==========================================================================
+==========================================================================
   Scalar Product Kernel
-==========================================================================#
+==========================================================================
 
 doc"ScalarProductKernel() = xᵀy"
 immutable ScalarProductKernel{T<:AbstractFloat} <: AdditiveKernel{T} end
@@ -131,3 +180,5 @@ function description_string{T<:AbstractFloat}(κ::ScalarProductKernel{T}, eltype
 end
 
 @inline phi{T<:AbstractFloat}(κ::ScalarProductKernel{T}, x::T, y::T) = x*y
+
+=#

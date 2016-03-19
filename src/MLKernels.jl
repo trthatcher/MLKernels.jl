@@ -33,9 +33,8 @@ export
 
     # Kernel Type
     Kernel,
-        # Subtypes
         StandardKernel,
-            BaseKernel,
+            PairwiseKernel,
                 AdditiveKernel,
                     SquaredDistanceKernel,
                     SineSquaredKernel,
@@ -50,14 +49,20 @@ export
     
     # Composition Classes
     CompositionClass,
-        ExponentialClass,
-        RationalClass,
+        PositiveMercerClass,
+            ExponentialClass,
+            GammaExponentialClass,
+            RationalClass,
+            GammaRationalClass,
+            MaternClass,
+            ExponentiatedClass,
         PolynomialClass,
-        MaternClass,
-        ExponentiatedClass,
+        NonNegativeNegativeDefiniteClass,
+            PowerClass,
+            LogClass,
+            GammaLogClass,
         SigmoidClass,
-        PowerClass,
-        LogClass,
+
     
     # Kernel Constructors
     GaussianKernel,
