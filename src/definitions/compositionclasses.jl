@@ -2,12 +2,6 @@
   Composition Classes
 ==========================================================================#
 
-function is_nonneg_and_negdef(κ::Kernel)
-    isnegdef(κ)      || error("Composed class must be negative definite.")
-    isnonnegative(κ) || error("Composed class must attain only non-negative values.")
-end
-
-
 #== Positive Mercer Classes ==#
 
 abstract PositiveMercerClass{T<:AbstractFloat} <: CompositionClass{T}
@@ -21,7 +15,8 @@ immutable GammaExponentialClass{T<:AbstractFloat} <: PositiveMercerClass{T}
         Parameter(γ, Interval(Bound(zero(T), :strict), Bound(one(T), :nonstrict)))
     )
 end
-@outer_constructor(GammaExponentialClass, (1,0.75))
+@outer_constructor(GammaExponentialClass, (1,0.5))
+@inline iscomposable(::GammaExponentialClass, κ::Kernel) = isnegdef(κ) && isnonnegative(κ)
 @inline phi{T<:AbstractFloat}(ϕ::GammaExponentialClass{T}, z::T) = exp(-ϕ.alpha * z^ϕ.gamma)
 
 
@@ -33,6 +28,7 @@ immutable ExponentialClass{T<:AbstractFloat} <: PositiveMercerClass{T}
     )
 end
 @outer_constructor(ExponentialClass, (1,))
+@inline iscomposable(::ExponentialClass, κ::Kernel) = isnegdef(κ) && isnonnegative(κ)
 @inline phi{T<:AbstractFloat}(ϕ::ExponentialClass{T}, z::T) = exp(-ϕ.alpha * z)
 
 
@@ -48,6 +44,7 @@ immutable GammaRationalClass{T<:AbstractFloat} <: PositiveMercerClass{T}
     )
 end
 @outer_constructor(GammaRationalClass, (1,1,0.5))
+@inline iscomposable(::GammaRationalClass, κ::Kernel) = isnegdef(κ) && isnonnegative(κ)
 @inline phi{T<:AbstractFloat}(ϕ::GammaRationalClass{T}, z::T) = (1 + ϕ.alpha)^(-ϕ.beta)
 
 
@@ -61,6 +58,7 @@ immutable RationalClass{T<:AbstractFloat} <: PositiveMercerClass{T}
     )
 end
 @outer_constructor(RationalClass, (1,1))
+@inline iscomposable(::RationalClass, κ::Kernel) = isnegdef(κ) && isnonnegative(κ)
 @inline phi{T<:AbstractFloat}(ϕ::RationalClass{T}, z::T) = (1 + ϕ.alpha)^(-ϕ.beta)
 
 
@@ -74,6 +72,7 @@ immutable MaternClass{T<:AbstractFloat} <: PositiveMercerClass{T}
     )
 end
 @outer_constructor(MaternClass, (1,1))
+@inline iscomposable(::MaternClass, κ::Kernel) = isnegdef(κ) && isnonnegative(κ)
 @inline function phi{T<:AbstractFloat}(ϕ::MaternClass{T}, z::T)
     v1 = sqrt(2ϕ.nu) * z / ϕ.rho
     v1 = v1 < eps(T) ? eps(T) : v1  # Overflow risk, z -> Inf
@@ -86,11 +85,12 @@ immutable ExponentiatedClass{T<:AbstractFloat} <: PositiveMercerClass{T}
     a::Parameter{T}
     c::Parameter{T}
     ExponentiatedClass(a::Variable{T}, c::Variable{T}) = new(
-        Parameter(a, Interval(Bound(zero(T)))),
-        Parameter(c, Interval(Bound(zero(T), false)))
+        Parameter(a, LowerBound(zero(T), :strict)),
+        Parameter(c, LowerBound(zero(T), :nonstrict))
     )
 end
 @outer_constructor(ExponentiatedClass, (1,0))
+@inline iscomposable(::ExponentiatedClass, κ::Kernel) = ismercer(κ)
 @inline phi{T<:AbstractFloat}(ϕ::ExponentiatedClass{T}, z::T) = exp(ϕ.a*z + ϕ.c)
 
 
@@ -108,6 +108,7 @@ immutable PolynomialClass{T<:AbstractFloat,U<:Integer} <: CompositionClass{T}
     )
 end
 @outer_constructor(PolynomialClass, (1,0,3))
+@inline iscomposable(::PolynomialClass, κ::Kernel) = ismercer(κ)
 @inline phi{T<:AbstractFloat}(ϕ::PolynomialClass{T}, z::T) = (ϕ.a*z + ϕ.c)^ϕ.d
 
 
@@ -127,6 +128,7 @@ immutable PowerClass{T<:AbstractFloat} <: NonNegativeNegativeDefiniteClass{T}
     )
 end
 @outer_constructor(PowerClass, (1,0,0.5))
+@inline iscomposable(::PowerClass, κ::Kernel) = isnegdef(κ) && isnonnegative(κ)
 @inline phi{T<:AbstractFloat}(ϕ::PowerClass{T}, z::T) = (ϕ.a*z + ϕ.c)^(ϕ.gamma)
 
 
@@ -140,17 +142,19 @@ immutable GammaLogClass{T<:AbstractFloat} <: NonNegativeNegativeDefiniteClass{T}
     )
 end
 @outer_constructor(GammaLogClass, (1,0.5))
+@inline iscomposable(::GammaLogClass, κ::Kernel) = isnegdef(κ) && isnonnegative(κ)
 @inline phi{T<:AbstractFloat}(ϕ::GammaLogClass{T}, z::T) = log(ϕ.alpha*z^(ϕ.gamma) + 1)
 
 
 doc"LogClass(z;α) = log(1 + α⋅z)"
 immutable LogClass{T<:AbstractFloat} <: NonNegativeNegativeDefiniteClass{T}
     alpha::Parameter{T}
-    LogClass(α::Variable{T}, γ::Variable{T}) = new(
+    LogClass(α::Variable{T}) = new(
         Parameter(α, LowerBound(zero(T), :strict))
     )
 end
 @outer_constructor(LogClass, (1,))
+@inline iscomposable(::LogClass, κ::Kernel) = isnegdef(κ) && isnonnegative(κ)
 @inline phi{T<:AbstractFloat}(ϕ::LogClass{T}, z::T) = log(ϕ.alpha*z + 1)
 
 
@@ -161,10 +165,12 @@ immutable SigmoidClass{T<:AbstractFloat} <: CompositionClass{T}
     a::Parameter{T}
     c::Parameter{T}
     SigmoidClass(a::Variable{T}, c::Variable{T}) = new(
-        Parameter(a, LowerBound(zero(T), :stict)),
+        Parameter(a, LowerBound(zero(T), :strict)),
         Parameter(c, LowerBound(zero(T), :nonstrict))   
     )
 end
+@outer_constructor(SigmoidClass, (1,0))
+@inline iscomposable(::SigmoidClass, κ::Kernel) = ismercer(κ)
 @inline phi{T<:AbstractFloat}(ϕ::SigmoidClass{T}, z::T) = tanh(ϕ.a*z + ϕ.c)
 
 

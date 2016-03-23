@@ -1,5 +1,19 @@
 # Additive Kernel References
 
+composition_classes = (
+    ExponentialClass,
+    GammaExponentialClass,
+    RationalClass,
+    GammaRationalClass,
+    MaternClass,
+    ExponentiatedClass,
+    PolynomialClass,
+    PowerClass,
+    LogClass,
+    GammaLogClass,
+    SigmoidClass
+)
+
 additive_kernels = (
     SquaredDistanceKernel,
     SineSquaredKernel,
@@ -7,28 +21,41 @@ additive_kernels = (
     ScalarProductKernel
 )
 
-composition_classes = (
-    ExponentialClass,
-    RationalClass,
-    MaternClass,
-    PowerClass,
-    LogClass,
-    PolynomialClass,
-    ExponentiatedClass,
-    SigmoidClass
-)
-
 composition_pairs = Dict(
-    ExponentialClass       => (SquaredDistanceKernel,SineSquaredKernel,ChiSquaredKernel),
-    RationalClass => (SquaredDistanceKernel,SineSquaredKernel,ChiSquaredKernel),
-    MaternClass            => (SquaredDistanceKernel,SineSquaredKernel,ChiSquaredKernel),
-    PowerClass             => (SquaredDistanceKernel,SineSquaredKernel,ChiSquaredKernel),
-    LogClass               => (SquaredDistanceKernel,SineSquaredKernel,ChiSquaredKernel),
-    PolynomialClass        => (ScalarProductKernel,),
-    ExponentiatedClass     => (ScalarProductKernel,),
-    SigmoidClass           => (ScalarProductKernel,)
+    ExponentialClass      => (SquaredDistanceKernel,SineSquaredKernel,ChiSquaredKernel),
+    GammaExponentialClass => (SquaredDistanceKernel,SineSquaredKernel,ChiSquaredKernel),
+    RationalClass         => (SquaredDistanceKernel,SineSquaredKernel,ChiSquaredKernel),
+    GammaRationalClass    => (SquaredDistanceKernel,SineSquaredKernel,ChiSquaredKernel),
+    MaternClass           => (SquaredDistanceKernel,SineSquaredKernel,ChiSquaredKernel),
+    ExponentiatedClass    => (SquaredDistanceKernel,SineSquaredKernel,ChiSquaredKernel),
+    PolynomialClass       => (SquaredDistanceKernel,SineSquaredKernel,ChiSquaredKernel),
+    PowerClass            => (ScalarProductKernel,),
+    LogClass              => (ScalarProductKernel,),
+    GammaLogClass         => (ScalarProductKernel,),
+    SigmoidClass          => (ScalarProductKernel,)
 )
 
+all_default_args = Dict(
+    SquaredDistanceKernel  => ([1], Int[]),
+    SineSquaredKernel      => ([π,1], Int[]),
+    ChiSquaredKernel       => ([1], Int[]),
+    ScalarProductKernel    => (Int[], Int[]),
+    GammaExponentialClass  => ([1,0.5],  Int[]),
+    ExponentialClass       => ([1,], Int[]),
+    GammaRationalClass     => ([1,1,0.5], Int[]),
+    RationalClass          => ([1,1], Int[]),
+    MaternClass            => ([1,1], Int[]),
+    ExponentiatedClass     => ([1,0], Int[]),
+    PolynomialClass        => ([1,1], Int[3]),
+    PowerClass             => ([1,0,1], Int[]),
+    GammaLogClass          => ([1,0.5], Int[]),
+    LogClass               => ([1,], Int[]),
+    SigmoidClass           => ([1,0], Int[])
+)
+
+
+
+#=
 composition_kernels = (
     GaussianKernel,
     SquaredExponentialKernel,
@@ -43,20 +70,24 @@ composition_kernels = (
     SigmoidKernel
 )
 
-all_args = Dict(
+all_test_args = Dict(
     SquaredDistanceKernel  => ([:t],[1],[0.5]),
     SineSquaredKernel      => ([:p, :t],[π,1],[2π,0.5]),
     ChiSquaredKernel       => ([:t],[1],[0.5]),
     ScalarProductKernel    => (Symbol[], Int[], Int[]),
-    ExponentialClass       => ([:alpha, :gamma], [1,1], [2,0.5]),
-    RationalClass => ([:alpha, :beta, :gamma], [1,1,1], [2,2,0.5]),
+    GammaExponentialClass  => ([:alpha, :gamma], [1,0.5], [2,1]),
+    ExponentialClass       => ([:alpha], [1,], [2,]),
+    GammaRationalClass     => ([:alpha, :beta, :gamma], [1,1,0.5], [2,2,1]),
+    RationalClass          => ([:alpha, :beta], [1,1], [2,2]),
     MaternClass            => ([:nu, :theta], [1,1], [2,2]),
-    PowerClass             => ([:a, :c, :gamma], [1,0,1], [2,1,0.5]),
-    LogClass               => ([:alpha, :gamma], [1,1], [2,0.5]),
-    PolynomialClass        => ([:a, :c, :d], [1,1,2], [2,2,3]),
     ExponentiatedClass     => ([:a, :c], [1,0], [2,1]),
-    SigmoidClass           => ([:a, :c], [1, 1], [2, 2])
+    PolynomialClass        => ([:a, :c, :d], [1,1,2], [2,2,3]),
+    PowerClass             => ([:a, :c, :gamma], [1,0,1], [2,1,0.5]),
+    GammaLogClass          => ([:alpha, :gamma], [1,0.5], [2,1]),
+    LogClass               => ([:alpha], [1,], [2,]),
+    SigmoidClass           => ([:a, :c], [1, 0], [2, 1])
 )
+
 
 all_kernelfunctions = Dict(
     SquaredDistanceKernel  => (t,x,y)   -> ((x-y)^2)^t,
@@ -138,3 +169,5 @@ all_errorcases = Dict(
     ExponentiatedClass     => ([0],),
     SigmoidClass           => ([0,1],[1,-0.1])
 )
+
+=#

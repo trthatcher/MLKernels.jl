@@ -32,10 +32,10 @@ ScalarProductKernel() = ScalarProductKernel{Float64}()
 #== Properties of Kernel Classes ==#
 
 for (classobj, properties) in (
-        (SquaredDistanceKernel, (true,  false, false, false, true)),
+        (SquaredDistanceKernel, (false, true,  false, false, true)),
         (SineSquaredKernel,     (false, true,  false, true,  true)),
-        (ChiSquaredKernel,      (true,  false, true,  true,  true)),
-        (ScalarProductKernel,   (false, false, true,  true,  true))
+        (ChiSquaredKernel,      (false, true,  true,  true,  true)),
+        (ScalarProductKernel,   (true,  false, true,  true,  true))
     )
     ismercer(::classobj) = properties[1]
     isnegdef(::classobj) = properties[2]

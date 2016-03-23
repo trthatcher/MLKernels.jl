@@ -82,8 +82,8 @@ include("common.jl")
 include("hyperparameters.jl")
 include("meta.jl")
 include("kernels.jl")
-include("pairwise.jl")
-include("kernelfunctions.jl")
-include("kernelapproximation.jl")
+#include("pairwise.jl")
+#include("kernelfunctions.jl")
+#include("kernelapproximation.jl")
 
 end # MLKernels

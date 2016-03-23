@@ -1,3 +1,23 @@
+
+for class_obj in composition_classes
+    info("Testing ", class_obj)
+
+    for T in FloatingPointTypes
+
+        default_floats, default_others = all_default_args[class_obj]
+        default_args = (T[default_floats...]..., default_others...)
+
+        fields = fieldnames(class_obj)
+
+        k = (class_obj)(default_args...)
+
+        for i in eachindex(fields)
+            @test getfield(k, fields[i]).value == default_args[i]
+        end
+    end
+end
+
+#=
 for kernel_obj in (additive_kernels..., composition_classes...)
     info("Testing ", kernel_obj)
     for T in FloatingPointTypes
@@ -308,3 +328,5 @@ for kernelobj1 in (SquaredDistanceKernel, RationalQuadraticKernel)
         end
     end
 end
+
+=#
