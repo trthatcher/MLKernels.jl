@@ -181,7 +181,9 @@ isfixed(θ::Parameter) = θ.isfixed
 @inline ^(v::Parameter, a::Integer)       = ^(v.value, a)
 @inline ^(v::Parameter, a::AbstractFloat) = ^(v.value, a)
 
+@inline besselk(v::Parameter, x::Real) = besselk(v.value, x)
 @inline exp(v::Parameter)  = exp(v.value)
+@inline gamma(v::Parameter) = gamma(v.value)
 @inline tanh(v::Parameter) = tanh(v.value)
 
 @inline ==(a::Real, v::Parameter) = ==(a, v.value)

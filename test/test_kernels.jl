@@ -6,16 +6,49 @@ for class_obj in composition_classes
 
         default_floats, default_others = all_default_args[class_obj]
         default_args = (T[default_floats...]..., default_others...)
-
         fields = fieldnames(class_obj)
-
         k = (class_obj)(default_args...)
+
+        @test eltype(k) == T
 
         for i in eachindex(fields)
             @test getfield(k, fields[i]).value == default_args[i]
         end
+
+        for z in (zero(T),one(T))
+            f = all_phifunctions[class_obj]
+            @test_approx_eq MOD.phi(k, z) f(default_args..., z)
+        end
     end
 end
+
+for kernel_obj in additive_kernels
+    info("Testing ", kernel_obj)
+
+    for T in FloatingPointTypes
+
+        default_floats, default_others = all_default_args[kernel_obj]
+        default_args = (T[default_floats...]..., default_others...)
+        fields = fieldnames(kernel_obj)
+        k = length(fields) == 0 ? (kernel_obj){T}() : (kernel_obj)(default_args...)
+
+        @test eltype(k) == T
+
+        for i in eachindex(fields)
+            @test getfield(k, fields[i]).value == default_args[i]
+        end
+
+        for (x,y) in ((zero(T),zero(T)), (zero(T),one(T)), (one(T),zero(T)), (one(T),one(T)))
+            f = all_phifunctions[kernel_obj]
+            @test_approx_eq MOD.phi(k, x, y) f(default_args..., x, y)
+        end
+    end
+end
+
+
+#for (x,y) in ((zero(T),zero(T)), (zero(T),one(T)), (one(T),zero(T)), (one(T),one(T)))
+
+
 
 #=
 for kernel_obj in (additive_kernels..., composition_classes...)

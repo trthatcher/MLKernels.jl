@@ -36,23 +36,45 @@ composition_pairs = Dict(
 )
 
 all_default_args = Dict(
-    SquaredDistanceKernel  => ([1], Int[]),
-    SineSquaredKernel      => ([π,1], Int[]),
-    ChiSquaredKernel       => ([1], Int[]),
-    ScalarProductKernel    => (Int[], Int[]),
-    GammaExponentialClass  => ([1,0.5],  Int[]),
-    ExponentialClass       => ([1,], Int[]),
-    GammaRationalClass     => ([1,1,0.5], Int[]),
-    RationalClass          => ([1,1], Int[]),
-    MaternClass            => ([1,1], Int[]),
-    ExponentiatedClass     => ([1,0], Int[]),
-    PolynomialClass        => ([1,1], Int[3]),
-    PowerClass             => ([1,0,1], Int[]),
-    GammaLogClass          => ([1,0.5], Int[]),
-    LogClass               => ([1,], Int[]),
-    SigmoidClass           => ([1,0], Int[])
+    SquaredDistanceKernel => ([], Int[]),
+    SineSquaredKernel     => ([π], Int[]),
+    ChiSquaredKernel      => ([], Int[]),
+    ScalarProductKernel   => ([], Int[]),
+    ExponentialClass      => ([1,], Int[]),
+    GammaExponentialClass => ([1,0.5],  Int[]),
+    RationalClass         => ([1,1], Int[]),
+    GammaRationalClass    => ([1,1,0.5], Int[]),
+    MaternClass           => ([1,1], Int[]),
+    ExponentiatedClass    => ([1,0], Int[]),
+    PolynomialClass       => ([1,1], Int[3]),
+    PowerClass            => ([1,0,1], Int[]),
+    LogClass              => ([1,], Int[]),
+    GammaLogClass         => ([1,0.5], Int[]),
+    SigmoidClass          => ([1,0], Int[])
 )
 
+all_phifunctions = Dict(
+    SquaredDistanceKernel => (x,y)     -> ((x-y)^2),
+    SineSquaredKernel     => (p,x,y)   -> (sin(p*(x-y))^2),
+    ChiSquaredKernel      => (x,y)     -> (x == y == 0) ? zero(typeof(x)) : ((x-y)^2/(x+y)),
+    ScalarProductKernel   => (x,y)     -> x*y,
+    ExponentialClass      => (α,z)     -> exp(-α*z^γ),
+    GammaExponentialClass => (α,γ,z)   -> exp(-α*z^γ),
+    RationalClass         => (α,β,z)   -> (1 + α*z)^(-β),
+    GammaRationalClass    => (α,β,γ,z) -> (1 + α*z^γ)^(-β),
+    MaternClass           => (ν,θ,z)   -> begin 
+                                              v1 = sqrt(2*ν) * z / θ
+                                              v1 = v1 < eps(typeof(z)) ? eps(typeof(z)) : v1
+                                              2*(v1/2)^ν * besselk(ν,v1)/gamma(ν)
+                                          end,
+    ExponentiatedClass    => (a,c,z)   -> exp(a*z+c),
+    PolynomialClass       => (a,c,d,z) -> (a*z+c)^d,
+    PowerClass            => (a,c,γ,z) -> (a*z+c)^γ,
+    LogClass              => (α,z)     -> log(α*z+1),
+    GammaLogClass         => (α,γ,z)   -> log(α*z^γ+1),
+    SigmoidClass          => (a,c,z)   -> tanh(a*z+c)
+
+)
 
 
 #=
@@ -89,25 +111,6 @@ all_test_args = Dict(
 )
 
 
-all_kernelfunctions = Dict(
-    SquaredDistanceKernel  => (t,x,y)   -> ((x-y)^2)^t,
-    SineSquaredKernel      => (p,t,x,y) -> (sin(p*(x-y))^2)^t,
-    ChiSquaredKernel       => (t,x,y)   -> (x == y == 0) ? zero(typeof(t)) : ((x-y)^2/(x+y))^t,
-    ScalarProductKernel    => (x,y)     -> x*y,
-    ExponentialClass       => (α,γ,z)   -> exp(-α*z^γ),
-    RationalClass => (α,β,γ,z) -> (1 + α*z^γ)^(-β),
-    MaternClass            => (ν,θ,z) -> begin 
-                                              v1 = sqrt(2*ν) * z / θ
-                                              v1 = v1 < eps(typeof(z)) ? eps(typeof(z)) : v1
-                                              2*(v1/2)^ν * besselk(ν,v1)/gamma(ν)
-                                          end,
-    PowerClass             => (a,c,γ,z) -> (a*z+c)^γ,
-    LogClass               => (α,γ,z)   -> log(α*z^γ+1),
-    PolynomialClass        => (a,c,d,z) -> (a*z+c)^d,
-    ExponentiatedClass     => (a,c,z)   -> exp(a*z+c),
-    SigmoidClass           => (a,c,z)   -> tanh(a*z+c)
-
-)
 
 all_kernelproperties = Dict( #|atzero|atpos|atneg |mercer|negdef|
     SquaredDistanceKernel  => (true,  true, false, false, true), 

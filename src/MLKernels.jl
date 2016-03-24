@@ -4,7 +4,8 @@
 
 module MLKernels
 
-import Base: call, convert, eltype, print, show, string, ==, *, /, +, -, ^, exp, tanh
+import Base: call, convert, eltype, print, show, string, ==, *, /, +, -, ^, besselk, exp, gamma, 
+             tanh
 
 export
     # Functions

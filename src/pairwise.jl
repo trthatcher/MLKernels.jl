@@ -1,10 +1,13 @@
-# sum(X .* X, 1)
+# Helper Functions
 
 for (scheme, dimension) in ((:row, 1), (:col, 2))
     @eval begin
 
-        function dotvectors!{T<:AbstractFloat}(::Type{Val{$scheme}}, X::AbstractMatrix{T}, 
-                                                                    xᵀx::Vector{T})
+        function dotvectors!{T<:AbstractFloat}(
+                ::Type{Val{$scheme}},
+                X::AbstractMatrix{T}, 
+                xᵀx::Vector{T}
+            )
             if !(size(X,$dimension) == length(xᵀx))
                 throw(DimensionMismatch("Dimension mismatch on dimension $dimension"))
             end
@@ -15,7 +18,7 @@ for (scheme, dimension) in ((:row, 1), (:col, 2))
             xᵀx
         end
 
-        function dotvectors{T<:AbstractFloat}(::Type{Val{$scheme}}, X::AbstractMatrix{T})
+        @inline function dotvectors{T<:AbstractFloat}(::Type{Val{$scheme}}, X::AbstractMatrix{T})
             dotvectors!(X, Array(T, size(X,$dimension)))
         end
 
@@ -23,16 +26,30 @@ for (scheme, dimension) in ((:row, 1), (:col, 2))
             Array(T, size(X,$dimension), size(X,$dimension))
         end
 
-        @inline function init_pairwise{T<:AbstractFloat}(::Type{Val{$scheme}}, X::AbstractMatrix{T}, 
-                                                                               Y::AbstractMatrix{T})
+        @inline function init_pairwise{T<:AbstractFloat}(
+                 ::Type{Val{$scheme}},
+                X::AbstractMatrix{T}, 
+                Y::AbstractMatrix{T}
+            )
             Array(T, size(X,$dimension), size(Y,$dimension))
         end
 
-        function gramian!{T<:AbstractFloat}(::Type{Val{$scheme}}, G::Matrix{T}, X::Matrix{T}, 
-                                                                             Y::Matrix{T})
-            A_mul_B!(G, X, Y)
+        @inline function gramian!{T<:AbstractFloat}(
+                 ::Type{Val{$scheme}}, 
+                G::Matrix{T}, 
+                X::Matrix{T}, 
+                Y::Matrix{T}
+            )
+            $(scheme == :row ? :A_mul_Bt! : :At_mul_B!)(G, X, Y)
         end
 
+        @inline function gramian!{T<:AbstractFloat}(
+                 ::Type{Val{$scheme}},
+                G::Matrix{T},
+                X::Matrix{T}
+            )
+            gramian(Val{$scheme}, G, X, X)
+        end
 
         @inline function subvector(::Type{Val{$scheme}}, X::AbstractMatrix,  i::Integer)
             $(scheme == :row ? :(sub(X, i, :)) : :(sub(X, :, i)))
@@ -40,6 +57,29 @@ for (scheme, dimension) in ((:row, 1), (:col, 2))
 
     end
 end
+
+function squared_distance!{T<:AbstractFloat}(G::Matrix{T}, xᵀx::Vector{T})
+    if !((n = length(xᵀx)) == size(K,1) == size(K,2))
+        throw(DimensionMismatch("Gramian matrix must be square."))
+    end
+    @inbounds for j = 1:n, i = (j:n)
+        G[i,j] = xᵀx[i] - 2K[i,j] + xᵀx[j]
+    end
+    LinAlg.copytri!(G, 'U')
+end
+
+function squared_distance!{T<:AbstractFloat}(G::Matrix{T}, xᵀx::Vector{T}, yᵀy::Vector{T})
+    if size(G,1) != length(xᵀx)
+        throw(DimensionMismatch(""))
+    elseif size(G,2) != length(yᵀy)
+        throw(DimensionMismatch(""))
+    end
+    @inbounds for I in CartesianRange(G)
+        G[I] = xᵀx[I[1]] - 2G[I] + yᵀy[I[2]]
+    end
+    G
+end
+
 
 function pairwise!{T<:AbstractFloat}(
         K::Matrix{T}, 
@@ -83,7 +123,15 @@ function pairwise!{T<:AbstractFloat}(
     end
     K
 end
+function pairwise{T<:AbstractFloat}(
+        κ::PairwiseKernel{T},
+        X::AbstractMatrix{T},
+        Y::AbstractMatrix{T},
+        is_rowmajor::Bool
+    )
+    pairwise!(init_gramian
 
+# NO CHECKS
 @inline function vectorpairwise{T<:AbstractFloat}(
         κ::StandardKernel{T},
         x::AbstractArray{T}, 
@@ -92,6 +140,7 @@ end
     phi(κ, x, y)
 end
 
+# NO CHECKS!
 function vectorpairwise{T<:AbstractFloat}(
         κ::AdditiveKernel{T},
         x::AbstractArray{T}, 
@@ -109,27 +158,6 @@ end
 
 
 
-function squared_distance!{T<:AbstractFloat}(G::Matrix{T}, xᵀx::Vector{T})
-    if !((n = length(xᵀx)) == size(K,1) == size(K,2))
-        throw(DimensionMismatch("Gramian matrix must be square."))
-    end
-    @inbounds for j = 1:n, i = (j:n)
-        G[i,j] = xᵀx[i] - 2K[i,j] + xᵀx[j]
-    end
-    LinAlg.copytri!(G, 'U')
-end
-
-function squared_distance!{T<:AbstractFloat}(G::Matrix{T}, xᵀx::Vector{T}, yᵀy::Vector{T})
-    if size(G,1) != length(xᵀx)
-        throw(DimensionMismatch(""))
-    elseif size(G,2) != length(yᵀy)
-        throw(DimensionMismatch(""))
-    end
-    @inbounds for I in CartesianRange(G)
-        G[I] = xᵀx[I[1]] - 2G[I] + yᵀy[I[2]]
-    end
-    G
-end
 
 
 

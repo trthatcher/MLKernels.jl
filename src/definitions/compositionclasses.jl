@@ -45,7 +45,7 @@ immutable GammaRationalClass{T<:AbstractFloat} <: PositiveMercerClass{T}
 end
 @outer_constructor(GammaRationalClass, (1,1,0.5))
 @inline iscomposable(::GammaRationalClass, κ::Kernel) = isnegdef(κ) && isnonnegative(κ)
-@inline phi{T<:AbstractFloat}(ϕ::GammaRationalClass{T}, z::T) = (1 + ϕ.alpha)^(-ϕ.beta)
+@inline phi{T<:AbstractFloat}(ϕ::GammaRationalClass{T}, z::T) = (1 + ϕ.alpha*z^ϕ.gamma)^(-ϕ.beta)
 
 
 doc"RationalClass(κ;α,β,γ) = (1 + α⋅κ)⁻ᵝ"
@@ -59,7 +59,7 @@ immutable RationalClass{T<:AbstractFloat} <: PositiveMercerClass{T}
 end
 @outer_constructor(RationalClass, (1,1))
 @inline iscomposable(::RationalClass, κ::Kernel) = isnegdef(κ) && isnonnegative(κ)
-@inline phi{T<:AbstractFloat}(ϕ::RationalClass{T}, z::T) = (1 + ϕ.alpha)^(-ϕ.beta)
+@inline phi{T<:AbstractFloat}(ϕ::RationalClass{T}, z::T) = (1 + ϕ.alpha*z)^(-ϕ.beta)
 
 
 doc"MatérnClass(κ;ν,ρ) = 2ᵛ⁻¹(√(2ν)κ/ρ)ᵛKᵥ(√(2ν)κ/ρ)/Γ(ν)"
