@@ -24,7 +24,7 @@ function vectorpairwise{T<:AbstractFloat}(
     s
 end
 
-for (scheme, dimension) in ((:row, 1), (:col, 2))
+for (scheme, dimension) in ((:(:row), 1), (:(:col), 2))
     @eval begin
 
         @inline function subvector(::Type{Val{$scheme}}, X::AbstractMatrix,  i::Integer)
@@ -47,7 +47,7 @@ for (scheme, dimension) in ((:row, 1), (:col, 2))
         end
 
         function pairwise!{T<:AbstractFloat}(
-                 ::Type{Val{$scheme}}
+                 ::Type{Val{$scheme}},
                 K::Matrix{T}, 
                 κ::PairwiseKernel{T},
                 X::AbstractMatrix{T}
@@ -59,14 +59,14 @@ for (scheme, dimension) in ((:row, 1), (:col, 2))
                 xj = subvector(Val{$scheme}, X, j)
                 for i = j:n
                     xi = subvector(Val{$scheme}, X, i)
-                    X[i,j] = vectorpairwise(κ, xi, xj)
+                    @inbounds X[i,j] = vectorpairwise(κ, xi, xj)
                 end
             end
             LinAlg.copytri!(K, 'U', false)
         end
 
         function pairwise!{T<:AbstractFloat}(
-                 ::Type{Val{$scheme}}
+                 ::Type{Val{$scheme}},
                 K::Matrix{T}, 
                 κ::PairwiseKernel{T},
                 X::AbstractMatrix{T},
@@ -81,7 +81,7 @@ for (scheme, dimension) in ((:row, 1), (:col, 2))
                 yj = subvector(scheme, Y, j)
                 for i = j:n
                     xi = subvector(scheme, X, i)
-                    X[i,j] = vectorpairwise(κ, xi, yj)
+                    @inbounds X[i,j] = vectorpairwise(κ, xi, yj)
                 end
             end
             K
@@ -90,16 +90,15 @@ for (scheme, dimension) in ((:row, 1), (:col, 2))
 end
 
 function pairwise{T<:AbstractFloat}(
-        v::DataType
+        v::DataType,
         κ::PairwiseKernel{T},
-        X::AbstractMatrix{T},
-        Y::AbstractMatrix{T}
+        X::AbstractMatrix{T}
     )
-    pairwise!(v, init_pairwise(v, X, Y), κ, X, Y)
+    pairwise!(v, init_pairwise(v, X), κ, X)
 end
 
 function pairwise{T<:AbstractFloat}(
-        v::DataType
+        v::DataType,
         κ::PairwiseKernel{T},
         X::AbstractMatrix{T},
         Y::AbstractMatrix{T}
@@ -111,47 +110,6 @@ end
 #===================================================================================================
   ScalarProduct and SquaredDistance using BLAS
 ===================================================================================================#
-
-for (scheme, dimension) in ((:row, 1), (:col, 2))
-    @eval begin
-
-        function dotvectors!{T<:AbstractFloat}(
-                ::Type{Val{$scheme}},
-                X::AbstractMatrix{T}, 
-                xᵀx::Vector{T}
-            )
-            if !(size(X,$dimension) == length(xᵀx))
-                throw(DimensionMismatch("Dimension mismatch on dimension $dimension"))
-            end
-            zero!(xᵀx)
-            for I in CartesianRange(size(X))
-                xᵀx[I.I[$dimension]] += X[I]^2
-            end
-            xᵀx
-        end
-
-        @inline function dotvectors{T<:AbstractFloat}(::Type{Val{$scheme}}, X::AbstractMatrix{T})
-            dotvectors!(X, Array(T, size(X,$dimension)))
-        end
-
-        @inline function gramian!{T<:AbstractFloat}(
-                 ::Type{Val{$scheme}}, 
-                G::Matrix{T}, 
-                X::Matrix{T}, 
-                Y::Matrix{T}
-            )
-            $(scheme == :row ? :A_mul_Bt! : :At_mul_B!)(G, X, Y)
-        end
-
-        @inline function gramian!{T<:AbstractFloat}(
-                 ::Type{Val{$scheme}},
-                G::Matrix{T},
-                X::Matrix{T}
-            )
-            gramian(Val{$scheme}, G, X, X)
-        end
-    end
-end
 
 function squared_distance!{T<:AbstractFloat}(G::Matrix{T}, xᵀx::Vector{T})
     if !((n = length(xᵀx)) == size(K,1) == size(K,2))
@@ -175,45 +133,86 @@ function squared_distance!{T<:AbstractFloat}(G::Matrix{T}, xᵀx::Vector{T}, y�
     G
 end
 
-@inline function pairwise!{T<:AbstractFloat}(
-        v::DataType
-        K::Matrix{T}, 
-        κ::ScalarProductKernel{T},
-        X::AbstractMatrix{T}
-    )
-    gramian!(v, K, X)
-end
+for (scheme, dimension) in ((:(:row), 1), (:(:col), 2))
+    @eval begin
 
-@inline function pairwise!{T<:AbstractFloat}(
-        v::DataType
-        K::Matrix{T}, 
-        κ::ScalarProductKernel{T},
-        X::AbstractMatrix{T},
-        Y::AbstractMatrix{T},
-    )
-    gramian!(v, K, X)
-end
+        function dotvectors!{T<:AbstractFloat}(
+                 ::Type{Val{$scheme}},
+                X::AbstractMatrix{T}, 
+                xᵀx::Vector{T}
+            )
+            if !(size(X,$dimension) == length(xᵀx))
+                throw(DimensionMismatch("Dimension mismatch on dimension $dimension"))
+            end
+            zero!(xᵀx)
+            for I in CartesianRange(size(X))
+                xᵀx[I.I[$dimension]] += X[I]^2
+            end
+            xᵀx
+        end
 
-@inline function pairwise!{T<:AbstractFloat}(
-        v::DataType
-        K::Matrix{T}, 
-        κ::SquaredDistanceKernel{T},
-        X::AbstractMatrix{T}
-    )
-    gramian!(v, K, X)
-    xᵀx = dotvectors(v, X)
-    squared_distance!(K, xᵀx)
-end
+        @inline function dotvectors{T<:AbstractFloat}(::Type{Val{$scheme}}, X::AbstractMatrix{T})
+            dotvectors!(X, Array(T, size(X,$dimension)))
+        end
 
-@inline function pairwise!{T<:AbstractFloat}(
-        v::DataType
-        K::Matrix{T}, 
-        κ::SquaredDistanceKernel{T},
-        X::AbstractMatrix{T},
-        Y::AbstractMatrix{T},
-    )
-    gramian!(v, K, X, Y)
-    xᵀx = dotvectors(v, X)
-    yᵀy = dotvectors(v, Y)
-    squared_distance!(K, xᵀx, yᵀy)
+        @inline function gramian!{T<:AbstractFloat}(
+                 ::Type{Val{$scheme}}, 
+                G::Matrix{T}, 
+                X::Matrix{T}, 
+                Y::Matrix{T}
+            )
+            $(scheme == :(:row) ? :A_mul_Bt! : :At_mul_B!)(G, X, Y)
+        end
+
+        @inline function gramian!{T<:AbstractFloat}(
+                 ::Type{Val{$scheme}},
+                G::Matrix{T},
+                X::Matrix{T}
+            )
+            gramian!(Val{$scheme}, G, X, X)
+        end
+
+        @inline function pairwise!{T<:AbstractFloat}(
+                 ::Type{Val{$scheme}},
+                K::Matrix{T}, 
+                κ::ScalarProductKernel{T},
+                X::AbstractMatrix{T}
+            )
+            gramian!(Val{$scheme}, K, X)
+        end
+
+        @inline function pairwise!{T<:AbstractFloat}(
+                 ::Type{Val{$scheme}},
+                K::Matrix{T}, 
+                κ::ScalarProductKernel{T},
+                X::AbstractMatrix{T},
+                Y::AbstractMatrix{T},
+            )
+            gramian!(Val{$scheme}, K, X)
+        end
+
+        @inline function pairwise!{T<:AbstractFloat}(
+                 ::Type{Val{$scheme}},
+                K::Matrix{T}, 
+                κ::SquaredDistanceKernel{T},
+                X::AbstractMatrix{T}
+            )
+            gramian!(Val{$scheme}, K, X)
+            xᵀx = dotvectors(Val{$scheme}, X)
+            squared_distance!(K, xᵀx)
+        end
+
+        @inline function pairwise!{T<:AbstractFloat}(
+                 ::Type{Val{$scheme}},
+                K::Matrix{T}, 
+                κ::SquaredDistanceKernel{T},
+                X::AbstractMatrix{T},
+                Y::AbstractMatrix{T},
+            )
+            gramian!(Val{$scheme}, K, X, Y)
+            xᵀx = dotvectors(Val{$scheme}, X)
+            yᵀy = dotvectors(Val{$scheme}, Y)
+            squared_distance!(K, xᵀx, yᵀy)
+        end
+    end
 end
