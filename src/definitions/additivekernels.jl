@@ -32,9 +32,9 @@ ScalarProductKernel() = ScalarProductKernel{Float64}()
 #== Properties of Kernel Classes ==#
 
 for (classobj, properties) in (
-        (SquaredDistanceKernel, (false, true,  false, false, true)),
+        (SquaredDistanceKernel, (false, true,  false, true,  true)),
         (SineSquaredKernel,     (false, true,  false, true,  true)),
-        (ChiSquaredKernel,      (false, true,  true,  true,  true)),
+        (ChiSquaredKernel,      (false, true,  false, true,  true)),
         (ScalarProductKernel,   (true,  false, true,  true,  true))
     )
     ismercer(::classobj) = properties[1]

@@ -22,17 +22,25 @@ additive_kernels = (
 )
 
 composition_pairs = Dict(
-    ExponentialClass      => (SquaredDistanceKernel,SineSquaredKernel,ChiSquaredKernel),
-    GammaExponentialClass => (SquaredDistanceKernel,SineSquaredKernel,ChiSquaredKernel),
-    RationalClass         => (SquaredDistanceKernel,SineSquaredKernel,ChiSquaredKernel),
-    GammaRationalClass    => (SquaredDistanceKernel,SineSquaredKernel,ChiSquaredKernel),
-    MaternClass           => (SquaredDistanceKernel,SineSquaredKernel,ChiSquaredKernel),
-    ExponentiatedClass    => (SquaredDistanceKernel,SineSquaredKernel,ChiSquaredKernel),
-    PolynomialClass       => (SquaredDistanceKernel,SineSquaredKernel,ChiSquaredKernel),
-    PowerClass            => (ScalarProductKernel,),
-    LogClass              => (ScalarProductKernel,),
-    GammaLogClass         => (ScalarProductKernel,),
-    SigmoidClass          => (ScalarProductKernel,)
+    ExponentialClass      => Dict(SquaredDistanceKernel=>true, SineSquaredKernel=>true, 
+                                  ChiSquaredKernel=>true),
+    GammaExponentialClass => Dict(SquaredDistanceKernel=>true, SineSquaredKernel=>true, 
+                                  ChiSquaredKernel=>true),
+    RationalClass         => Dict(SquaredDistanceKernel=>true, SineSquaredKernel=>true, 
+                                  ChiSquaredKernel=>true),
+    GammaRationalClass    => Dict(SquaredDistanceKernel=>true, SineSquaredKernel=>true, 
+                                  ChiSquaredKernel=>true),
+    MaternClass           => Dict(SquaredDistanceKernel=>true, SineSquaredKernel=>true, 
+                                  ChiSquaredKernel=>true),
+    ExponentiatedClass    => Dict(ScalarProductKernel=>true),
+    PolynomialClass       => Dict(ScalarProductKernel=>true),
+    PowerClass            => Dict(SquaredDistanceKernel=>true, SineSquaredKernel=>true, 
+                                  ChiSquaredKernel=>true),
+    LogClass              => Dict(SquaredDistanceKernel=>true, SineSquaredKernel=>true, 
+                                  ChiSquaredKernel=>true),
+    GammaLogClass         => Dict(SquaredDistanceKernel=>true, SineSquaredKernel=>true, 
+                                  ChiSquaredKernel=>true),
+    SigmoidClass          => Dict(ScalarProductKernel=>true)
 )
 
 all_default_args = Dict(
@@ -76,6 +84,24 @@ all_phifunctions = Dict(
 
 )
 
+all_kernelproperties = Dict( #|mercer |negdef |neg    |zero   |pos
+    SineSquaredKernel =>      (false,  true,   false,  true,   true),
+    ExponentiatedClass =>     (true,   false,  false,  false,  true),
+    ScalarProductKernel =>    (true,   false,  true,   true,   true),
+    SquaredDistanceKernel =>  (false,  true,   false,  true,   true),
+    SigmoidClass =>           (false,  false,  true,   true,   true),
+    ExponentialClass =>       (true,   false,  false,  false,  true),
+    GammaLogClass =>          (false,  true,   false,  true,   true),
+    GammaRationalClass =>     (true,   false,  false,  false,  true),
+    LogClass =>               (false,  true,   false,  true,   true),
+    MaternClass =>            (true,   false,  false,  false,  true),
+    PolynomialClass =>        (true,   false,  true,   true,   true),
+    PowerClass =>             (false,  true,   false,  true,   true),
+    GammaExponentialClass =>  (true,   false,  false,  false,  true),
+    ChiSquaredKernel =>       (false,  true,   false,  true,   true),
+    RationalClass =>          (true,   false,  false,  false,  true)
+ )
+
 
 #=
 composition_kernels = (
@@ -112,20 +138,6 @@ all_test_args = Dict(
 
 
 
-all_kernelproperties = Dict( #|atzero|atpos|atneg |mercer|negdef|
-    SquaredDistanceKernel  => (true,  true, false, false, true), 
-    SineSquaredKernel      => (true,  true, false, false, true),
-    ChiSquaredKernel       => (true,  true, false, false, true),
-    ScalarProductKernel    => (true,  true, true,  true,  false),
-    ExponentialClass       => (false, true, false, true,  false),
-    RationalClass => (false, true, false, true,  false),
-    MaternClass            => (false, true, false, true,  false),
-    PowerClass             => (true,  true, false, false, true),
-    LogClass               => (true,  true, false, false, true),
-    PolynomialClass        => (true,  true, true,  true,  false),
-    ExponentiatedClass     => (false, true, false, true,  false),
-    SigmoidClass           => (true,  true, true,  false, false)
-)
 
 all_testinputs = Dict(
     SquaredDistanceKernel  => ([1,1],[1,0],[0,1],[0,0],[-1,-1],[-1,0],[0,-1]),
