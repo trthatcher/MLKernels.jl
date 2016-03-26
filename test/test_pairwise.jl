@@ -1,6 +1,6 @@
 info("Testing ", MOD.pairwise)
 for kernelobj in additive_kernels
-    for T in FloatingPointTypes
+    for T in (Float64,)
         x1 = T[1; 2]
         x2 = T[2; 0]
         x3 = T[3; 2]
@@ -10,51 +10,24 @@ for kernelobj in additive_kernels
         y2 = T[1; 1]
         Y = [y1'; y2']
 
-        w = T[2; 1]
-
         Set_x = (x1,x2,x3)
         Set_y = (y1,y2)
-
-        k = convert(Kernel{T}, (kernelobj)())
+        k = (kernelobj)()
        
-        @test MOD.pairwise(k, x1[1], y1[1])             == MOD.phi(k, x1[1], y1[1])
-        @test MOD.pairwise(ARD(k,w[1:1]), x1[1], y1[1]) == MOD.phi(k, x1[1], y1[1]) * w[1]^2
-
-        @test MOD.pairwise(k, x1, y1)        == MOD.phi(k, x1[1], y1[1]) + MOD.phi(k, x1[2], y1[2])
-        @test MOD.pairwise(ARD(k,w), x1, y1) == MOD.phi(k, x1[1], y1[1]) * w[1]^2 + 
-                                                MOD.phi(k, x1[2], y1[2]) * w[2]^2
+        @test MOD.pairwise(k, x1[1], y1[1])  == MOD.phi(k, x1[1], y1[1])
+        @test MOD.pairwise(k, x1, y1) == MOD.phi(k, x1[1], y1[1]) + MOD.phi(k, x1[2], y1[2])
         
         P = [MOD.pairwise(k,x,y) for x in Set_x, y in Set_x]
-        #K = Array(T,length(Set_x),length(Set_x))
-
-        @test_approx_eq MOD.syml!(MOD.pairwise(k, X,false,true))  P
-        @test_approx_eq MOD.symu!(MOD.pairwise(k, X,false,false)) P
-
-        @test_approx_eq MOD.syml!(MOD.pairwise(k, X',true,true))  P
-        @test_approx_eq MOD.symu!(MOD.pairwise(k, X',true,false)) P
-
-        P = [MOD.pairwise(k,x,y,w) for x in Set_x, y in Set_x]
-
-        @test_approx_eq MOD.syml!(MOD.pairwise(ARD(k,w), X,false,true))  P
-        @test_approx_eq MOD.symu!(MOD.pairwise(ARD(k,w), X,false,false)) P
-
-        @test_approx_eq MOD.syml!(MOD.pairwise(ARD(k,w), X',true,true))  P
-        @test_approx_eq MOD.symu!(MOD.pairwise(ARD(k,w), X',true,false)) P
+        @test_approx_eq MOD.pairwise(Val{:row}, k, X)  P
+        @test_approx_eq MOD.pairwise(Val{:col}, k, X') P
 
         P = [MOD.pairwise(k,x,y) for x in Set_x, y in Set_y]
-
-        @test_approx_eq MOD.pairwise(k, X, Y, false)  P
-        @test_approx_eq MOD.pairwise(k, X', Y', true) P
-
-        P = [MOD.pairwise(k,x,y,w) for x in Set_x, y in Set_y]
-
-        @test_approx_eq MOD.pairwise(ARD(k,w), X, Y, false)  P
-        @test_approx_eq MOD.pairwise(ARD(k,w), X', Y', true) P
-
+        @test_approx_eq MOD.pairwise(Val{:row}, k, X, Y)   P
+        @test_approx_eq MOD.pairwise(Val{:col}, k, X', Y') P
     end
 end
 
-
+#=
 immutable TestKernel{T<:AbstractFloat} <: BaseKernel{T}
     a::T
 end
@@ -95,3 +68,4 @@ for T in (Float32, Float64)
     @test_approx_eq MOD.pairwise(k, X', Y', true)   P
 
 end
+=#

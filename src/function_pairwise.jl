@@ -2,20 +2,22 @@
   Generic pairwise functions for kernels consuming two vectors
 ===================================================================================================#
 
-# NO CHECKS
-@inline function vectorpairwise{T<:AbstractFloat}(
+@inline pairwise{T<:AbstractFloat}(κ::StandardKernel{T}, x::T, y::T) = phi(κ, x, y)
+
+@inline function pairwise{T<:AbstractFloat}(
         κ::StandardKernel{T},
-        x::AbstractArray{T}, 
-        y::AbstractArray{T}
+        x::AbstractVector{T}, 
+        y::AbstractVector{T}
     )
     phi(κ, x, y)
 end
 
-# NO CHECKS
-function vectorpairwise{T<:AbstractFloat}(
+@inline pairwise{T<:AbstractFloat}(κ::AdditiveKernel{T}, x::T, y::T) = phi(κ, x, y)
+
+function pairwise{T<:AbstractFloat}(
         κ::AdditiveKernel{T},
-        x::AbstractArray{T}, 
-        y::AbstractArray{T}
+        x::AbstractVector{T}, 
+        y::AbstractVector{T}
     )
     s = zero(T)
     @inbounds for i in eachindex(x)
@@ -28,7 +30,7 @@ for (scheme, dimension) in ((:(:row), 1), (:(:col), 2))
     @eval begin
 
         @inline function subvector(::Type{Val{$scheme}}, X::AbstractMatrix,  i::Integer)
-            $(scheme == :row ? :(sub(X, i, :)) : :(sub(X, :, i)))
+            $(scheme == :(:row) ? :(slice(X, i, :)) : :(slice(X, :, i)))
         end
 
         @inline function init_pairwise{T<:AbstractFloat}(
@@ -52,14 +54,14 @@ for (scheme, dimension) in ((:(:row), 1), (:(:col), 2))
                 κ::PairwiseKernel{T},
                 X::AbstractMatrix{T}
             )
-            if !(n = size(X, $dimension) == size(K,1) == size(K,2))
+            if !((n = size(X, $dimension)) == size(K,1) == size(K,2))
                 throw(DimensionMismatch("Dimensions of K must match dimension $dimension of X"))
             end
             for j = 1:n
                 xj = subvector(Val{$scheme}, X, j)
-                for i = j:n
+                for i = 1:j
                     xi = subvector(Val{$scheme}, X, i)
-                    @inbounds X[i,j] = vectorpairwise(κ, xi, xj)
+                    K[i,j] = pairwise(κ, xi, xj)
                 end
             end
             LinAlg.copytri!(K, 'U', false)
@@ -72,16 +74,16 @@ for (scheme, dimension) in ((:(:row), 1), (:(:col), 2))
                 X::AbstractMatrix{T},
                 Y::AbstractMatrix{T},
             )
-            if !(n = size(X, $dimension) == size(K,1))
+            if !((n = size(X, $dimension)) == size(K,1))
                 throw(DimensionMismatch("Dimension 1 of K must match dimension $dimension of X"))
-            elseif !(m = size(Y, $dimension) == size(K,2))
+            elseif !((m = size(Y, $dimension)) == size(K,2))
                 throw(DimensionMismatch("Dimension 2 of K must match dimension $dimension of Y"))
             end
             for j = 1:m
-                yj = subvector(scheme, Y, j)
-                for i = j:n
-                    xi = subvector(scheme, X, i)
-                    @inbounds X[i,j] = vectorpairwise(κ, xi, yj)
+                yj = subvector(Val{$scheme}, Y, j)
+                for i = 1:n
+                    xi = subvector(Val{$scheme}, X, i)
+                    K[i,j] = pairwise(κ, xi, yj)
                 end
             end
             K
@@ -112,11 +114,11 @@ end
 ===================================================================================================#
 
 function squared_distance!{T<:AbstractFloat}(G::Matrix{T}, xᵀx::Vector{T})
-    if !((n = length(xᵀx)) == size(K,1) == size(K,2))
+    if !((n = length(xᵀx)) == size(G,1) == size(G,2))
         throw(DimensionMismatch("Gramian matrix must be square."))
     end
-    @inbounds for j = 1:n, i = (j:n)
-        G[i,j] = xᵀx[i] - 2K[i,j] + xᵀx[j]
+    @inbounds for j = 1:n, i = (1:j)
+        G[i,j] = xᵀx[i] - 2G[i,j] + xᵀx[j]
     end
     LinAlg.copytri!(G, 'U')
 end
@@ -127,7 +129,7 @@ function squared_distance!{T<:AbstractFloat}(G::Matrix{T}, xᵀx::Vector{T}, y�
     elseif size(G,2) != length(yᵀy)
         throw(DimensionMismatch(""))
     end
-    @inbounds for I in CartesianRange(G)
+    @inbounds for I in CartesianRange(size(G))
         G[I] = xᵀx[I[1]] - 2G[I] + yᵀy[I[2]]
     end
     G
@@ -144,7 +146,7 @@ for (scheme, dimension) in ((:(:row), 1), (:(:col), 2))
             if !(size(X,$dimension) == length(xᵀx))
                 throw(DimensionMismatch("Dimension mismatch on dimension $dimension"))
             end
-            zero!(xᵀx)
+            fill!(xᵀx, zero(T))
             for I in CartesianRange(size(X))
                 xᵀx[I.I[$dimension]] += X[I]^2
             end
@@ -152,24 +154,24 @@ for (scheme, dimension) in ((:(:row), 1), (:(:col), 2))
         end
 
         @inline function dotvectors{T<:AbstractFloat}(::Type{Val{$scheme}}, X::AbstractMatrix{T})
-            dotvectors!(X, Array(T, size(X,$dimension)))
-        end
-
-        @inline function gramian!{T<:AbstractFloat}(
-                 ::Type{Val{$scheme}}, 
-                G::Matrix{T}, 
-                X::Matrix{T}, 
-                Y::Matrix{T}
-            )
-            $(scheme == :(:row) ? :A_mul_Bt! : :At_mul_B!)(G, X, Y)
+            dotvectors!(Val{$scheme}, X, Array(T, size(X,$dimension)))
         end
 
         @inline function gramian!{T<:AbstractFloat}(
                  ::Type{Val{$scheme}},
                 G::Matrix{T},
-                X::Matrix{T}
+                X::AbstractMatrix{T}
             )
             gramian!(Val{$scheme}, G, X, X)
+        end
+
+        @inline function gramian!{T<:AbstractFloat}(
+                 ::Type{Val{$scheme}}, 
+                G::Matrix{T}, 
+                X::AbstractMatrix{T}, 
+                Y::AbstractMatrix{T}
+            )
+            $(scheme == :(:row) ? :A_mul_Bt! : :At_mul_B!)(G, X, Y)
         end
 
         @inline function pairwise!{T<:AbstractFloat}(
@@ -188,7 +190,7 @@ for (scheme, dimension) in ((:(:row), 1), (:(:col), 2))
                 X::AbstractMatrix{T},
                 Y::AbstractMatrix{T},
             )
-            gramian!(Val{$scheme}, K, X)
+            gramian!(Val{$scheme}, K, X, Y)
         end
 
         @inline function pairwise!{T<:AbstractFloat}(
