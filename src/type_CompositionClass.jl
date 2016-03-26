@@ -4,13 +4,16 @@
 
 abstract CompositionClass{T<:AbstractFloat}
 
-eltype{T}(::CompositionClass{T}) = T 
+@inline eltype{T}(::CompositionClass{T}) = T 
 
-iscomposable(::CompositionClass, ::Kernel) = false
+@inline iscomposable(::CompositionClass, ::Kernel) = false
 
-attainszero(::CompositionClass)     = true
-attainspositive(::CompositionClass) = true
-attainsnegative(::CompositionClass) = true
+@inline ismercer(::CompositionClass) = false
+@inline isnegdef(::CompositionClass) = false
+
+@inline attainszero(::CompositionClass)     = true
+@inline attainspositive(::CompositionClass) = true
+@inline attainsnegative(::CompositionClass) = true
 
 function description_string(ϕ::CompositionClass)
     class = typeof(ϕ)
@@ -27,6 +30,9 @@ end
 #== Positive Mercer Classes ==#
 
 abstract PositiveMercerClass{T<:AbstractFloat} <: CompositionClass{T}
+@inline ismercer(::PositiveMercerClass) = true
+@inline attainsnegative(::PositiveMercerClass) = false
+@inline attainszero(::PositiveMercerClass) = false
 
 doc"GammaExponentialClass(κ;α,γ) = exp(-α⋅κᵞ)"
 immutable GammaExponentialClass{T<:AbstractFloat} <: PositiveMercerClass{T}
@@ -132,14 +138,17 @@ end
 @outer_constructor(PolynomialClass, (1,0,3))
 @inline iscomposable(::PolynomialClass, κ::Kernel) = ismercer(κ)
 @inline phi{T<:AbstractFloat}(ϕ::PolynomialClass{T}, z::T) = (ϕ.a*z + ϕ.c)^ϕ.d
+@inline ismercer(::PolynomialClass) = true
 
 
 #== Non-Negative Negative Definite Kernel Classes ==#
 
-abstract NonNegativeNegativeDefiniteClass{T<:AbstractFloat} <: CompositionClass{T}
+abstract NonNegNegDefClass{T<:AbstractFloat} <: CompositionClass{T}
+@inline isnegdef(::NonNegNegDefClass) = true
+@inline attainsnegative(::NonNegNegDefClass) = false
 
 doc"PowerClass(z;a,c,γ) = (az + c)ᵞ"
-immutable PowerClass{T<:AbstractFloat} <: NonNegativeNegativeDefiniteClass{T}
+immutable PowerClass{T<:AbstractFloat} <: NonNegNegDefClass{T}
     a::Parameter{T}
     c::Parameter{T}
     gamma::Parameter{T}
@@ -155,7 +164,7 @@ end
 
 
 doc"GammmaLogClass(z;α,γ) = log(1 + α⋅zᵞ)"
-immutable GammaLogClass{T<:AbstractFloat} <: NonNegativeNegativeDefiniteClass{T}
+immutable GammaLogClass{T<:AbstractFloat} <: NonNegNegDefClass{T}
     alpha::Parameter{T}
     gamma::Parameter{T}
     GammaLogClass(α::Variable{T}, γ::Variable{T}) = new(
@@ -169,7 +178,7 @@ end
 
 
 doc"LogClass(z;α) = log(1 + α⋅z)"
-immutable LogClass{T<:AbstractFloat} <: NonNegativeNegativeDefiniteClass{T}
+immutable LogClass{T<:AbstractFloat} <: NonNegNegDefClass{T}
     alpha::Parameter{T}
     LogClass(α::Variable{T}) = new(
         Parameter(α, LowerBound(zero(T), :strict))
@@ -194,19 +203,3 @@ end
 @outer_constructor(SigmoidClass, (1,0))
 @inline iscomposable(::SigmoidClass, κ::Kernel) = ismercer(κ)
 @inline phi{T<:AbstractFloat}(ϕ::SigmoidClass{T}, z::T) = tanh(ϕ.a*z + ϕ.c)
-
-
-#== Properties of Kernel Classes ==#
-
-for (classobj, properties) in (
-        (PositiveMercerClass, (true, false, false, false, true)),
-        (NonNegativeNegativeDefiniteClass, (false, true, false, true, true)),
-        (PolynomialClass, (true, false, true, true, true)),
-        (SigmoidClass, (false, false, true, true, true))
-    )
-    ismercer(::classobj) = properties[1]
-    isnegdef(::classobj) = properties[2]
-    attainsnegative(::classobj) = properties[3]
-    attainszero(::classobj)     = properties[4]
-    attainspositive(::classobj) = properties[5]
-end
