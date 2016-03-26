@@ -4,197 +4,49 @@
 
 abstract Kernel{T<:AbstractFloat}
 
-abstract StandardKernel{T<:AbstractFloat}  <: Kernel{T}  # Either a kernel is atomic or it is a
-abstract KernelOperation{T<:AbstractFloat} <: Kernel{T}  # function of multiple kernels
-
 eltype{T}(::Kernel{T}) = T 
 
-doc"`ismercer(κ)`: tests whether a kernel `κ` is a Mercer kernel."
+doc"`ismercer(κ)`: returns `true` if kernel `κ` is a Mercer kernel."
 ismercer(::Kernel) = false
 
-doc"`isnegdef(κ)`: tests whether a kernel `κ` is a continuous symmetric negative-definite kernel."
+doc"`isnegdef(κ)`: returns `true` if kernel `κ` is a continuous symmetric negative-definite kernel."
 isnegdef(::Kernel) = false
 
-attainszero(::Kernel)     = true
+doc"`attainszero(κ)`: returns `true` if ∃x,y such that κ(x,y) = 0"
+attainszero(::Kernel) = true
+
+doc"`attainspositive(κ)`: returns `true` if ∃x,y such that κ(x,y) > 0"
 attainspositive(::Kernel) = true
+
+doc"`attainsnegative(κ)`: returns `true` if ∃x,y such that κ(x,y) < 0"
 attainsnegative(::Kernel) = true
 
+doc"`isnonnegative(κ)`: returns `true` if κ(x,y) > 0 ∀x,y"
 isnonnegative(κ::Kernel) = !attainsnegative(κ)
+
+doc"`ispositive(κ)`: returns `true` if κ(x,y) ≧ 0 ∀x,y"
 ispositive(κ::Kernel)    = !attainsnegative(κ) && !attainszero(κ) &&  attainspositive(κ)
+
+doc"`isnegative(κ)`: returns `true` if κ(x,y) ≦ 0 ∀x,y"
 isnegative(k::Kernel)    =  attainsnegative(κ) && !attainszero(κ) && !attainspositive(κ)
 
-
-#===================================================================================================
-  Composition Classes: Valid kernel transformations
-===================================================================================================#
-
-abstract CompositionClass{T<:AbstractFloat}
-
-eltype{T}(::CompositionClass{T}) = T 
-
-iscomposable(::CompositionClass, ::Kernel) = false
-
-attainszero(::CompositionClass)     = true
-attainspositive(::CompositionClass) = true
-attainsnegative(::CompositionClass) = true
-
-include("definitions/compositionclasses.jl")  # standard CompositionClass definitions
-
-function description_string(ϕ::CompositionClass)
-    class = typeof(ϕ)
-    fields = fieldnames(class)
-    class_str = string(class.name.name)
-    *(class_str, "(", join(["$field=$(getfield(ϕ,field).value)" for field in fields], ","), ")")
-end
-
-function show(io::IO, ϕ::CompositionClass)
-    print(io, description_string(ϕ))
-end
-
-#=
-for class_obj in concrete_subtypes(CompositionClass)
-    class_name = class_obj.name.name  # symbol for concrete kernel type
-    field_conversions = [:(convert(T, κ.$field.value)) for field in fieldnames(class_obj)]
-    constructorcall = Expr(:call, class_name, field_conversions...)
-    @eval begin
-        convert{T<:AbstractFloat}(::Type{$class_name{T}}, κ::$class_name) = $constructorcall
-    end
-end
-=#
-
-#===================================================================================================
-  Standard Kernels
-===================================================================================================#
-
-#==========================================================================
-  Pairwise Kernels: consume two vectors
-==========================================================================#
-
-abstract PairwiseKernel{T<:AbstractFloat} <: StandardKernel{T}
-
-abstract AdditiveKernel{T<:AbstractFloat} <: PairwiseKernel{T}
-
-include("definitions/additivekernels.jl")
-
-#=
-for kernel_obj in concrete_subtypes(AdditiveKernel)
-    kernel_name = kernel_obj.name.name  # symbol for concrete kernel type
-    if length(fieldnames(kernel_obj)) == 0
-        @eval begin
-            convert{T<:AbstractFloat}(::Type{$kernel_name{T}}, κ::$kernel_name) = $kernel_name{T}()
-        end
-    else 
-        field_conversions = [:(convert(T, κ.$field)) for field in fieldnames(kernel_obj)]
-        constructor_call = Expr(:call, kernel_name, field_conversions...)
-        @eval begin
-            convert{T<:AbstractFloat}(::Type{$kernel_name{T}}, κ::$kernel_name) = $constructor_call
-        end
-    end
-end
-=#
-
-#==========================================================================
-  Kernel Composition ψ = ϕ(κ(x,y))
-==========================================================================#
-
-doc"KernelComposition(ϕ,κ) = ϕ∘κ"
-immutable KernelComposition{T<:AbstractFloat} <: StandardKernel{T}
-    phi::CompositionClass{T}
-    k::PairwiseKernel{T}
-    function KernelComposition(ϕ::CompositionClass{T}, κ::PairwiseKernel{T})
-        iscomposable(ϕ, κ) || error("Kernel is not composable.")
-        new(ϕ, κ)
-    end
-end
-function KernelComposition{T<:AbstractFloat}(ϕ::CompositionClass{T}, κ::PairwiseKernel{T})
-    KernelComposition{T}(ϕ, κ)
-end
-#function KernelComposition{T<:AbstractFloat,U<:AbstractFloat}(
-#        ϕ::CompositionClass{T}, 
-#        κ::PairwiseKernel{U}
-#    )
-#    V = promote_type(T, U)
-#    KernelComposition{V}(convert(CompositionClass{V}, ϕ), convert(Kernel{V}, κ))
-#end
-
-ismercer(κ::KernelComposition) = ismercer(κ.phi)
-isnegdef(κ::KernelComposition) = isnegdef(κ.phi)
-
-attainszero(κ::KernelComposition)     = attainszero(κ.phi)
-attainspositive(κ::KernelComposition) = attainspositive(κ.phi)
-attainsnegative(κ::KernelComposition) = attainsnegative(κ.phi)
-
-
-#function convert{T<:AbstractFloat}(::Type{KernelComposition{T}}, ψ::KernelComposition)
-#    KernelComposition(convert(CompositionClass{T}, ψ.phi), convert(Kernel{T}, ψ.k))
-#end
-
-# Special Compositions
-
-∘(ϕ::CompositionClass, κ::Kernel) = KernelComposition(ϕ, κ)
-
-function ^{T<:AbstractFloat}(κ::PairwiseKernel{T}, d::Integer)
-    KernelComposition(PolynomialClass(one(T), zero(T), convert(T,d)), κ)
-end
-
-function ^{T<:AbstractFloat}(κ::PairwiseKernel{T}, γ::T)
-    KernelComposition(PowerClass(one(T), zero(T), γ), κ)
-end
-
-function exp{T<:AbstractFloat}(κ::PairwiseKernel{T})
-    KernelComposition(ExponentiatedClass(one(T), zero(T)), κ)
-end
-
-function tanh{T<:AbstractFloat}(κ::PairwiseKernel{T})
-    KernelComposition(SigmoidClass(one(T), zero(T)), κ)
+function show(io::IO, κ::Kernel)
+    print(io, description_string(κ))
 end
 
 
-# Special Kernel Constructors
+#== Standard Kernels ==#
 
-include("definitions/compositionkernels.jl")
+abstract StandardKernel{T<:AbstractFloat}  <: Kernel{T}  # Either a kernel is atomic or it is a
 
-
-
-#==========================================================================
-  ARD Kernel
-==========================================================================#
-
-#=
-doc"`ARD(κ,w)` where `κ <: AdditiveKernel`"
-immutable ARD{T<:AbstractFloat} <: BaseKernel{T}
-    k::AdditiveKernel{T}
-    w::Vector{T}
-    function ARD(κ::AdditiveKernel{T}, w::Vector{T})
-        length(w) > 0 || error("Weight vector w must be at least of length 1.")
-        all(w .> 0) || error("Weight vector w must consist of positive values.")
-        new(κ, w)
-    end
-end
-ARD{T<:AbstractFloat}(κ::AdditiveKernel{T}, w::Vector{T}) = ARD{T}(κ, w)
-
-ismercer(κ::ARD) = ismercer(κ.k)
-isnegdef(κ::ARD) = isnegdef(κ.k)
-
-attainszero(κ::ARD) = attainszero(κ.k)
-attainspositive(κ::ARD) = attainspositive(κ.k)
-attainsnegative(κ::ARD) = attainsnegative(κ.k)
-
-function description_string{T<:AbstractFloat,}(κ::ARD{T}, eltype::Bool = true)
-    "ARD" * (eltype ? "{$(T)}" : "") * "(κ=$(description_string(κ.k, false)),w=$(κ.w))"
-end
-
-function convert{T<:AbstractFloat}(::Type{ARD{T}}, κ::ARD)
-    ARD(convert(Kernel{T},κ.k), convert(Vector{T}, κ.w))
-end
-=#
+include("type_PairwiseKernel.jl")
+include("type_CompositionClass.jl")
+include("type_CompositionKernel.jl")
 
 
+#== Kernel Operations ==#
 
-#===================================================================================================
-  Kernel Operations
-===================================================================================================#
-
+abstract KernelOperation{T<:AbstractFloat} <: Kernel{T}  # function of multiple kernels
 
 #==========================================================================
   Kernel Affinity

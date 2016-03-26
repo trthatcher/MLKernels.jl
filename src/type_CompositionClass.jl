@@ -1,6 +1,28 @@
-#==========================================================================
-  Composition Classes
-==========================================================================#
+#===================================================================================================
+  Composition Classes: Valid kernel transformations
+===================================================================================================#
+
+abstract CompositionClass{T<:AbstractFloat}
+
+eltype{T}(::CompositionClass{T}) = T 
+
+iscomposable(::CompositionClass, ::Kernel) = false
+
+attainszero(::CompositionClass)     = true
+attainspositive(::CompositionClass) = true
+attainsnegative(::CompositionClass) = true
+
+function description_string(ϕ::CompositionClass)
+    class = typeof(ϕ)
+    fields = fieldnames(class)
+    class_str = string(class.name.name)
+    *(class_str, "(", join(["$field=$(getfield(ϕ,field).value)" for field in fields], ","), ")")
+end
+
+function show(io::IO, ϕ::CompositionClass)
+    print(io, description_string(ϕ))
+end
+
 
 #== Positive Mercer Classes ==#
 

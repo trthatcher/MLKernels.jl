@@ -1,3 +1,34 @@
+#==========================================================================
+  Kernel Composition ψ = ϕ(κ(x,y))
+==========================================================================#
+
+doc"KernelComposition(ϕ,κ) = ϕ∘κ"
+immutable KernelComposition{T<:AbstractFloat} <: StandardKernel{T}
+    phi::CompositionClass{T}
+    k::PairwiseKernel{T}
+    function KernelComposition(ϕ::CompositionClass{T}, κ::PairwiseKernel{T})
+        iscomposable(ϕ, κ) || error("Kernel is not composable.")
+        new(ϕ, κ)
+    end
+end
+function KernelComposition{T<:AbstractFloat}(ϕ::CompositionClass{T}, κ::PairwiseKernel{T})
+    KernelComposition{T}(ϕ, κ)
+end
+
+function description_string(κ::KernelComposition)
+    string("∘(",description_string(κ.phi), ",", description_string(κ.k),")")
+end
+
+ismercer(κ::KernelComposition) = ismercer(κ.phi)
+isnegdef(κ::KernelComposition) = isnegdef(κ.phi)
+
+attainszero(κ::KernelComposition)     = attainszero(κ.phi)
+attainspositive(κ::KernelComposition) = attainspositive(κ.phi)
+attainsnegative(κ::KernelComposition) = attainsnegative(κ.phi)
+
+
+#== Composition Kernels ==#
+
 doc"GaussianKernel(α) = exp(-α⋅‖x-y‖²)"
 function GaussianKernel{T<:AbstractFloat}(α::Argument{T} = 1.0)
     KernelComposition(ExponentialClass(α), SquaredDistanceKernel{T}())
@@ -43,4 +74,25 @@ end
 doc"SigmoidKernel(α,c) = tanh(a⋅xᵀy + c)"
 function SigmoidKernel{T<:Real}(a::Argument{T} = 1.0, c::Argument{T} = one(T))
     KernelComposition(SigmoidClass(a, c), ScalarProductKernel{T}())
+end
+
+
+#== Special Compositions ==#
+
+∘(ϕ::CompositionClass, κ::Kernel) = KernelComposition(ϕ, κ)
+
+function ^{T<:AbstractFloat}(κ::PairwiseKernel{T}, d::Integer)
+    KernelComposition(PolynomialClass(one(T), zero(T), d), κ)
+end
+
+function ^{T<:AbstractFloat}(κ::PairwiseKernel{T}, γ::T)
+    KernelComposition(PowerClass(one(T), zero(T), γ), κ)
+end
+
+function exp{T<:AbstractFloat}(κ::PairwiseKernel{T})
+    KernelComposition(ExponentiatedClass(one(T), zero(T)), κ)
+end
+
+function tanh{T<:AbstractFloat}(κ::PairwiseKernel{T})
+    KernelComposition(SigmoidClass(one(T), zero(T)), κ)
 end
