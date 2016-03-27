@@ -31,6 +31,9 @@ function get_default(obj::DataType)
     obj <: Integer ? Int64 : Float64
 end
 
+# Notes:
+#   Assumes arguments are organized by type parameter
+#   Assumes Variable{} is the argument type
 function generate_outer_constructor(obj::DataType, defaults::Tuple{Vararg{Real}})
     fields = fieldnames(obj)
     length(defaults) == length(fields) || error("wrong size")
@@ -38,12 +41,15 @@ function generate_outer_constructor(obj::DataType, defaults::Tuple{Vararg{Real}}
     fieldparams = Symbol[fieldtype(obj, field).parameters[1].name for field in fields]
     first_idx   = [param => findfirst(fieldparams, param) for param in keys(parameters)]
 
+    # Produces [Float64, T, ..., Int64, U, ...] with length == length(fields)
     defaultparams = Symbol[if i == first_idx[fieldparams[i]]
                         get_default(parameters[fieldparams[i]]).name.name
                     else
                         fieldparams[i]
                     end for i in eachindex(fields)]
 
+    # Produces [arg1::Argument{T} = convert(Float64, default1), 
+    #           arg2::Argument{T} = convert(T,default2)...]
     arguments = [Expr(:kw, :($(fields[i])::Argument{$(fieldparams[i])}),
                             :(convert($(defaultparams[i]), $(defaults[i]))))
                  for i in eachindex(fields)]
@@ -62,59 +68,25 @@ function generate_outer_constructor(obj::DataType, defaults::Tuple{Vararg{Real}}
     Expr(:(=), definition_ls, definition_rs)
 end
 
-#=
 function generate_conversion(obj::DataType)
     fields = fieldnames(obj)
-    length(defaults) == length(fields) || error("wrong size")
     parameters  = Symbol[param.name for param in obj.parameters]
     fieldparams = Symbol[fieldtype(obj, field).parameters[1].name for field in fields]
 
-        # Stopped here.
-    defaultparams = Symbol[if i == first_idx[fieldparams[i]]
-                        get_default(parameters[fieldparams[i]]).name.name
-                    else
-                        fieldparams[i]
-                    end for i in eachindex(fields)]
+    convert_target = Expr(:(::), Expr(:curly, :Type, Expr(:curly, obj.name.name, parameters...)))
 
-    arguments = [Expr(:kw, :($(fields[i])::Argument{$(fieldparams[i])}),
-                            :(convert($(defaultparams[i]), $(defaults[i]))))
-                 for i in eachindex(fields)]
+    converted_arguments = Expr[:(Variable(convert($(fieldparams[i]), obj.$(fields[i]).value), 
+                                 obj.$(fields[i]).isfixed)) for i in eachindex(fields)]
 
-    constructor = Expr(:curly, obj.name.name, 
-                       [Expr(:(<:), param.name, param.ub.name.name) for param in obj.parameters]...)
-
-    definition_ls = Expr(:call, constructor, arguments...)
-
-    definition_rs = Expr(:call, 
-                         Expr(:curly, obj.name.name, 
-                              [param.name for param in obj.parameters]...), 
-                         [Expr(:call, :convert, :(Variable{$(fieldparams[i])}), fields[i]) 
-                          for i in eachindex(fields)]...)
+    definition_ls = Expr(:call, Expr(:curly, :convert, parameters...),
+                                convert_target,
+                                Expr(:(::), :obj, obj.name.name))
+    definition_rs = Expr(:call, obj.name.name, converted_arguments...)
 
     Expr(:(=), definition_ls, definition_rs)
 end
-=#
-    
+
 macro outer_constructor(obj, defaults)
     eval(generate_outer_constructor(eval(obj), eval(defaults)))
+    eval(generate_conversion(eval(obj)))
 end
-
-
-
-
-#=
-function generic_constructor(obj::DataType, defaults::Tuple{Vararg{Real}})
-    fields = fieldnames(obj)
-    fieldtypes = [field => fieldtype(obj, field).parameters[1] for field in fields]
-    arguments = [Expr(:kw, :($(fields[i])::Argument), defaults[i]) for i in eachindex(fields)]
-    conversions = [:(convert(Variable{$(get_default(fieldtypes[field].ub))}, $field))
-                   for field in fields]
-    definition_ls = Expr(:call, obj.name.name, arguments...)
-    definition_rs = Expr(:call, obj.name.name, conversions...)
-    Expr(:(=), definition_ls, definition_rs)
-end
-
-function kernel_constructors(obj::DataType, defaults::Tuple{Vararg{Real}})
-    Expr(:block, outer_constructor(eval(obj)), generic_constructor(eval(obj), defaults))
-end
-=#

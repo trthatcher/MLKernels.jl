@@ -164,6 +164,10 @@ end
 
 isfixed(θ::Parameter) = θ.isfixed
 
+function Variable{T<:Real}(θ::Parameter{T})
+    Variable(θ.value, θ.isfixed)
+end
+
 @inline *(a::Real, v::Parameter) = *(a, v.value)
 @inline *(v::Parameter, a::Real) = *(v.value, a)
 
