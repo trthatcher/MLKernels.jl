@@ -158,8 +158,8 @@ function convert{T<:Real}(::Type{Parameter{T}}, θ::Parameter)
     Parameter{T}(convert(T, θ.value), convert(Interval{T}, θ.bounds), θ.isfixed)
 end
 
-function show(io::IO, θ::Parameter)
-    print(io, "Parameter(", θ.value, ") ∈ ", θ.bounds)
+function show{T}(io::IO, θ::Parameter{T})
+    print(io, "Parameter{" * string(T) * "}(", θ.value, ") ∈ ", θ.bounds)
 end
 
 isfixed(θ::Parameter) = θ.isfixed
