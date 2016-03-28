@@ -19,18 +19,6 @@ function supertypes(T::DataType)
     ancestors
 end
 
-function promote_arguments(U::DataType, θ::Variable{Real}...)
-    U <: Real && isbit(U) || error("Argument U type must be a real bits type")
-    T = promote_type([eltype(x) for x in θ]...)
-    T = T <: super(U) ? T : U
-    tuple(Variable{T}[isa(x, Fixed) ? convert(Fixed{T}, x) : convert(T, x) for x in θ]...)
-end
-
-function get_default(obj::DataType)
-    obj <: Real || error("Data type should be subtype of Real")
-    obj <: Integer ? Int64 : Float64
-end
-
 # Checks to make sure the fields in the datatype are of type Parameter{T} or Parameter{U} where
 # T<:AbstractFloat and U<:Integer
 function fieldparameters(obj::DataType)
@@ -87,11 +75,7 @@ function generate_conversions(obj::DataType)
         conversion2 = Expr(:(=), Expr(:call, Expr(:curly, :convert, :T, :_, :U), convert_target,
                                              Expr(:(::), :obj, Expr(:curly, obj_sym, :_, :U))),
                                  Expr(:call, obj_sym, converted_arguments...))
-        # combined codeblock
-        return quote
-            $conversion1
-            $conversion2
-        end
+        return Expr(:block, conversion1, conversion2)
     elseif length(obj.parameters) == 1
         # convert(::Type{obj{T}}, ::obj) = ...
         convert_target      = Expr(:(::), Expr(:curly, :Type, Expr(:curly, obj_sym, :T)))
