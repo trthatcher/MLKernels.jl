@@ -2,23 +2,11 @@
   Generic pairwise functions for kernels consuming two vectors
 ===================================================================================================#
 
-@inline pairwise{T<:AbstractFloat}(κ::StandardKernel{T}, x::T, y::T) = phi(κ, x, y)
+pairwise{T}(κ::StandardKernel{T}, x::T, y::T) = phi(κ, x, y)
+pairwise{T}(κ::StandardKernel{T}, x::AbstractVector{T}, y::AbstractVector{T}) = phi(κ, x, y)
 
-@inline function pairwise{T<:AbstractFloat}(
-        κ::StandardKernel{T},
-        x::AbstractVector{T}, 
-        y::AbstractVector{T}
-    )
-    phi(κ, x, y)
-end
-
-@inline pairwise{T<:AbstractFloat}(κ::AdditiveKernel{T}, x::T, y::T) = phi(κ, x, y)
-
-function pairwise{T<:AbstractFloat}(
-        κ::AdditiveKernel{T},
-        x::AbstractVector{T}, 
-        y::AbstractVector{T}
-    )
+pairwise{T}(κ::AdditiveKernel{T}, x::T, y::T) = phi(κ, x, y)
+function pairwise{T}(κ::AdditiveKernel{T}, x::AbstractVector{T}, y::AbstractVector{T})
     s = zero(T)
     @inbounds for i in eachindex(x)
         s += phi(κ, x[i], y[i])
@@ -29,18 +17,18 @@ end
 for (scheme, dimension) in ((:(:row), 1), (:(:col), 2))
     @eval begin
 
-        @inline function subvector(::Type{Val{$scheme}}, X::AbstractMatrix,  i::Integer)
+        function subvector(::Type{Val{$scheme}}, X::AbstractMatrix,  i::Integer)
             $(scheme == :(:row) ? :(slice(X, i, :)) : :(slice(X, :, i)))
         end
 
-        @inline function init_pairwise{T<:AbstractFloat}(
+        @inline function init_pairwise{T}(
                  ::Type{Val{$scheme}},
                 X::AbstractMatrix{T}
             )
             Array(T, size(X,$dimension), size(X,$dimension))
         end
 
-        @inline function init_pairwise{T<:AbstractFloat}(
+        @inline function init_pairwise{T}(
                  ::Type{Val{$scheme}},
                 X::AbstractMatrix{T}, 
                 Y::AbstractMatrix{T}
@@ -48,7 +36,7 @@ for (scheme, dimension) in ((:(:row), 1), (:(:col), 2))
             Array(T, size(X,$dimension), size(Y,$dimension))
         end
 
-        function pairwise!{T<:AbstractFloat}(
+        function pairwise!{T}(
                  ::Type{Val{$scheme}},
                 K::Matrix{T}, 
                 κ::PairwiseKernel{T},
@@ -67,7 +55,7 @@ for (scheme, dimension) in ((:(:row), 1), (:(:col), 2))
             LinAlg.copytri!(K, 'U', false)
         end
 
-        function pairwise!{T<:AbstractFloat}(
+        function pairwise!{T}(
                  ::Type{Val{$scheme}},
                 K::Matrix{T}, 
                 κ::PairwiseKernel{T},
@@ -91,7 +79,7 @@ for (scheme, dimension) in ((:(:row), 1), (:(:col), 2))
     end
 end
 
-function pairwise{T<:AbstractFloat}(
+function pairwise{T}(
         v::DataType,
         κ::PairwiseKernel{T},
         X::AbstractMatrix{T}
@@ -99,7 +87,7 @@ function pairwise{T<:AbstractFloat}(
     pairwise!(v, init_pairwise(v, X), κ, X)
 end
 
-function pairwise{T<:AbstractFloat}(
+function pairwise{T}(
         v::DataType,
         κ::PairwiseKernel{T},
         X::AbstractMatrix{T},
@@ -174,7 +162,7 @@ for (scheme, dimension) in ((:(:row), 1), (:(:col), 2))
             $(scheme == :(:row) ? :A_mul_Bt! : :At_mul_B!)(G, X, Y)
         end
 
-        @inline function pairwise!{T<:AbstractFloat}(
+        @inline function pairwise!{T}(
                  ::Type{Val{$scheme}},
                 K::Matrix{T}, 
                 κ::ScalarProductKernel{T},
@@ -183,7 +171,7 @@ for (scheme, dimension) in ((:(:row), 1), (:(:col), 2))
             gramian!(Val{$scheme}, K, X)
         end
 
-        @inline function pairwise!{T<:AbstractFloat}(
+        @inline function pairwise!{T}(
                  ::Type{Val{$scheme}},
                 K::Matrix{T}, 
                 κ::ScalarProductKernel{T},
@@ -193,7 +181,7 @@ for (scheme, dimension) in ((:(:row), 1), (:(:col), 2))
             gramian!(Val{$scheme}, K, X, Y)
         end
 
-        @inline function pairwise!{T<:AbstractFloat}(
+        @inline function pairwise!{T}(
                  ::Type{Val{$scheme}},
                 K::Matrix{T}, 
                 κ::SquaredDistanceKernel{T},
@@ -204,7 +192,7 @@ for (scheme, dimension) in ((:(:row), 1), (:(:col), 2))
             squared_distance!(K, xᵀx)
         end
 
-        @inline function pairwise!{T<:AbstractFloat}(
+        @inline function pairwise!{T}(
                  ::Type{Val{$scheme}},
                 K::Matrix{T}, 
                 κ::SquaredDistanceKernel{T},

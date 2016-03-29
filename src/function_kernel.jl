@@ -1,45 +1,97 @@
+#===================================================================================================
+  Generic kernel function
+===================================================================================================#
+
+call{T}(κ::Kernel{T}, x::T, y::T)                 = kernel(κ, x, y)
+call{T}(κ::Kernel{T}, x::Vector{T}, y::Vector{T}) = kernel(κ, x, y)
+
+call{T}(κ::Kernel{T}, X::Matrix{T})               = kernelmatrix(κ, X)
+call{T}(κ::Kernel{T}, X::Matrix{T}, Y::Matrix{T}) = kernelmatrix(κ, X, Y)
+
+kernel{T}(κ::PairwiseKernel{T}, x::T, y::T) = pairwise(κ, x, y)
+kernel{T}(κ::PairwiseKernel{T}, x::AbstractVector{T}, y::AbstractVector{T}) = pairwise(κ, x, y)
+
+kernel{T}(κ::KernelComposition{T}, x::T, y::T) = phi(κ.phi, pairwise(κ.k, x, y))
+function kernel{T}(κ::KernelComposition{T}, x::AbstractVector{T}, y::AbstractVector{T})
+    phi(κ.phi, pairwise(κ.k, x, y))
+end
+
+
 #==========================================================================
-  Kernel Functions
+  Generic kernelmatrix Functions
 ==========================================================================#
 
-call{T<:AbstractFloat}(κ::Kernel{T}, x::T, y::T) = kernel(κ, x, y)
-call{T<:AbstractFloat}(κ::Kernel{T}, x::Vector{T}, y::Vector{T}) = kernel(κ, x, y)
-
-call{T<:AbstractFloat}(κ::Kernel{T}, X::Matrix{T}) = kernelmatrix(κ, X)
-call{T<:AbstractFloat}(κ::Kernel{T}, X::Matrix{T}, Y::Matrix{T}) = kernelmatrix(κ, X, Y)
-
-@inline kernel{T<:AbstractFloat}(κ::BaseKernel{T}, x::T, y::T) = pairwise(κ, x, y)
-@inline kernel{T<:AbstractFloat}(κ::BaseKernel{T}, x::Vector{T}, y::Vector{T}) = pairwise(κ, x, y)
-
-@inline kernel{T<:AbstractFloat}(κ::ARD{T}, x::T, y::T) = pairwise(κ.k, x, y, κ.w[1])
-@inline kernel{T<:AbstractFloat}(κ::ARD{T}, x::Vector{T}, y::Vector{T}) = pairwise(κ.k, x, y, κ.w)
-
-@inline function kernel{T<:AbstractFloat}(κ::KernelComposition{T}, x::T, y::T)
-    phi(κ.phi, kernel(κ.k, x, y))
-end
-@inline function kernel{T<:AbstractFloat}(κ::KernelComposition{T}, x::Vector{T}, y::Vector{T})
-    phi(κ.phi, kernel(κ.k, x, y))
+function phi_matrix!{T}(ϕ::CompositionClass{T}, K::AbstractMatrix{T})
+    @inbounds for i in eachindex(K)
+        K[i] = phi(ϕ, K[i])
+    end
+    K
 end
 
-@inline kernel{T<:AbstractFloat}(ψ::KernelAffinity{T}, x::T, y::T) = ψ.a*kernel(ψ.k, x, y) + ψ.c
-@inline function kernel{T<:AbstractFloat}(ψ::KernelAffinity{T}, x::Vector{T}, y::Vector{T})
-    ψ.a*kernel(ψ.k, x, y) + ψ.c
+function phi_symmetricmatrix!{T}(ϕ::CompositionClass{T}, K::AbstractMatrix{T})
+    if !((n = size(K,1)) == size(K,2))
+        throw(DimensionMismatch("Kernel matrix must be square."))
+    end
+    @inbounds for j = 1:n, i = (1:j)
+        K[i,j] = phi(ϕ, K[i,j])
+    end
+    LinAlg.copytri!(K, 'U')
 end
 
-kernel{T<:AbstractFloat}(ψ::KernelSum{T}, x::T, y::T) = sum(map(κ -> kernel(κ,x,y), ψ.k)) + ψ.c
-function kernel{T<:AbstractFloat}(ψ::KernelSum{T}, x::Vector{T}, y::Vector{T})
-    sum(map(κ -> kernel(κ,x,y), ψ.k)) + ψ.c
+function kernelmatrix{T}(κ::Kernel{T}, X::AbstractMatrix{T}, is_rowmajor::Bool = true)
+    scheme = is_rowmajor ? Val{:row} : Val{:col}
+    kernelmatrix!(scheme, init_pairwise(scheme, X), κ, X)
 end
 
-kernel{T<:AbstractFloat}(ψ::KernelProduct{T}, x::T, y::T) = ψ.a * prod(map(κ -> kernel(κ,x,y), ψ.k))
-function kernel{T<:AbstractFloat}(ψ::KernelProduct{T}, x::Vector{T}, y::Vector{T})
-    ψ.a * prod(map(κ -> kernel(κ,x,y), ψ.k))
+function kernelmatrix{T}(
+        κ::Kernel{T},
+        X::AbstractMatrix{T},
+        Y::AbstractMatrix{T},
+        is_rowmajor::Bool = true
+    )
+    scheme = is_rowmajor ? Val{:row} : Val{:col}
+    kernelmatrix!(scheme, init_pairwise(scheme, X, Y), κ, X, Y)
+end
+
+
+#== Standard Kernel ==#
+
+function kernelmatrix!{T}(v::DataType, K::Matrix{T}, κ::StandardKernel{T}, X::AbstractMatrix{T})
+    pairwise!(v, K, κ, X)
+end
+
+function kernelmatrix!{T}(
+        v::DataType,
+        K::Matrix{T},
+        κ::StandardKernel{T},
+        X::AbstractMatrix{T}
+    )
+    pairwise!(v, K, κ, X)
+end
+
+
+#== Composition Kernel ==#
+
+function kernelmatrix!{T}(v::DataType, K::Matrix{T}, κ::KernelComposition{T}, X::AbstractMatrix{T})
+    pairwise!(v, K, κ.kappa, X)
+    phi_symmetricmatrix!(κ.phi, K)
+end
+
+function kernelmatrix!{T}(
+        v::DataType,
+        K::Matrix{T},
+        κ::KernelComposition{T},
+        X::AbstractMatrix{T},
+        Y::AbstractMatrix{T}
+    )
+    pairwise!(v, K, κ.kappa, X, Y)
+    phi_matrix!(κ.phi, K)
 end
 
 
 #==========================================================================
   Kernel Matrix Transformation
-==========================================================================#
+==========================================================================
 
 # Centralize a kernel matrix K
 function centerkernelmatrix!{T<:AbstractFloat}(K::Matrix{T})
@@ -63,75 +115,9 @@ function centerkernelmatrix!{T<:AbstractFloat}(K::Matrix{T})
 end
 centerkernelmatrix{T<:AbstractFloat}(K::Matrix{T}) = centerkernelmatrix!(copy(K))
 
-
-#==========================================================================
-  Generic Kernel Matrix Functions
-==========================================================================#
-
-function kernelmatrix{T<:AbstractFloat}(κ::Kernel{T}, X::Matrix{T}, is_trans::Bool = false, 
-                                        store_upper::Bool = true, symmetrize::Bool = true)
-    kernelmatrix!(init_pairwise(X, is_trans), κ, X, is_trans, store_upper, symmetrize)
-end
-
-function kernelmatrix{T<:AbstractFloat}(κ::Kernel{T}, X::Matrix{T}, Y::Matrix{T}, 
-                                        is_trans::Bool = false)
-    kernelmatrix!(init_pairwise(X, Y, is_trans), κ, X, Y, is_trans)
-end
-
-
-#==========================================================================
-  Base Kernel Matrix Functions
-==========================================================================#
-
-function kernelmatrix!{T<:AbstractFloat}(K::Matrix{T}, κ::BaseKernel{T}, X::Matrix{T}, 
-                                         is_trans::Bool, store_upper::Bool, symmetrize::Bool)
-    pairwise!(K, κ, copy(X), is_trans, store_upper)
-    symmetrize ? (store_upper ? syml!(K) : symu!(K)) : K
-end
-
-function kernelmatrix!{T<:AbstractFloat}(K::Matrix{T}, κ::BaseKernel{T}, X::Matrix{T}, Y::Matrix{T},
-                                         is_trans::Bool)
-    pairwise!(K, κ, copy(X), copy(Y), is_trans)
-end
-
-
-#==========================================================================
-  Composite Kernel Matrix Functions
-==========================================================================#
-
-# Apply phi to matrix elements
-function phi_matrix!{T<:AbstractFloat}(ϕ::CompositionClass{T}, K::Matrix{T})
-    @inbounds @simd for i = 1:length(K)
-        K[i] = phi(ϕ, K[i])
-    end
-    K
-end
-
-function phi_square_matrix!{T<:AbstractFloat}(ϕ::CompositionClass{T}, K::Matrix{T}, store_upper::Bool)
-    (n = size(K,1)) == size(K,2) || throw(DimensionMismatch("K must be square."))
-    @inbounds for j = 1:n, i = store_upper ? (1:j) : (j:n)
-        K[i,j] = phi(ϕ, K[i,j])
-    end
-    K
-end
-
-function kernelmatrix!{T<:AbstractFloat}(K::Matrix{T}, κ::KernelComposition{T}, X::Matrix{T}, 
-                                         is_trans::Bool, store_upper::Bool, symmetrize::Bool)
-    kernelmatrix!(K, κ.k, X, is_trans, store_upper, false)
-    phi_square_matrix!(κ.phi, K, store_upper)
-    symmetrize ? (store_upper ? syml!(K) : symu!(K)) : K
-end
-
-function kernelmatrix!{T<:AbstractFloat}(K::Matrix{T}, κ::KernelComposition{T}, X::Matrix{T}, 
-                                         Y::Matrix{T}, is_trans::Bool)
-    kernelmatrix!(K, κ.k, X, Y, is_trans)
-    phi_matrix!(κ.phi, K)
-end
-
-
-#==========================================================================
+==========================================================================
   Kernel Operation Matrix Functions
-==========================================================================#
+==========================================================================
 
 
 for (kernel_object, matrix_op, array_op, identity, scalar) in (
@@ -170,3 +156,5 @@ for (kernel_object, matrix_op, array_op, identity, scalar) in (
 
     end
 end
+
+=#

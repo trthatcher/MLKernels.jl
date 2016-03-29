@@ -5,7 +5,7 @@
 doc"KernelComposition(ϕ,κ) = ϕ∘κ"
 immutable KernelComposition{T<:AbstractFloat} <: StandardKernel{T}
     phi::CompositionClass{T}
-    k::PairwiseKernel{T}
+    kappa::PairwiseKernel{T}
     function KernelComposition(ϕ::CompositionClass{T}, κ::PairwiseKernel{T})
         iscomposable(ϕ, κ) || error("Kernel is not composable.")
         new(ϕ, κ)
@@ -16,7 +16,7 @@ function KernelComposition{T<:AbstractFloat}(ϕ::CompositionClass{T}, κ::Pairwi
 end
 
 function description_string(κ::KernelComposition)
-    string("∘(",description_string(κ.phi), ",", description_string(κ.k),")")
+    string("∘(",description_string(κ.phi), ",", description_string(κ.kappa),")")
 end
 
 ismercer(κ::KernelComposition) = ismercer(κ.phi)
@@ -47,7 +47,7 @@ function PeriodicKernel{T<:AbstractFloat}(α::Argument{T} = 1.0, p::Argument{T} 
 end
 
 doc"RationalQuadraticKernel(α,β) = (1 + α⋅‖x-y‖²)⁻ᵝ"
-function RationalQuadraticKernel{T<:Real}(α::Argument{T} = 1.0, β::Argument{T} = one(T))
+function RationalQuadraticKernel{T<:AbstractFloat}(α::Argument{T} = 1.0, β::Argument{T} = one(T))
     KernelComposition(RationalClass(α, β), SquaredDistanceKernel{T}())
 end
 

@@ -78,12 +78,11 @@ export
     LinearKernel,
     SigmoidKernel
 
-
-include("type_Parameter.jl")
 include("meta.jl")
+include("type_Parameter.jl")
 include("type_Kernel.jl")
 include("function_pairwise.jl")
-#include("kernelfunctions.jl")
+include("function_kernel.jl")
 #include("kernelapproximation.jl")
 
 end # MLKernels
