@@ -66,17 +66,17 @@ export
 
     
     # Kernel Constructors
-    GaussianKernel,
-        SquaredExponentialKernel,
-        RadialBasisKernel,
-    LaplacianKernel,
-    PeriodicKernel,
-    RationalQuadraticKernel,
-    MaternKernel,
-        MatérnKernel,
-    PolynomialKernel,
-    LinearKernel,
-    SigmoidKernel
+        GaussianKernel,
+            SquaredExponentialKernel,
+            RadialBasisKernel,
+        LaplacianKernel,
+        PeriodicKernel,
+        RationalQuadraticKernel,
+        MaternKernel,
+            MatérnKernel,
+        PolynomialKernel,
+        LinearKernel,
+        SigmoidKernel
 
 include("meta.jl")
 include("type_Parameter.jl")
