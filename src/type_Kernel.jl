@@ -25,13 +25,17 @@ doc"`isnonnegative(κ)`: returns `true` if κ(x,y) > 0 ∀x,y"
 isnonnegative(κ::Kernel) = !attainsnegative(κ)
 
 doc"`ispositive(κ)`: returns `true` if κ(x,y) ≧ 0 ∀x,y"
-ispositive(κ::Kernel)    = !attainsnegative(κ) && !attainszero(κ) &&  attainspositive(κ)
+ispositive(κ::Kernel) = !attainsnegative(κ) && !attainszero(κ) &&  attainspositive(κ)
 
 doc"`isnegative(κ)`: returns `true` if κ(x,y) ≦ 0 ∀x,y"
-isnegative(k::Kernel)    =  attainsnegative(κ) && !attainszero(κ) && !attainspositive(κ)
+isnegative(k::Kernel) =  attainsnegative(κ) && !attainszero(κ) && !attainspositive(κ)
 
 function show(io::IO, κ::Kernel)
     print(io, description_string(κ))
+end
+
+function convert{T<:AbstractFloat,K<:Kernel}(::Type{Kernel{T}}, ϕ::K)
+    convert(K.name.primary{T}, ϕ)
 end
 
 
@@ -41,7 +45,7 @@ abstract StandardKernel{T<:AbstractFloat}  <: Kernel{T}  # Either a kernel is at
 
 include("type_PairwiseKernel.jl")
 include("type_CompositionClass.jl")
-include("type_CompositionKernel.jl")
+include("type_KernelComposition.jl")
 
 
 #== Kernel Operations ==#
@@ -56,7 +60,7 @@ doc"KernelAffinity(κ;a,c) = a⋅κ + c"
 immutable KernelAffinity{T<:AbstractFloat} <: KernelOperation{T}
     a::Parameter{T}
     c::Parameter{T}
-    k::Kernel{T}
+    kappa::Kernel{T}
     KernelAffinity(a::Variable{T}, c::Variable{T}, κ::Kernel{T}) = new(
         Parameter(a, LowerBound(zero(T), :strict)),
         Parameter(c, LowerBound(zero(T), :nonstrict)),
@@ -67,8 +71,8 @@ function KernelAffinity{T<:AbstractFloat}(a::Argument{T}, c::Argument{T}, κ::Ke
     KernelAffinity{T}(convert(Variable{T}, a), convert(Variable{T}, c), κ)
 end
 
-ismercer(ψ::KernelAffinity) = ismercer(ψ.k)
-isnegdef(ψ::KernelAffinity) = isnegdef(ψ.k)
+ismercer(ψ::KernelAffinity) = ismercer(ψ.kappa)
+isnegdef(ψ::KernelAffinity) = isnegdef(ψ.kappa)
 
 attainszero(ψ::KernelAffinity)     = attainszero(ψ.k)
 attainspositive(ψ::KernelAffinity) = attainspositive(ψ.k)

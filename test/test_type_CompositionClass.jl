@@ -2,13 +2,12 @@ info("Testing ", MOD.CompositionClass)
 for class_obj in composition_classes
     info("Testing ", class_obj)
 
-    # Test various constructors
+    # Test constructors
     for T in FloatingPointTypes
         default_floats, default_others = all_default_args[class_obj]
         default_args = (T[default_floats...]..., default_others...)
         fields = fieldnames(class_obj)
         k = (class_obj)(default_args...)
-
         @test eltype(k) == T
 
         for i in eachindex(fields)
@@ -18,6 +17,14 @@ for class_obj in composition_classes
         for z in (zero(T),one(T))
             f = all_phifunctions[class_obj]
             @test_approx_eq MOD.phi(k, z) f(default_args..., z)
+        end
+    end
+
+    # Test conversions
+    for T in FloatingPointTypes
+        phi = (class_obj)()
+        for U in FloatingPointTypes
+            @test U == eltype(convert(CompositionClass{U}, phi))
         end
     end
 

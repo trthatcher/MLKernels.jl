@@ -15,6 +15,10 @@ function KernelComposition{T<:AbstractFloat}(ϕ::CompositionClass{T}, κ::Pairwi
     KernelComposition{T}(ϕ, κ)
 end
 
+function convert{T<:AbstractFloat}(::Type{KernelComposition{T}}, κ::KernelComposition{T})
+    KernelComposition(convert(CompositionClass{T}, κ.phi), convert(Kernel{T}, κ.kappa))
+end
+
 function description_string(κ::KernelComposition)
     string("∘(",description_string(κ.phi), ",", description_string(κ.kappa),")")
 end

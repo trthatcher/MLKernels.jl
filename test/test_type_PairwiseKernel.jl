@@ -2,7 +2,7 @@ info("Testing ", MOD.AdditiveKernel)
 for kernel_obj in additive_kernels
     info("Testing ", kernel_obj)
 
-    # Test various constructors
+    # Test constructors
     for T in FloatingPointTypes
         default_floats, default_others = all_default_args[kernel_obj]
         default_args = (T[default_floats...]..., default_others...)
@@ -22,6 +22,14 @@ for kernel_obj in additive_kernels
         for (x,y) in ((zero(T),zero(T)), (zero(T),one(T)), (one(T),zero(T)), (one(T),one(T)))
             f = all_phifunctions[kernel_obj]
             @test_approx_eq MOD.phi(k, x, y) f(default_args..., x, y)
+        end
+    end
+
+    # Test conversions
+    for T in FloatingPointTypes
+        k = (kernel_obj)()
+        for U in FloatingPointTypes
+            @test U == eltype(convert(Kernel{U}, k))
         end
     end
 

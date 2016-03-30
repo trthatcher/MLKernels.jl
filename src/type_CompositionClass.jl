@@ -26,6 +26,10 @@ function show(io::IO, ϕ::CompositionClass)
     print(io, description_string(ϕ))
 end
 
+function convert{T<:AbstractFloat,K<:CompositionClass}(::Type{CompositionClass{T}}, ϕ::K)
+    convert(K.name.primary{T}, ϕ)
+end
+
 
 #== Positive Mercer Classes ==#
 
