@@ -18,8 +18,7 @@ for class_obj in composition_classes
     end
 end
 
-for kernel_obj in (GaussianKernel, LaplacianKernel, PeriodicKernel, RationalQuadraticKernel,
-                   MaternKernel, PolynomialKernel, LinearKernel, SigmoidKernel)
+for kernel_obj in composition_kernels
     @test typeof((kernel_obj)()) <: KernelComposition
 end
 

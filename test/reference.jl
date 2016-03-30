@@ -102,15 +102,13 @@ all_kernelproperties = Dict( #|mercer |negdef |neg    |zero   |pos
     RationalClass =>          (true,   false,  false,  false,  true)
  )
 
-
-#=
 composition_kernels = (
     GaussianKernel,
     SquaredExponentialKernel,
     RadialBasisKernel,
     LaplacianKernel,
     PeriodicKernel,
-    RationalKernel,
+    RationalQuadraticKernel,
     MaternKernel,
     MatérnKernel,
     PolynomialKernel,
@@ -118,6 +116,8 @@ composition_kernels = (
     SigmoidKernel
 )
 
+
+#=
 all_test_args = Dict(
     SquaredDistanceKernel  => ([:t],[1],[0.5]),
     SineSquaredKernel      => ([:p, :t],[π,1],[2π,0.5]),
