@@ -18,6 +18,8 @@ function Bound{T<:Real}(value::T, boundtype::Symbol)
     end
 end
 
+eltype{T<:Real}(::Bound{T}) = T
+
 convert{T<:Real}(::Type{Bound{T}}, B::Bound) = Bound(convert(T, B.value), B.is_strict)
 
 immutable Interval{T<:Real}
@@ -26,10 +28,11 @@ immutable Interval{T<:Real}
     function Interval(lower::Nullable{Bound{T}}, upper::Nullable{Bound{T}})
         if !isnull(lower) && !isnull(upper)
             ubound = get(upper)
-            if !((lbound = get(lower)).is_strict) && !ubound.is_strict
-                lbound.value <= ubound.value || error("Invalid bounds")
-            else
+            lbound = get(lower)
+            if lbound.is_strict || ubound.is_strict
                 lbound.value <  ubound.value || error("Invalid bounds")
+            else
+                lbound.value <= ubound.value || error("Invalid bounds")
             end
         end
         new(lower, upper)
@@ -37,6 +40,8 @@ immutable Interval{T<:Real}
 end
 Interval{T<:Real}(lower::Nullable{Bound{T}}, upper::Nullable{Bound{T}}) = Interval{T}(lower, upper)
 Interval{T<:Real}(lower::Bound{T}, upper::Bound{T}) = Interval(Nullable(lower), Nullable(upper))
+
+eltype{T}(::Interval{T}) = T
 
 function UpperBound{T<:Real}(value::T, boundtype::Symbol)
     if boundtype == :strict
@@ -49,7 +54,6 @@ function UpperBound{T<:Real}(value::T, boundtype::Symbol)
 end
 UpperBound{T<:Real}(upper::Bound{T}) = Interval(Nullable{Bound{T}}(), Nullable(upper))
 
-
 function LowerBound{T<:Real}(value::T, boundtype::Symbol)
     if boundtype == :strict
         return Interval(Nullable(Bound(value, true)), Nullable{Bound{T}}())
@@ -61,9 +65,7 @@ function LowerBound{T<:Real}(value::T, boundtype::Symbol)
 end
 LowerBound{T<:Real}(lower::Bound{T}) = Interval(Nullable(lower), Nullable{Bound{T}}())
 
-   
-LowerBound{T<:Real}(x::T) = Interval(Nullable(B), Nullable{Bound{T}}())
-NullBound{T<:Real}(::Type{T})    = Interval(Nullable{Bound{T}}(), Nullable{Bound{T}}())
+NullBound{T<:Real}(::Type{T}) = Interval(Nullable{Bound{T}}(), Nullable{Bound{T}}())
 
 function convert{T<:Real}(::Type{Interval{T}}, I::Interval)
     if isnull(I.lower)
