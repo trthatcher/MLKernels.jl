@@ -43,6 +43,9 @@ for T in (FloatingPointTypes..., IntegerTypes...)
                 @test lnull ? isnull(I2.lower) : get(I2.lower) == convert(Bound{Float64}, Bl)
                 @test unull ? isnull(I2.upper) : get(I2.upper) == convert(Bound{Float64}, Bu)
             end
+
+            # Test that output does not create error
+            show(DevNull, I)
         end
 
         Bu = Bound(zero(T), ustrict)
@@ -66,6 +69,8 @@ for T in (FloatingPointTypes..., IntegerTypes...)
         @test isnull(I.upper)
         @test get(I.lower) == B
 
+        @test_throws ErrorException LowerBound(zero(T), :test)
+
         I = UpperBound(B)
         @test isnull(I.lower)
         @test get(I.upper) == B
@@ -73,5 +78,7 @@ for T in (FloatingPointTypes..., IntegerTypes...)
         I = UpperBound(zero(T), strict ? :strict : :nonstrict)
         @test isnull(I.lower)
         @test get(I.upper) == B
+
+        @test_throws ErrorException UpperBound(zero(T), :test)
     end
 end

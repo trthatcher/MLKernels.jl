@@ -80,22 +80,27 @@ function convert{T<:Real}(::Type{Interval{T}}, I::Interval)
 end
 
 
-function show{T}(io::IO, I::Interval{T})
+function description_string{T}(I::Interval{T})
+    interval =  string("Interval{", T, "}")
     if isnull(I.lower)
         if isnull(I.upper)
-            print(io, T <: Integer ? "ℤ" : "ℝ")
+            string(interval, "(-∞,∞)")
         else
-            print(io, "(-∞,", get(I.upper).value, get(I.upper).is_strict ? ")" : "]")
+            string(interval, "(-∞,", get(I.upper).value, get(I.upper).is_strict ? ")" : "]")
         end
     else
+        lower = string(get(I.lower).is_strict ? "(" : "[",  get(I.lower).value, ",")
         if isnull(I.upper)
-            print(io, get(I.lower).is_strict ? "(" : "[", get(I.lower).value, ",∞)")
+            string(interval, lower, "∞)")
         else
-            print(io, get(I.lower).is_strict ? "(" : "[", get(I.lower).value, ",",
-                      get(I.upper).value, get(I.upper).is_strict ? ")" : "]")
+            string(interval, lower, get(I.upper).value, get(I.upper).is_strict ? ")" : "]")
         end
     end
 end
+function show{T}(io::IO, I::Interval{T})
+    print(io, description_string(I))
+end
+
 
 function checkbounds{T<:Real}(I::Interval{T}, x::T)
     if isnull(I.lower)
