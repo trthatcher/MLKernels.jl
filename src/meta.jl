@@ -15,7 +15,7 @@ function fieldparameters(obj::DataType)
     for field in fields
         field_type = fieldtype(obj, field)
         isa(field_type, DataType) || error("Field $field must be ::Parameter")
-        if field_type.name.name != :Parameter 
+        if field_type.name.name != :HyperParameter 
             error("Fields must consist of Parameter types")
         end
         length(field_type.parameters) == 1 || error("Parameter type must have one type parameter")

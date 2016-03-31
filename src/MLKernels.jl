@@ -79,7 +79,7 @@ export
         SigmoidKernel
 
 include("meta.jl")
-include("type_Parameter.jl")
+include("type_HyperParameter.jl")
 include("type_Kernel.jl")
 include("function_pairwise.jl")
 include("function_kernel.jl")

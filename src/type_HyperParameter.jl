@@ -118,7 +118,7 @@ end
 
 
 #========================
-  Hyperparameter Object
+  HyperParameter Object
 ========================#
 
 immutable Variable{T<:Real}
@@ -138,58 +138,58 @@ convert{T<:Real}(::Type{Variable{T}}, value::Real) = Variable(convert(T, value),
 typealias Argument{T<:Real} Union{T,Variable{T}}
 
 
-type Parameter{T<:Real}
+type HyperParameter{T<:Real}
     value::T
     bounds::Interval{T}
     isfixed::Bool
-    function Parameter(value::T, bounds::Interval{T}, isfixed::Bool)
+    function HyperParameter(value::T, bounds::Interval{T}, isfixed::Bool)
         checkbounds(bounds, value) || error("Value $(value) must be in range " * string(bounds))
         new(value, bounds, isfixed)
     end
 end
-function Parameter{T<:Real}(x::T, bounds::Interval{T} = NullBound(T), isfixed::Bool=false)
-    Parameter{T}(x, bounds, isfixed)
+function HyperParameter{T<:Real}(x::T, bounds::Interval{T} = NullBound(T), isfixed::Bool=false)
+    HyperParameter{T}(x, bounds, isfixed)
 end
-function Parameter{T<:Real}(x::Variable{T}, bounds::Interval{T} = NullBound(T))
-    Parameter(x.value, bounds, x.isfixed)
-end
-
-function convert{T<:Real}(::Type{Parameter{T}}, θ::Parameter)
-    Parameter{T}(convert(T, θ.value), convert(Interval{T}, θ.bounds), θ.isfixed)
+function HyperParameter{T<:Real}(x::Variable{T}, bounds::Interval{T} = NullBound(T))
+    HyperParameter(x.value, bounds, x.isfixed)
 end
 
-function show{T}(io::IO, θ::Parameter{T})
-    print(io, "Parameter{" * string(T) * "}(", θ.value, ") ∈ ", θ.bounds)
+function convert{T<:Real}(::Type{HyperParameter{T}}, θ::HyperParameter)
+    HyperParameter{T}(convert(T, θ.value), convert(Interval{T}, θ.bounds), θ.isfixed)
 end
 
-isfixed(θ::Parameter) = θ.isfixed
+function show{T}(io::IO, θ::HyperParameter{T})
+    print(io, "HyperParameter{" * string(T) * "}(", θ.value, ") ∈ ", θ.bounds)
+end
 
-function Variable{T<:Real}(θ::Parameter{T})
+isfixed(θ::HyperParameter) = θ.isfixed
+
+function Variable{T<:Real}(θ::HyperParameter{T})
     Variable(θ.value, θ.isfixed)
 end
 
-@inline *(a::Real, v::Parameter) = *(a, v.value)
-@inline *(v::Parameter, a::Real) = *(v.value, a)
+@inline *(a::Real, v::HyperParameter) = *(a, v.value)
+@inline *(v::HyperParameter, a::Real) = *(v.value, a)
 
-@inline /(a::Real, v::Parameter) = /(a, v.value)
-@inline /(v::Parameter, a::Real) = /(v.value, a)
+@inline /(a::Real, v::HyperParameter) = /(a, v.value)
+@inline /(v::HyperParameter, a::Real) = /(v.value, a)
 
-@inline +(a::Real, v::Parameter) = +(a, v.value)
-@inline +(v::Parameter, a::Real) = +(v.value, a)
+@inline +(a::Real, v::HyperParameter) = +(a, v.value)
+@inline +(v::HyperParameter, a::Real) = +(v.value, a)
 
-@inline -(v::Parameter) = -(v.value)
-@inline -(a::Real, v::Parameter) = -(a, v.value)
-@inline -(v::Parameter, a::Real) = -(v.value, a)
+@inline -(v::HyperParameter) = -(v.value)
+@inline -(a::Real, v::HyperParameter) = -(a, v.value)
+@inline -(v::HyperParameter, a::Real) = -(v.value, a)
 
-@inline ^(a::Real, v::Parameter)          = ^(a, v.value)
-@inline ^(v::Parameter, a::Integer)       = ^(v.value, a)
-@inline ^(v::Parameter, a::AbstractFloat) = ^(v.value, a)
+@inline ^(a::Real, v::HyperParameter)          = ^(a, v.value)
+@inline ^(v::HyperParameter, a::Integer)       = ^(v.value, a)
+@inline ^(v::HyperParameter, a::AbstractFloat) = ^(v.value, a)
 
-@inline besselk(v::Parameter, x::Real) = besselk(v.value, x)
-@inline exp(v::Parameter)  = exp(v.value)
-@inline gamma(v::Parameter) = gamma(v.value)
-@inline tanh(v::Parameter) = tanh(v.value)
+@inline besselk(v::HyperParameter, x::Real) = besselk(v.value, x)
+@inline exp(v::HyperParameter)  = exp(v.value)
+@inline gamma(v::HyperParameter) = gamma(v.value)
+@inline tanh(v::HyperParameter) = tanh(v.value)
 
-@inline ==(a::Real, v::Parameter) = ==(a, v.value)
-@inline ==(v::Parameter, a::Real) = ==(v.value, a)
-@inline ==(v1::Parameter, v2::Parameter) = ==(v1.value, v2.value)
+@inline ==(a::Real, v::HyperParameter) = ==(a, v.value)
+@inline ==(v::HyperParameter, a::Real) = ==(v.value, a)
+@inline ==(v1::HyperParameter, v2::HyperParameter) = ==(v1.value, v2.value)

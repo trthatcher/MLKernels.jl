@@ -33,9 +33,9 @@ convert{T}(::Type{SquaredDistanceKernel{T}}, ::SquaredDistanceKernel) = SquaredD
 
 doc"SineSquaredKernel(p) = Σⱼsin²(p(xⱼ-yⱼ))"
 immutable SineSquaredKernel{T<:AbstractFloat} <: NonNegNegDefAdditiveKernel{T}
-    p::Parameter{T}
+    p::HyperParameter{T}
     SineSquaredKernel(p::Variable{T}) = new(
-        Parameter(p, LowerBound(zero(T), :strict))
+        HyperParameter(p, LowerBound(zero(T), :strict))
     )
 end
 @outer_constructor(SineSquaredKernel, (π,))
