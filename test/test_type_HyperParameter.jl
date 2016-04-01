@@ -22,12 +22,31 @@ info("Testing ", Interval)
 for T in (FloatingPointTypes..., IntegerTypes...)
     for lstrict in (true, false), ustrict in (true, false)
         Bl = Bound(zero(T), lstrict)
-        Bu = Bound(one(T),  ustrict)
+        Bu = Bound(convert(T,2),  ustrict)
 
         I = Interval(Bl, Bu)
 
+        @test eltype(I) == T
+
         @test get(I.lower) == Bl
         @test get(I.upper) == Bu
+
+        @test MOD.checkbounds(I, -one(T)) == false
+        @test MOD.checkbounds(I, convert(T,3)) == false
+
+        @test MOD.checkbounds(I, one(T))
+
+        if lstrict
+            @test MOD.checkbounds(I, zero(T)) == false
+        else
+            @test MOD.checkbounds(I, zero(T)) == true
+        end
+
+        if ustrict
+            @test MOD.checkbounds(I, convert(T,2)) == false
+        else
+            @test MOD.checkbounds(I, convert(T,2)) == true
+        end
 
         for lnull in (true, false), unull in (true, false)
             I = Interval(lnull ? Nullable{Bound{T}}() : Nullable(Bl),
@@ -59,23 +78,29 @@ for T in (FloatingPointTypes..., IntegerTypes...)
         end
     end
     for strict in (true, false)
-        B = Bound(zero(T), strict)
+        B = Bound(convert(T,2), strict)
 
         I = LowerBound(B)
         @test isnull(I.upper)
         @test get(I.lower) == B
+        @test MOD.checkbounds(I, one(T)) == false
+        @test MOD.checkbounds(I, convert(T,3)) == true
+        @test MOD.checkbounds(I, convert(T,2)) == (strict ? false : true)
 
-        I = LowerBound(zero(T), strict ? :strict : :nonstrict)
+        I = LowerBound(convert(T,2), strict ? :strict : :nonstrict)
         @test isnull(I.upper)
         @test get(I.lower) == B
 
-        @test_throws ErrorException LowerBound(zero(T), :test)
+        @test_throws ErrorException LowerBound(one(T), :test)
 
         I = UpperBound(B)
         @test isnull(I.lower)
         @test get(I.upper) == B
+        @test MOD.checkbounds(I, one(T)) == true
+        @test MOD.checkbounds(I, convert(T,3)) == false
+        @test MOD.checkbounds(I, convert(T,2)) == (strict ? false : true)
 
-        I = UpperBound(zero(T), strict ? :strict : :nonstrict)
+        I = UpperBound(convert(T,2), strict ? :strict : :nonstrict)
         @test isnull(I.lower)
         @test get(I.upper) == B
 

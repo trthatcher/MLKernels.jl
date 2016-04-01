@@ -107,14 +107,16 @@ function checkbounds{T<:Real}(I::Interval{T}, x::T)
         if isnull(I.upper)
             true
         else
-            get(I.upper).is_strict ? (x < get(I.upper).value) : (x <= get(I.upper).value)
+            ub = get(I.upper)
+            ub.is_strict ? (x < ub.value) : (x <= ub.value)
         end
     else
         lb = get(I.lower)
         if isnull(I.upper)
             lb.is_strict ? (lb.value < x) : (lb.value <= x)
         else
-            if (ub = get(I.upper)).is_strict
+            ub = get(I.upper)
+            if ub.is_strict
                 lb.is_strict ? (lb.value < x < ub.value) : (lb.value <= x < ub.value)
             else
                 lb.is_strict ? (lb.value < x <= ub.value) : (lb.value <= x <= ub.value)
