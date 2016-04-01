@@ -134,7 +134,8 @@ immutable Variable{T<:Real}
     value::T
     isfixed::Bool
 end
-Variable{T<:AbstractFloat}(value::T, isfixed::Bool=false) = Variable{T}(value, false)
+Variable{T<:Real}(value::T, isfixed::Bool=false) = Variable{T}(value, false)
+Variable{T<:Real}(value::Variable{T}) = value
 Fixed{T<:Real}(v::T) = Variable{T}(v, true)
 
 eltype{T<:Real}(::Variable{T}) = T
@@ -169,12 +170,6 @@ end
 
 function show{T}(io::IO, θ::HyperParameter{T})
     print(io, "HyperParameter{" * string(T) * "}(", θ.value, ") ∈ ", θ.bounds)
-end
-
-isfixed(θ::HyperParameter) = θ.isfixed
-
-function Variable{T<:Real}(θ::HyperParameter{T})
-    Variable(θ.value, θ.isfixed)
 end
 
 @inline *(a::Real, v::HyperParameter) = *(a, v.value)

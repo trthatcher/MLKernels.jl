@@ -84,7 +84,8 @@ function generate_outer_constructor(obj::DataType, defaults::Tuple{Vararg{Real}}
                                     :(convert($(default_parameters[i]), $(defaults[i]))))
                           for i in eachindex(fields)]
     type_params = [p.name for p in obj.parameters]
-    type_args   = [:(convert(Variable{$(parameters[i])}, $(fields[i]))) for i in eachindex(fields)]
+    type_args   = [:(Variable($(fields[i]))) for i in eachindex(fields)]
+    #type_args   = [:(convert(Variable{$(parameters[i])}, $(fields[i]))) for i in eachindex(fields)]
 
     obj_sym = obj.name.name                           
     Expr(:(=), Expr(:call, Expr(:curly, obj_sym, constructor_params...), constructor_args...),

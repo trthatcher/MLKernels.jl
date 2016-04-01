@@ -107,3 +107,25 @@ for T in (FloatingPointTypes..., IntegerTypes...)
         @test_throws ErrorException UpperBound(zero(T), :test)
     end
 end
+
+info("Testing ", Variable)
+for T in (FloatingPointTypes..., IntegerTypes...)
+
+    v = Variable(one(T))
+    @test v.value   == one(T)
+    @test v.isfixed == false
+
+    @test Variable(one(T), true).value   == one(T)
+    @test Variable(one(T), true).isfixed == false
+
+    @test Fixed(one(T)).value   == one(T)
+    @test Fixed(one(T)).isfixed == true
+
+    if T in FloatingPointTypes
+        @test eltype(convert(Variable{Float32}, v)) == Float32
+        @test eltype(convert(Variable{Float64}, v)) == Float64
+    else
+        @test eltype(convert(Variable{Int32}, v)) == Int32
+        @test eltype(convert(Variable{Int64}, v)) == Int64
+    end
+end
