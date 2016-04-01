@@ -105,6 +105,11 @@ for T in (FloatingPointTypes..., IntegerTypes...)
         @test get(I.upper) == B
 
         @test_throws ErrorException UpperBound(zero(T), :test)
+
+        I = NullBound(T)
+        @test MOD.checkbounds(I, -one(T)) == true
+        @test MOD.checkbounds(I, zero(T)) == true
+        @test MOD.checkbounds(I,  one(T)) == true
     end
 end
 
@@ -128,4 +133,19 @@ for T in (FloatingPointTypes..., IntegerTypes...)
         @test eltype(convert(Variable{Int32}, v)) == Int32
         @test eltype(convert(Variable{Int64}, v)) == Int64
     end
+end
+
+info("Testing ", HyperParameter)
+for T in (FloatingPointTypes..., IntegerTypes...)
+    I = UpperBound(one(T), :strict)
+
+    for fixedvar in (true, false)
+        P = HyperParameter(zero(T), I, fixedvar)
+        @test P.value == zero(T)
+        @test P.isfixed == fixedvar
+    end
+
+    @test_throws ErrorException HyperParameter(one(T), I, true)
+
+    show(DevNull, HyperParameter(zero(T), I, true))
 end

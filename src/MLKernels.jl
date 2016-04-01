@@ -27,7 +27,7 @@ export
     LowerBound,
     UpperBound,
     Interval,
-    Parameter,
+    HyperParameter,
     Value,
     Variable,
     Fixed,
