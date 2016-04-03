@@ -1,14 +1,28 @@
 # Unit Tests
 using Base.Test
-importall MLKernels
+using MLKernels
 
 FloatingPointTypes = (Float32, Float64)
 IntegerTypes = (Int32, UInt32, Int64, UInt64)
 MOD = MLKernels
 
+
+module MLKTest
+
+using MLKernels
+
+immutable TestKernel{T<:AbstractFloat} <: StandardKernel{T}
+    a::MLKernels.HyperParameter{T}
+    TestKernel(a::Variable{T}) = new(HyperParameter(a, unbounded(T)))
+end
+TestKernel{T<:AbstractFloat}(a::Argument{T}=1.0) = TestKernel{T}(Variable(a))
+
+end
+
+
 include("reference.jl")
 
-include("test_type_HyperParameter.jl")
+include("test_module_HyperParameter.jl")
 include("test_type_PairwiseKernel.jl")
 include("test_type_CompositionClass.jl")
 include("test_type_KernelComposition.jl")

@@ -23,14 +23,15 @@ export
 
     # Hyper Parameters
     Bound,
-    NullBound,
-    LowerBound,
-    UpperBound,
     Interval,
-    HyperParameter,
-    Value,
+    leftbounded,
+    rightbounded,
+    unbounded,
+    checkbounds,
     Variable,
-    Fixed,
+    fixed,
+    Argument,
+    HyperParameter,
 
     # Kernel Type
     Kernel,
@@ -78,8 +79,11 @@ export
         LinearKernel,
         SigmoidKernel
 
+include("module_HyperParameter.jl")
+using MLKernels.HyperParameters: Bound, Interval, leftbounded, rightbounded, unbounded, checkbounds,
+    Variable, fixed, Argument, HyperParameter
+
 include("meta.jl")
-include("type_HyperParameter.jl")
 include("type_Kernel.jl")
 include("function_pairwise.jl")
 include("function_kernel.jl")

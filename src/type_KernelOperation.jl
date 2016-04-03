@@ -8,13 +8,13 @@ immutable KernelAffinity{T<:AbstractFloat} <: KernelOperation{T}
     c::HyperParameter{T}
     kappa::Kernel{T}
     KernelAffinity(a::Variable{T}, c::Variable{T}, κ::Kernel{T}) = new(
-        HyperParameter(a, LowerBound(zero(T), :strict)),
-        HyperParameter(c, LowerBound(zero(T), :nonstrict)),
+        HyperParameter(a, leftbounded(zero(T), :open)),
+        HyperParameter(c, leftbounded(zero(T), :closed)),
         κ
     )
 end
 function KernelAffinity{T<:AbstractFloat}(a::Argument{T}, c::Argument{T}, κ::Kernel{T})
-    KernelAffinity{T}(convert(Variable{T}, a), convert(Variable{T}, c), κ)
+    KernelAffinity{T}(Variable(a), Variable(c), κ)
 end
 
 ismercer(ψ::KernelAffinity) = ismercer(ψ.kappa)
@@ -84,7 +84,7 @@ immutable KernelProduct{T<:AbstractFloat} <: KernelOperation{T}
         if all(ismercer, κ)
             error("Kernels must be Mercer for closure under multiplication.")
         end
-        new(HyperParameter(a, LowerBound(zero(T), :strict)), κ)
+        new(HyperParameter(a, leftbounded(zero(T), :open)), κ)
     end
 end
 #function KernelProduct{T<:AbstractFloat}(a::Argument{T}, κ::Vector{Kernel{T}})
@@ -104,7 +104,7 @@ immutable KernelSum{T<:AbstractFloat} <: KernelOperation{T}
         if !(all(ismercer, κ) || all(isnegdef, κ))
             error("All kernels must be Mercer or negative definite for closure under addition")
         end
-        new(HyperParameter(c, LowerBound(zero(T), :nonstrict)), κ)
+        new(HyperParameter(c, leftbounded(zero(T), :closed)), κ)
     end
 end
 #function KernelSum{T<:AbstractFloat}(c::Argument{T}, κ::Vector{Kernel{T}})

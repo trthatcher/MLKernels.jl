@@ -43,8 +43,8 @@ immutable GammaExponentialClass{T<:AbstractFloat} <: PositiveMercerClass{T}
     alpha::HyperParameter{T}
     gamma::HyperParameter{T}
     GammaExponentialClass(α::Variable{T}, γ::Variable{T}) = new(
-        HyperParameter(α, LowerBound(zero(T), :strict)),
-        HyperParameter(γ, Interval(Bound(zero(T), :strict), Bound(one(T), :nonstrict)))
+        HyperParameter(α, leftbounded(zero(T), :open)),
+        HyperParameter(γ, Interval(Bound(zero(T), :open), Bound(one(T), :closed)))
     )
 end
 @outer_constructor(GammaExponentialClass, (1,0.5))
@@ -56,7 +56,7 @@ doc"ExponentialClass(κ;α) = exp(-α⋅κ²)"
 immutable ExponentialClass{T<:AbstractFloat} <: PositiveMercerClass{T}
     alpha::HyperParameter{T}
     ExponentialClass(α::Variable{T}) = new(
-        HyperParameter(α, LowerBound(zero(T), :strict))
+        HyperParameter(α, leftbounded(zero(T), :open))
     )
 end
 @outer_constructor(ExponentialClass, (1,))
@@ -70,9 +70,9 @@ immutable GammaRationalClass{T<:AbstractFloat} <: PositiveMercerClass{T}
     beta::HyperParameter{T}
     gamma::HyperParameter{T}
     GammaRationalClass(α::Variable{T}, β::Variable{T}, γ::Variable{T}) = new(
-        HyperParameter(α, LowerBound(zero(T), :strict)),
-        HyperParameter(β, LowerBound(zero(T), :strict)),
-        HyperParameter(γ, Interval(Bound(zero(T), :strict), Bound(one(T), :nonstrict)))
+        HyperParameter(α, leftbounded(zero(T), :open)),
+        HyperParameter(β, leftbounded(zero(T), :open)),
+        HyperParameter(γ, Interval(Bound(zero(T), :open), Bound(one(T), :closed)))
     )
 end
 @outer_constructor(GammaRationalClass, (1,1,0.5))
@@ -85,8 +85,8 @@ immutable RationalClass{T<:AbstractFloat} <: PositiveMercerClass{T}
     alpha::HyperParameter{T}
     beta::HyperParameter{T}
     RationalClass(α::Variable{T}, β::Variable{T}) = new(
-        HyperParameter(α, LowerBound(zero(T), :strict)),
-        HyperParameter(β, LowerBound(zero(T), :strict))
+        HyperParameter(α, leftbounded(zero(T), :open)),
+        HyperParameter(β, leftbounded(zero(T), :open))
     )
 end
 @outer_constructor(RationalClass, (1,1))
@@ -99,8 +99,8 @@ immutable MaternClass{T<:AbstractFloat} <: PositiveMercerClass{T}
     nu::HyperParameter{T}
     rho::HyperParameter{T}
     MaternClass(ν::Variable{T}, ρ::Variable{T}) = new(
-        HyperParameter(ν, LowerBound(zero(T), :strict)),
-        HyperParameter(ρ, LowerBound(zero(T), :strict))
+        HyperParameter(ν, leftbounded(zero(T), :open)),
+        HyperParameter(ρ, leftbounded(zero(T), :open))
     )
 end
 @outer_constructor(MaternClass, (1,1))
@@ -117,8 +117,8 @@ immutable ExponentiatedClass{T<:AbstractFloat} <: PositiveMercerClass{T}
     a::HyperParameter{T}
     c::HyperParameter{T}
     ExponentiatedClass(a::Variable{T}, c::Variable{T}) = new(
-        HyperParameter(a, LowerBound(zero(T), :strict)),
-        HyperParameter(c, LowerBound(zero(T), :nonstrict))
+        HyperParameter(a, leftbounded(zero(T), :open)),
+        HyperParameter(c, leftbounded(zero(T), :closed))
     )
 end
 @outer_constructor(ExponentiatedClass, (1,0))
@@ -134,9 +134,9 @@ immutable PolynomialClass{T<:AbstractFloat,U<:Integer} <: CompositionClass{T}
     c::HyperParameter{T}
     d::HyperParameter{U}
     PolynomialClass(a::Variable{T}, c::Variable{T}, d::Variable{U}) = new(
-        HyperParameter(a, LowerBound(zero(T), :strict)),
-        HyperParameter(c, LowerBound(zero(T), :nonstrict)),
-        HyperParameter(d, LowerBound(one(U),  :nonstrict))
+        HyperParameter(a, leftbounded(zero(T), :open)),
+        HyperParameter(c, leftbounded(zero(T), :closed)),
+        HyperParameter(d, leftbounded(one(U),  :closed))
     )
 end
 @outer_constructor(PolynomialClass, (1,0,3))
@@ -157,9 +157,9 @@ immutable PowerClass{T<:AbstractFloat} <: NonNegNegDefClass{T}
     c::HyperParameter{T}
     gamma::HyperParameter{T}
     PowerClass(a::Variable{T}, c::Variable{T}, γ::Variable{T}) = new(
-        HyperParameter(a, LowerBound(zero(T), :strict)),
-        HyperParameter(c, LowerBound(zero(T), :nonstrict)),
-        HyperParameter(γ, Interval(Bound(zero(T), :strict), Bound(one(T), :nonstrict)))
+        HyperParameter(a, leftbounded(zero(T), :open)),
+        HyperParameter(c, leftbounded(zero(T), :closed)),
+        HyperParameter(γ, Interval(Bound(zero(T), :open), Bound(one(T), :closed)))
     )
 end
 @outer_constructor(PowerClass, (1,0,0.5))
@@ -172,8 +172,8 @@ immutable GammaLogClass{T<:AbstractFloat} <: NonNegNegDefClass{T}
     alpha::HyperParameter{T}
     gamma::HyperParameter{T}
     GammaLogClass(α::Variable{T}, γ::Variable{T}) = new(
-        HyperParameter(α, LowerBound(zero(T), :strict)),
-        HyperParameter(γ, Interval(Bound(zero(T), :strict), Bound(one(T), :nonstrict)))
+        HyperParameter(α, leftbounded(zero(T), :open)),
+        HyperParameter(γ, Interval(Bound(zero(T), :open), Bound(one(T), :closed)))
     )
 end
 @outer_constructor(GammaLogClass, (1,0.5))
@@ -185,7 +185,7 @@ doc"LogClass(z;α) = log(1 + α⋅z)"
 immutable LogClass{T<:AbstractFloat} <: NonNegNegDefClass{T}
     alpha::HyperParameter{T}
     LogClass(α::Variable{T}) = new(
-        HyperParameter(α, LowerBound(zero(T), :strict))
+        HyperParameter(α, leftbounded(zero(T), :open))
     )
 end
 @outer_constructor(LogClass, (1,))
@@ -200,8 +200,8 @@ immutable SigmoidClass{T<:AbstractFloat} <: CompositionClass{T}
     a::HyperParameter{T}
     c::HyperParameter{T}
     SigmoidClass(a::Variable{T}, c::Variable{T}) = new(
-        HyperParameter(a, LowerBound(zero(T), :strict)),
-        HyperParameter(c, LowerBound(zero(T), :nonstrict))   
+        HyperParameter(a, leftbounded(zero(T), :open)),
+        HyperParameter(c, leftbounded(zero(T), :closed))   
     )
 end
 @outer_constructor(SigmoidClass, (1,0))

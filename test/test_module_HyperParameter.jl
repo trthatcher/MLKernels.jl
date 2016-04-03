@@ -1,10 +1,10 @@
 info("Testing ", Bound)
 for T in (FloatingPointTypes..., IntegerTypes...)
-    for strict in (true, false)
-        B = Bound(one(T), strict)
+    for isopen in (true, false)
+        B = Bound(one(T), isopen)
         @test B.value == one(T)
-        @test B.is_strict == strict
-        @test B == Bound(one(T), strict ? :strict : :nonstrict)
+        @test B.isopen == isopen
+        @test B == Bound(one(T), isopen ? :open : :closed)
 
         if T in FloatingPointTypes
             @test eltype(convert(Bound{Float32}, B)) == Float32
@@ -20,29 +20,29 @@ end
 
 info("Testing ", Interval)
 for T in (FloatingPointTypes..., IntegerTypes...)
-    for lstrict in (true, false), ustrict in (true, false)
-        Bl = Bound(zero(T), lstrict)
-        Bu = Bound(convert(T,2),  ustrict)
+    for lisopen in (true, false), uisopen in (true, false)
+        Bl = Bound(zero(T), lisopen)
+        Br = Bound(convert(T,2),  uisopen)
 
-        I = Interval(Bl, Bu)
+        I = Interval(Bl, Br)
 
         @test eltype(I) == T
 
-        @test get(I.lower) == Bl
-        @test get(I.upper) == Bu
+        @test get(I.left) == Bl
+        @test get(I.right) == Br
 
         @test MOD.checkbounds(I, -one(T)) == false
         @test MOD.checkbounds(I, convert(T,3)) == false
 
         @test MOD.checkbounds(I, one(T))
 
-        if lstrict
+        if lisopen
             @test MOD.checkbounds(I, zero(T)) == false
         else
             @test MOD.checkbounds(I, zero(T)) == true
         end
 
-        if ustrict
+        if uisopen
             @test MOD.checkbounds(I, convert(T,2)) == false
         else
             @test MOD.checkbounds(I, convert(T,2)) == true
@@ -50,63 +50,63 @@ for T in (FloatingPointTypes..., IntegerTypes...)
 
         for lnull in (true, false), unull in (true, false)
             I = Interval(lnull ? Nullable{Bound{T}}() : Nullable(Bl),
-                         unull ? Nullable{Bound{T}}() : Nullable(Bu))
-            @test lnull ? isnull(I.lower) : get(I.lower) == Bl
-            @test unull ? isnull(I.upper) : get(I.upper) == Bu
+                         unull ? Nullable{Bound{T}}() : Nullable(Br))
+            @test lnull ? isnull(I.left) : get(I.left) == Bl
+            @test unull ? isnull(I.right) : get(I.right) == Br
 
             if T in FloatingPointTypes
                 I2 = convert(Interval{Float32}, I)
-                @test lnull ? isnull(I2.lower) : get(I2.lower) == convert(Bound{Float32}, Bl)
-                @test unull ? isnull(I2.upper) : get(I2.upper) == convert(Bound{Float32}, Bu)
+                @test lnull ? isnull(I2.left) : get(I2.left) == convert(Bound{Float32}, Bl)
+                @test unull ? isnull(I2.right) : get(I2.right) == convert(Bound{Float32}, Br)
                 I2 = convert(Interval{Float64}, I)
-                @test lnull ? isnull(I2.lower) : get(I2.lower) == convert(Bound{Float64}, Bl)
-                @test unull ? isnull(I2.upper) : get(I2.upper) == convert(Bound{Float64}, Bu)
+                @test lnull ? isnull(I2.left) : get(I2.left) == convert(Bound{Float64}, Bl)
+                @test unull ? isnull(I2.right) : get(I2.right) == convert(Bound{Float64}, Br)
             end
 
             # Test that output does not create error
             show(DevNull, I)
         end
 
-        Bu = Bound(zero(T), ustrict)
+        Br = Bound(zero(T), uisopen)
 
-        if lstrict || ustrict
-            @test_throws ErrorException Interval(Bl, Bu)
+        if lisopen || uisopen
+            @test_throws ErrorException Interval(Bl, Br)
         else
-            I = Interval(Bl, Bu)
-            @test get(I.lower) == Bl
-            @test get(I.upper) == Bu
+            I = Interval(Bl, Br)
+            @test get(I.left) == Bl
+            @test get(I.right) == Br
         end
     end
-    for strict in (true, false)
-        B = Bound(convert(T,2), strict)
+    for isopen in (true, false)
+        B = Bound(convert(T,2), isopen)
 
-        I = LowerBound(B)
-        @test isnull(I.upper)
-        @test get(I.lower) == B
+        I = leftbounded(B)
+        @test isnull(I.right)
+        @test get(I.left) == B
         @test MOD.checkbounds(I, one(T)) == false
         @test MOD.checkbounds(I, convert(T,3)) == true
-        @test MOD.checkbounds(I, convert(T,2)) == (strict ? false : true)
+        @test MOD.checkbounds(I, convert(T,2)) == (isopen ? false : true)
 
-        I = LowerBound(convert(T,2), strict ? :strict : :nonstrict)
-        @test isnull(I.upper)
-        @test get(I.lower) == B
+        I = leftbounded(convert(T,2), isopen ? :open : :closed)
+        @test isnull(I.right)
+        @test get(I.left) == B
 
-        @test_throws ErrorException LowerBound(one(T), :test)
+        @test_throws ErrorException leftbounded(one(T), :test)
 
-        I = UpperBound(B)
-        @test isnull(I.lower)
-        @test get(I.upper) == B
+        I = rightbounded(B)
+        @test isnull(I.left)
+        @test get(I.right) == B
         @test MOD.checkbounds(I, one(T)) == true
         @test MOD.checkbounds(I, convert(T,3)) == false
-        @test MOD.checkbounds(I, convert(T,2)) == (strict ? false : true)
+        @test MOD.checkbounds(I, convert(T,2)) == (isopen ? false : true)
 
-        I = UpperBound(convert(T,2), strict ? :strict : :nonstrict)
-        @test isnull(I.lower)
-        @test get(I.upper) == B
+        I = rightbounded(convert(T,2), isopen ? :open : :closed)
+        @test isnull(I.left)
+        @test get(I.right) == B
 
-        @test_throws ErrorException UpperBound(zero(T), :test)
+        @test_throws ErrorException rightbounded(zero(T), :test)
 
-        I = NullBound(T)
+        I = unbounded(T)
         @test MOD.checkbounds(I, -one(T)) == true
         @test MOD.checkbounds(I, zero(T)) == true
         @test MOD.checkbounds(I,  one(T)) == true
@@ -123,8 +123,8 @@ for T in (FloatingPointTypes..., IntegerTypes...)
     @test Variable(one(T), true).value   == one(T)
     @test Variable(one(T), true).isfixed == false
 
-    @test Fixed(one(T)).value   == one(T)
-    @test Fixed(one(T)).isfixed == true
+    @test fixed(one(T)).value   == one(T)
+    @test fixed(one(T)).isfixed == true
 
     if T in FloatingPointTypes
         @test eltype(convert(Variable{Float32}, v)) == Float32
@@ -137,7 +137,7 @@ end
 
 info("Testing ", HyperParameter)
 for T in (FloatingPointTypes..., IntegerTypes...)
-    I = UpperBound(one(T), :strict)
+    I = rightbounded(one(T), :open)
 
     for fixedvar in (true, false)
         P = HyperParameter(zero(T), I, fixedvar)
@@ -148,4 +148,10 @@ for T in (FloatingPointTypes..., IntegerTypes...)
     @test_throws ErrorException HyperParameter(one(T), I, true)
 
     show(DevNull, HyperParameter(zero(T), I, true))
+
+    P = HyperParameter(convert(T,2), unbounded(T), false)
+
+    @test 3*P == 3 * 2
+    @test P*3 == 3 * 2
+
 end

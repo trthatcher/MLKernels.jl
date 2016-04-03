@@ -35,7 +35,7 @@ doc"SineSquaredKernel(p) = Σⱼsin²(p(xⱼ-yⱼ))"
 immutable SineSquaredKernel{T<:AbstractFloat} <: NonNegNegDefAdditiveKernel{T}
     p::HyperParameter{T}
     SineSquaredKernel(p::Variable{T}) = new(
-        HyperParameter(p, LowerBound(zero(T), :strict))
+        HyperParameter(p, leftbounded(zero(T), :open))
     )
 end
 @outer_constructor(SineSquaredKernel, (π,))

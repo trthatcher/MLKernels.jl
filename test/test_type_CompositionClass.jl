@@ -40,6 +40,7 @@ for class_obj in composition_classes
 
     # Test iscomposable() rules
     valid_kernel_objs = composition_pairs[class_obj]
+    @test MOD.iscomposable(phi, MLKTest.TestKernel()) == false
     for kernel_obj in additive_kernels
         isvalid = get(valid_kernel_objs, kernel_obj, false)
         k = (kernel_obj)()

@@ -1,17 +1,23 @@
-#=================
-  Bounds Objects
-=================#
+module HyperParameters
+
+import Base: convert, eltype, show, ==, *, /, +, -, ^, besselk, exp, gamma, tanh
+
+export Bound, Interval, leftbounded, rightbounded, unbounded, checkbounds, Variable, fixed, 
+    Argument, HyperParameter
+
+
+#== Bound Type ==#
 
 immutable Bound{T<:Real}
     value::T
-    is_strict::Bool
+    isopen::Bool
 end
-Bound{T<:Real}(value::T, is_strict::Bool) = Bound{T}(value, is_strict)
+Bound{T<:Real}(value::T, isopen::Bool) = Bound{T}(value, isopen)
 
 function Bound{T<:Real}(value::T, boundtype::Symbol)
-    if boundtype == :strict
+    if boundtype == :open
         return Bound(value, true)
-    elseif boundtype == :nonstrict
+    elseif boundtype == :closed
         return Bound(value, false)
     else
         error("Bound type $boundtype not recognized")
@@ -19,62 +25,65 @@ function Bound{T<:Real}(value::T, boundtype::Symbol)
 end
 
 eltype{T<:Real}(::Bound{T}) = T
+convert{T<:Real}(::Type{Bound{T}}, B::Bound) = Bound(convert(T, B.value), B.isopen)
 
-convert{T<:Real}(::Type{Bound{T}}, B::Bound) = Bound(convert(T, B.value), B.is_strict)
+
+#== Interval Type ==#
 
 immutable Interval{T<:Real}
-    lower::Nullable{Bound{T}}
-    upper::Nullable{Bound{T}}
-    function Interval(lower::Nullable{Bound{T}}, upper::Nullable{Bound{T}})
-        if !isnull(lower) && !isnull(upper)
-            ubound = get(upper)
-            lbound = get(lower)
-            if lbound.is_strict || ubound.is_strict
-                lbound.value <  ubound.value || error("Invalid bounds")
+    left::Nullable{Bound{T}}
+    right::Nullable{Bound{T}}
+    function Interval(left::Nullable{Bound{T}}, right::Nullable{Bound{T}})
+        if !isnull(left) && !isnull(right)
+            rbound = get(right)
+            lbound = get(left)
+            if lbound.isopen || rbound.isopen
+                lbound.value <  rbound.value || error("Invalid bounds")
             else
-                lbound.value <= ubound.value || error("Invalid bounds")
+                lbound.value <= rbound.value || error("Invalid bounds")
             end
         end
-        new(lower, upper)
+        new(left, right)
     end
 end
-Interval{T<:Real}(lower::Nullable{Bound{T}}, upper::Nullable{Bound{T}}) = Interval{T}(lower, upper)
-Interval{T<:Real}(lower::Bound{T}, upper::Bound{T}) = Interval(Nullable(lower), Nullable(upper))
+Interval{T<:Real}(left::Nullable{Bound{T}}, right::Nullable{Bound{T}}) = Interval{T}(left, right)
+Interval{T<:Real}(left::Bound{T}, right::Bound{T}) = Interval(Nullable(left), Nullable(right))
 
 eltype{T}(::Interval{T}) = T
 
-function UpperBound{T<:Real}(value::T, boundtype::Symbol)
-    if boundtype == :strict
-        return Interval(Nullable{Bound{T}}(), Nullable(Bound(value, true)))
-    elseif boundtype == :nonstrict
-        return Interval(Nullable{Bound{T}}(), Nullable(Bound(value, false)))
+function leftbounded{T<:Real}(value::T, boundtype::Symbol)
+    if boundtype == :open
+        Interval(Nullable(Bound(value, true)),  Nullable{Bound{T}}())
+    elseif boundtype == :closed
+        Interval(Nullable(Bound(value, false)), Nullable{Bound{T}}())
     else
         error("Bound type $boundtype not recognized")
     end
 end
-UpperBound{T<:Real}(upper::Bound{T}) = Interval(Nullable{Bound{T}}(), Nullable(upper))
+leftbounded{T<:Real}(left::Bound{T}) = Interval(Nullable(left), Nullable{Bound{T}}())
 
-function LowerBound{T<:Real}(value::T, boundtype::Symbol)
-    if boundtype == :strict
-        return Interval(Nullable(Bound(value, true)), Nullable{Bound{T}}())
-    elseif boundtype == :nonstrict
-        return Interval(Nullable(Bound(value, false)), Nullable{Bound{T}}())
+function rightbounded{T<:Real}(value::T, boundtype::Symbol)
+    if boundtype == :open
+        Interval(Nullable{Bound{T}}(), Nullable(Bound(value, true)))
+    elseif boundtype == :closed
+        Interval(Nullable{Bound{T}}(), Nullable(Bound(value, false)))
     else
         error("Bound type $boundtype not recognized")
     end
 end
-LowerBound{T<:Real}(lower::Bound{T}) = Interval(Nullable(lower), Nullable{Bound{T}}())
+rightbounded{T<:Real}(right::Bound{T}) = Interval(Nullable{Bound{T}}(), Nullable(right))
 
-NullBound{T<:Real}(::Type{T}) = Interval(Nullable{Bound{T}}(), Nullable{Bound{T}}())
+
+unbounded{T<:Real}(::Type{T}) = Interval(Nullable{Bound{T}}(), Nullable{Bound{T}}())
 
 function convert{T<:Real}(::Type{Interval{T}}, I::Interval)
-    if isnull(I.lower)
-        isnull(I.upper) ? NullBound(T) : UpperBound(convert(Bound{T}, get(I.upper)))
+    if isnull(I.left)
+        isnull(I.right) ? unbounded(T) : rightbounded(convert(Bound{T}, get(I.right)))
     else
-        if isnull(I.upper)
-            LowerBound(convert(Bound{T}, get(I.lower)))
+        if isnull(I.right)
+            leftbounded(convert(Bound{T}, get(I.left)))
         else
-            Interval(convert(Bound{T}, get(I.lower)), convert(Bound{T}, get(I.upper)))
+            Interval(convert(Bound{T}, get(I.left)), convert(Bound{T}, get(I.right)))
         end
     end
 end
@@ -82,18 +91,18 @@ end
 
 function description_string{T}(I::Interval{T})
     interval =  string("Interval{", T, "}")
-    if isnull(I.lower)
-        if isnull(I.upper)
+    if isnull(I.left)
+        if isnull(I.right)
             string(interval, "(-∞,∞)")
         else
-            string(interval, "(-∞,", get(I.upper).value, get(I.upper).is_strict ? ")" : "]")
+            string(interval, "(-∞,", get(I.right).value, get(I.right).isopen ? ")" : "]")
         end
     else
-        lower = string(get(I.lower).is_strict ? "(" : "[",  get(I.lower).value, ",")
-        if isnull(I.upper)
-            string(interval, lower, "∞)")
+        left = string(get(I.left).isopen ? "(" : "[",  get(I.left).value, ",")
+        if isnull(I.right)
+            string(interval, left, "∞)")
         else
-            string(interval, lower, get(I.upper).value, get(I.upper).is_strict ? ")" : "]")
+            string(interval, left, get(I.right).value, get(I.right).isopen ? ")" : "]")
         end
     end
 end
@@ -103,32 +112,30 @@ end
 
 
 function checkbounds{T<:Real}(I::Interval{T}, x::T)
-    if isnull(I.lower)
-        if isnull(I.upper)
+    if isnull(I.left)
+        if isnull(I.right)
             true
         else
-            ub = get(I.upper)
-            ub.is_strict ? (x < ub.value) : (x <= ub.value)
+            ub = get(I.right)
+            ub.isopen ? (x < ub.value) : (x <= ub.value)
         end
     else
-        lb = get(I.lower)
-        if isnull(I.upper)
-            lb.is_strict ? (lb.value < x) : (lb.value <= x)
+        lb = get(I.left)
+        if isnull(I.right)
+            lb.isopen ? (lb.value < x) : (lb.value <= x)
         else
-            ub = get(I.upper)
-            if ub.is_strict
-                lb.is_strict ? (lb.value < x < ub.value) : (lb.value <= x < ub.value)
+            ub = get(I.right)
+            if ub.isopen
+                lb.isopen ? (lb.value < x < ub.value) : (lb.value <= x < ub.value)
             else
-                lb.is_strict ? (lb.value < x <= ub.value) : (lb.value <= x <= ub.value)
+                lb.isopen ? (lb.value < x <= ub.value) : (lb.value <= x <= ub.value)
             end
         end
     end
 end
 
 
-#========================
-  HyperParameter Object
-========================#
+#== Variable Type ==#
 
 immutable Variable{T<:Real}
     value::T
@@ -136,17 +143,16 @@ immutable Variable{T<:Real}
 end
 Variable{T<:Real}(value::T, isfixed::Bool=false) = Variable{T}(value, false)
 Variable{T<:Real}(value::Variable{T}) = value
-Fixed{T<:Real}(v::T) = Variable{T}(v, true)
+fixed{T<:Real}(v::T) = Variable{T}(v, true)
 
 eltype{T<:Real}(::Variable{T}) = T
 
-function convert{T<:Real}(::Type{Variable{T}}, var::Variable)
-    Variable(convert(T, var.value), var.isfixed)
-end
-convert{T<:Real}(::Type{Variable{T}}, value::Real) = Variable(convert(T, value), false)
+convert{T<:Real}(::Type{Variable{T}}, var::Variable) = Variable(convert(T, var.value), var.isfixed)
 
 typealias Argument{T<:Real} Union{T,Variable{T}}
 
+
+#== HyperParameter Type ==#
 
 type HyperParameter{T<:Real}
     value::T
@@ -197,3 +203,5 @@ end
 @inline ==(a::Real, v::HyperParameter) = ==(a, v.value)
 @inline ==(v::HyperParameter, a::Real) = ==(v.value, a)
 @inline ==(v1::HyperParameter, v2::HyperParameter) = ==(v1.value, v2.value)
+
+end # End HyperParameter
