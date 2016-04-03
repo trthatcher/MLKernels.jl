@@ -151,7 +151,26 @@ for T in (FloatingPointTypes..., IntegerTypes...)
 
     P = HyperParameter(convert(T,2), unbounded(T), false)
 
-    @test 3*P == 3 * 2
-    @test P*3 == 3 * 2
+    @test_approx_eq 3*P 3*2
+    @test_approx_eq P*3 3*2
 
+    @test_approx_eq 3/P 3/2
+    @test_approx_eq P/3 2/3
+
+    if !(T <: Unsigned)
+        @test_approx_eq -P  -2
+        @test_approx_eq 3-P 3-2
+        @test_approx_eq P-3 2-3
+    end
+
+    @test_approx_eq 3^P 3^2
+    if !(T <: Integer)
+        @test_approx_eq P^convert(T,0.5) 2^convert(T,0.5)
+    end
+    @test_approx_eq P^3 2^3
+
+    @test_approx_eq besselk(P, 1) besselk(2,1)
+    @test_approx_eq exp(P) exp(2)
+    @test_approx_eq gamma(P) gamma(2)
+    @test_approx_eq tanh(P) tanh(2)
 end
