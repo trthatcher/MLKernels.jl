@@ -24,6 +24,21 @@ for kernelobj in additive_kernels
         P = [MOD.pairwise(k,x,y) for x in Set_x, y in Set_y]
         @test_approx_eq MOD.pairwise(Val{:row}, k, X, Y)   P
         @test_approx_eq MOD.pairwise(Val{:col}, k, X', Y') P
+
+        @test_throws DimensionMismatch MOD.pairwise!(Val{:row}, Array(T,1,4), k, X)
+        @test_throws DimensionMismatch MOD.pairwise!(Val{:row}, Array(T,4,1), k, X)
+        @test_throws DimensionMismatch MOD.pairwise!(Val{:col}, Array(T,1,4), k, X')
+        @test_throws DimensionMismatch MOD.pairwise!(Val{:col}, Array(T,4,1), k, X')
+
+        @test_throws DimensionMismatch MOD.pairwise!(Val{:row}, Array(T,2,2), k, X, Y)
+        @test_throws DimensionMismatch MOD.pairwise!(Val{:row}, Array(T,4,2), k, X, Y)
+        @test_throws DimensionMismatch MOD.pairwise!(Val{:col}, Array(T,2,2), k, X', Y')
+        @test_throws DimensionMismatch MOD.pairwise!(Val{:col}, Array(T,4,2), k, X', Y')
+
+        @test_throws DimensionMismatch MOD.pairwise!(Val{:row}, Array(T,2,2), k, Y, X)
+        @test_throws DimensionMismatch MOD.pairwise!(Val{:row}, Array(T,2,4), k, Y, X)
+        @test_throws DimensionMismatch MOD.pairwise!(Val{:col}, Array(T,2,2), k, Y', X')
+        @test_throws DimensionMismatch MOD.pairwise!(Val{:col}, Array(T,2,4), k, Y', X')
     end
 end
 

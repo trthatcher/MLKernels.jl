@@ -43,7 +43,8 @@ for (scheme, dimension) in ((:(:row), 1), (:(:col), 2))
                 X::AbstractMatrix{T}
             )
             if !((n = size(X, $dimension)) == size(K,1) == size(K,2))
-                throw(DimensionMismatch("Dimensions of K must match dimension $dimension of X"))
+                errorstring = string("Dimensions of K must match dimension ", $dimension, "of X")
+                throw(DimensionMismatch(errorstring))
             end
             for j = 1:n
                 xj = subvector(Val{$scheme}, X, j)
@@ -63,9 +64,11 @@ for (scheme, dimension) in ((:(:row), 1), (:(:col), 2))
                 Y::AbstractMatrix{T},
             )
             if !((n = size(X, $dimension)) == size(K,1))
-                throw(DimensionMismatch("Dimension 1 of K must match dimension $dimension of X"))
+                errorstring = string("Dimension 1 of K must match dimension ", $dimension, "of X")
+                throw(DimensionMismatch(errorstring))
             elseif !((m = size(Y, $dimension)) == size(K,2))
-                throw(DimensionMismatch("Dimension 2 of K must match dimension $dimension of Y"))
+                errorstring = string("Dimension 1 of K must match dimension ", $dimension, "of Y")
+                throw(DimensionMismatch(errorstring))
             end
             for j = 1:m
                 yj = subvector(Val{$scheme}, Y, j)
