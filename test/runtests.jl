@@ -16,6 +16,8 @@ module MLKTest
         TestKernel(a::Variable{T}) = new(HyperParameter(a, unbounded(T)))
     end
     TestKernel{T<:AbstractFloat}(a::Argument{T}=1.0) = TestKernel{T}(Variable(a))
+    MLKernels.phi(κ::TestKernel, x::Real, y::Real) = x*y
+    MLKernels.phi(κ::TestKernel, x::Vector, y::Vector) = product(x)*product(y)
 
     immutable TestClass{T<:AbstractFloat} <: CompositionClass{T}
         a::MLKernels.HyperParameter{T}

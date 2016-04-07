@@ -19,8 +19,11 @@ function convert{T<:AbstractFloat}(::Type{KernelComposition{T}}, κ::KernelCompo
     KernelComposition(convert(CompositionClass{T}, κ.phi), convert(Kernel{T}, κ.kappa))
 end
 
-function description_string(κ::KernelComposition)
-    string("KernelComposition(",description_string(κ.phi), ",", description_string(κ.kappa),")")
+function description_string(κ::KernelComposition, showtype::Bool = true)
+    obj_str = string("KernelComposition", showtype ? string("{", eltype(κ), "}") : "")
+    class_str = description_string(κ.phi, false)
+    kernel_str = description_string(κ.kappa, false)
+    string(obj_str, "(phi=", class_str, ",kappa=", kernel_str, ")")
 end
 
 ismercer(κ::KernelComposition) = ismercer(κ.phi)

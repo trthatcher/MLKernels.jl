@@ -72,49 +72,43 @@ end
 
 
 #===================================================================================================
-  Kernel Affinity
+  Kernel Product and Sum
 ===================================================================================================#
 
 # Kernel Product
 
 immutable KernelProduct{T<:AbstractFloat} <: KernelOperation{T}
     a::HyperParameter{T}
-    k::Vector{Kernel{T}}
-    function KernelProduct(a::Variable{T}, κ::Vector{Kernel{T}})
-        if all(ismercer, κ)
+    kappa1::Kernel{T}
+    kappa2::Kernel{T}
+    function KernelProduct(a::Variable{T}, κ1::Kernel{T}, κ2::Kernel)
+        if !(ismercer(κ1) && ismercer(κ2))
             error("Kernels must be Mercer for closure under multiplication.")
         end
-        new(HyperParameter(a, leftbounded(zero(T), :open)), κ)
+        new(HyperParameter(a, leftbounded(zero(T), :open)), κ1, κ2)
     end
 end
-#function KernelProduct{T<:AbstractFloat}(a::Argument{T}, κ::Vector{Kernel{T}})
-#    KernelProduct{T}(convert(Variable{T}, a), κ)
-#end
+function KernelProduct{T<:AbstractFloat}(a::Argument{T}, κ1::Kernel{T}, κ2::Kernel{T})
+    KernelProduct{T}(Variable(a), κ1, κ2)
+end
 
-attainszero(ψ::KernelProduct)     = any(attainszero, ψ.k)
-attainspositive(ψ::KernelProduct) = any(attainspositive, ψ.k)
-attainsnegative(ψ::KernelProduct) = any(attainsnegative, ψ.k)
 
 # Kernel Sum
 
 immutable KernelSum{T<:AbstractFloat} <: KernelOperation{T}
     c::HyperParameter{T}
-    k::Vector{Kernel{T}}
-    function KernelSum(c::Variable{T}, κ::Vector{Kernel{T}})
-        if !(all(ismercer, κ) || all(isnegdef, κ))
+    kappa1::Kernel{T}
+    kappa2::Kernel{T}
+    function KernelSum(c::Variable{T}, κ1::Kernel{T}, κ2::Kernel{T})
+        if !(ismercer(κ1) && ismercer(κ2)) && !(isnegdef(κ1) && isnegdef(κ2))
             error("All kernels must be Mercer or negative definite for closure under addition")
         end
-        new(HyperParameter(c, leftbounded(zero(T), :closed)), κ)
+        new(HyperParameter(c, leftbounded(zero(T), :closed)), κ1, κ2)
     end
 end
-#function KernelSum{T<:AbstractFloat}(c::Argument{T}, κ::Vector{Kernel{T}})
-#    KernelSum{T}(convert(Variable{T}, c), κ)
-#end
-
-attainszero(ψ::KernelSum) = (all(attainszero, ψ.k) && ψ.c == 0) || (any(attainspositive, ψ.k) &&
-                                                                    any(attainsnegative, ψ.k))
-attainspositive(ψ::KernelSum) = any(attainspositive, ψ.k)
-attainsnegative(ψ::KernelSum) = any(attainsnegative, ψ.k)
+function KernelSum{T<:AbstractFloat}(c::Argument{T}, κ1::Kernel{T}, κ2::Kernel{T})
+    KernelSum{T}(Variable(c), κ1, κ2)
+end
 
 
 # Common Functions
@@ -124,30 +118,21 @@ for (kernel_object, kernel_op, identity, scalar) in (
         (:KernelSum,     :+, :0, :c)
     )
     other_identity = identity == :1 ? :0 : :1
+    scalar_str = string(scalar)
     @eval begin
         
-        function $kernel_object{T<:AbstractFloat}($scalar::Argument{T}, κ::Vector{Kernel{T}})
-            ($kernel_object){T}(convert(Variable{T}, $scalar), κ)
+        function description_string(ψ::$kernel_object, showtype::Bool = true)
+            constant_str = string($scalar_str,"=", ψ.$scalar.value)
+            kernel1_str = "kappa1=" * description_string(ψ.kappa1, false)
+            kernel2_str = "kappa2=" * description_string(ψ.kappa2, false)
+            obj_str = string($kernel_object.name.name, showtype ? string("{", eltype(ψ), "}") : "")
+            string(obj_str, "(", constant_str, ",", kernel1_str, ",", kernel2_str, ")")
         end
 
-        function $kernel_object{T<:AbstractFloat}($scalar::Argument{T}, κ::Kernel{T}...)
-            ($kernel_object){T}($scalar, Kernel{T}[κ...])
+        function convert{T<:AbstractFloat}(::Type{($kernel_object){T}}, ψ::$kernel_object)
+            $kernel_object(Variable(convert(T, ψ.$scalar.value), ψ.$scalar.isfixed),
+                           convert(Kernel{T}, ψ.kappa1), convert(Kernel{T}, ψ.kappa2))
         end
-        
-        function $kernel_object{T<:AbstractFloat}($scalar::Argument, κ::Kernel{T}...)
-            ($kernel_object){T}(convert(Argument{T}, $scalar), Kernel{T}[κ...])
-        end
-
-        #function description_string{T<:AbstractFloat}(ψ::$kernel_object{T}, eltype::Bool = true)
-        #    descs = map(κ -> description_string(κ, false), ψ.k)
-        #    ($(string(kernel_object)) * (eltype ? "{$(T)}" : "") * 
-        #        "(" * (ψ.$scalar == $identity ? "" : $(string(scalar)) * "=" * string(ψ.$scalar) * 
-        #        ",") * join(descs, ", ") * ")")
-        #end
-
-        #function convert{T<:AbstractFloat}(::Type{($kernel_object){T}}, ψ::$kernel_object)
-        #    $kernel_object(convert(T, ψ.$scalar), Kernel{T}[ψ.k...])
-        #end
 
         ismercer(ψ::$kernel_object) = all(ismercer, ψ.k)
         isnegdef(ψ::$kernel_object) = all(isnegdef, ψ.k)

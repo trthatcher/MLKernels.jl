@@ -5,10 +5,10 @@
 abstract PairwiseKernel{T<:AbstractFloat} <: StandardKernel{T}
 abstract AdditiveKernel{T<:AbstractFloat} <: PairwiseKernel{T}
 
-function description_string(κ::PairwiseKernel)
+function description_string(κ::PairwiseKernel, showtype::Bool = true)
     obj = typeof(κ)
     fields = fieldnames(obj)
-    obj_str = string(obj.name.name)
+    obj_str = string(obj.name.name) * (showtype ? string("{", eltype(κ), "}") : "")
     if length(fields) == 0
         return obj_str
     else

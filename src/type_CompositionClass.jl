@@ -15,10 +15,10 @@ abstract CompositionClass{T<:AbstractFloat}
 @inline attainspositive(::CompositionClass) = true
 @inline attainsnegative(::CompositionClass) = true
 
-function description_string(ϕ::CompositionClass)
+function description_string(ϕ::CompositionClass, showtype::Bool = true)
     class = typeof(ϕ)
     fields = fieldnames(class)
-    class_str = string(class.name.name)
+    class_str = string(class.name.name) * (showtype ? string("{", eltype(ϕ), "}") : "")
     *(class_str, "(", join(["$field=$(getfield(ϕ,field).value)" for field in fields], ","), ")")
 end
 
