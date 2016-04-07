@@ -135,7 +135,8 @@ for (scheme, dimension) in ((:(:row), 1), (:(:col), 2))
                 xᵀx::Vector{T}
             )
             if !(size(X,$dimension) == length(xᵀx))
-                throw(DimensionMismatch("Dimension mismatch on dimension $dimension"))
+                errorstring = string("Dimension mismatch on dimension ", $dimension)
+                throw(DimensionMismatch(errorstring))
             end
             fill!(xᵀx, zero(T))
             for I in CartesianRange(size(X))

@@ -24,8 +24,10 @@ attainszero(ψ::KernelAffinity)     = attainszero(ψ.kappa)
 attainspositive(ψ::KernelAffinity) = attainspositive(ψ.kappa)
 attainsnegative(ψ::KernelAffinity) = attainsnegative(ψ.kappa)
 
-function description_string(κ::KernelAffinity)
-    "KernelAffinity(a=$(κ.a.value),c=$(κ.c.value)," * description_string(κ.kappa) * ")"
+function description_string(κ::KernelAffinity, showtype::Bool = true)
+    obj_str = string("KernelAffinity", showtype ? string("{", eltype(κ), "}") : "")
+    kernel_str = description_string(κ.kappa)
+    string(obj_str, "(a=$(κ.a.value),c=$(κ.c.value),", kernel_str, ")")
 end
 
 function convert{T<:AbstractFloat}(::Type{KernelAffinity{T}}, ψ::KernelAffinity)
@@ -120,7 +122,6 @@ for (kernel_object, kernel_op, identity, scalar) in (
     other_identity = identity == :1 ? :0 : :1
     scalar_str = string(scalar)
     @eval begin
-        
         function description_string(ψ::$kernel_object, showtype::Bool = true)
             constant_str = string($scalar_str,"=", ψ.$scalar.value)
             kernel1_str = "kappa1=" * description_string(ψ.kappa1, false)
@@ -137,23 +138,12 @@ for (kernel_object, kernel_op, identity, scalar) in (
         ismercer(ψ::$kernel_object) = all(ismercer, ψ.k)
         isnegdef(ψ::$kernel_object) = all(isnegdef, ψ.k)
 
-        #=
-
-        function $kernel_op($scalar::Real, ψ::$kernel_object) 
-            $kernel_object($kernel_op($scalar, ψ.$scalar), ψ.k...)
+        function $kernel_op{T}($scalar::Real, ψ::$kernel_object{T}) 
+            $kernel_object($kernel_op(convert(T, $scalar), ψ.$scalar.value), ψ.kappa1, ψ.kappa2)
         end
         $kernel_op(ψ::$kernel_object, $scalar::Real) = $kernel_op($scalar, ψ)
 
-        function $kernel_op(κ1::$kernel_object, κ2::$kernel_object)
-            $kernel_object($kernel_op(κ1.$scalar, κ2.$scalar), κ1.k..., κ2.k...)
-        end
-
-        $kernel_op(κ::Kernel, ψ::$kernel_object) = $kernel_object(ψ.$scalar, κ, ψ.k...)
-        $kernel_op(ψ::$kernel_object, κ::Kernel) = $kernel_object(ψ.$scalar, ψ.k..., κ)
-
-        $kernel_op(κ1::Kernel, κ2::Kernel) = $kernel_object($identity, κ1, κ2)
-        =#
-
+        $kernel_op{T}(κ1::Kernel{T}, κ2::Kernel{T}) = $kernel_object(convert(T, $identity), κ1, κ2)
     end
 end
 

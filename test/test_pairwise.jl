@@ -40,6 +40,14 @@ for kernelobj in additive_kernels
         @test_throws DimensionMismatch MOD.pairwise!(Val{:col}, Array(T,2,2), k, Y', X')
         @test_throws DimensionMismatch MOD.pairwise!(Val{:col}, Array(T,2,4), k, Y', X')
 
+        @test_approx_eq MOD.dotvectors(Val{:row}, X) sum((X.*X),2)
+        @test_approx_eq MOD.dotvectors(Val{:col}, X) sum((X.*X),1)
+
+        @test_throws DimensionMismatch MOD.dotvectors!(Val{:row}, Array(T,3,2), Array(T,2))
+        @test_throws DimensionMismatch MOD.dotvectors!(Val{:row}, Array(T,3,4), Array(T,4))
+        @test_throws DimensionMismatch MOD.dotvectors!(Val{:col}, Array(T,2,3), Array(T,2))
+        @test_throws DimensionMismatch MOD.dotvectors!(Val{:col}, Array(T,4,3), Array(T,4))
+
         @test_throws DimensionMismatch MOD.squared_distance!(Array(T,3,4), Array(T,3))
         @test_throws DimensionMismatch MOD.squared_distance!(Array(T,4,3), Array(T,3))
 
