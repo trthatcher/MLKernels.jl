@@ -115,60 +115,65 @@ end
 
 # Common Functions
 
-for (kernel_object, kernel_op, identity, scalar) in (
+for (kernel_obj, kernel_op, identity, scalar) in (
         (:KernelProduct, :*, :1, :a),
         (:KernelSum,     :+, :0, :c)
     )
     other_identity = identity == :1 ? :0 : :1
     scalar_str = string(scalar)
     @eval begin
-        function description_string(ψ::$kernel_object, showtype::Bool = true)
+        function description_string(ψ::$kernel_obj, showtype::Bool = true)
             constant_str = string($scalar_str,"=", ψ.$scalar.value)
             kernel1_str = "kappa1=" * description_string(ψ.kappa1, false)
             kernel2_str = "kappa2=" * description_string(ψ.kappa2, false)
-            obj_str = string($kernel_object.name.name, showtype ? string("{", eltype(ψ), "}") : "")
+            obj_str = string($kernel_obj.name.name, showtype ? string("{", eltype(ψ), "}") : "")
             string(obj_str, "(", constant_str, ",", kernel1_str, ",", kernel2_str, ")")
         end
 
-        function convert{T<:AbstractFloat}(::Type{($kernel_object){T}}, ψ::$kernel_object)
-            $kernel_object(Variable(convert(T, ψ.$scalar.value), ψ.$scalar.isfixed),
+        function convert{T<:AbstractFloat}(::Type{($kernel_obj){T}}, ψ::$kernel_obj)
+            $kernel_obj(Variable(convert(T, ψ.$scalar.value), ψ.$scalar.isfixed),
                            convert(Kernel{T}, ψ.kappa1), convert(Kernel{T}, ψ.kappa2))
         end
 
-        ismercer(ψ::$kernel_object) = all(ismercer, ψ.k)
-        isnegdef(ψ::$kernel_object) = all(isnegdef, ψ.k)
+        ismercer(ψ::$kernel_obj) = ismercer(ψ.kappa1) && ismercer(ψ.kappa2)
+        isnegdef(ψ::$kernel_obj) = isnegdef(ψ.kappa1) && isnegdef(ψ.kappa2)
 
-        function $kernel_op{T}($scalar::Real, ψ::$kernel_object{T}) 
-            $kernel_object($kernel_op(convert(T, $scalar), ψ.$scalar.value), ψ.kappa1, ψ.kappa2)
+        function $kernel_op{T}($scalar::Real, ψ::$kernel_obj{T}) 
+            $kernel_obj($kernel_op(convert(T, $scalar), ψ.$scalar.value), ψ.kappa1, ψ.kappa2)
         end
-        $kernel_op(ψ::$kernel_object, $scalar::Real) = $kernel_op($scalar, ψ)
+        $kernel_op(ψ::$kernel_obj, $scalar::Real) = $kernel_op($scalar, ψ)
 
-        $kernel_op{T}(κ1::Kernel{T}, κ2::Kernel{T}) = $kernel_object(convert(T, $identity), κ1, κ2)
+        $kernel_op{T}(κ1::Kernel{T}, κ2::Kernel{T}) = $kernel_obj(convert(T, $identity), κ1, κ2)
     end
 end
 
-#=
-for (kernel_object, kernel_op, identity, scalar, op2_identity, op2_scalar) in (
+for (kernel_obj, kernel_op, identity, scalar, op2_identity, op2_scalar) in (
         (:KernelProduct, :*, :1, :a, :0, :c),
         (:KernelSum,     :+, :0, :c, :1, :a)
     )
     @eval begin
         function $kernel_op(κ1::KernelAffinity, κ2::KernelAffinity)
             if κ1.$op2_scalar == $op2_identity && κ2.$op2_scalar == $op2_identity
-                $kernel_object($kernel_op(κ1.$scalar, κ2.$scalar), κ1.k, κ2.k)
+                $kernel_obj($kernel_op(κ1.$scalar.value, κ2.$scalar.value), κ1.kappa, κ2.kappa)
             else
-                $kernel_object($identity, κ1, κ2)
+                $kernel_obj($identity, κ1, κ2)
             end
         end
 
         function $kernel_op(κ1::KernelAffinity, κ2::StandardKernel)
             if κ1.$op2_scalar == $op2_identity
-                $kernel_object(κ1.$scalar, κ1.k, κ2)
+                $kernel_obj(κ1.$scalar.value, κ1.kappa, κ2)
             else
-                $kernel_object($identity, κ1, κ2)
+                $kernel_obj($identity, κ1, κ2)
             end
         end
-        $kernel_op(κ1::StandardKernel, κ2::KernelAffinity) = $kernel_op(κ2, κ1)
+
+        function $kernel_op(κ1::StandardKernel, κ2::KernelAffinity)
+            if κ2.$op2_scalar == $op2_identity
+                $kernel_obj(κ2.$scalar.value, κ1, κ2.kappa)
+            else
+                $kernel_obj($identity, κ1, κ2)
+            end
+        end
     end
 end
-=#
