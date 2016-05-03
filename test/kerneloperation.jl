@@ -21,6 +21,8 @@ for kernelobj in (additive_kernels..., composition_kernels...)
         @test ismercer(k) === ismercer(k.kappa)
         @test isnegdef(k) === isnegdef(k.kappa)
 
+        @test_approx_eq MOD.phi(k, one(T)) (a*one(T) + c)
+
         k = k1 + c
         @test k.a == one(T)
         @test k.c == c
@@ -70,7 +72,7 @@ for kernelobj in (additive_kernels..., composition_kernels...)
         @test tanh(k) == KernelComposition(SigmoidClass(a, c), k.kappa)=#
 
         # Test that output does not create error
-        show(DevNull, k)
+        @test show(DevNull, k) == nothing
 
     end
 end
@@ -94,6 +96,9 @@ for kernelobj1 in (additive_kernels..., composition_kernels...)
 
                 @test ismercer(k) == (ismercer(k1) && ismercer(k2))
                 @test isnegdef(k) == (isnegdef(k1) && isnegdef(k2))
+
+                # Test that output does not create error
+                @test show(DevNull, k) == nothing
 
                 c = convert(T,2)
 
@@ -127,6 +132,11 @@ for kernelobj1 in (additive_kernels..., composition_kernels...)
                 @test k.kappa1 == 2k1
                 @test k.kappa2 == k2
 
+                k = (k1 + k2) + 1
+                @test k.c == one(T)
+                @test k.kappa1 == k1
+                @test k.kappa2 == k2
+
             else
                 @test_throws ErrorException k1 + k2
             end
@@ -134,22 +144,17 @@ for kernelobj1 in (additive_kernels..., composition_kernels...)
     end
 end
 
-#=
 info("Testing ", KernelProduct)
-for kernelobj1 in (SquaredDistanceKernel, RationalQuadraticKernel)
-    for kernelobj2 in (ScalarProductKernel, ChiSquaredKernel)
+for kernelobj1 in (additive_kernels..., composition_kernels...)
+    for kernelobj2 in (additive_kernels..., composition_kernels...)
         for T in FloatingPointTypes
-
             k1 = convert(Kernel{T}, (kernelobj1)())
             k2 = convert(Kernel{T}, (kernelobj2)())
-
-            kvec = [k1, k2]
-
-            if all(ismercer, kvec)
-
+            if ismercer(k1) && ismercer(k2)
                 k = k1 * k2
-                @test k.a == one(T)
-                @test all(k.k .== kvec) || all(k.k .== reverse(kvec))
+                @test k.a.value == one(T)
+                @test k.kappa1 == k1
+                @test k.kappa2 == k2
 
                 @test eltype(convert(Kernel{Float32}, k))  == Float32
                 @test eltype(convert(Kernel{Float64}, k))  == Float64
@@ -157,33 +162,49 @@ for kernelobj1 in (SquaredDistanceKernel, RationalQuadraticKernel)
 
                 @test ismercer(k) == (ismercer(k1) && ismercer(k2))
 
-                @test MOD.attainszero(k) == any(MOD.attainszero, kvec)
-                @test MOD.attainspositive(k) == any(MOD.attainspositive, kvec)
-                @test MOD.attainsnegative(k) == any(MOD.attainsnegative, kvec)
+                # Test that output does not create error
+                @test show(DevNull, k) == nothing
 
-                @test isa(MOD.description_string(k,true), AbstractString)
-                @test isa(MOD.description_string(k,false), AbstractString)
-
-                a = 2one(T)
+                a = convert(T,2)
 
                 k = (k1 * a) * (k2 * a)
-                @test k.a == a^2
-                @test all(k.k .== kvec) || all(k.k .== reverse(kvec))
+                @test k.a.value == a^2
+                @test k.kappa1 == k1
+                @test k.kappa2 == k2
 
                 k = (k1 * a) * k2
                 @test k.a == a
-                @test all(k.k .== kvec) || all(k.k .== reverse(kvec))
+                @test k.kappa1 == k1
+                @test k.kappa2 == k2
 
                 k = k1 * (k2 * a)
                 @test k.a == a
-                @test all(k.k .== kvec) || all(k.k .== reverse(kvec))
+                @test k.kappa1 == k1
+                @test k.kappa2 == k2
+
+                k = (k1 + 1) * (k2 + 1)
+                @test k.a.value == one(T)
+                @test k.kappa1 == (k1 + 1)
+                @test k.kappa2 == (k2 + 1)
+
+                k = k1 * (k2 + 1)
+                @test k.a.value == one(T)
+                @test k.kappa1 == k1
+                @test k.kappa2 == (k2 + 1)
+
+                k = (k1 + 1) * k2
+                @test k.a.value == one(T)
+                @test k.kappa1 == (k1 + 1)
+                @test k.kappa2 == k2
+
+                k = (k1 * k2) * 2
+                @test k.a == convert(T,2)
+                @test k.kappa1 == k1
+                @test k.kappa2 == k2
 
             else
-
                 @test_throws ErrorException k1 * k2
-
             end
         end
     end
 end
-=#
