@@ -17,6 +17,10 @@ function description_string(κ::PairwiseKernel, showtype::Bool = true)
     end
 end
 
+function =={T<:PairwiseKernel}(κ1::T, κ2::T)
+    all([getfield(κ1,field) == getfield(κ2,field) for field in fieldnames(T)])
+end
+
 
 #== Non-Negative Negative Definite Additive Kernel ==#
 

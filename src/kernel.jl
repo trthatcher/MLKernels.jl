@@ -39,11 +39,6 @@ function convert{T<:AbstractFloat,K<:Kernel}(::Type{Kernel{T}}, ϕ::K)
 end
 
 
-#== Composition Class ==#
-
-include("compositionclass.jl")
-
-
 #== Standard Kernels ==#
 
 abstract StandardKernel{T<:AbstractFloat}  <: Kernel{T}  # Either a kernel is atomic or it is a
