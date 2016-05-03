@@ -41,19 +41,19 @@ end
 
 #== Composition Class ==#
 
-include("type_CompositionClass.jl")
+include("compositionclass.jl")
 
 
 #== Standard Kernels ==#
 
 abstract StandardKernel{T<:AbstractFloat}  <: Kernel{T}  # Either a kernel is atomic or it is a
 
-include("type_PairwiseKernel.jl")
-include("type_KernelComposition.jl")
+include("pairwisekernel.jl")
+include("kernelcomposition.jl")
 
 
 #== Kernel Operations ==#
 
 abstract KernelOperation{T<:AbstractFloat} <: Kernel{T}  # function of multiple kernels
 
-include("type_KernelOperation.jl")
+include("kerneloperation.jl")

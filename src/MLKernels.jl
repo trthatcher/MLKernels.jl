@@ -79,14 +79,13 @@ export
         LinearKernel,
         SigmoidKernel
 
-include("module_HyperParameter.jl")
+include("hyperparameter.jl")
 using MLKernels.HyperParameters: Bound, Interval, leftbounded, rightbounded, unbounded, checkbounds,
     Variable, fixed, Argument, HyperParameter
 
 include("meta.jl")
-include("type_Kernel.jl")
-include("function_pairwise.jl")
-include("function_kernel.jl")
-#include("kernelapproximation.jl")
+include("kernel.jl")
+include("pairwisefunction.jl")
+include("kernelfunction.jl")
 
 end # MLKernels

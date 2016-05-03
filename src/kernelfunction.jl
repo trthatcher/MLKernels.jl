@@ -89,6 +89,41 @@ function kernelmatrix!{T}(
 end
 
 
+#== Kernel Operation ==#
+
+for (kernel_object, scalar_op, identity, scalar) in (
+        (:KernelProduct, :*, :1, :a),
+        (:KernelSum,     :+, :0, :c)
+    )
+    @eval begin
+        function kernelmatrix!{T}(
+                v::Union{Type{Val{:row}},Type{Val{:col}}},
+                K::Matrix{T},
+                κ::$kernel_object{T},
+                X::Matrix{T}
+            )
+            kernelmatrix!(v, K, κ.kappa1, X)
+            broadcast!($scalar_op, K, kernelmatrix(v, similar(K), κ.kappa2, X))
+            κ.$scalar == $identity ? K : broadcast!($scalar_op, K, κ.$scalar)
+        end
+
+        function kernelmatrix!{T}(
+                v::Union{Type{Val{:row}},Type{Val{:col}}},
+                K::Matrix{T},
+                κ::$kernel_object{T},
+                X::Matrix{T},
+                Y::Matrix{T}
+            )
+            kernelmatrix!(v, K, κ.kappa1, X, Y)
+            broadcast!($scalar_op, K, kernelmatrix(v, similar(K), κ.kappa2, X, Y))
+            κ.$scalar == $identity ? K : broadcast!($scalar_op, K, κ.$scalar)
+        end
+    end
+end
+
+
+
+
 #==========================================================================
   Kernel Matrix Transformation
 ==========================================================================
