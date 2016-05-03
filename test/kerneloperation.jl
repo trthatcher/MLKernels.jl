@@ -3,8 +3,8 @@ for kernelobj in (additive_kernels..., composition_kernels...)
     for T in FloatingPointTypes
 
         k1 = convert(Kernel{T}, (kernelobj)())
-        a = 2one(T)
-        c = 3one(T)
+        a = convert(T,2)
+        c = convert(T,3)
 
         k = KernelAffinity(a, c, k1)
         @test k.a.value == a
@@ -110,6 +110,21 @@ for kernelobj1 in (additive_kernels..., composition_kernels...)
                 k = k1 + (k2 + c)
                 @test k.c == c
                 @test k.kappa1 == k1
+                @test k.kappa2 == k2
+
+                k = 2k1 + 2k2
+                @test k.c.value == zero(T)
+                @test k.kappa1 == 2k1
+                @test k.kappa2 == 2k2
+
+                k = k1 + 2k2
+                @test k.c.value == zero(T)
+                @test k.kappa1 == k1
+                @test k.kappa2 == 2k2
+
+                k = 2k1 + k2
+                @test k.c.value == zero(T)
+                @test k.kappa1 == 2k1
                 @test k.kappa2 == k2
 
             else

@@ -1,4 +1,0 @@
-using MLKernels
-@elapsed kernelmatrix(κ, rand(5000,5000), rand(5000,5000))
-# 12.750737257
-# 12.28299033

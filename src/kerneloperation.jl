@@ -17,6 +17,10 @@ function KernelAffinity{T<:AbstractFloat}(a::Argument{T}, c::Argument{T}, κ::Ke
     KernelAffinity{T}(Variable(a), Variable(c), κ)
 end
 
+function ==(ψ1::KernelAffinity, ψ2::KernelAffinity)
+    (ψ1.a == ψ2.a) && (ψ1.c == ψ2.c) && (ψ1.kappa == ψ2.kappa)
+end
+
 ismercer(ψ::KernelAffinity) = ismercer(ψ.kappa)
 isnegdef(ψ::KernelAffinity) = isnegdef(ψ.kappa)
 
@@ -130,6 +134,10 @@ for (kernel_obj, kernel_op, identity, scalar) in (
             string(obj_str, "(", constant_str, ",", kernel1_str, ",", kernel2_str, ")")
         end
 
+        function ==(ψ1::KernelAffinity, ψ2::KernelAffinity)
+            (ψ1.a == ψ2.a) && (ψ1.c == ψ2.c) && (ψ1.kappa == ψ2.kappa)
+        end
+
         function convert{T<:AbstractFloat}(::Type{($kernel_obj){T}}, ψ::$kernel_obj)
             $kernel_obj(Variable(convert(T, ψ.$scalar.value), ψ.$scalar.isfixed),
                            convert(Kernel{T}, ψ.kappa1), convert(Kernel{T}, ψ.kappa2))
@@ -152,27 +160,27 @@ for (kernel_obj, kernel_op, identity, scalar, op2_identity, op2_scalar) in (
         (:KernelSum,     :+, :0, :c, :1, :a)
     )
     @eval begin
-        function $kernel_op(κ1::KernelAffinity, κ2::KernelAffinity)
+        function ($kernel_op){T}(κ1::KernelAffinity{T}, κ2::KernelAffinity{T})
             if κ1.$op2_scalar == $op2_identity && κ2.$op2_scalar == $op2_identity
                 $kernel_obj($kernel_op(κ1.$scalar.value, κ2.$scalar.value), κ1.kappa, κ2.kappa)
             else
-                $kernel_obj($identity, κ1, κ2)
+                $kernel_obj(convert(T, $identity), κ1, κ2)
             end
         end
 
-        function $kernel_op(κ1::KernelAffinity, κ2::StandardKernel)
+        function ($kernel_op){T}(κ1::KernelAffinity{T}, κ2::StandardKernel{T})
             if κ1.$op2_scalar == $op2_identity
                 $kernel_obj(κ1.$scalar.value, κ1.kappa, κ2)
             else
-                $kernel_obj($identity, κ1, κ2)
+                $kernel_obj(convert(T, $identity), κ1, κ2)
             end
         end
 
-        function $kernel_op(κ1::StandardKernel, κ2::KernelAffinity)
+        function ($kernel_op){T}(κ1::StandardKernel{T}, κ2::KernelAffinity{T})
             if κ2.$op2_scalar == $op2_identity
                 $kernel_obj(κ2.$scalar.value, κ1, κ2.kappa)
             else
-                $kernel_obj($identity, κ1, κ2)
+                $kernel_obj(convert(T, $identity), κ1, κ2)
             end
         end
     end
