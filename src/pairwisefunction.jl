@@ -131,8 +131,8 @@ for (scheme, dimension) in ((:(:row), 1), (:(:col), 2))
 
         function dotvectors!{T<:AbstractFloat}(
                  ::Type{Val{$scheme}},
-                X::AbstractMatrix{T}, 
-                xᵀx::Vector{T}
+                xᵀx::Vector{T},
+                X::AbstractMatrix{T}
             )
             if !(size(X,$dimension) == length(xᵀx))
                 errorstring = string("Dimension mismatch on dimension ", $dimension)
@@ -146,7 +146,7 @@ for (scheme, dimension) in ((:(:row), 1), (:(:col), 2))
         end
 
         @inline function dotvectors{T<:AbstractFloat}(::Type{Val{$scheme}}, X::AbstractMatrix{T})
-            dotvectors!(Val{$scheme}, X, Array(T, size(X,$dimension)))
+            dotvectors!(Val{$scheme}, Array(T, size(X,$dimension)), X)
         end
 
         @inline function gramian!{T<:AbstractFloat}(
