@@ -2,9 +2,7 @@
   Generic pairwisematrix functions for kernels consuming two vectors
 ===================================================================================================#
 
-pairwise{T}(κ::StandardKernel{T}, x::T, y::T) = phi(κ, x, y)
-pairwise{T}(κ::StandardKernel{T}, x::AbstractArray{T}, y::AbstractArray{T}) = phi(κ, x, y)
-
+# These two functions may be used to define any kernel
 pairwise{T}(κ::AdditiveKernel{T}, x::T, y::T) = phi(κ, x, y)
 function unsafe_pairwise{T}(κ::AdditiveKernel{T}, x::AbstractArray{T}, y::AbstractArray{T})
     s = zero(T)
@@ -13,6 +11,7 @@ function unsafe_pairwise{T}(κ::AdditiveKernel{T}, x::AbstractArray{T}, y::Abstr
     end
     s
 end
+
 function pairwise{T}(κ::AdditiveKernel{T}, x::AbstractArray{T}, y::AbstractArray{T})
     length(x) == length(y) || throw(DimensionMismatch("Arrays x and y must have the same length."))
     unsafe_pairwise(κ, x, y)
@@ -113,7 +112,7 @@ for (order, dimension) in ((:(:row), 1), (:(:col), 2))
 end
 
 function pairwisematrix{T}(
-        σ::DataType,
+        σ::Union{Type{Val{:row}},Type{Val{:col}}},
         κ::PairwiseKernel{T},
         X::AbstractMatrix{T}
     )
@@ -121,7 +120,7 @@ function pairwisematrix{T}(
 end
 
 function pairwisematrix{T}(
-        σ::DataType,
+        σ::Union{Type{Val{:row}},Type{Val{:col}}},
         κ::PairwiseKernel{T},
         X::AbstractMatrix{T},
         Y::AbstractMatrix{T}

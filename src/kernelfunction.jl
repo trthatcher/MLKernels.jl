@@ -5,8 +5,8 @@
 call{T}(κ::Kernel{T}, x::T, y::T) = kernel(κ, x, y)
 call{T}(κ::Kernel{T}, x::AbstractArray{T}, y::AbstractArray{T}) = kernel(κ, x, y)
 
-kernel{T}(κ::PairwiseKernel{T}, x::T, y::T) = pairwise(κ, x, y)
-kernel{T}(κ::PairwiseKernel{T}, x::AbstractArray{T}, y::AbstractArray{T}) = pairwise(κ, x, y)
+kernel{T}(κ::StandardKernel{T}, x::T, y::T) = pairwise(κ, x, y)
+kernel{T}(κ::StandardKernel{T}, x::AbstractArray{T}, y::AbstractArray{T}) = pairwise(κ, x, y)
 
 kernel{T}(κ::KernelComposition{T}, x::T, y::T) = phi(κ.phi, pairwise(κ.kappa, x, y))
 function kernel{T}(κ::KernelComposition{T}, x::AbstractArray{T}, y::AbstractArray{T})
@@ -40,7 +40,7 @@ function kernelmatrix{T}(
         κ::Kernel{T}, 
         X::AbstractMatrix{T}
     )
-    kernelmatrix!(σ, init_pairwise(σ, X), κ, X)
+    kernelmatrix!(σ, init_pairwisematrix(σ, X), κ, X)
 end
 
 function kernelmatrix{T}(
@@ -48,7 +48,7 @@ function kernelmatrix{T}(
         X::AbstractMatrix{T},
         order::Union{Type{Val{:row}},Type{Val{:col}}} = Val{:row}
     )
-    kernelmatrix!(order, init_pairwise(order, X), κ, X)
+    kernelmatrix!(order, init_pairwisematrix(order, X), κ, X)
 end
 
 function kernelmatrix{T}(
@@ -57,7 +57,7 @@ function kernelmatrix{T}(
         X::AbstractMatrix{T},
         Y::AbstractMatrix{T}
     )
-    kernelmatrix!(σ, init_pairwise(σ, X, Y), κ, X, Y)
+    kernelmatrix!(σ, init_pairwisematrix(σ, X, Y), κ, X, Y)
 end
 
 function kernelmatrix{T}(
@@ -66,41 +66,52 @@ function kernelmatrix{T}(
         Y::AbstractMatrix{T},
         order::Union{Type{Val{:row}},Type{Val{:col}}} = Val{:row}
     )
-    kernelmatrix!(order, init_pairwise(order, X, Y), κ, X, Y)
+    kernelmatrix!(order, init_pairwisematrix(order, X, Y), κ, X, Y)
 end
 
 
 #== Standard Kernel ==#
 
-function kernelmatrix!{T}(σ::DataType, K::Matrix{T}, κ::StandardKernel{T}, X::AbstractMatrix{T})
-    pairwise!(σ, K, κ, X)
-end
-
 function kernelmatrix!{T}(
-        σ::DataType,
+        σ::Union{Type{Val{:row}},Type{Val{:col}}},
         K::Matrix{T},
         κ::StandardKernel{T},
         X::AbstractMatrix{T}
     )
-    pairwise!(σ, K, κ, X)
+    pairwisematrix!(σ, K, κ, X)
+end
+
+function kernelmatrix!{T}(
+        σ::Union{Type{Val{:row}},Type{Val{:col}}},
+        K::Matrix{T},
+        κ::StandardKernel{T},
+        X::AbstractMatrix{T},
+        Y::AbstractMatrix{T}
+    )
+    pairwisematrix!(σ, K, κ, X, Y)
 end
 
 
 #== Composition Kernel ==#
 
-function kernelmatrix!{T}(σ::DataType, K::Matrix{T}, κ::KernelComposition{T}, X::AbstractMatrix{T})
-    pairwise!(σ, K, κ.kappa, X)
+function kernelmatrix!{T}(
+        σ::Union{Type{Val{:row}},Type{Val{:col}}},
+        K::Matrix{T},
+        κ::KernelComposition{T},
+        X::AbstractMatrix{T}
+    )
+    pairwisematrix!(σ, K, κ.kappa, X)
     phi_symmetric!(κ.phi, K)
 end
 
 function kernelmatrix!{T}(
-        σ::DataType,
+        σ::Union{Type{Val{:row}},Type{Val{:col}}},
         K::Matrix{T},
         κ::KernelComposition{T},
         X::AbstractMatrix{T},
         Y::AbstractMatrix{T}
     )
-    pairwise!(σ, K, κ.kappa, X, Y)
+    pairwisematrix!(σ, K, κ.kappa, X, Y)
     phi_rectangular!(κ.phi, K)
 end
 

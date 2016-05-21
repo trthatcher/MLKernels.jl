@@ -6,10 +6,8 @@ info("Testing ", MOD.pairwise)
 for kernelobj in additive_kernels
     for spX in (true,false), spY in (true,false)
         for T in FloatingPointTypes
-
             x = spX ? convert(SparseMatrixCSC{T},sprand(p,1,0.2)) : rand(T,p)
             y = spY ? convert(SparseMatrixCSC{T},sprand(p,1,0.2)) : rand(T,p)
-
             k = convert(Kernel{T}, (kernelobj)())
            
             @test MOD.pairwise(k, x[1], y[1]) == MOD.phi(k, x[1], y[1])
@@ -22,7 +20,6 @@ info("Testing ", MOD.pairwisematrix)
 for kernelobj in additive_kernels
     for spX in (true,false), spY in (true,false)
         for T in FloatingPointTypes
-
             Set_X = spX ? [convert(SparseMatrixCSC{T},sprand(p,1,0.2)) for i = 1:n] :
                           [rand(T, p) for i = 1:n]
             Set_Y = spY ? [convert(SparseMatrixCSC{T},sprand(p,1,0.2)) for i = 1:m] :
@@ -30,13 +27,9 @@ for kernelobj in additive_kernels
 
             X = transpose(hcat(Set_X...))
             Y = transpose(hcat(Set_Y...))
-
             k = convert(Kernel{T}, (kernelobj)())
             #println("κ:", k, ", X:", typeof(X), ", Y:", typeof(Y))
-           
-            @test MOD.pairwise(k, Set_X[1][1], Set_Y[1][1]) == MOD.phi(k, Set_X[1][1], Set_Y[1][1])
-            @test MOD.pairwise(k, Set_X[1], Set_Y[1]) == sum(map((x,y) -> MOD.phi(k,x,y), Set_X[1], Set_Y[1]))
-            
+                       
             P = [MOD.pairwise(k,x,y) for x in Set_X, y in Set_X]
             @test_approx_eq MOD.pairwisematrix(Val{:row}, k, X)  P
             @test_approx_eq MOD.pairwisematrix(Val{:col}, k, X') P
