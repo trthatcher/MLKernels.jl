@@ -22,7 +22,7 @@ for kernelobj in (additive_kernels..., composition_kernels...)
 end
 
 info("Testing ", MOD.kernelmatrix)
-for kernelobj in additive_kernels
+for kernelobj in (additive_kernels..., composition_kernels...)
     for spX in (true,false), spY in (true,false)
         for T in FloatingPointTypes
             Set_X = spX ? [convert(SparseMatrixCSC{T},sprand(p,1,0.2)) for i = 1:n] :
@@ -36,16 +36,18 @@ for kernelobj in additive_kernels
             #println("κ:", k, ", X:", typeof(X), ", Y:", typeof(Y))
             
             P = [MOD.kernel(k,x,y) for x in Set_X, y in Set_X]
-            @test_approx_eq MOD.kernelmatrix(Val{:row}, k, X)  P
-            @test_approx_eq MOD.kernelmatrix(Val{:col}, k, X') P
             @test_approx_eq MOD.kernelmatrix!(Val{:row}, Array(T,n,n), k, X)  P
             @test_approx_eq MOD.kernelmatrix!(Val{:col}, Array(T,n,n), k, X') P
+            @test_approx_eq MOD.kernelmatrix(Val{:row}, k, X)  P
+            @test_approx_eq MOD.kernelmatrix(Val{:col}, k, X') P
+            @test_approx_eq MOD.kernelmatrix(k, X) P
 
             P = [MOD.kernel(k,x,y) for x in Set_X, y in Set_Y]
-            @test_approx_eq MOD.kernelmatrix(Val{:row}, k, X,  Y)  P
-            @test_approx_eq MOD.kernelmatrix(Val{:col}, k, X', Y') P
             @test_approx_eq MOD.kernelmatrix!(Val{:row}, Array(T,n,m), k, X,  Y)  P
             @test_approx_eq MOD.kernelmatrix!(Val{:col}, Array(T,n,m), k, X', Y') P
+            @test_approx_eq MOD.kernelmatrix(Val{:row}, k, X,  Y)  P
+            @test_approx_eq MOD.kernelmatrix(Val{:col}, k, X', Y') P
+            @test_approx_eq MOD.kernelmatrix(k, X,  Y) P
         end
     end
 end

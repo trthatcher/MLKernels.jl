@@ -4,6 +4,7 @@
 * Redefined all kernels as collections of `Parameter`s internally
 * Removed ARD type
 * Removed kernel approximation
+* Deprecated `is_trans` argument
 
 # MLKernels 0.1.1 Release Notes
 

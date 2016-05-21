@@ -45,10 +45,9 @@ end
 
 function kernelmatrix{T}(
         κ::Kernel{T},
-        X::AbstractMatrix{T},
-        order::Union{Type{Val{:row}},Type{Val{:col}}} = Val{:row}
+        X::AbstractMatrix{T}
     )
-    kernelmatrix!(order, init_pairwisematrix(order, X), κ, X)
+    kernelmatrix(Val{:row}, κ, X)
 end
 
 function kernelmatrix{T}(
@@ -63,10 +62,9 @@ end
 function kernelmatrix{T}(
         κ::Kernel{T},
         X::AbstractMatrix{T},
-        Y::AbstractMatrix{T},
-        order::Union{Type{Val{:row}},Type{Val{:col}}} = Val{:row}
+        Y::AbstractMatrix{T}
     )
-    kernelmatrix!(order, init_pairwisematrix(order, X, Y), κ, X, Y)
+    kernelmatrix(Val{:row}, κ, X, Y)
 end
 
 
