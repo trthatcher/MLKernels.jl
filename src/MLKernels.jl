@@ -14,7 +14,6 @@ export
     kernelmatrix,
     centerkernelmatrix!,
     centerkernelmatrix,
-    nystrom,
 
     ismercer,
     isnegdef,

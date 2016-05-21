@@ -100,7 +100,7 @@ for (kernel_object, scalar_op, identity, scalar) in (
                 v::Union{Type{Val{:row}},Type{Val{:col}}},
                 K::Matrix{T},
                 κ::$kernel_object{T},
-                X::Matrix{T}
+                X::AbstractMatrix{T}
             )
             kernelmatrix!(v, K, κ.kappa1, X)
             broadcast!($scalar_op, K, kernelmatrix(v, similar(K), κ.kappa2, X))
@@ -111,8 +111,8 @@ for (kernel_object, scalar_op, identity, scalar) in (
                 v::Union{Type{Val{:row}},Type{Val{:col}}},
                 K::Matrix{T},
                 κ::$kernel_object{T},
-                X::Matrix{T},
-                Y::Matrix{T}
+                X::AbstractMatrix{T},
+                Y::AbstractMatrix{T}
             )
             kernelmatrix!(v, K, κ.kappa1, X, Y)
             broadcast!($scalar_op, K, kernelmatrix(v, similar(K), κ.kappa2, X, Y))
