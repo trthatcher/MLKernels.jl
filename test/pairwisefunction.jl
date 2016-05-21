@@ -49,10 +49,13 @@ for kernelobj in additive_kernels
             @test_approx_eq MOD.pairwisematrix!(Val{:row}, Array(T,n,m), k, X,  Y)  P
             @test_approx_eq MOD.pairwisematrix!(Val{:col}, Array(T,n,m), k, X', Y') P
 
-            @test_throws DimensionMismatch MOD.pairwisematrix!(Val{:row}, Array(T,n+1,n), k, X)
-            @test_throws DimensionMismatch MOD.pairwisematrix!(Val{:row}, Array(T,n,n+1), k, X)
-            @test_throws DimensionMismatch MOD.pairwisematrix!(Val{:col}, Array(T,n+1,n), k, X')
-            @test_throws DimensionMismatch MOD.pairwisematrix!(Val{:col}, Array(T,n,n+1), k, X')
+            @test_throws DimensionMismatch MOD.pairwisematrix!(Val{:row}, Array(T,n+1,n),   k, X)
+            @test_throws DimensionMismatch MOD.pairwisematrix!(Val{:row}, Array(T,n,n+1),   k, X)
+            @test_throws DimensionMismatch MOD.pairwisematrix!(Val{:row}, Array(T,n+1,n+1), k, X)
+
+            @test_throws DimensionMismatch MOD.pairwisematrix!(Val{:col}, Array(T,n+1,n),   k, X')
+            @test_throws DimensionMismatch MOD.pairwisematrix!(Val{:col}, Array(T,n,n+1),   k, X')
+            @test_throws DimensionMismatch MOD.pairwisematrix!(Val{:col}, Array(T,n+1,n+1), k, X')
 
             @test_throws DimensionMismatch MOD.pairwisematrix!(Val{:row}, Array(T,n+1,m), k, X,  Y)
             @test_throws DimensionMismatch MOD.pairwisematrix!(Val{:row}, Array(T,n,m+1), k, X,  Y)

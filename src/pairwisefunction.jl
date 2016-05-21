@@ -19,23 +19,23 @@ function pairwise{T}(κ::AdditiveKernel{T}, x::AbstractArray{T}, y::AbstractArra
 end
 
 
-for (scheme, dimension) in ((:(:row), 1), (:(:col), 2))
-    isrowmajor = scheme == :(:row)
+for (order, dimension) in ((:(:row), 1), (:(:col), 2))
+    isrowmajor = order == :(:row)
     @eval begin
 
-        @inline function subvector(::Type{Val{$scheme}}, X::AbstractMatrix,  i::Integer)
+        @inline function subvector(::Type{Val{$order}}, X::AbstractMatrix,  i::Integer)
             $(isrowmajor ? :(slice(X, i, :)) : :(slice(X, :, i)))
         end
 
         @inline function init_pairwisematrix{T}(
-                 ::Type{Val{$scheme}},
+                 ::Type{Val{$order}},
                 X::AbstractMatrix{T}
             )
             Array(T, size(X,$dimension), size(X,$dimension))
         end
 
         @inline function init_pairwisematrix{T}(
-                 ::Type{Val{$scheme}},
+                 ::Type{Val{$order}},
                 X::AbstractMatrix{T}, 
                 Y::AbstractMatrix{T}
             )
@@ -43,7 +43,7 @@ for (scheme, dimension) in ((:(:row), 1), (:(:col), 2))
         end
 
         function checkpairwisedimensions{T}(
-                 ::Type{Val{$scheme}},
+                 ::Type{Val{$order}},
                 K::Matrix{T}, 
                 X::AbstractMatrix{T}
             )
@@ -58,7 +58,7 @@ for (scheme, dimension) in ((:(:row), 1), (:(:col), 2))
         end
 
         function checkpairwisedimensions(
-                 ::Type{Val{$scheme}},
+                 ::Type{Val{$order}},
                 K::Matrix,
                 X::AbstractMatrix, 
                 Y::AbstractMatrix
@@ -76,16 +76,16 @@ for (scheme, dimension) in ((:(:row), 1), (:(:col), 2))
         end
 
         function pairwisematrix!{T}(
-                v::Type{Val{$scheme}},
+                σ::Type{Val{$order}},
                 K::Matrix{T}, 
                 κ::PairwiseKernel{T},
                 X::AbstractMatrix{T}
             )
-            n = checkpairwisedimensions(v, K, X)
+            n = checkpairwisedimensions(σ, K, X)
             for j = 1:n
-                xj = subvector(v, X, j)
+                xj = subvector(σ, X, j)
                 for i = 1:j
-                    xi = subvector(v, X, i)
+                    xi = subvector(σ, X, i)
                     @inbounds K[i,j] = unsafe_pairwise(κ, xi, xj)
                 end
             end
@@ -93,17 +93,17 @@ for (scheme, dimension) in ((:(:row), 1), (:(:col), 2))
         end
 
         function pairwisematrix!{T}(
-                v::Type{Val{$scheme}},
+                σ::Type{Val{$order}},
                 K::Matrix{T}, 
                 κ::PairwiseKernel{T},
                 X::AbstractMatrix{T},
                 Y::AbstractMatrix{T},
             )
-            n, m = checkpairwisedimensions(v, K, X, Y)
+            n, m = checkpairwisedimensions(σ, K, X, Y)
             for j = 1:m
-                yj = subvector(v, Y, j)
+                yj = subvector(σ, Y, j)
                 for i = 1:n
-                    xi = subvector(v, X, i)
+                    xi = subvector(σ, X, i)
                     @inbounds K[i,j] = unsafe_pairwise(κ, xi, yj)
                 end
             end
@@ -113,20 +113,20 @@ for (scheme, dimension) in ((:(:row), 1), (:(:col), 2))
 end
 
 function pairwisematrix{T}(
-        v::DataType,
+        σ::DataType,
         κ::PairwiseKernel{T},
         X::AbstractMatrix{T}
     )
-    pairwisematrix!(v, init_pairwisematrix(v, X), κ, X)
+    pairwisematrix!(σ, init_pairwisematrix(σ, X), κ, X)
 end
 
 function pairwisematrix{T}(
-        v::DataType,
+        σ::DataType,
         κ::PairwiseKernel{T},
         X::AbstractMatrix{T},
         Y::AbstractMatrix{T}
     )
-    pairwisematrix!(v, init_pairwisematrix(v, X, Y), κ, X, Y)
+    pairwisematrix!(σ, init_pairwisematrix(σ, X, Y), κ, X, Y)
 end
 
 
@@ -156,12 +156,12 @@ function squared_distance!{T<:AbstractFloat}(G::Matrix{T}, xᵀx::Vector{T}, y�
     G
 end
 
-for (scheme, dimension) in ((:(:row), 1), (:(:col), 2))
-    isrowmajor = scheme == :(:row)
+for (order, dimension) in ((:(:row), 1), (:(:col), 2))
+    isrowmajor = order == :(:row)
     @eval begin
 
         function dotvectors!{T<:AbstractFloat}(
-                 ::Type{Val{$scheme}},
+                 ::Type{Val{$order}},
                 xᵀx::Vector{T},
                 X::AbstractMatrix{T}
             )
@@ -176,12 +176,12 @@ for (scheme, dimension) in ((:(:row), 1), (:(:col), 2))
             xᵀx
         end
 
-        @inline function dotvectors{T<:AbstractFloat}(v::Type{Val{$scheme}}, X::AbstractMatrix{T})
-            dotvectors!(v, Array(T, size(X,$dimension)), X)
+        @inline function dotvectors{T<:AbstractFloat}(σ::Type{Val{$order}}, X::AbstractMatrix{T})
+            dotvectors!(σ, Array(T, size(X,$dimension)), X)
         end
 
         function gramian!{T<:AbstractFloat}(
-                 ::Type{Val{$scheme}},
+                 ::Type{Val{$order}},
                 G::Matrix{T},
                 X::Matrix{T}
             )
@@ -189,16 +189,16 @@ for (scheme, dimension) in ((:(:row), 1), (:(:col), 2))
         end
 
         function gramian!{T<:AbstractFloat}(
-                v::Type{Val{$scheme}},
+                σ::Type{Val{$order}},
                 G::Matrix{T},
                 X::AbstractMatrix{T}
             )
-            checkpairwisedimensions(v, G, X)
+            checkpairwisedimensions(σ, G, X)
             copy!(G, $(isrowmajor ? :A_mul_Bt : :At_mul_B)(X, X))
         end
 
         function gramian!{T<:AbstractFloat}(
-                 ::Type{Val{$scheme}}, 
+                 ::Type{Val{$order}}, 
                 G::Matrix{T}, 
                 X::Matrix{T}, 
                 Y::Matrix{T}
@@ -207,56 +207,56 @@ for (scheme, dimension) in ((:(:row), 1), (:(:col), 2))
         end
 
         function gramian!{T<:AbstractFloat}(
-                v::Type{Val{$scheme}}, 
+                σ::Type{Val{$order}}, 
                 G::Matrix{T}, 
                 X::AbstractMatrix{T}, 
                 Y::AbstractMatrix{T}
             )
-            checkpairwisedimensions(v, G, X, Y)
+            checkpairwisedimensions(σ, G, X, Y)
             # copy!(G, $(isrowmajor ? :A_mul_Bt : :At_mul_B)(X, Y))
             copy!(G, $(isrowmajor ? :(X*transpose(Y)) : :(transpose(X)*Y)))
         end
 
         @inline function pairwisematrix!{T}(
-                v::Type{Val{$scheme}},
+                σ::Type{Val{$order}},
                 K::Matrix{T}, 
                 κ::ScalarProductKernel{T},
                 X::AbstractMatrix{T}
             )
-            gramian!(v, K, X)
+            gramian!(σ, K, X)
         end
 
         @inline function pairwisematrix!{T}(
-                v::Type{Val{$scheme}},
+                σ::Type{Val{$order}},
                 K::Matrix{T}, 
                 κ::ScalarProductKernel{T},
                 X::AbstractMatrix{T},
                 Y::AbstractMatrix{T},
             )
-            gramian!(v, K, X, Y)
+            gramian!(σ, K, X, Y)
         end
 
         @inline function pairwisematrix!{T}(
-                v::Type{Val{$scheme}},
+                σ::Type{Val{$order}},
                 K::Matrix{T}, 
                 κ::SquaredDistanceKernel{T},
                 X::AbstractMatrix{T}
             )
-            gramian!(v, K, X)
-            xᵀx = dotvectors(v, X)
+            gramian!(σ, K, X)
+            xᵀx = dotvectors(σ, X)
             squared_distance!(K, xᵀx)
         end
 
         @inline function pairwisematrix!{T}(
-                v::Type{Val{$scheme}},
+                σ::Type{Val{$order}},
                 K::Matrix{T}, 
                 κ::SquaredDistanceKernel{T},
                 X::AbstractMatrix{T},
                 Y::AbstractMatrix{T},
             )
-            gramian!(v, K, X, Y)
-            xᵀx = dotvectors(v, X)
-            yᵀy = dotvectors(v, Y)
+            gramian!(σ, K, X, Y)
+            xᵀx = dotvectors(σ, X)
+            yᵀy = dotvectors(σ, Y)
             squared_distance!(K, xᵀx, yᵀy)
         end
     end

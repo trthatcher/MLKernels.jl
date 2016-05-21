@@ -2,18 +2,15 @@
   Generic kernel function
 ===================================================================================================#
 
-call{T}(κ::Kernel{T}, x::T, y::T)                 = kernel(κ, x, y)
-call{T}(κ::Kernel{T}, x::Vector{T}, y::Vector{T}) = kernel(κ, x, y)
-
-call{T}(κ::Kernel{T}, X::Matrix{T})               = kernelmatrix(κ, X)
-call{T}(κ::Kernel{T}, X::Matrix{T}, Y::Matrix{T}) = kernelmatrix(κ, X, Y)
+call{T}(κ::Kernel{T}, x::T, y::T) = kernel(κ, x, y)
+call{T}(κ::Kernel{T}, x::AbstractArray{T}, y::AbstractArray{T}) = kernel(κ, x, y)
 
 kernel{T}(κ::PairwiseKernel{T}, x::T, y::T) = pairwise(κ, x, y)
-kernel{T}(κ::PairwiseKernel{T}, x::AbstractVector{T}, y::AbstractVector{T}) = pairwise(κ, x, y)
+kernel{T}(κ::PairwiseKernel{T}, x::AbstractArray{T}, y::AbstractArray{T}) = pairwise(κ, x, y)
 
-kernel{T}(κ::KernelComposition{T}, x::T, y::T) = phi(κ.phi, pairwise(κ.k, x, y))
-function kernel{T}(κ::KernelComposition{T}, x::AbstractVector{T}, y::AbstractVector{T})
-    phi(κ.phi, pairwise(κ.k, x, y))
+kernel{T}(κ::KernelComposition{T}, x::T, y::T) = phi(κ.phi, pairwise(κ.kappa, x, y))
+function kernel{T}(κ::KernelComposition{T}, x::AbstractArray{T}, y::AbstractArray{T})
+    phi(κ.phi, pairwise(κ.kappa, x, y))
 end
 
 
@@ -21,71 +18,90 @@ end
   Generic kernelmatrix Functions
 ==========================================================================#
 
-function phi_matrix!{T}(ϕ::CompositionClass{T}, K::AbstractMatrix{T})
-    @inbounds for i in eachindex(K)
-        K[i] = phi(ϕ, K[i])
+function phi_rectangular!{T}(ϕ::CompositionClass{T}, K::AbstractMatrix{T})
+    for i in eachindex(K)
+        @inbounds K[i] = phi(ϕ, K[i])
     end
     K
 end
 
-function phi_symmetricmatrix!{T}(ϕ::CompositionClass{T}, K::AbstractMatrix{T})
+function phi_symmetric!{T}(ϕ::CompositionClass{T}, K::AbstractMatrix{T})
     if !((n = size(K,1)) == size(K,2))
         throw(DimensionMismatch("Kernel matrix must be square."))
     end
-    @inbounds for j = 1:n, i = (1:j)
-        K[i,j] = phi(ϕ, K[i,j])
+    for j = 1:n, i = (1:j)
+        @inbounds K[i,j] = phi(ϕ, K[i,j])
     end
     LinAlg.copytri!(K, 'U')
 end
 
-function kernelmatrix{T}(κ::Kernel{T}, X::AbstractMatrix{T}, is_rowmajor::Bool = true)
-    scheme = is_rowmajor ? Val{:row} : Val{:col}
-    kernelmatrix!(scheme, init_pairwise(scheme, X), κ, X)
+function kernelmatrix{T}(
+        σ::Union{Type{Val{:row}},Type{Val{:col}}},
+        κ::Kernel{T}, 
+        X::AbstractMatrix{T}
+    )
+    kernelmatrix!(σ, init_pairwise(σ, X), κ, X)
+end
+
+function kernelmatrix{T}(
+        κ::Kernel{T},
+        X::AbstractMatrix{T},
+        order::Union{Type{Val{:row}},Type{Val{:col}}} = Val{:row}
+    )
+    kernelmatrix!(order, init_pairwise(order, X), κ, X)
+end
+
+function kernelmatrix{T}(
+        σ::Union{Type{Val{:row}},Type{Val{:col}}},
+        κ::Kernel{T}, 
+        X::AbstractMatrix{T},
+        Y::AbstractMatrix{T}
+    )
+    kernelmatrix!(σ, init_pairwise(σ, X, Y), κ, X, Y)
 end
 
 function kernelmatrix{T}(
         κ::Kernel{T},
         X::AbstractMatrix{T},
         Y::AbstractMatrix{T},
-        is_rowmajor::Bool = true
+        order::Union{Type{Val{:row}},Type{Val{:col}}} = Val{:row}
     )
-    scheme = is_rowmajor ? Val{:row} : Val{:col}
-    kernelmatrix!(scheme, init_pairwise(scheme, X, Y), κ, X, Y)
+    kernelmatrix!(order, init_pairwise(order, X, Y), κ, X, Y)
 end
 
 
 #== Standard Kernel ==#
 
-function kernelmatrix!{T}(v::DataType, K::Matrix{T}, κ::StandardKernel{T}, X::AbstractMatrix{T})
-    pairwise!(v, K, κ, X)
+function kernelmatrix!{T}(σ::DataType, K::Matrix{T}, κ::StandardKernel{T}, X::AbstractMatrix{T})
+    pairwise!(σ, K, κ, X)
 end
 
 function kernelmatrix!{T}(
-        v::DataType,
+        σ::DataType,
         K::Matrix{T},
         κ::StandardKernel{T},
         X::AbstractMatrix{T}
     )
-    pairwise!(v, K, κ, X)
+    pairwise!(σ, K, κ, X)
 end
 
 
 #== Composition Kernel ==#
 
-function kernelmatrix!{T}(v::DataType, K::Matrix{T}, κ::KernelComposition{T}, X::AbstractMatrix{T})
-    pairwise!(v, K, κ.kappa, X)
-    phi_symmetricmatrix!(κ.phi, K)
+function kernelmatrix!{T}(σ::DataType, K::Matrix{T}, κ::KernelComposition{T}, X::AbstractMatrix{T})
+    pairwise!(σ, K, κ.kappa, X)
+    phi_symmetric!(κ.phi, K)
 end
 
 function kernelmatrix!{T}(
-        v::DataType,
+        σ::DataType,
         K::Matrix{T},
         κ::KernelComposition{T},
         X::AbstractMatrix{T},
         Y::AbstractMatrix{T}
     )
-    pairwise!(v, K, κ.kappa, X, Y)
-    phi_matrix!(κ.phi, K)
+    pairwise!(σ, K, κ.kappa, X, Y)
+    phi_rectangular!(κ.phi, K)
 end
 
 
@@ -97,25 +113,25 @@ for (kernel_object, scalar_op, identity, scalar) in (
     )
     @eval begin
         function kernelmatrix!{T}(
-                v::Union{Type{Val{:row}},Type{Val{:col}}},
+                σ::Union{Type{Val{:row}},Type{Val{:col}}},
                 K::Matrix{T},
                 κ::$kernel_object{T},
                 X::AbstractMatrix{T}
             )
-            kernelmatrix!(v, K, κ.kappa1, X)
-            broadcast!($scalar_op, K, kernelmatrix(v, similar(K), κ.kappa2, X))
+            kernelmatrix!(σ, K, κ.kappa1, X)
+            broadcast!($scalar_op, K, kernelmatrix(σ, similar(K), κ.kappa2, X))
             κ.$scalar == $identity ? K : broadcast!($scalar_op, K, κ.$scalar)
         end
 
         function kernelmatrix!{T}(
-                v::Union{Type{Val{:row}},Type{Val{:col}}},
+                σ::Union{Type{Val{:row}},Type{Val{:col}}},
                 K::Matrix{T},
                 κ::$kernel_object{T},
                 X::AbstractMatrix{T},
                 Y::AbstractMatrix{T}
             )
-            kernelmatrix!(v, K, κ.kappa1, X, Y)
-            broadcast!($scalar_op, K, kernelmatrix(v, similar(K), κ.kappa2, X, Y))
+            kernelmatrix!(σ, K, κ.kappa1, X, Y)
+            broadcast!($scalar_op, K, kernelmatrix(σ, similar(K), κ.kappa2, X, Y))
             κ.$scalar == $identity ? K : broadcast!($scalar_op, K, κ.$scalar)
         end
     end
