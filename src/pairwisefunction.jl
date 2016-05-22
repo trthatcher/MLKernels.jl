@@ -3,8 +3,8 @@
 ===================================================================================================#
 
 # These two functions may be used to define any kernel
-pairwise{T}(κ::AdditiveKernel{T}, x::T, y::T) = phi(κ, x, y)
-function unsafe_pairwise{T}(κ::AdditiveKernel{T}, x::AbstractArray{T}, y::AbstractArray{T})
+pairwise{T}(κ::PairwiseKernel{T}, x::T, y::T) = phi(κ, x, y)
+function unsafe_pairwise{T}(κ::PairwiseKernel{T}, x::AbstractArray{T}, y::AbstractArray{T})
     s = zero(T)
     @inbounds for i in eachindex(x)
         s += phi(κ, x[i], y[i])
@@ -12,11 +12,10 @@ function unsafe_pairwise{T}(κ::AdditiveKernel{T}, x::AbstractArray{T}, y::Abstr
     s
 end
 
-function pairwise{T}(κ::AdditiveKernel{T}, x::AbstractArray{T}, y::AbstractArray{T})
+function pairwise{T}(κ::PairwiseKernel{T}, x::AbstractArray{T}, y::AbstractArray{T})
     length(x) == length(y) || throw(DimensionMismatch("Arrays x and y must have the same length."))
     unsafe_pairwise(κ, x, y)
 end
-
 
 for (order, dimension) in ((:(:row), 1), (:(:col), 2))
     isrowmajor = order == :(:row)
@@ -162,7 +161,7 @@ for (order, dimension) in ((:(:row), 1), (:(:col), 2))
         function dotvectors!{T<:AbstractFloat}(
                  ::Type{Val{$order}},
                 xᵀx::Vector{T},
-                X::AbstractMatrix{T}
+                X::Matrix{T}
             )
             if !(size(X,$dimension) == length(xᵀx))
                 errorstring = string("Dimension mismatch on dimension ", $dimension)
@@ -175,7 +174,7 @@ for (order, dimension) in ((:(:row), 1), (:(:col), 2))
             xᵀx
         end
 
-        @inline function dotvectors{T<:AbstractFloat}(σ::Type{Val{$order}}, X::AbstractMatrix{T})
+        @inline function dotvectors{T<:AbstractFloat}(σ::Type{Val{$order}}, X::Matrix{T})
             dotvectors!(σ, Array(T, size(X,$dimension)), X)
         end
 
@@ -188,15 +187,6 @@ for (order, dimension) in ((:(:row), 1), (:(:col), 2))
         end
 
         function gramian!{T<:AbstractFloat}(
-                σ::Type{Val{$order}},
-                G::Matrix{T},
-                X::AbstractMatrix{T}
-            )
-            checkpairwisedimensions(σ, G, X)
-            copy!(G, $(isrowmajor ? :A_mul_Bt : :At_mul_B)(X, X))
-        end
-
-        function gramian!{T<:AbstractFloat}(
                  ::Type{Val{$order}}, 
                 G::Matrix{T}, 
                 X::Matrix{T}, 
@@ -205,22 +195,11 @@ for (order, dimension) in ((:(:row), 1), (:(:col), 2))
             $(isrowmajor ? :A_mul_Bt! : :At_mul_B!)(G, X, Y)
         end
 
-        function gramian!{T<:AbstractFloat}(
-                σ::Type{Val{$order}}, 
-                G::Matrix{T}, 
-                X::AbstractMatrix{T}, 
-                Y::AbstractMatrix{T}
-            )
-            checkpairwisedimensions(σ, G, X, Y)
-            # copy!(G, $(isrowmajor ? :A_mul_Bt : :At_mul_B)(X, Y))
-            copy!(G, $(isrowmajor ? :(X*transpose(Y)) : :(transpose(X)*Y)))
-        end
-
         @inline function pairwisematrix!{T}(
                 σ::Type{Val{$order}},
                 K::Matrix{T}, 
                 κ::ScalarProductKernel{T},
-                X::AbstractMatrix{T}
+                X::Matrix{T}
             )
             gramian!(σ, K, X)
         end
@@ -229,8 +208,8 @@ for (order, dimension) in ((:(:row), 1), (:(:col), 2))
                 σ::Type{Val{$order}},
                 K::Matrix{T}, 
                 κ::ScalarProductKernel{T},
-                X::AbstractMatrix{T},
-                Y::AbstractMatrix{T},
+                X::Matrix{T},
+                Y::Matrix{T},
             )
             gramian!(σ, K, X, Y)
         end
@@ -239,7 +218,7 @@ for (order, dimension) in ((:(:row), 1), (:(:col), 2))
                 σ::Type{Val{$order}},
                 K::Matrix{T}, 
                 κ::SquaredDistanceKernel{T},
-                X::AbstractMatrix{T}
+                X::Matrix{T}
             )
             gramian!(σ, K, X)
             xᵀx = dotvectors(σ, X)
@@ -250,8 +229,8 @@ for (order, dimension) in ((:(:row), 1), (:(:col), 2))
                 σ::Type{Val{$order}},
                 K::Matrix{T}, 
                 κ::SquaredDistanceKernel{T},
-                X::AbstractMatrix{T},
-                Y::AbstractMatrix{T},
+                X::Matrix{T},
+                Y::Matrix{T},
             )
             gramian!(σ, K, X, Y)
             xᵀx = dotvectors(σ, X)
