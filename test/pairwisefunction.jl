@@ -17,6 +17,9 @@ for kernelobj in additive_kernels
 end
 
 info("Testing ", MOD.pairwisematrix)
+steps = length(additive_kernels)*2*2
+counter = 0
+info("    [  0.0%]")
 for kernelobj in additive_kernels
     for spX in (true,false), spY in (true,false)
         for T in FloatingPointTypes
@@ -79,5 +82,7 @@ for kernelobj in additive_kernels
             @test_throws DimensionMismatch MOD.squared_distance!(Array(T,3,4), Array(T,3), Array(T,3))
             @test_throws DimensionMismatch MOD.squared_distance!(Array(T,3,4), Array(T,3), Array(T,5))
         end
+        counter += 1
+        info("[", @sprintf("%5.1f", counter/steps*100), "%]")
     end
 end

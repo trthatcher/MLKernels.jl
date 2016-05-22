@@ -22,7 +22,10 @@ for kernelobj in (additive_kernels..., composition_kernels...)
 end
 
 info("Testing ", MOD.kernelmatrix)
-for kernelobj in (additive_kernels..., composition_kernels...)
+steps = 2*2*2
+counter = 0
+info("    [  0.0%]")
+for kernelobj in (ScalarProductKernel, GaussianKernel)
     for spX in (true,false), spY in (true,false)
         for T in FloatingPointTypes
             Set_X = spX ? [convert(SparseMatrixCSC{T},sprand(p,1,0.2)) for i = 1:n] :
@@ -49,6 +52,8 @@ for kernelobj in (additive_kernels..., composition_kernels...)
             @test_approx_eq MOD.kernelmatrix(Val{:col}, k, X', Y') P
             @test_approx_eq MOD.kernelmatrix(k, X,  Y) P
         end
+        counter += 1
+        info("    [", @sprintf("%5.1f", counter/steps*100), "%]")
     end
 end
 
