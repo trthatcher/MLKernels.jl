@@ -18,36 +18,21 @@ end
   Generic kernelmatrix Functions
 ==========================================================================#
 
-function phi_rectangular!{T}(ϕ::CompositionClass{T}, K::AbstractMatrix{T})
-    for i in eachindex(K)
-        @inbounds K[i] = phi(ϕ, K[i])
-    end
-    K
-end
-
-function phi_symmetric!{T}(ϕ::CompositionClass{T}, K::AbstractMatrix{T})
-    if !((n = size(K,1)) == size(K,2))
-        throw(DimensionMismatch("Kernel matrix must be square."))
-    end
-    for j = 1:n, i = (1:j)
-        @inbounds K[i,j] = phi(ϕ, K[i,j])
-    end
-    LinAlg.copytri!(K, 'U')
-end
-
 function kernelmatrix{T}(
         σ::Union{Type{Val{:row}},Type{Val{:col}}},
         κ::Kernel{T}, 
-        X::AbstractMatrix{T}
+        X::AbstractMatrix{T},
+        symmetrize::Bool = true
     )
-    kernelmatrix!(σ, init_pairwisematrix(σ, X), κ, X)
+    kernelmatrix!(σ, init_pairwisematrix(σ, X), κ, X, symmetrize)
 end
 
 function kernelmatrix{T}(
         κ::Kernel{T},
-        X::AbstractMatrix{T}
+        X::AbstractMatrix{T},
+        symmetrize::Bool = true
     )
-    kernelmatrix(Val{:row}, κ, X)
+    kernelmatrix(Val{:row}, κ, X, symmetrize)
 end
 
 function kernelmatrix{T}(
@@ -74,9 +59,10 @@ function kernelmatrix!{T}(
         σ::Union{Type{Val{:row}},Type{Val{:col}}},
         K::Matrix{T},
         κ::StandardKernel{T},
-        X::AbstractMatrix{T}
+        X::AbstractMatrix{T},
+        symmetrize::Bool = true
     )
-    pairwisematrix!(σ, K, κ, X)
+    pairwisematrix!(σ, K, κ, X, symmetrize)
 end
 
 function kernelmatrix!{T}(
@@ -92,14 +78,32 @@ end
 
 #== Composition Kernel ==#
 
+function phi_rectangular!{T}(ϕ::CompositionClass{T}, K::AbstractMatrix{T})
+    for i in eachindex(K)
+        @inbounds K[i] = phi(ϕ, K[i])
+    end
+    K
+end
+
+function phi_symmetric!{T}(ϕ::CompositionClass{T}, K::AbstractMatrix{T}, symmetrize::Bool = true)
+    if !((n = size(K,1)) == size(K,2))
+        throw(DimensionMismatch("Kernel matrix must be square."))
+    end
+    for j = 1:n, i = (1:j)
+        @inbounds K[i,j] = phi(ϕ, K[i,j])
+    end
+    symmetrize ? LinAlg.copytri!(K, 'U') : K
+end
+
 function kernelmatrix!{T}(
         σ::Union{Type{Val{:row}},Type{Val{:col}}},
         K::Matrix{T},
         κ::KernelComposition{T},
-        X::AbstractMatrix{T}
+        X::AbstractMatrix{T},
+        symmetrize::Bool = true
     )
-    pairwisematrix!(σ, K, κ.kappa, X)
-    phi_symmetric!(κ.phi, K)
+    pairwisematrix!(σ, K, κ.kappa, X, false)
+    phi_symmetric!(κ.phi, K, symmetrize)
 end
 
 function kernelmatrix!{T}(

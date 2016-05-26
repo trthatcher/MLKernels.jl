@@ -77,7 +77,8 @@ for (order, dimension) in ((:(:row), 1), (:(:col), 2))
                 σ::Type{Val{$order}},
                 K::Matrix{T}, 
                 κ::PairwiseKernel{T},
-                X::AbstractMatrix{T}
+                X::AbstractMatrix{T},
+                symmetrize::Bool
             )
             n = checkpairwisedimensions(σ, K, X)
             for j = 1:n
@@ -87,7 +88,7 @@ for (order, dimension) in ((:(:row), 1), (:(:col), 2))
                     @inbounds K[i,j] = unsafe_pairwise(κ, xi, xj)
                 end
             end
-            LinAlg.copytri!(K, 'U', false)
+            symmetrize ? LinAlg.copytri!(K, 'U', false) : K
         end
 
         function pairwisematrix!{T}(
@@ -110,15 +111,17 @@ for (order, dimension) in ((:(:row), 1), (:(:col), 2))
     end
 end
 
-function pairwisematrix{T}(
+#=
+@inline function pairwisematrix{T}(
         σ::Union{Type{Val{:row}},Type{Val{:col}}},
         κ::PairwiseKernel{T},
-        X::AbstractMatrix{T}
+        X::AbstractMatrix{T},
+        symmetrize::Bool = true
     )
-    pairwisematrix!(σ, init_pairwisematrix(σ, X), κ, X)
+    pairwisematrix!(σ, init_pairwisematrix(σ, X), κ, X, symmetrize)
 end
 
-function pairwisematrix{T}(
+@inline function pairwisematrix{T}(
         σ::Union{Type{Val{:row}},Type{Val{:col}}},
         κ::PairwiseKernel{T},
         X::AbstractMatrix{T},
@@ -126,20 +129,20 @@ function pairwisematrix{T}(
     )
     pairwisematrix!(σ, init_pairwisematrix(σ, X, Y), κ, X, Y)
 end
-
+=#
 
 #===================================================================================================
   ScalarProduct and SquaredDistance using BLAS/Built-In methods
 ===================================================================================================#
 
-function squared_distance!{T<:AbstractFloat}(G::Matrix{T}, xᵀx::Vector{T})
+function squared_distance!{T<:AbstractFloat}(G::Matrix{T}, xᵀx::Vector{T}, symmetrize::Bool)
     if !((n = length(xᵀx)) == size(G,1) == size(G,2))
         throw(DimensionMismatch("Gramian matrix must be square."))
     end
     @inbounds for j = 1:n, i = (1:j)
         G[i,j] = xᵀx[i] - 2G[i,j] + xᵀx[j]
     end
-    LinAlg.copytri!(G, 'U')
+    symmetrize ? LinAlg.copytri!(G, 'U') : G
 end
 
 function squared_distance!{T<:AbstractFloat}(G::Matrix{T}, xᵀx::Vector{T}, yᵀy::Vector{T})
@@ -181,27 +184,30 @@ for (order, dimension) in ((:(:row), 1), (:(:col), 2))
         function gramian!{T<:AbstractFloat}(
                  ::Type{Val{$order}},
                 G::Matrix{T},
-                X::Matrix{T}
+                X::Matrix{T},
+                symmetrize::Bool
             )
-            $(isrowmajor ? :A_mul_Bt! : :At_mul_B!)(G, X, X)
+            LinAlg.syrk_wrapper!(G, $(isrowmajor ? 'N' : 'T'), X)
+            symmetrize ? LinAlg.copytri!(G, 'U') : G
         end
 
-        function gramian!{T<:AbstractFloat}(
+        @inline function gramian!{T<:AbstractFloat}(
                  ::Type{Val{$order}}, 
                 G::Matrix{T}, 
                 X::Matrix{T}, 
                 Y::Matrix{T}
             )
-            $(isrowmajor ? :A_mul_Bt! : :At_mul_B!)(G, X, Y)
+            LinAlg.gemm_wrapper!(G, $(isrowmajor ? 'N' : 'T'), $(isrowmajor ? 'T' : 'N'), X, Y)
         end
 
         @inline function pairwisematrix!{T}(
                 σ::Type{Val{$order}},
                 K::Matrix{T}, 
                 κ::ScalarProductKernel{T},
-                X::Matrix{T}
+                X::Matrix{T},
+                symmetrize::Bool
             )
-            gramian!(σ, K, X)
+            gramian!(σ, K, X, symmetrize)
         end
 
         @inline function pairwisematrix!{T}(
@@ -214,18 +220,19 @@ for (order, dimension) in ((:(:row), 1), (:(:col), 2))
             gramian!(σ, K, X, Y)
         end
 
-        @inline function pairwisematrix!{T}(
+        function pairwisematrix!{T}(
                 σ::Type{Val{$order}},
                 K::Matrix{T}, 
                 κ::SquaredDistanceKernel{T},
-                X::Matrix{T}
+                X::Matrix{T},
+                symmetrize::Bool
             )
-            gramian!(σ, K, X)
+            gramian!(σ, K, X, false)
             xᵀx = dotvectors(σ, X)
-            squared_distance!(K, xᵀx)
+            squared_distance!(K, xᵀx, symmetrize)
         end
 
-        @inline function pairwisematrix!{T}(
+        function pairwisematrix!{T}(
                 σ::Type{Val{$order}},
                 K::Matrix{T}, 
                 κ::SquaredDistanceKernel{T},
