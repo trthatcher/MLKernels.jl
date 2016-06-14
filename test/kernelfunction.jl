@@ -50,6 +50,34 @@ for kernelobj in (additive_kernels..., composition_kernels..., MLKTest.PairwiseT
     counter += 1
     info("    Progress: ", @sprintf("%5.1f", counter/steps*100), "%")
 end
+smallset = (ChiSquaredKernel, ScalarProductKernel, GaussianKernel, MLKTest.PairwiseTestKernel)
+for kernelobj1 in smallset
+    for kernlobj2 in smallset
+        for T in FloatingPointTypes
+            Set_X = [rand(T,p) for i = 1:n]
+            Set_Y = [rand(T,p) for i = 1:m]
+
+            X = transpose(hcat(Set_X...))
+            Y = transpose(hcat(Set_Y...))
+            k = convert(Kernel{T}, (kernelobj)())
+            #println("κ:", k, ", X:", typeof(X), ", Y:", typeof(Y))
+            
+            P = [MOD.kernel(k,x,y) for x in Set_X, y in Set_X]
+            @test_approx_eq MOD.kernelmatrix!(Val{:row}, Array(T,n,n), k, X)  P
+            @test_approx_eq MOD.kernelmatrix!(Val{:col}, Array(T,n,n), k, X') P
+            @test_approx_eq MOD.kernelmatrix(Val{:row}, k, X)  P
+            @test_approx_eq MOD.kernelmatrix(Val{:col}, k, X') P
+            @test_approx_eq MOD.kernelmatrix(k, X) P
+
+            P = [MOD.kernel(k,x,y) for x in Set_X, y in Set_Y]
+            @test_approx_eq MOD.kernelmatrix!(Val{:row}, Array(T,n,m), k, X,  Y)  P
+            @test_approx_eq MOD.kernelmatrix!(Val{:col}, Array(T,n,m), k, X', Y') P
+            @test_approx_eq MOD.kernelmatrix(Val{:row}, k, X,  Y)  P
+            @test_approx_eq MOD.kernelmatrix(Val{:col}, k, X', Y') P
+            @test_approx_eq MOD.kernelmatrix(k, X,  Y) P
+        end
+    end
+end
 
 #=
 info("Testing ", centerkernelmatrix)

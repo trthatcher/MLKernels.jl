@@ -60,7 +60,7 @@ function kernelmatrix!{T}(
         K::Matrix{T},
         κ::StandardKernel{T},
         X::AbstractMatrix{T},
-        symmetrize::Bool = true
+        symmetrize::Bool
     )
     pairwisematrix!(σ, K, κ, X, symmetrize)
 end
@@ -129,11 +129,15 @@ for (kernel_object, scalar_op, identity, scalar) in (
                 σ::Union{Type{Val{:row}},Type{Val{:col}}},
                 K::Matrix{T},
                 κ::$kernel_object{T},
-                X::AbstractMatrix{T}
+                X::AbstractMatrix{T},
+                symmetrize::Bool = true
             )
-            kernelmatrix!(σ, K, κ.kappa1, X)
-            broadcast!($scalar_op, K, kernelmatrix(σ, similar(K), κ.kappa2, X))
-            κ.$scalar == $identity ? K : broadcast!($scalar_op, K, κ.$scalar)
+            kernelmatrix!(σ, K, κ.kappa1, X, false)
+            broadcast!($scalar_op, K, kernelmatrix!(σ, similar(K), κ.kappa2, X, false))
+            if κ.$scalar != $identity
+                broadcast!($scalar_op, K, κ.$scalar)
+            end
+            symmetrize ? LinAlg.copytri!(K, 'U') : K
         end
 
         function kernelmatrix!{T}(
@@ -144,7 +148,7 @@ for (kernel_object, scalar_op, identity, scalar) in (
                 Y::AbstractMatrix{T}
             )
             kernelmatrix!(σ, K, κ.kappa1, X, Y)
-            broadcast!($scalar_op, K, kernelmatrix(σ, similar(K), κ.kappa2, X, Y))
+            broadcast!($scalar_op, K, kernelmatrix!(σ, similar(K), κ.kappa2, X, Y))
             κ.$scalar == $identity ? K : broadcast!($scalar_op, K, κ.$scalar)
         end
     end

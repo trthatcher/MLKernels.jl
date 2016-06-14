@@ -1,248 +1,101 @@
 #===================================================================================================
-  Generic pairwisematrix functions for kernels consuming two vectors
+  Pairwise Kernels - Consume two vectors
 ===================================================================================================#
 
-# These two functions may be used to define any kernel
-pairwise{T}(κ::PairwiseKernel{T}, x::T, y::T) = phi(κ, x, y)
-function unsafe_pairwise{T}(κ::PairwiseKernel{T}, x::AbstractArray{T}, y::AbstractArray{T})
-    s = zero(T)
-    @inbounds for i in eachindex(x)
-        s += phi(κ, x[i], y[i])
-    end
-    s
-end
+abstract PairwiseFunction{T<:AbstractFloat} <: RealFunction{T}
 
-function pairwise{T}(κ::PairwiseKernel{T}, x::AbstractArray{T}, y::AbstractArray{T})
-    length(x) == length(y) || throw(DimensionMismatch("Arrays x and y must have the same length."))
-    unsafe_pairwise(κ, x, y)
-end
+pairwise_initiate{T}(::PairwiseFunction{T}) = zero(T)
+pairwise_return{T}(::PairwiseFunction{T}, s::T) = s
 
-for (order, dimension) in ((:(:row), 1), (:(:col), 2))
-    isrowmajor = order == :(:row)
-    @eval begin
-
-        @inline function subvector(::Type{Val{$order}}, X::AbstractMatrix,  i::Integer)
-            $(isrowmajor ? :(slice(X, i, :)) : :(slice(X, :, i)))
-        end
-
-        @inline function init_pairwisematrix{T}(
-                 ::Type{Val{$order}},
-                X::AbstractMatrix{T}
-            )
-            Array(T, size(X,$dimension), size(X,$dimension))
-        end
-
-        @inline function init_pairwisematrix{T}(
-                 ::Type{Val{$order}},
-                X::AbstractMatrix{T}, 
-                Y::AbstractMatrix{T}
-            )
-            Array(T, size(X,$dimension), size(Y,$dimension))
-        end
-
-        function checkpairwisedimensions{T}(
-                 ::Type{Val{$order}},
-                K::Matrix{T}, 
-                X::AbstractMatrix{T}
-            )
-            n = size(K,1)
-            if size(K,2) != n
-                throw(DimensionMismatch("Kernel matrix K must be square"))
-            elseif size(X, $dimension) != n
-                errorstring = string("Dimensions of K must match dimension ", $dimension, "of X")
-                throw(DimensionMismatch(errorstring))
-            end
-            return n
-        end
-
-        function checkpairwisedimensions(
-                 ::Type{Val{$order}},
-                K::Matrix,
-                X::AbstractMatrix, 
-                Y::AbstractMatrix
-            )
-            n = size(X, $dimension)
-            m = size(Y, $dimension)
-            if n != size(K,1)
-                errorstring = string("Dimension 1 of K must match dimension ", $dimension, "of X")
-                throw(DimensionMismatch(errorstring))
-            elseif m != size(K,2)
-                errorstring = string("Dimension 2 of K must match dimension ", $dimension, "of Y")
-                throw(DimensionMismatch(errorstring))
-            end
-            return (n, m)
-        end
-
-        function pairwisematrix!{T}(
-                σ::Type{Val{$order}},
-                K::Matrix{T}, 
-                κ::PairwiseKernel{T},
-                X::AbstractMatrix{T},
-                symmetrize::Bool
-            )
-            n = checkpairwisedimensions(σ, K, X)
-            for j = 1:n
-                xj = subvector(σ, X, j)
-                for i = 1:j
-                    xi = subvector(σ, X, i)
-                    @inbounds K[i,j] = unsafe_pairwise(κ, xi, xj)
-                end
-            end
-            symmetrize ? LinAlg.copytri!(K, 'U', false) : K
-        end
-
-        function pairwisematrix!{T}(
-                σ::Type{Val{$order}},
-                K::Matrix{T}, 
-                κ::PairwiseKernel{T},
-                X::AbstractMatrix{T},
-                Y::AbstractMatrix{T},
-            )
-            n, m = checkpairwisedimensions(σ, K, X, Y)
-            for j = 1:m
-                yj = subvector(σ, Y, j)
-                for i = 1:n
-                    xi = subvector(σ, X, i)
-                    @inbounds K[i,j] = unsafe_pairwise(κ, xi, yj)
-                end
-            end
-            K
-        end
+function description_string(f::PairwiseFunction, showtype::Bool = true)
+    obj = typeof(f)
+    fields = fieldnames(obj)
+    obj_str = string(obj.name.name) * (showtype ? string("{", eltype(f), "}") : "")
+    if length(fields) == 0
+        return obj_str
+    else
+        fields_str = join(["$field=$(getfield(f,field).value)" for field in fields], ",")
+        *(obj_str, "(", fields_str, ")")
     end
 end
 
-#=
-@inline function pairwisematrix{T}(
-        σ::Union{Type{Val{:row}},Type{Val{:col}}},
-        κ::PairwiseKernel{T},
-        X::AbstractMatrix{T},
-        symmetrize::Bool = true
+function =={T<:PairwiseFunction}(f1::T, f2::T)
+    all([getfield(f1,field) == getfield(f2,field) for field in fieldnames(T)])
+end
+
+
+abstract SymmetricPairwiseFunction{T<:AbstractFloat} <: PairwiseFunction{T}
+
+
+#=== Metrics ===#
+
+abstract Metric{T<:AbstractFloat} <: SymmetricPairwiseFunction{T}
+
+@inline attainsnegative(::Metric) = false
+
+
+doc"Euclidean() = √((x-y)ᵀ(x-y))"
+immutable Euclidean{T<:AbstractFloat} <: Metric{T} end
+Euclidean() = Euclidean{Float64}()
+
+convert{T}(::Type{Euclidean{T}}, ::Euclidean) = Euclidean{T}()
+
+isnegdef(::SquaredEuclidean) = true
+
+@inline pairwise_aggregate{T}(::Euclidean{T}, s::T, x::T, y::T) = s + (x-y)^2
+@inline pairwise_return{T}(::Euclidean{T}, s::T) = sqrt(s)
+
+
+doc"SquaredEuclidean() = (x-y)ᵀ(x-y)"
+immutable SquaredEuclidean{T<:AbstractFloat} <: Metric{T} end
+SquaredEuclidean() = SquaredEuclidean{Float64}()
+
+convert{T}(::Type{SquaredEuclidean{T}}, ::SquaredEuclidean) = SquaredEuclidean{T}()
+
+isnegdef(::SquaredEuclidean) = true
+
+@inline pairwise_aggregate{T}(f::EuclideanDistance{T}, s::T, x::T, y::T) = s + (x-y)^2
+
+
+doc"ChiSquared() = Σⱼ(xⱼ-yⱼ)²/(xⱼ+yⱼ)"
+immutable ChiSquared{T<:AbstractFloat} <: Metric{T} end
+ChiSquared() = ChiSquared{Float64}()
+
+convert{T}(::Type{ChiSquared{T}}, ::ChiSquared) = ChiSquared{T}()
+
+isnegdef(::ChiSquared) = true
+
+@inline function pairwise_aggregate{T}(f::ChiSquared{T}, s::T, x::T, y::T)
+    s + (x == y == zero(T)) ? zero(T) : (x-y)^2/(x+y)
+end
+
+
+#=== Inner Products ===#
+
+abstract InnerProduct{T<:AbstractFloat} <: SymmetricPairwiseFunction{T}
+
+doc"ScalarProduct() = xᵀy"
+immutable ScalarProduct{T<:AbstractFloat} <: InnerProduct{T} end
+ScalarProduct() = ScalarProduct{Float64}()
+
+convert{T}(::Type{ScalarProduct{T}}, ::ScalarProduct) = ScalarProduct{T}()
+
+@inline ismercer(::ScalarProduct) = true
+
+@inline pairwise_aggregate{T}(f::ScalarProduct{T}, s::T, x::T, y::T) = s + x*y
+
+
+#=== Other Functions ===#
+
+doc"SineSquared(p) = Σⱼsin²(p(xⱼ-yⱼ))"
+immutable SineSquared{T<:AbstractFloat} <: SymmetricPairwiseFunction{T}
+    p::HyperParameter{T}
+    SineSquared(p::Variable{T}) = new(
+        HyperParameter(p, leftbounded(zero(T), :open))
     )
-    pairwisematrix!(σ, init_pairwisematrix(σ, X), κ, X, symmetrize)
 end
+@outer_constructor(SineSquared, (π,))
 
-@inline function pairwisematrix{T}(
-        σ::Union{Type{Val{:row}},Type{Val{:col}}},
-        κ::PairwiseKernel{T},
-        X::AbstractMatrix{T},
-        Y::AbstractMatrix{T}
-    )
-    pairwisematrix!(σ, init_pairwisematrix(σ, X, Y), κ, X, Y)
-end
-=#
+isnegdef(::SineSquared) = true
 
-#===================================================================================================
-  ScalarProduct and SquaredDistance using BLAS/Built-In methods
-===================================================================================================#
-
-function squared_distance!{T<:AbstractFloat}(G::Matrix{T}, xᵀx::Vector{T}, symmetrize::Bool)
-    if !((n = length(xᵀx)) == size(G,1) == size(G,2))
-        throw(DimensionMismatch("Gramian matrix must be square."))
-    end
-    @inbounds for j = 1:n, i = (1:j)
-        G[i,j] = xᵀx[i] - 2G[i,j] + xᵀx[j]
-    end
-    symmetrize ? LinAlg.copytri!(G, 'U') : G
-end
-
-function squared_distance!{T<:AbstractFloat}(G::Matrix{T}, xᵀx::Vector{T}, yᵀy::Vector{T})
-    if size(G,1) != length(xᵀx)
-        throw(DimensionMismatch("Length of xᵀx must match rows of G"))
-    elseif size(G,2) != length(yᵀy)
-        throw(DimensionMismatch("Length of yᵀy must match columns of G"))
-    end
-    @inbounds for I in CartesianRange(size(G))
-        G[I] = xᵀx[I[1]] - 2G[I] + yᵀy[I[2]]
-    end
-    G
-end
-
-for (order, dimension) in ((:(:row), 1), (:(:col), 2))
-    isrowmajor = order == :(:row)
-    @eval begin
-
-        function dotvectors!{T<:AbstractFloat}(
-                 ::Type{Val{$order}},
-                xᵀx::Vector{T},
-                X::Matrix{T}
-            )
-            if !(size(X,$dimension) == length(xᵀx))
-                errorstring = string("Dimension mismatch on dimension ", $dimension)
-                throw(DimensionMismatch(errorstring))
-            end
-            fill!(xᵀx, zero(T))
-            for I in CartesianRange(size(X))
-                xᵀx[I.I[$dimension]] += X[I]^2
-            end
-            xᵀx
-        end
-
-        @inline function dotvectors{T<:AbstractFloat}(σ::Type{Val{$order}}, X::Matrix{T})
-            dotvectors!(σ, Array(T, size(X,$dimension)), X)
-        end
-
-        function gramian!{T<:AbstractFloat}(
-                 ::Type{Val{$order}},
-                G::Matrix{T},
-                X::Matrix{T},
-                symmetrize::Bool
-            )
-            LinAlg.syrk_wrapper!(G, $(isrowmajor ? 'N' : 'T'), X)
-            symmetrize ? LinAlg.copytri!(G, 'U') : G
-        end
-
-        @inline function gramian!{T<:AbstractFloat}(
-                 ::Type{Val{$order}}, 
-                G::Matrix{T}, 
-                X::Matrix{T}, 
-                Y::Matrix{T}
-            )
-            LinAlg.gemm_wrapper!(G, $(isrowmajor ? 'N' : 'T'), $(isrowmajor ? 'T' : 'N'), X, Y)
-        end
-
-        @inline function pairwisematrix!{T}(
-                σ::Type{Val{$order}},
-                K::Matrix{T}, 
-                κ::ScalarProductKernel{T},
-                X::Matrix{T},
-                symmetrize::Bool
-            )
-            gramian!(σ, K, X, symmetrize)
-        end
-
-        @inline function pairwisematrix!{T}(
-                σ::Type{Val{$order}},
-                K::Matrix{T}, 
-                κ::ScalarProductKernel{T},
-                X::Matrix{T},
-                Y::Matrix{T},
-            )
-            gramian!(σ, K, X, Y)
-        end
-
-        function pairwisematrix!{T}(
-                σ::Type{Val{$order}},
-                K::Matrix{T}, 
-                κ::SquaredDistanceKernel{T},
-                X::Matrix{T},
-                symmetrize::Bool
-            )
-            gramian!(σ, K, X, false)
-            xᵀx = dotvectors(σ, X)
-            squared_distance!(K, xᵀx, symmetrize)
-        end
-
-        function pairwisematrix!{T}(
-                σ::Type{Val{$order}},
-                K::Matrix{T}, 
-                κ::SquaredDistanceKernel{T},
-                X::Matrix{T},
-                Y::Matrix{T},
-            )
-            gramian!(σ, K, X, Y)
-            xᵀx = dotvectors(σ, X)
-            yᵀy = dotvectors(σ, Y)
-            squared_distance!(K, xᵀx, yᵀy)
-        end
-    end
-end
+@inline pairwise_aggregate{T}(f::SineSquared{T}, s::T, x::T, y::T) = s + sin(f.p*(x-y))^2
