@@ -9,12 +9,6 @@ import Base: call, convert, eltype, print, show, string, ==, *, /, +, -, ^, bess
 
 export
     # Functions
-    ∘,
-    kernel,
-    kernelmatrix,
-    centerkernelmatrix!,
-    centerkernelmatrix,
-
     ismercer,
     isnegdef,
     ispositive,
@@ -33,20 +27,18 @@ export
     HyperParameter,
 
     # Kernel Type
-    Kernel,
-        StandardKernel,
-            PairwiseKernel,
-                AdditiveKernel,
-                    SquaredDistanceKernel,
+    MathematicalFunction,
+        RealFunction,
+            PairwiseRealFunction,
+                SymmetricRealFunction,
+                    Metric,
+                        Euclidean,
+                        SquaredEuclidean,
+                        ChiSquared,
+                    InnerProduct,
+                        ScalarProduct,
                     SineSquaredKernel,
-                    ChiSquaredKernel,
-                    ScalarProductKernel,
-                ARD,
-            KernelComposition,
-        KernelOperation,
-            KernelAffinity,
-            KernelProduct,
-            KernelSum,
+            CompositeRealFunction,
     
     # Composition Classes
     CompositionClass,
@@ -83,8 +75,8 @@ using MLKernels.HyperParameters: Bound, Interval, leftbounded, rightbounded, unb
     Variable, fixed, Argument, HyperParameter
 
 include("meta.jl")
-include("kernel.jl")
-include("pairwisefunction.jl")
-include("kernelfunction.jl")
+include("functions.jl")
+#include("pairwisefunction.jl")
+#include("kernelfunction.jl")
 
 end # MLKernels

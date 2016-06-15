@@ -2,7 +2,9 @@
   RealFunctions
 ===================================================================================================#
 
-abstract RealFunction{T<:AbstractFloat}
+abstract MathematicalFunction{T}
+
+abstract RealFunction{T<:AbstractFloat} <: MathematicalFunction{T}
 
 eltype{T}(::RealFunction{T}) = T 
 
@@ -40,21 +42,12 @@ function show(io::IO, f::RealFunction)
     print(io, description_string(f))
 end
 
-function convert{T<:AbstractFloat,K<:RealFunction}(::Type{RealFunction{T}}, ϕ::K)
-    convert(K.name.primary{T}, ϕ)
+function convert{T<:AbstractFloat,F<:RealFunction}(::Type{RealFunction{T}}, f::F)
+    convert(F.name.primary{T}, f)
 end
 
+# Functions
 
-#== Standard RealFunctions ==#
-
-abstract StandardRealFunction{T<:AbstractFloat}  <: RealFunction{T}  # Either a kernel is atomic or it is a
-
-include("pairwisekernel.jl")
-include("kernelcomposition.jl")
-
-
-#== RealFunction Operations ==#
-
-abstract PointwiseFunction{T<:AbstractFloat} <: RealFunction{T}  # function of multiple kernels
-
-include("kerneloperation.jl")
+include("functions/pairwisefunction.jl")
+include("functions/compositefunction.jl")
+#include("pointwisefunction.jl")

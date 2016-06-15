@@ -6,6 +6,7 @@ FloatingPointTypes = (Float32, Float64)
 IntegerTypes = (Int32, UInt32, Int64, UInt64)
 MOD = MLKernels
 
+#=
 module MLKTest
 
     using MLKernels
@@ -39,12 +40,13 @@ module MLKTest
     end
     TestClass{T<:AbstractFloat}(a::Argument{T}=1.0) = TestClass{T}(Variable(a))
 end
+=#
 
 include("reference.jl")
 
 include("hyperparameter.jl")
-include("pairwisekernel.jl")
-include("kernelcomposition.jl")
-include("kerneloperation.jl")
-include("pairwisefunction.jl")
-include("kernelfunction.jl")
+include("functions/pairwisefunction.jl")
+#include("kernelcomposition.jl")
+#include("kerneloperation.jl")
+#include("pairwisefunction.jl")
+#include("kernelfunction.jl")
