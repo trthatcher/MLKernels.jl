@@ -31,6 +31,7 @@ abstract SymmetricPairwiseRealFunction{T<:AbstractFloat} <: PairwiseRealFunction
 
 abstract Metric{T<:AbstractFloat} <: SymmetricPairwiseRealFunction{T}
 
+@inline ismetric(::Metric) = true
 @inline attainsnegative(::Metric) = false
 
 
@@ -65,6 +66,9 @@ end
 
 abstract InnerProduct{T<:AbstractFloat} <: SymmetricPairwiseRealFunction{T}
 
+@inline isinnerprod(::InnerProduct) = true
+
+
 doc"ScalarProduct() = xᵀy"
 immutable ScalarProduct{T<:AbstractFloat} <: InnerProduct{T} end
 ScalarProduct() = ScalarProduct{Float64}()
@@ -83,5 +87,6 @@ immutable SineSquaredKernel{T<:AbstractFloat} <: SymmetricPairwiseRealFunction{T
     )
 end
 @outer_constructor(SineSquaredKernel, (π,))
+attainsnegative(::SineSquaredKernel) = false
 isnegdef(::SineSquaredKernel) = true
 @inline pairwise_aggregate{T}(f::SineSquaredKernel{T}, s::T, x::T, y::T) = s + sin(f.p*(x-y))^2

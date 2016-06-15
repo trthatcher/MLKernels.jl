@@ -32,6 +32,16 @@ pairwise_functions_aggregate = Dict(
     ScalarProduct     => (s,x,y)   -> s + x*y
 )
 
+pairwise_functions_properties = Dict( 
+                        #|mercer|negdef|metric|inprod|neg   |zero |pos
+    SineSquaredKernel => (false, true,  false, false, false, true, true),
+    ScalarProduct     => (true,  false, false, true,  true,  true, true),
+    Euclidean         => (false, true,  true,  false, false, true, true),
+    SquaredEuclidean  => (false, true,  true,  false, false, true, true),
+    ChiSquared        => (false, true,  true,  false, false, true, true)
+ )
+
+
 
 
 composition_classes = (

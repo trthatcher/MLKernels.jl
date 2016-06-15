@@ -40,17 +40,16 @@ for f_obj in pairwise_functions
 
     f = (f_obj)()
 
-    #=
-    properties = all_kernelproperties[f_obj]
-    
+    properties = pairwise_functions_properties[f_obj]
 
-    @test MOD.ismercer(k)        == properties[1]
-    @test MOD.isnegdef(k)        == properties[2]
-    @test MOD.attainsnegative(k) == properties[3]
-    @test MOD.attainszero(k)     == properties[4]
-    @test MOD.attainspositive(k) == properties[5]
+    @test MOD.ismercer(f)        == properties[1]
+    @test MOD.isnegdef(f)        == properties[2]
+    @test MOD.ismetric(f)        == properties[3]
+    @test MOD.isinnerprod(f)     == properties[4]
+    @test MOD.attainsnegative(f) == properties[5]
+    @test MOD.attainszero(f)     == properties[6]
+    @test MOD.attainspositive(f) == properties[7]
 
-    =#
     # Test that output does not create error
     show(DevNull, f)
 
