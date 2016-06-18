@@ -1,69 +1,70 @@
 info("Testing ", MOD.CompositionClass)
-@test MOD.iscomposable(MLKTest.TestClass(), MLKTest.TestKernel()) == false
+#@test MOD.iscomposable(MLKTest.TestClass(), MLKTest.TestKernel()) == false
 for class_obj in composition_classes
     info("Testing ", class_obj)
 
     # Test constructors
     for T in FloatingPointTypes
-        default_floats, default_others = all_default_args[class_obj]
+        default_floats, default_others = composition_classes_defaults[class_obj]
         default_args = (T[default_floats...]..., default_others...)
         fields = fieldnames(class_obj)
-        k = (class_obj)(default_args...)
-        @test eltype(k) == T
+        g = (class_obj)(default_args...)
+        @test eltype(g) == T
 
         for i in eachindex(fields)
-            @test getfield(k, fields[i]).value == default_args[i]
+            @test getfield(g, fields[i]).value == default_args[i]
         end
 
         for z in (zero(T),one(T))
-            f = all_phifunctions[class_obj]
-            @test_approx_eq MOD.phi(k, z) f(default_args..., z)
+            ft = composition_classes_compose[class_obj]
+            @test_approx_eq MOD.composition(g, z) ft(default_args..., z)
         end
     end
 
     # Test conversions
     for T in FloatingPointTypes
-        phi = (class_obj)()
+        g = (class_obj)()
         for U in FloatingPointTypes
-            @test U == eltype(convert(CompositionClass{U}, phi))
+            @test U == eltype(convert(CompositionClass{U}, g))
         end
     end
 
     # Test equality
-    phi1 = (class_obj)()
+    g1 = (class_obj)()
     for class_obj2 in composition_classes
-        phi2 = (class_obj2)()
+        g2 = (class_obj2)()
         if class_obj == class_obj2
-            @test phi1 == phi2
+            @test g1 == g2
         else
-            @test phi1 != phi2
+            @test g1 != g2
         end
     end
 
     # Test properties
-    properties = all_kernelproperties[class_obj]
-    phi = (class_obj)()
+    properties = composition_class_properties[class_obj]
+    g = (class_obj)()
 
-    @test MOD.ismercer(phi)        == properties[1]
-    @test MOD.isnegdef(phi)        == properties[2]
-    @test MOD.attainsnegative(phi) == properties[3]
-    @test MOD.attainszero(phi)     == properties[4]
-    @test MOD.attainspositive(phi) == properties[5]
+    @test MOD.ismercer(g)        == properties[1]
+    @test MOD.isnegdef(g)        == properties[2]
+    @test MOD.ismetric(g)        == properties[3]
+    @test MOD.isinnerprod(g)     == properties[4]
+    @test MOD.attainsnegative(g) == properties[5]
+    @test MOD.attainszero(g)     == properties[6]
+    @test MOD.attainspositive(g) == properties[7]
 
     # Test iscomposable() rules
-    valid_kernel_objs = composition_pairs[class_obj]
-    for kernel_obj in additive_kernels
-        isvalid = get(valid_kernel_objs, kernel_obj, false)
-        k = (kernel_obj)()
-        @test MOD.iscomposable(phi, k) == isvalid
+    for f_obj in pairwise_functions
+        f = (f_obj)()
+        isvalid = get(composition_rule, class_obj, false)(f)
+        @test MOD.iscomposable(g, f) == isvalid
     end
 
     # Test that output does not create error
-    show(DevNull, phi)
+    show(DevNull, g)
 end
 
-
-info("Testing ", MOD.KernelComposition)
+#=
+info("Testing ", MOD.CompositeFunction)
 for class_obj in composition_classes
     phi = (class_obj)()
     valid_kernel_objs = composition_pairs[class_obj]
@@ -115,3 +116,4 @@ for kernel_obj in additive_kernels
     end
 
 end
+=#

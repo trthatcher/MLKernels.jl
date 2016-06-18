@@ -46,7 +46,7 @@ include("reference.jl")
 
 include("hyperparameter.jl")
 include("functions/pairwisefunction.jl")
-#include("kernelcomposition.jl")
+include("functions/compositefunction.jl")
 #include("kerneloperation.jl")
 #include("pairwisefunction.jl")
 #include("kernelfunction.jl")

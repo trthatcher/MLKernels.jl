@@ -104,6 +104,20 @@ composition_rule = Dict(
     SigmoidClass          => f -> ismercer(f)
 )
 
+composition_class_properties = Dict( 
+                            #|mercer|negdef|metric|inprod|neg   |zero  |pos
+    ExponentiatedClass =>    (true,  false, false, false, false, false, true),
+    SigmoidClass =>          (false, false, false, false, true,  true,  true),
+    ExponentialClass =>      (true,  false, false, false, false, false, true),
+    GammaLogClass =>         (false, true,  false, false, false, true,  true),
+    GammaRationalClass =>    (true,  false, false, false, false, false, true),
+    LogClass =>              (false, true,  false, false, false, true,  true),
+    MaternClass =>           (true,  false, false, false, false, false, true),
+    PolynomialClass =>       (true,  false, false, false, true,  true,  true),
+    PowerClass =>            (false, true,  false, false, false, true,  true),
+    GammaExponentialClass => (true,  false, false, false, false, false, true),
+    RationalClass =>         (true,  false, false, false, false, false, true)
+ )
 
 
 
