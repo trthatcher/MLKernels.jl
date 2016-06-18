@@ -63,57 +63,57 @@ for class_obj in composition_classes
     show(DevNull, g)
 end
 
-#=
-info("Testing ", MOD.CompositeFunction)
+info("Testing ", MOD.CompositeRealFunction)
 for class_obj in composition_classes
-    phi = (class_obj)()
-    valid_kernel_objs = composition_pairs[class_obj]
-    for kernel_obj in additive_kernels 
-        kappa = (kernel_obj)()
-        if get(valid_kernel_objs, kernel_obj, false)
-            psi = phi ∘ kappa
-            @test MOD.ismercer(psi)        == MOD.ismercer(phi)
-            @test MOD.isnegdef(psi)        == MOD.isnegdef(phi)
-            @test MOD.attainsnegative(psi) == MOD.attainsnegative(phi)
-            @test MOD.attainszero(psi)     == MOD.attainszero(phi)
-            @test MOD.attainspositive(psi) == MOD.attainspositive(phi)
-            show(DevNull, psi)
+    g = (class_obj)()
+    for f_obj in pairwise_functions
+        f = (f_obj)()
+        isvalid = get(composition_rule, class_obj, false)(f)
+        if isvalid
+            h = g ∘ f
+            @test MOD.ismercer(h)        == MOD.ismercer(g)
+            @test MOD.isnegdef(h)        == MOD.isnegdef(g)
+            @test MOD.ismetric(h)        == false
+            @test MOD.isinnerprod(h)     == false
+            @test MOD.attainsnegative(h) == MOD.attainsnegative(g)
+            @test MOD.attainszero(h)     == MOD.attainszero(g)
+            @test MOD.attainspositive(h) == MOD.attainspositive(g)
+            show(DevNull, h)
         else
-            @test_throws ErrorException phi ∘ kappa
+            @test_throws ErrorException g ∘ f
         end
     end
 end
 
-for kernel_obj in composition_kernels
-    @test typeof((kernel_obj)()) <: KernelComposition
+for h_obj in composite_functions
+    @test typeof((h_obj)()) <: CompositeRealFunction
 end
 
-for kernel_obj in additive_kernels
-    kappa = (kernel_obj)()
+for f_obj in pairwise_functions
+    f = (f_obj)()
 
-    if MOD.iscomposable(PolynomialClass(), kappa)
-        @test typeof((kappa^2).phi) <: PolynomialClass
+    if MOD.iscomposable(PolynomialClass(), f)
+        @test typeof((f^2).g) <: PolynomialClass
     else
-        @test_throws ErrorException kappa^2
+        @test_throws ErrorException f^2
     end
 
-    if MOD.iscomposable(PowerClass(), kappa)
-        @test typeof((kappa^0.5).phi) <: PowerClass
-    else
-        @test_throws ErrorException kappa^0.5
+    if MOD.iscomposable(PowerClass(), f)
+        @test typeof((f^0.5).g) <: PowerClass
+   else
+        @test_throws ErrorException f^0.5
     end
 
-    if MOD.iscomposable(ExponentiatedClass(), kappa)
-        @test typeof((exp(kappa)).phi) <: ExponentiatedClass
+    if MOD.iscomposable(ExponentiatedClass(), f)
+        @test typeof((exp(f)).g) <: ExponentiatedClass
     else
-        @test_throws ErrorException exp(kappa)
+        @test_throws ErrorException exp(f)
     end
 
-    if MOD.iscomposable(SigmoidClass(), kappa)
-        @test typeof((tanh(kappa)).phi) <: SigmoidClass
+    if MOD.iscomposable(SigmoidClass(), f)
+        @test typeof((tanh(f)).g) <: SigmoidClass
     else
-        @test_throws ErrorException tanh(kappa)
+        @test_throws ErrorException tanh(f)
     end
 
 end
-=#

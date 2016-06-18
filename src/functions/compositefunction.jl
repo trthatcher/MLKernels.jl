@@ -43,7 +43,7 @@ abstract PositiveMercerClass{T<:AbstractFloat} <: CompositionClass{T}
 @inline attainsnegative(::PositiveMercerClass) = false
 @inline attainszero(::PositiveMercerClass) = false
 
-doc"GammaExponentialClass(f;α,γ) = exp(-α⋅fᵞ)"
+doc"GammaExponentialClass(α,γ) = exp(-α⋅fᵞ)  f:ℜⁿ×ℜⁿ→ℜ, α ∈ (0,∞), γ ∈ (0,1]"
 immutable GammaExponentialClass{T<:AbstractFloat} <: PositiveMercerClass{T}
     alpha::HyperParameter{T}
     gamma::HyperParameter{T}
@@ -57,7 +57,7 @@ end
 @inline composition{T<:AbstractFloat}(g::GammaExponentialClass{T}, z::T) = exp(-g.alpha * z^g.gamma)
 
 
-doc"ExponentialClass(f;α) = exp(-α⋅f²)"
+doc"ExponentialClass(α) = exp(-α⋅f)"
 immutable ExponentialClass{T<:AbstractFloat} <: PositiveMercerClass{T}
     alpha::HyperParameter{T}
     ExponentialClass(α::Variable{T}) = new(
@@ -69,7 +69,7 @@ end
 @inline composition{T<:AbstractFloat}(g::ExponentialClass{T}, z::T) = exp(-g.alpha * z)
 
 
-doc"GammaRationalClass(f;α,β,γ) = (1 + α⋅fᵞ)⁻ᵝ"
+doc"GammaRationalClass(α,β,γ) = (1 + α⋅fᵞ)⁻ᵝ"
 immutable GammaRationalClass{T<:AbstractFloat} <: PositiveMercerClass{T}
     alpha::HyperParameter{T}
     beta::HyperParameter{T}
@@ -85,7 +85,7 @@ end
 @inline composition{T<:AbstractFloat}(g::GammaRationalClass{T}, z::T) = (1 + g.alpha*z^g.gamma)^(-g.beta)
 
 
-doc"RationalClass(f;α,β,γ) = (1 + α⋅f)⁻ᵝ"
+doc"RationalClass(α,β,γ) = (1 + α⋅f)⁻ᵝ"
 immutable RationalClass{T<:AbstractFloat} <: PositiveMercerClass{T}
     alpha::HyperParameter{T}
     beta::HyperParameter{T}
@@ -99,7 +99,7 @@ end
 @inline composition{T<:AbstractFloat}(g::RationalClass{T}, z::T) = (1 + g.alpha*z)^(-g.beta)
 
 
-doc"MatérnClass(f;ν,ρ) = 2ᵛ⁻¹(√(2ν)f/ρ)ᵛKᵥ(√(2ν)f/ρ)/Γ(ν)"
+doc"MatérnClass(ν,ρ) = 2ᵛ⁻¹(√(2ν)f/ρ)ᵛKᵥ(√(2ν)f/ρ)/Γ(ν)"
 immutable MaternClass{T<:AbstractFloat} <: PositiveMercerClass{T}
     nu::HyperParameter{T}
     rho::HyperParameter{T}
@@ -117,7 +117,7 @@ end
 end
 
 
-doc"ExponentiatedClass(f;α) = exp(a⋅f + c)"
+doc"ExponentiatedClass(α) = exp(a⋅f + c)"
 immutable ExponentiatedClass{T<:AbstractFloat} <: PositiveMercerClass{T}
     a::HyperParameter{T}
     c::HyperParameter{T}
@@ -133,7 +133,7 @@ end
 
 #== Other Mercer Classes ==#
 
-doc"PolynomialClass(f;a,c,d) = (a⋅f + c)ᵈ"
+doc"PolynomialClass(a,c,d) = (a⋅f + c)ᵈ"
 immutable PolynomialClass{T<:AbstractFloat,U<:Integer} <: CompositionClass{T}
     a::HyperParameter{T}
     c::HyperParameter{T}
@@ -156,7 +156,7 @@ abstract NonNegNegDefClass{T<:AbstractFloat} <: CompositionClass{T}
 @inline isnegdef(::NonNegNegDefClass) = true
 @inline attainsnegative(::NonNegNegDefClass) = false
 
-doc"PowerClass(z;a,c,γ) = (az + c)ᵞ"
+doc"PowerClass(a,c,γ) = (a⋅f + c)ᵞ"
 immutable PowerClass{T<:AbstractFloat} <: NonNegNegDefClass{T}
     a::HyperParameter{T}
     c::HyperParameter{T}
@@ -172,7 +172,7 @@ end
 @inline composition{T<:AbstractFloat}(g::PowerClass{T}, z::T) = (g.a*z + g.c)^(g.gamma)
 
 
-doc"GammmaLogClass(z;α,γ) = log(1 + α⋅zᵞ)"
+doc"GammmaLogClass(α,γ) = log(1 + α⋅fᵞ)"
 immutable GammaLogClass{T<:AbstractFloat} <: NonNegNegDefClass{T}
     alpha::HyperParameter{T}
     gamma::HyperParameter{T}
@@ -186,7 +186,7 @@ end
 @inline composition{T<:AbstractFloat}(g::GammaLogClass{T}, z::T) = log(g.alpha*z^(g.gamma) + 1)
 
 
-doc"LogClass(z;α) = log(1 + α⋅z)"
+doc"LogClass(α) = log(1 + α⋅f)"
 immutable LogClass{T<:AbstractFloat} <: NonNegNegDefClass{T}
     alpha::HyperParameter{T}
     LogClass(α::Variable{T}) = new(
@@ -200,7 +200,7 @@ end
 
 #== Non-Mercer, Non-Negative Definite Classes ==#
 
-doc"SigmoidClass(f;α,c) = tanh(a⋅f + c)"
+doc"SigmoidClass(α,c) = tanh(a⋅f + c)"
 immutable SigmoidClass{T<:AbstractFloat} <: CompositionClass{T}
     a::HyperParameter{T}
     c::HyperParameter{T}
@@ -233,25 +233,25 @@ end
 
 ∘(g::CompositionClass, f::PairwiseRealFunction) = CompositeRealFunction(g, f)
 
-function convert{T<:AbstractFloat}(::Type{CompositeRealFunction{T}}, f::CompositeRealFunction)
-    CompositeRealFunction(convert(CompositionClass{T}, f.g), convert(Kernel{T}, f.f))
+function convert{T<:AbstractFloat}(::Type{CompositeRealFunction{T}}, h::CompositeRealFunction)
+    CompositeRealFunction(convert(CompositionClass{T}, h.g), convert(Kernel{T}, h.f))
 end
 
 function description_string(f::CompositeRealFunction, showtype::Bool = true)
-    obj_str = string("CompositeRealFunction", showtype ? string("{", eltype(f), "}") : "")
+    obj_str = string("∘", showtype ? string("{", eltype(f), "}") : "")
     class_str = description_string(f.g, false)
     kernel_str = description_string(f.f, false)
     string(obj_str, "(g=", class_str, ",f=", kernel_str, ")")
 end
 
-==(ψ1::CompositeRealFunction, ψ2::CompositeRealFunction) = (ψ1.g == ψ2.g) && (ψ1.f == ψ2.f)
+==(h1::CompositeRealFunction, h2::CompositeRealFunction) = (h1.g == h2.g) && (h1.f == h2.f)
 
-ismercer(f::CompositeRealFunction) = ismercer(f.g)
-isnegdef(f::CompositeRealFunction) = isnegdef(f.g)
+ismercer(h::CompositeRealFunction) = ismercer(h.g)
+isnegdef(h::CompositeRealFunction) = isnegdef(h.g)
 
-attainszero(f::CompositeRealFunction)     = attainszero(f.g)
-attainspositive(f::CompositeRealFunction) = attainspositive(f.g)
-attainsnegative(f::CompositeRealFunction) = attainsnegative(f.g)
+attainszero(h::CompositeRealFunction)     = attainszero(h.g)
+attainspositive(h::CompositeRealFunction) = attainspositive(h.g)
+attainsnegative(h::CompositeRealFunction) = attainsnegative(h.g)
 
 
 #== Composition Kernels ==#

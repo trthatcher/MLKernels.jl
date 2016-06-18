@@ -119,6 +119,19 @@ composition_class_properties = Dict(
     RationalClass =>         (true,  false, false, false, false, false, true)
  )
 
+composite_functions = (
+    GaussianKernel,
+    SquaredExponentialKernel,
+    RadialBasisKernel,
+    LaplacianKernel,
+    PeriodicKernel,
+    RationalQuadraticKernel,
+    MaternKernel,
+    MatérnKernel,
+    PolynomialKernel,
+    LinearKernel,
+    SigmoidKernel
+)
 
 
 
@@ -143,18 +156,5 @@ all_kernelproperties = Dict( #|mercer |negdef |neg    |zero   |pos
     RationalClass =>          (true,   false,  false,  false,  true)
  )
 
-composition_kernels = (
-    GaussianKernel,
-    SquaredExponentialKernel,
-    RadialBasisKernel,
-    LaplacianKernel,
-    PeriodicKernel,
-    RationalQuadraticKernel,
-    MaternKernel,
-    MatérnKernel,
-    PolynomialKernel,
-    LinearKernel,
-    SigmoidKernel
-)
 
 =#

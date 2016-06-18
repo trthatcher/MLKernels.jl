@@ -11,8 +11,11 @@ export
     # Functions
     ismercer,
     isnegdef,
+    ismetric,
+    isinnerprod,
     ispositive,
     isnonnegative,
+    ∘,
 
     # Hyper Parameters
     Bound,
