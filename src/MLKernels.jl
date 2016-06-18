@@ -16,6 +16,8 @@ export
     ispositive,
     isnonnegative,
     ∘,
+    pairwise,
+    pairwisematrix,
 
     # Hyper Parameters
     Bound,
@@ -79,7 +81,7 @@ using MLKernels.HyperParameters: Bound, Interval, leftbounded, rightbounded, unb
 
 include("meta.jl")
 include("functions.jl")
-#include("pairwisefunction.jl")
+include("pairwise.jl")
 #include("kernelfunction.jl")
 
 end # MLKernels

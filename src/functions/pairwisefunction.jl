@@ -4,8 +4,8 @@
 
 abstract PairwiseRealFunction{T<:AbstractFloat} <: RealFunction{T}
 
-pairwise_initiate{T}(::PairwiseRealFunction{T}) = zero(T)
-pairwise_return{T}(::PairwiseRealFunction{T}, s::T) = s
+@inline pairwise_initiate{T}(::PairwiseRealFunction{T}) = zero(T)
+@inline pairwise_return{T}(::PairwiseRealFunction{T}, s::T) = s
 
 function description_string(f::PairwiseRealFunction, showtype::Bool = true)
     obj = typeof(f)
