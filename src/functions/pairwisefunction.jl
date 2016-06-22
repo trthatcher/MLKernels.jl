@@ -2,12 +2,12 @@
   Pairwise Functions - Consume two vectors
 ===================================================================================================#
 
-abstract PairwiseRealFunction{T<:AbstractFloat} <: RealFunction{T}
+abstract PairwiseFunction{T<:AbstractFloat} <: RealFunction{T}
 
-@inline pairwise_initiate{T}(::PairwiseRealFunction{T}) = zero(T)
-@inline pairwise_return{T}(::PairwiseRealFunction{T}, s::T) = s
+@inline pairwise_initiate{T}(::PairwiseFunction{T}) = zero(T)
+@inline pairwise_return{T}(::PairwiseFunction{T}, s::T) = s
 
-function description_string(f::PairwiseRealFunction, showtype::Bool = true)
+function description_string(f::PairwiseFunction, showtype::Bool = true)
     obj = typeof(f)
     fields = fieldnames(obj)
     obj_str = string(obj.name.name) * (showtype ? string("{", eltype(f), "}") : "")
@@ -19,17 +19,17 @@ function description_string(f::PairwiseRealFunction, showtype::Bool = true)
     end
 end
 
-function =={T<:PairwiseRealFunction}(f1::T, f2::T)
+function =={T<:PairwiseFunction}(f1::T, f2::T)
     all([getfield(f1,field) == getfield(f2,field) for field in fieldnames(T)])
 end
 
 
-abstract SymmetricPairwiseRealFunction{T<:AbstractFloat} <: PairwiseRealFunction{T}
+abstract SymmetricPairwiseFunction{T<:AbstractFloat} <: PairwiseFunction{T}
 
 
 #=== Metrics ===#
 
-abstract Metric{T<:AbstractFloat} <: SymmetricPairwiseRealFunction{T}
+abstract Metric{T<:AbstractFloat} <: SymmetricPairwiseFunction{T}
 
 @inline ismetric(::Metric) = true
 @inline attainsnegative(::Metric) = false
@@ -64,7 +64,7 @@ end
 
 #=== Inner Products ===#
 
-abstract InnerProduct{T<:AbstractFloat} <: SymmetricPairwiseRealFunction{T}
+abstract InnerProduct{T<:AbstractFloat} <: SymmetricPairwiseFunction{T}
 
 @inline isinnerprod(::InnerProduct) = true
 
@@ -80,7 +80,7 @@ convert{T}(::Type{ScalarProduct{T}}, ::ScalarProduct) = ScalarProduct{T}()
 #=== Other Functions ===#
 
 doc"SineSquaredKernel(p) = Σⱼsin²(p(xⱼ-yⱼ))"
-immutable SineSquaredKernel{T<:AbstractFloat} <: SymmetricPairwiseRealFunction{T}
+immutable SineSquaredKernel{T<:AbstractFloat} <: SymmetricPairwiseFunction{T}
     p::HyperParameter{T}
     SineSquaredKernel(p::Variable{T}) = new(
         HyperParameter(p, leftbounded(zero(T), :open))

@@ -1,4 +1,4 @@
-info("Testing ", MOD.PairwiseRealFunction)
+info("Testing ", MOD.PairwiseFunction)
 for f_obj in pairwise_functions
     info("Testing ", f_obj)
 

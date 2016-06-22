@@ -5,27 +5,7 @@
 # Row major and column major ordering are supported
 MemoryOrder = Union{Type{Val{:col}},Type{Val{:row}}}
 
-
-#================================================
-  PairwiseRealFunction Scalar/Vector Operation
-================================================#
-
-function pairwise{T}(f::PairwiseRealFunction{T}, x::T, y::T)
-    pairwise_return(pairwise_aggregate(f, pairwise_initiate(f), x, y))
-end
-
-# No checks, assumes length(x) == length(y) >= 1
-function unsafe_pairwise{T}(f::PairwiseRealFunction{T}, x::AbstractArray{T}, y::AbstractArray{T})
-    s = pairwise_initiate(f)
-    @simd for I in eachindex(x,y)
-        @inbounds xi = x[I]
-        @inbounds yi = y[I]
-        s = pairwise_aggregate(f, s, xi, yi)
-    end
-    pairwise_return(f, s)
-end
-
-function pairwise{T}(f::PairwiseRealFunction{T}, x::AbstractArray{T}, y::AbstractArray{T})
+function pairwise{T}(f::RealFunction{T}, x::AbstractArray{T}, y::AbstractArray{T})
     if (n = length(x)) != length(y)
         throw(DimensionMismatch("Arrays x and y must have the same length."))
     end
@@ -37,7 +17,27 @@ call{T}(f::RealFunction{T}, x::AbstractArray{T}, y::AbstractArray{T}) = pairwise
 
 
 #================================================
-  PairwiseRealFunction Matrix Operation
+  PairwiseFunction Scalar/Vector Operation
+================================================#
+
+function pairwise{T}(f::PairwiseFunction{T}, x::T, y::T)
+    pairwise_return(pairwise_aggregate(f, pairwise_initiate(f), x, y))
+end
+
+# No checks, assumes length(x) == length(y) >= 1
+function unsafe_pairwise{T}(f::PairwiseFunction{T}, x::AbstractArray{T}, y::AbstractArray{T})
+    s = pairwise_initiate(f)
+    @simd for I in eachindex(x,y)
+        @inbounds xi = x[I]
+        @inbounds yi = y[I]
+        s = pairwise_aggregate(f, s, xi, yi)
+    end
+    pairwise_return(f, s)
+end
+
+
+#================================================
+  PairwiseFunction Matrix Operation
 ================================================#
 
 for (order, dimension) in ((:(:row), 1), (:(:col), 2))
@@ -99,7 +99,7 @@ for (order, dimension) in ((:(:row), 1), (:(:col), 2))
         function pairwisematrix!{T}(
                 σ::Type{Val{$order}},
                 P::Matrix{T}, 
-                f::PairwiseRealFunction{T},
+                f::PairwiseFunction{T},
                 X::AbstractMatrix{T},
                 symmetrize::Bool
             )
@@ -117,7 +117,7 @@ for (order, dimension) in ((:(:row), 1), (:(:col), 2))
         function pairwisematrix!{T}(
                 σ::Type{Val{$order}},
                 P::Matrix{T}, 
-                f::PairwiseRealFunction{T},
+                f::PairwiseFunction{T},
                 X::AbstractMatrix{T},
                 Y::AbstractMatrix{T},
             )
@@ -136,7 +136,7 @@ end
 
 function pairwisematrix{T}(
         σ::MemoryOrder,
-        f::PairwiseRealFunction{T}, 
+        f::PairwiseFunction{T}, 
         X::AbstractMatrix{T},
         symmetrize::Bool = true
     )
@@ -144,7 +144,7 @@ function pairwisematrix{T}(
 end
 
 function pairwisematrix{T}(
-        f::PairwiseRealFunction{T},
+        f::PairwiseFunction{T},
         X::AbstractMatrix{T},
         symmetrize::Bool = true
     )
@@ -153,7 +153,7 @@ end
 
 function pairwisematrix{T}(
         σ::MemoryOrder,
-        f::PairwiseRealFunction{T}, 
+        f::PairwiseFunction{T}, 
         X::AbstractMatrix{T},
         Y::AbstractMatrix{T}
     )
@@ -161,7 +161,7 @@ function pairwisematrix{T}(
 end
 
 function pairwisematrix{T}(
-        f::PairwiseRealFunction{T},
+        f::PairwiseFunction{T},
         X::AbstractMatrix{T},
         Y::AbstractMatrix{T}
     )
@@ -170,8 +170,20 @@ end
 
 
 #================================================
-  CompositeRealFunction Matrix Operation
+  CompositeFunction Matrix Operation
 ================================================#
+
+@inline function pairwise{T}(f::CompositeFunction{T}, x::T, y::T)
+    compose(h.g, pairwise(h.f, x, y))
+end
+
+@inline function unsafe_pairwise{T}(
+        h::CompositeFunction{T},
+        x::AbstractArray{T},
+        y::AbstractArray{T}
+    )
+    compose(h.g, unsafe_pairwise(h.f, x, y))
+end
 
 function rectangularcompose!{T}(g::CompositionClass{T}, P::AbstractMatrix{T})
     for i in eachindex(P)
@@ -182,7 +194,7 @@ end
 
 function symmetriccompose!{T}(g::CompositionClass{T}, P::AbstractMatrix{T}, symmetrize::Bool)
     if !((n = size(P,1)) == size(P,2))
-        throw(DimensionMismatch("PairwiseRealFunction matrix must be square."))
+        throw(DimensionMismatch("PairwiseFunction matrix must be square."))
     end
     for j = 1:n, i = (1:j)
         @inbounds P[i,j] = compose(g, P[i,j])
@@ -193,7 +205,7 @@ end
 function pairwisematrix!{T}(
         σ::MemoryOrder,
         P::Matrix{T}, 
-        h::CompositeRealFunction{T},
+        h::CompositeFunction{T},
         X::AbstractMatrix{T},
         symmetrize::Bool
     )
@@ -204,7 +216,7 @@ end
 function pairwisematrix!{T}(
         σ::MemoryOrder,
         P::Matrix{T}, 
-        h::CompositeRealFunction{T},
+        h::CompositeFunction{T},
         X::AbstractMatrix{T},
         Y::AbstractMatrix{T}
     )
@@ -217,6 +229,17 @@ end
   PointwiseRealFunction Matrix Operation
 ================================================#
 
+@inline pairwise{T}(h::AffineFunction{T}, x::T, y::T) = h.a*pairwise(h.f, x, y) + h.c
+
+@inline function unsafe_pairwise{T}(
+        h::AffineFunction{T},
+        x::AbstractArray{T},
+        y::AbstractArray{T}
+    )
+    h.a*unsafe_pairwise(h.f, x, y) + h.c
+end
+
+
 #=
 
 for (kernel_object, scalar_op, identity, scalar) in (
@@ -224,6 +247,19 @@ for (kernel_object, scalar_op, identity, scalar) in (
         (:KernelSum,     :+, :0, :c)
     )
     @eval begin
+
+        @inline function pairwise{T}(h::$kernel_object{T}, x::T, y::T)
+            $scalar_op(pairwise(h.f, x, y), pairwise(h.g, x, y))
+        end
+
+        @inline function unsafe_pairwise{T}(
+                h::$kernel_object{T},
+                x::AbstractArray{T},
+                y::AbstractArray{T}
+            )
+            $scalar_op(pairwise(h.f, x, y), pairwise(h.g, x, y))
+        end
+
         function kernelmatrix!{T}(
                 σ::Union{Type{Val{:row}},Type{Val{:col}}},
                 K::Matrix{T},

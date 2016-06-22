@@ -50,4 +50,4 @@ end
 
 include("functions/pairwisefunction.jl")
 include("functions/compositefunction.jl")
-#include("pointwisefunction.jl")
+include("functions/pointwisefunction.jl")

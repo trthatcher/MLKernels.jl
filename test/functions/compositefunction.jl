@@ -63,7 +63,7 @@ for class_obj in composition_classes
     show(DevNull, g)
 end
 
-info("Testing ", MOD.CompositeRealFunction)
+info("Testing ", MOD.CompositeFunction)
 for class_obj in composition_classes
     g = (class_obj)()
     for f_obj in pairwise_functions
@@ -86,7 +86,7 @@ for class_obj in composition_classes
 end
 
 for h_obj in composite_functions
-    @test typeof((h_obj)()) <: CompositeRealFunction
+    @test typeof((h_obj)()) <: CompositeFunction
 end
 
 for f_obj in pairwise_functions

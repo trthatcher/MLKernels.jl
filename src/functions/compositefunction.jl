@@ -218,69 +218,69 @@ end
   Kernel Composition ψ = g(f(x,y))
 ===================================================================================================#
 
-doc"CompositeRealFunction(g,f) = g∘f"
-immutable CompositeRealFunction{T<:AbstractFloat} <: RealFunction{T}
+doc"CompositeFunction(g,f) = g∘f"
+immutable CompositeFunction{T<:AbstractFloat} <: RealFunction{T}
     g::CompositionClass{T}
-    f::PairwiseRealFunction{T}
-    function CompositeRealFunction(g::CompositionClass{T}, f::PairwiseRealFunction{T})
+    f::PairwiseFunction{T}
+    function CompositeFunction(g::CompositionClass{T}, f::PairwiseFunction{T})
         iscomposable(g, f) || error("Kernel is not composable.")
         new(g, f)
     end
 end
-function CompositeRealFunction{T<:AbstractFloat}(g::CompositionClass{T}, f::PairwiseRealFunction{T})
-    CompositeRealFunction{T}(g, f)
+function CompositeFunction{T<:AbstractFloat}(g::CompositionClass{T}, f::PairwiseFunction{T})
+    CompositeFunction{T}(g, f)
 end
 
-∘(g::CompositionClass, f::PairwiseRealFunction) = CompositeRealFunction(g, f)
+∘(g::CompositionClass, f::PairwiseFunction) = CompositeFunction(g, f)
 
-function convert{T<:AbstractFloat}(::Type{CompositeRealFunction{T}}, h::CompositeRealFunction)
-    CompositeRealFunction(convert(CompositionClass{T}, h.g), convert(Kernel{T}, h.f))
+function convert{T<:AbstractFloat}(::Type{CompositeFunction{T}}, h::CompositeFunction)
+    CompositeFunction(convert(CompositionClass{T}, h.g), convert(Kernel{T}, h.f))
 end
 
-function description_string(f::CompositeRealFunction, showtype::Bool = true)
+function description_string(f::CompositeFunction, showtype::Bool = true)
     obj_str = string("∘", showtype ? string("{", eltype(f), "}") : "")
     class_str = description_string(f.g, false)
     kernel_str = description_string(f.f, false)
     string(obj_str, "(g=", class_str, ",f=", kernel_str, ")")
 end
 
-==(h1::CompositeRealFunction, h2::CompositeRealFunction) = (h1.g == h2.g) && (h1.f == h2.f)
+==(h1::CompositeFunction, h2::CompositeFunction) = (h1.g == h2.g) && (h1.f == h2.f)
 
-ismercer(h::CompositeRealFunction) = ismercer(h.g)
-isnegdef(h::CompositeRealFunction) = isnegdef(h.g)
+ismercer(h::CompositeFunction) = ismercer(h.g)
+isnegdef(h::CompositeFunction) = isnegdef(h.g)
 
-attainszero(h::CompositeRealFunction)     = attainszero(h.g)
-attainspositive(h::CompositeRealFunction) = attainspositive(h.g)
-attainsnegative(h::CompositeRealFunction) = attainsnegative(h.g)
+attainszero(h::CompositeFunction)     = attainszero(h.g)
+attainspositive(h::CompositeFunction) = attainspositive(h.g)
+attainsnegative(h::CompositeFunction) = attainsnegative(h.g)
 
 
 #== Composition Kernels ==#
 
 doc"GaussianKernel(α) = exp(-α⋅‖x-y‖²)"
 function GaussianKernel{T<:AbstractFloat}(α::Argument{T} = 1.0)
-    CompositeRealFunction(ExponentialClass(α), SquaredEuclidean{T}())
+    CompositeFunction(ExponentialClass(α), SquaredEuclidean{T}())
 end
 SquaredExponentialKernel = GaussianKernel
 RadialBasisKernel = GaussianKernel
 
 doc"LaplacianKernel(α) = exp(α⋅‖x-y‖)"
 function LaplacianKernel{T<:AbstractFloat}(α::Argument{T} = 1.0)
-    CompositeRealFunction(GammaExponentialClass(α, convert(T, 0.5)), SquaredEuclidean{T}())
+    CompositeFunction(GammaExponentialClass(α, convert(T, 0.5)), SquaredEuclidean{T}())
 end
 
 doc"PeriodicKernel(α,p) = exp(-α⋅Σⱼsin²(p(xⱼ-yⱼ)))"
 function PeriodicKernel{T<:AbstractFloat}(α::Argument{T} = 1.0, p::Argument{T} = convert(T, π))
-    CompositeRealFunction(ExponentialClass(α), SineSquaredKernel(p))
+    CompositeFunction(ExponentialClass(α), SineSquaredKernel(p))
 end
 
 doc"RationalQuadraticKernel(α,β) = (1 + α⋅‖x-y‖²)⁻ᵝ"
 function RationalQuadraticKernel{T<:AbstractFloat}(α::Argument{T} = 1.0, β::Argument{T} = one(T))
-    CompositeRealFunction(RationalClass(α, β), SquaredEuclidean{T}())
+    CompositeFunction(RationalClass(α, β), SquaredEuclidean{T}())
 end
 
 doc"MatérnKernel(ν,θ) = 2ᵛ⁻¹(√(2ν)‖x-y‖²/θ)ᵛKᵥ(√(2ν)‖x-y‖²/θ)/Γ(ν)"
 function MaternKernel{T<:AbstractFloat}(ν::Argument{T} = 1.0, θ::Argument{T} = one(T))
-    CompositeRealFunction(MaternClass(ν, θ), SquaredEuclidean{T}())
+    CompositeFunction(MaternClass(ν, θ), SquaredEuclidean{T}())
 end
 MatérnKernel = MaternKernel
 
@@ -290,34 +290,34 @@ function PolynomialKernel{T<:AbstractFloat,U<:Integer}(
         c::Argument{T} = one(T),
         d::Argument{U} = 3
     )
-    CompositeRealFunction(PolynomialClass(a, c, d), ScalarProduct{T}())
+    CompositeFunction(PolynomialClass(a, c, d), ScalarProduct{T}())
 end
 
 doc"LinearKernel(α,c,d) = a⋅xᵀy + c"
 function LinearKernel{T<:AbstractFloat}(a::Argument{T} = 1.0, c::Argument{T} = one(T))
-    CompositeRealFunction(PolynomialClass(a, c, 1), ScalarProduct{T}())
+    CompositeFunction(PolynomialClass(a, c, 1), ScalarProduct{T}())
 end
 
 doc"SigmoidKernel(α,c) = tanh(a⋅xᵀy + c)"
 function SigmoidKernel{T<:Real}(a::Argument{T} = 1.0, c::Argument{T} = one(T))
-    CompositeRealFunction(SigmoidClass(a, c), ScalarProduct{T}())
+    CompositeFunction(SigmoidClass(a, c), ScalarProduct{T}())
 end
 
 
 #== Special Compositions ==#
 
-function ^{T<:AbstractFloat}(f::PairwiseRealFunction{T}, d::Integer)
-    CompositeRealFunction(PolynomialClass(one(T), zero(T), d), f)
+function ^{T<:AbstractFloat}(f::PairwiseFunction{T}, d::Integer)
+    CompositeFunction(PolynomialClass(one(T), zero(T), d), f)
 end
 
-function ^{T<:AbstractFloat}(f::PairwiseRealFunction{T}, γ::T)
-    CompositeRealFunction(PowerClass(one(T), zero(T), γ), f)
+function ^{T<:AbstractFloat}(f::PairwiseFunction{T}, γ::T)
+    CompositeFunction(PowerClass(one(T), zero(T), γ), f)
 end
 
-function exp{T<:AbstractFloat}(f::PairwiseRealFunction{T})
-    CompositeRealFunction(ExponentiatedClass(one(T), zero(T)), f)
+function exp{T<:AbstractFloat}(f::PairwiseFunction{T})
+    CompositeFunction(ExponentiatedClass(one(T), zero(T)), f)
 end
 
-function tanh{T<:AbstractFloat}(f::PairwiseRealFunction{T})
-    CompositeRealFunction(SigmoidClass(one(T), zero(T)), f)
+function tanh{T<:AbstractFloat}(f::PairwiseFunction{T})
+    CompositeFunction(SigmoidClass(one(T), zero(T)), f)
 end

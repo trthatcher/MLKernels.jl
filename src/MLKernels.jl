@@ -34,8 +34,8 @@ export
     # Kernel Type
     MathematicalFunction,
         RealFunction,
-            PairwiseRealFunction,
-                SymmetricRealFunction,
+            PairwiseFunction,
+                SymmetricFunction,
                     Metric,
                         Euclidean,
                         SquaredEuclidean,
@@ -43,7 +43,7 @@ export
                     InnerProduct,
                         ScalarProduct,
                     SineSquaredKernel,
-            CompositeRealFunction,
+            CompositeFunction,
     
     # Composition Classes
     CompositionClass,
@@ -81,7 +81,7 @@ using MLKernels.HyperParameters: Bound, Interval, leftbounded, rightbounded, unb
 
 include("meta.jl")
 include("functions.jl")
-include("pairwise.jl")
+#include("pairwise.jl")
 #include("kernelfunction.jl")
 
 end # MLKernels

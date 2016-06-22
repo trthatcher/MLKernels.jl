@@ -1,187 +1,181 @@
 #===================================================================================================
-  Kernel Affinity
+  RealFunction Affinity
 ===================================================================================================#
 
-doc"KernelAffinity(κ;a,c) = a⋅κ + c"
-immutable KernelAffinity{T<:AbstractFloat} <: KernelOperation{T}
+abstract PointwiseFunction{T} <: RealFunction{T}
+
+doc"AffineFunction(f;a,c) = a⋅f + c"
+immutable AffineFunction{T<:AbstractFloat} <: PointwiseFunction{T}
     a::HyperParameter{T}
     c::HyperParameter{T}
-    kappa::Kernel{T}
-    KernelAffinity(a::Variable{T}, c::Variable{T}, κ::Kernel{T}) = new(
+    f::RealFunction{T}
+    AffineFunction(a::Variable{T}, c::Variable{T}, f::RealFunction{T}) = new(
         HyperParameter(a, leftbounded(zero(T), :open)),
         HyperParameter(c, leftbounded(zero(T), :closed)),
-        κ
+        f
     )
 end
-function KernelAffinity{T<:AbstractFloat}(a::Argument{T}, c::Argument{T}, κ::Kernel{T})
-    KernelAffinity{T}(Variable(a), Variable(c), κ)
+function AffineFunction{T<:AbstractFloat}(a::Argument{T}, c::Argument{T}, f::RealFunction{T})
+    AffineFunction{T}(Variable(a), Variable(c), f)
 end
 
-function ==(ψ1::KernelAffinity, ψ2::KernelAffinity)
-    (ψ1.a == ψ2.a) && (ψ1.c == ψ2.c) && (ψ1.kappa == ψ2.kappa)
+function ==(f::AffineFunction, g::AffineFunction)
+    (f.a == g.a) && (f.c == g.c) && (f.f == g.f)
 end
 
-ismercer(ψ::KernelAffinity) = ismercer(ψ.kappa)
-isnegdef(ψ::KernelAffinity) = isnegdef(ψ.kappa)
+ismercer(h::AffineFunction) = ismercer(h.f)
+isnegdef(h::AffineFunction) = isnegdef(h.f)
 
-attainszero(ψ::KernelAffinity)     = attainszero(ψ.kappa)
-attainspositive(ψ::KernelAffinity) = attainspositive(ψ.kappa)
-attainsnegative(ψ::KernelAffinity) = attainsnegative(ψ.kappa)
+attainszero(h::AffineFunction)     = attainszero(h.f)
+attainspositive(h::AffineFunction) = attainspositive(h.f)
+attainsnegative(h::AffineFunction) = attainsnegative(h.f)
 
-function description_string(κ::KernelAffinity, showtype::Bool = true)
-    obj_str = string("KernelAffinity", showtype ? string("{", eltype(κ), "}") : "")
-    kernel_str = description_string(κ.kappa)
-    string(obj_str, "(a=$(κ.a.value),c=$(κ.c.value),", kernel_str, ")")
+function description_string(h::AffineFunction, showtype::Bool = true)
+    obj_str = string("AffineFunction", showtype ? string("{", eltype(h), "}") : "")
+    h_str = description_string(h.f)
+    string(obj_str, "(a=$(h.a.value),c=$(h.c.value),", h_str, ")")
 end
 
-function convert{T<:AbstractFloat}(::Type{KernelAffinity{T}}, ψ::KernelAffinity)
-    KernelAffinity(convert(T, ψ.a.value), convert(T, ψ.c.value), convert(Kernel{T}, ψ.kappa))
+function convert{T<:AbstractFloat}(::Type{AffineFunction{T}}, h::AffineFunction)
+    AffineFunction(convert(T, h.a.value), convert(T, h.c.value), convert(RealFunction{T}, h.f))
 end
-
-@inline phi{T<:AbstractFloat}(ψ::KernelAffinity{T}, z::T) = ψ.a*z + ψ.c
 
 
 # Operations
 
-+{T<:AbstractFloat}(κ::Kernel{T}, c::Real) = KernelAffinity(one(T), convert(T, c), κ)
-+(c::Real, κ::Kernel) = +(κ, c)
++{T<:AbstractFloat}(f::RealFunction{T}, c::Real) = AffineFunction(one(T), convert(T, c), f)
++(c::Real, f::RealFunction) = +(f, c)
 
-*{T<:AbstractFloat}(κ::Kernel{T}, a::Real) = KernelAffinity(convert(T, a), zero(T), κ)
-*(a::Real, κ::Kernel) = *(κ, a)
+*{T<:AbstractFloat}(f::RealFunction{T}, a::Real) = AffineFunction(convert(T, a), zero(T), f)
+*(a::Real, f::RealFunction) = *(f, a)
 
-function +{T<:AbstractFloat}(κ::KernelAffinity{T}, c::Real)
-    KernelAffinity(κ.a.value, κ.c + convert(T,c), κ.kappa)
+function +{T<:AbstractFloat}(f::AffineFunction{T}, c::Real)
+    AffineFunction(f.a.value, f.c + convert(T,c), f.f)
 end
-+(c::Real, κ::KernelAffinity) = +(κ, c)
++(c::Real, f::AffineFunction) = +(f, c)
 
-function *{T<:AbstractFloat}(κ::KernelAffinity{T}, a::Real)
+function *{T<:AbstractFloat}(f::AffineFunction{T}, a::Real)
     a = convert(T, a)
-    KernelAffinity(a * κ.a, a * κ.c, κ.kappa)
+    AffineFunction(a * f.a, a * f.c, f.f)
 end
-*(a::Real, κ::KernelAffinity) = *(κ, a)
+*(a::Real, f::AffineFunction) = *(f, a)
 
-function ^{T<:AbstractFloat}(ψ::KernelAffinity{T}, d::Integer)
-    KernelComposition(PolynomialClass(ψ.a.value, ψ.c.value, convert(T,d)), ψ.kappa)
-end
-
-function ^{T<:AbstractFloat}(ψ::KernelAffinity{T}, γ::AbstractFloat)
-    KernelComposition(PowerClass(ψ.a.value, ψ.c.value, convert(T,γ)), ψ.kappa)
+function ^{T<:AbstractFloat}(h::AffineFunction{T}, d::Integer)
+    CompositeRealFunction(PolynomialClass(h.a.value, h.c.value, convert(T,d)), h.f)
 end
 
-function exp{T<:AbstractFloat}(ψ::KernelAffinity{T})
-    KernelComposition(ExponentiatedClass(ψ.a.value, ψ.c.value), ψ.kappa)
+function ^{T<:AbstractFloat}(h::AffineFunction{T}, γ::AbstractFloat)
+    CompositeRealFunction(PowerClass(h.a.value, h.c.value, convert(T,γ)), h.f)
 end
 
-function tanh{T<:AbstractFloat}(ψ::KernelAffinity{T})
-    KernelComposition(SigmoidClass(ψ.a.value, ψ.c.value), ψ.kappa)
+function exp{T<:AbstractFloat}(h::AffineFunction{T})
+    CompositeRealFunction(ExponentiatedClass(h.a.value, h.c.value), h.f)
+end
+
+function tanh{T<:AbstractFloat}(h::AffineFunction{T})
+    CompositeRealFunction(SigmoidClass(h.a.value, h.c.value), h.f)
 end
 
 
 #===================================================================================================
-  Kernel Product and Sum
+  RealFunction Product and Sum
 ===================================================================================================#
 
-# Kernel Product
+# RealFunction Product
 
-immutable KernelProduct{T<:AbstractFloat} <: KernelOperation{T}
+immutable FunctionProduct{T<:AbstractFloat} <: PointwiseFunction{T}
     a::HyperParameter{T}
-    kappa1::Kernel{T}
-    kappa2::Kernel{T}
-    function KernelProduct(a::Variable{T}, κ1::Kernel{T}, κ2::Kernel)
-        if !(ismercer(κ1) && ismercer(κ2))
-            error("Kernels must be Mercer for closure under multiplication.")
-        end
-        new(HyperParameter(a, leftbounded(zero(T), :open)), κ1, κ2)
+    f::RealFunction{T}
+    g::RealFunction{T}
+    function FunctionProduct(a::Variable{T}, f::RealFunction{T}, g::RealFunction)
+        new(HyperParameter(a, leftbounded(zero(T), :open)), f, g)
     end
 end
-function KernelProduct{T<:AbstractFloat}(a::Argument{T}, κ1::Kernel{T}, κ2::Kernel{T})
-    KernelProduct{T}(Variable(a), κ1, κ2)
+function FunctionProduct{T<:AbstractFloat}(a::Argument{T}, f::RealFunction{T}, g::RealFunction{T})
+    FunctionProduct{T}(Variable(a), f, g)
 end
 
 
-# Kernel Sum
+# RealFunction Sum
 
-immutable KernelSum{T<:AbstractFloat} <: KernelOperation{T}
+immutable FunctionSum{T<:AbstractFloat} <: PointwiseFunction{T}
     c::HyperParameter{T}
-    kappa1::Kernel{T}
-    kappa2::Kernel{T}
-    function KernelSum(c::Variable{T}, κ1::Kernel{T}, κ2::Kernel{T})
-        if !(ismercer(κ1) && ismercer(κ2)) && !(isnegdef(κ1) && isnegdef(κ2))
-            error("All kernels must be Mercer or negative definite for closure under addition")
-        end
-        new(HyperParameter(c, leftbounded(zero(T), :closed)), κ1, κ2)
+    f::RealFunction{T}
+    g::RealFunction{T}
+    function FunctionSum(c::Variable{T}, f::RealFunction{T}, g::RealFunction{T})
+        new(HyperParameter(c, leftbounded(zero(T), :closed)), f, g)
     end
 end
-function KernelSum{T<:AbstractFloat}(c::Argument{T}, κ1::Kernel{T}, κ2::Kernel{T})
-    KernelSum{T}(Variable(c), κ1, κ2)
+function FunctionSum{T<:AbstractFloat}(c::Argument{T}, f::RealFunction{T}, g::RealFunction{T})
+    FunctionSum{T}(Variable(c), f, g)
 end
 
 
 # Common Functions
 
-for (kernel_obj, kernel_op, identity, scalar) in (
-        (:KernelProduct, :*, :1, :a),
-        (:KernelSum,     :+, :0, :c)
+for (h_obj, h_op, identity, scalar) in (
+        (:FunctionProduct, :*, :1, :a),
+        (:FunctionSum,     :+, :0, :c)
     )
     other_identity = identity == :1 ? :0 : :1
     scalar_str = string(scalar)
     @eval begin
-        function description_string(ψ::$kernel_obj, showtype::Bool = true)
-            constant_str = string($scalar_str,"=", ψ.$scalar.value)
-            kernel1_str = "kappa1=" * description_string(ψ.kappa1, false)
-            kernel2_str = "kappa2=" * description_string(ψ.kappa2, false)
-            obj_str = string($kernel_obj.name.name, showtype ? string("{", eltype(ψ), "}") : "")
-            string(obj_str, "(", constant_str, ",", kernel1_str, ",", kernel2_str, ")")
+        function description_string(h::$h_obj, showtype::Bool = true)
+            constant_str = string($scalar_str,"=", h.$scalar.value)
+            f_str = "f=" * description_string(h.f, false)
+            g_str = "g=" * description_string(h.g, false)
+            obj_str = string($h_obj.name.name, showtype ? string("{", eltype(h), "}") : "")
+            string(obj_str, "(", constant_str, ",", f_str, ",", g_str, ")")
         end
 
-        function ==(ψ1::$kernel_obj, ψ2::$kernel_obj)
-            (ψ1.$scalar == ψ2.$scalar) && (ψ1.kappa1 == ψ2.kappa1) && (ψ1.kappa2 == ψ2.kappa2)
+        function ==(f::$h_obj, g::$h_obj)
+            (f.$scalar == g.$scalar) && (f.f == g.f) && (f.g == g.g)
         end
 
-        function convert{T<:AbstractFloat}(::Type{($kernel_obj){T}}, ψ::$kernel_obj)
-            $kernel_obj(Variable(convert(T, ψ.$scalar.value), ψ.$scalar.isfixed),
-                           convert(Kernel{T}, ψ.kappa1), convert(Kernel{T}, ψ.kappa2))
+        function convert{T<:AbstractFloat}(::Type{($h_obj){T}}, h::$h_obj)
+            $h_obj(Variable(convert(T, h.$scalar.value), h.$scalar.isfixed),
+                           convert(RealFunction{T}, h.f), convert(RealFunction{T}, h.g))
         end
 
-        ismercer(ψ::$kernel_obj) = ismercer(ψ.kappa1) && ismercer(ψ.kappa2)
-        isnegdef(ψ::$kernel_obj) = isnegdef(ψ.kappa1) && isnegdef(ψ.kappa2)
+        ismercer(h::$h_obj) = ismercer(h.f) && ismercer(h.g)
+        isnegdef(h::$h_obj) = isnegdef(h.f) && isnegdef(h.g)
     end
 end
 
-for (kernel_obj, kernel_op, identity, scalar, op2_identity, op2_scalar) in (
-        (:KernelProduct, :*, :1, :a, :0, :c),
-        (:KernelSum,     :+, :0, :c, :1, :a)
+for (h_obj, h_op, identity, scalar, op2_identity, op2_scalar) in (
+        (:FunctionProduct, :*, :1, :a, :0, :c),
+        (:FunctionSum,     :+, :0, :c, :1, :a)
     )
     @eval begin
 
-        function $kernel_op{T}($scalar::Real, ψ::$kernel_obj{T}) 
-            $kernel_obj($kernel_op(convert(T, $scalar), ψ.$scalar.value), ψ.kappa1, ψ.kappa2)
+        function $h_op{T}($scalar::Real, h::$h_obj{T}) 
+            $h_obj($h_op(convert(T, $scalar), h.$scalar.value), h.f, h.g)
         end
-        $kernel_op(ψ::$kernel_obj, $scalar::Real) = $kernel_op($scalar, ψ)
+        $h_op(h::$h_obj, $scalar::Real) = $h_op($scalar, h)
 
-        $kernel_op{T}(κ1::Kernel{T}, κ2::Kernel{T}) = $kernel_obj(convert(T, $identity), κ1, κ2)
+        $h_op{T}(f::RealFunction{T}, g::RealFunction{T}) = $h_obj(convert(T, $identity), f, g)
 
-        function ($kernel_op){T}(κ1::KernelAffinity{T}, κ2::KernelAffinity{T})
-            if κ1.$op2_scalar == $op2_identity && κ2.$op2_scalar == $op2_identity
-                $kernel_obj($kernel_op(κ1.$scalar.value, κ2.$scalar.value), κ1.kappa, κ2.kappa)
+        function ($h_op){T}(f::AffineFunction{T}, g::AffineFunction{T})
+            if f.$op2_scalar == $op2_identity && g.$op2_scalar == $op2_identity
+                $h_obj($h_op(f.$scalar.value, g.$scalar.value), f.f, g.f)
             else
-                $kernel_obj(convert(T, $identity), κ1, κ2)
+                $h_obj(convert(T, $identity), f, g)
             end
         end
 
-        function ($kernel_op){T}(κ1::KernelAffinity{T}, κ2::StandardKernel{T})
-            if κ1.$op2_scalar == $op2_identity
-                $kernel_obj(κ1.$scalar.value, κ1.kappa, κ2)
+        function ($h_op){T}(f::AffineFunction{T}, g::RealFunction{T})
+            if f.$op2_scalar == $op2_identity
+                $h_obj(f.$scalar.value, f.f, g)
             else
-                $kernel_obj(convert(T, $identity), κ1, κ2)
+                $h_obj(convert(T, $identity), f, g)
             end
         end
 
-        function ($kernel_op){T}(κ1::StandardKernel{T}, κ2::KernelAffinity{T})
-            if κ2.$op2_scalar == $op2_identity
-                $kernel_obj(κ2.$scalar.value, κ1, κ2.kappa)
+        function ($h_op){T}(f::RealFunction{T}, g::AffineFunction{T})
+            if g.$op2_scalar == $op2_identity
+                $h_obj(g.$scalar.value, f, g.f)
             else
-                $kernel_obj(convert(T, $identity), κ1, κ2)
+                $h_obj(convert(T, $identity), f, g)
             end
         end
     end
