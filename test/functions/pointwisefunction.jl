@@ -1,210 +1,198 @@
-info("Testing ", KernelAffinity)
-for kernelobj in (additive_kernels..., composition_kernels...)
+info("Testing ", AffineFunction)
+for f_obj in (pairwise_functions..., composite_functions...)
     for T in FloatingPointTypes
 
-        k1 = convert(Kernel{T}, (kernelobj)())
+        f1 = convert(RealFunction{T}, (f_obj)())
         a = convert(T,2)
         c = convert(T,3)
 
-        k = KernelAffinity(a, c, k1)
-        @test k.a.value == a
-        @test k.c.value == c
+        h = AffineFunction(a, c, f1)
+        @test h.a.value == a
+        @test h.c.value == c
 
-        @test eltype(convert(KernelAffinity{Float16},  k)) == Float16
-        @test eltype(convert(KernelAffinity{Float32},  k)) == Float32
-        @test eltype(convert(KernelAffinity{Float64},  k)) == Float64
-        @test eltype(convert(KernelAffinity{BigFloat}, k)) == BigFloat
+        @test eltype(convert(AffineFunction{Float16},  h)) == Float16
+        @test eltype(convert(AffineFunction{Float32},  h)) == Float32
+        @test eltype(convert(AffineFunction{Float64},  h)) == Float64
+        @test eltype(convert(AffineFunction{BigFloat}, h)) == BigFloat
 
-        @test MOD.attainszero(k) == MOD.attainszero(k.kappa)
-        @test MOD.attainspositive(k) == MOD.attainspositive(k.kappa)
-        @test MOD.attainsnegative(k) == MOD.attainsnegative(k.kappa)
-        @test ismercer(k) === ismercer(k.kappa)
-        @test isnegdef(k) === isnegdef(k.kappa)
-
-        @test_approx_eq MOD.phi(k, one(T)) (a*one(T) + c)
-
-        k = k1 + c
-        @test k.a == one(T)
-        @test k.c == c
-        @test k.kappa == k1
-
-        k = c + ((c + k1) + c)
-        @test k.a == one(T)
-        @test k.c == 3c
-        @test k.kappa == k1
-
-        k = k1 * a
-        @test k.a == a
-        @test k.c == zero(T)
-        @test k.kappa == k1
-
-        k = a * ((a * k1) * a)
-        @test k.a == a^3
-        @test k.c == zero(T)
-        @test k.kappa == k1
-
-        k = (a * k1) + c
-        @test k.a == a
-        @test k.c == c
-        @test k.kappa == k1
-
-        k = c + (k1 * a)
-        @test k.a == a
-        @test k.c == c
-        @test k.kappa == k1
-
-        k = a * (a * k1 + c)
-        @test k.a == a^2
-        @test k.c == a*c
-        @test k.kappa == k1
-
-        k = (a * k1 + c) * a
-        @test k.a == a^2
-        @test k.c == a*c
-        @test k.kappa == k1
-
-       #= k = a * convert(Kernel{T}, SquaredDistanceKernel()) + c
-        @test k^(one(T)/2) == KernelComposition(PowerClass(a, c, one(T)/2), k.kappa)
-        
-        k = a * convert(Kernel{T}, ScalarProductKernel()) + c
-        @test k^3     == KernelComposition(PolynomialClass(a, c, 3one(T)), k.kappa)
-        @test exp(k)  == KernelComposition(ExponentiatedClass(a, c), k.kappa)
-        @test tanh(k) == KernelComposition(SigmoidClass(a, c), k.kappa)=#
+        @test MOD.attainszero(h) == MOD.attainszero(h.f)
+        @test MOD.attainspositive(h) == MOD.attainspositive(h.f)
+        @test MOD.attainsnegative(h) == MOD.attainsnegative(h.f)
+        @test ismercer(h) === ismercer(h.f)
+        @test isnegdef(h) === isnegdef(h.f)
 
         # Test that output does not create error
-        @test show(DevNull, k) == nothing
+        @test show(DevNull, h) == nothing
+
+        h = f1 + c
+        @test h.a == one(T)
+        @test h.c == c
+        @test h.f == f1
+
+        h = c + ((c + f1) + c)
+        @test h.a == one(T)
+        @test h.c == 3c
+        @test h.f == f1
+
+        h = f1 * a
+        @test h.a == a
+        @test h.c == zero(T)
+        @test h.f == f1
+
+        h = a * ((a * f1) * a)
+        @test h.a == a^3
+        @test h.c == zero(T)
+        @test h.f == f1
+
+        h = (a * f1) + c
+        @test h.a == a
+        @test h.c == c
+        @test h.f == f1
+
+        h = c + (f1 * a)
+        @test h.a == a
+        @test h.c == c
+        @test h.f == f1
+
+        h = a * (a * f1 + c)
+        @test h.a == a^2
+        @test h.c == a*c
+        @test h.f == f1
+
+        h = (a * f1 + c) * a
+        @test h.a == a^2
+        @test h.c == a*c
+        @test h.f == f1
+
+       #= h = a * convert(RealFunction{T}, SquaredDistanceRealFunction()) + c
+        @test k^(one(T)/2) == RealFunctionComposition(PowerClass(a, c, one(T)/2), h.f)
+        
+        h = a * convert(RealFunction{T}, ScalarProductRealFunction()) + c
+        @test k^3     == RealFunctionComposition(PolynomialClass(a, c, 3one(T)), h.f)
+        @test exp(h)  == RealFunctionComposition(ExponentiatedClass(a, c), h.f)
+        @test tanh(h) == RealFunctionComposition(SigmoidClass(a, c), h.f)=#
 
     end
 end
 
 
-info("Testing ", KernelSum)
-for kernelobj1 in (additive_kernels..., composition_kernels...)
-    for kernelobj2 in (additive_kernels..., composition_kernels...)
+info("Testing ", FunctionSum)
+for f_obj1 in (pairwise_functions..., composite_functions...)
+    for f_obj2 in (pairwise_functions..., composite_functions...)
         for T in FloatingPointTypes
-            k1 = convert(Kernel{T}, (kernelobj1)())
-            k2 = convert(Kernel{T}, (kernelobj2)())
-            if ismercer(k1) && ismercer(k2) || isnegdef(k1) && isnegdef(k2)
-                k = k1 + k2
-                @test k.c.value == zero(T)
-                @test k.kappa1 == k1
-                @test k.kappa2 == k2
+            f1 = convert(RealFunction{T}, (f_obj1)())
+            f2 = convert(RealFunction{T}, (f_obj2)())
+            h = f1 + f2
+            @test h.c.value == zero(T)
+            @test h.f == f1
+            @test h.g == f2
 
-                @test eltype(convert(Kernel{Float32}, k))  == Float32
-                @test eltype(convert(Kernel{Float64}, k))  == Float64
-                @test eltype(convert(Kernel{BigFloat}, k)) == BigFloat
+            @test eltype(convert(RealFunction{Float32}, h))  == Float32
+            @test eltype(convert(RealFunction{Float64}, h))  == Float64
+            @test eltype(convert(RealFunction{BigFloat}, h)) == BigFloat
 
-                @test ismercer(k) == (ismercer(k1) && ismercer(k2))
-                @test isnegdef(k) == (isnegdef(k1) && isnegdef(k2))
+            @test ismercer(h) == (ismercer(f1) && ismercer(f2))
+            @test isnegdef(h) == (isnegdef(f1) && isnegdef(f2))
 
-                # Test that output does not create error
-                @test show(DevNull, k) == nothing
+            # Test that output does not create error
+            @test show(DevNull, h) == nothing
 
-                c = convert(T,2)
+            c = convert(T,2)
 
-                k = (k1 + c) + (k2 + c)
-                @test k.c.value == 2c
-                @test k.kappa1 == k1
-                @test k.kappa2 == k2
+            h = (f1 + c) + (f2 + c)
+            @test h.c.value == 2c
+            @test h.f == f1
+            @test h.g == f2
 
-                k = (k1 + c) + k2
-                @test k.c == c
-                @test k.kappa1 == k1
-                @test k.kappa2 == k2
+            h = (f1 + c) + f2
+            @test h.c == c
+            @test h.f == f1
+            @test h.g == f2
 
-                k = k1 + (k2 + c)
-                @test k.c == c
-                @test k.kappa1 == k1
-                @test k.kappa2 == k2
+            h = f1 + (f2 + c)
+            @test h.c == c
+            @test h.f == f1
+            @test h.g == f2
 
-                k = 2k1 + 2k2
-                @test k.c.value == zero(T)
-                @test k.kappa1 == 2k1
-                @test k.kappa2 == 2k2
+            h = (2*f1) + (2*f2)
+            @test h.c == zero(T)
+            @test h.f == 2*f1
+            @test h.g == 2*f2
 
-                k = k1 + 2k2
-                @test k.c.value == zero(T)
-                @test k.kappa1 == k1
-                @test k.kappa2 == 2k2
+            h = f1 + (2*f2)
+            @test h.c == zero(T)
+            @test h.f == f1
+            @test h.g == 2*f2
 
-                k = 2k1 + k2
-                @test k.c.value == zero(T)
-                @test k.kappa1 == 2k1
-                @test k.kappa2 == k2
+            h = (2*f1) + f2
+            @test h.c == zero(T)
+            @test h.f == 2*f1
+            @test h.g == f2
 
-                k = (k1 + k2) + 1
-                @test k.c == one(T)
-                @test k.kappa1 == k1
-                @test k.kappa2 == k2
-
-            else
-                @test_throws ErrorException k1 + k2
-            end
+            h = (f1 + f2) + 1
+            @test h.c == one(T)
+            @test h.f == f1
+            @test h.g == f2
         end
     end
 end
 
-info("Testing ", KernelProduct)
-for kernelobj1 in (additive_kernels..., composition_kernels...)
-    for kernelobj2 in (additive_kernels..., composition_kernels...)
+info("Testing ", FunctionProduct)
+for f_obj1 in (pairwise_functions..., composite_functions...)
+    for f_obj2 in (pairwise_functions..., composite_functions...)
         for T in FloatingPointTypes
-            k1 = convert(Kernel{T}, (kernelobj1)())
-            k2 = convert(Kernel{T}, (kernelobj2)())
-            if ismercer(k1) && ismercer(k2)
-                k = k1 * k2
-                @test k.a.value == one(T)
-                @test k.kappa1 == k1
-                @test k.kappa2 == k2
+            f1 = convert(RealFunction{T}, (f_obj1)())
+            f2 = convert(RealFunction{T}, (f_obj2)())
+            h = f1 * f2
+            @test h.a.value == one(T)
+            @test h.f == f1
+            @test h.g == f2
 
-                @test eltype(convert(Kernel{Float32}, k))  == Float32
-                @test eltype(convert(Kernel{Float64}, k))  == Float64
-                @test eltype(convert(Kernel{BigFloat}, k)) == BigFloat
+            @test eltype(convert(RealFunction{Float32}, h))  == Float32
+            @test eltype(convert(RealFunction{Float64}, h))  == Float64
+            @test eltype(convert(RealFunction{BigFloat}, h)) == BigFloat
 
-                @test ismercer(k) == (ismercer(k1) && ismercer(k2))
+            @test ismercer(h) == (ismercer(f1) && ismercer(f2))
 
-                # Test that output does not create error
-                @test show(DevNull, k) == nothing
+            # Test that output does not create error
+            @test show(DevNull, h) == nothing
 
-                a = convert(T,2)
+            a = convert(T,2)
 
-                k = (k1 * a) * (k2 * a)
-                @test k.a.value == a^2
-                @test k.kappa1 == k1
-                @test k.kappa2 == k2
+            h = (f1 * a) * (f2 * a)
+            @test h.a.value == a^2
+            @test h.f == f1
+            @test h.g == f2
 
-                k = (k1 * a) * k2
-                @test k.a == a
-                @test k.kappa1 == k1
-                @test k.kappa2 == k2
+            h = (f1 * a) * f2
+            @test h.a == a
+            @test h.f == f1
+            @test h.g == f2
 
-                k = k1 * (k2 * a)
-                @test k.a == a
-                @test k.kappa1 == k1
-                @test k.kappa2 == k2
+            h = f1 * (f2 * a)
+            @test h.a == a
+            @test h.f == f1
+            @test h.g == f2
 
-                k = (k1 + 1) * (k2 + 1)
-                @test k.a.value == one(T)
-                @test k.kappa1 == (k1 + 1)
-                @test k.kappa2 == (k2 + 1)
+            h = (f1 + 1) * (f2 + 1)
+            @test h.a.value == one(T)
+            @test h.f == (f1 + 1)
+            @test h.g == (f2 + 1)
 
-                k = k1 * (k2 + 1)
-                @test k.a.value == one(T)
-                @test k.kappa1 == k1
-                @test k.kappa2 == (k2 + 1)
+            h = f1 * (f2 + 1)
+            @test h.a.value == one(T)
+            @test h.f == f1
+            @test h.g == (f2 + 1)
 
-                k = (k1 + 1) * k2
-                @test k.a.value == one(T)
-                @test k.kappa1 == (k1 + 1)
-                @test k.kappa2 == k2
+            h = (f1 + 1) * f2
+            @test h.a.value == one(T)
+            @test h.f == (f1 + 1)
+            @test h.g == f2
 
-                k = (k1 * k2) * 2
-                @test k.a == convert(T,2)
-                @test k.kappa1 == k1
-                @test k.kappa2 == k2
-
-            else
-                @test_throws ErrorException k1 * k2
-            end
+            h = (f1 * f2) * 2
+            @test h.a == convert(T,2)
+            @test h.f == f1
+            @test h.g == f2
         end
     end
 end

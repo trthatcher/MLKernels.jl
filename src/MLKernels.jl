@@ -44,6 +44,10 @@ export
                         ScalarProduct,
                     SineSquaredKernel,
             CompositeFunction,
+            PointwiseFunction,
+                AffineFunction,
+                FunctionSum,
+                FunctionProduct,
     
     # Composition Classes
     CompositionClass,

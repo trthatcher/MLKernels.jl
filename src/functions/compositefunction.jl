@@ -234,7 +234,7 @@ end
 ∘(g::CompositionClass, f::PairwiseFunction) = CompositeFunction(g, f)
 
 function convert{T<:AbstractFloat}(::Type{CompositeFunction{T}}, h::CompositeFunction)
-    CompositeFunction(convert(CompositionClass{T}, h.g), convert(Kernel{T}, h.f))
+    CompositeFunction(convert(CompositionClass{T}, h.g), convert(RealFunction{T}, h.f))
 end
 
 function description_string(f::CompositeFunction, showtype::Bool = true)
