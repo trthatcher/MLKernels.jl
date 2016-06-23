@@ -61,19 +61,19 @@ end
 *(a::Real, f::AffineFunction) = *(f, a)
 
 function ^{T<:AbstractFloat}(h::AffineFunction{T}, d::Integer)
-    CompositeRealFunction(PolynomialClass(h.a.value, h.c.value, convert(T,d)), h.f)
+    CompositeFunction(PolynomialClass(h.a.value, h.c.value, d), h.f)
 end
 
 function ^{T<:AbstractFloat}(h::AffineFunction{T}, γ::AbstractFloat)
-    CompositeRealFunction(PowerClass(h.a.value, h.c.value, convert(T,γ)), h.f)
+    CompositeFunction(PowerClass(h.a.value, h.c.value, convert(T,γ)), h.f)
 end
 
 function exp{T<:AbstractFloat}(h::AffineFunction{T})
-    CompositeRealFunction(ExponentiatedClass(h.a.value, h.c.value), h.f)
+    CompositeFunction(ExponentiatedClass(h.a.value, h.c.value), h.f)
 end
 
 function tanh{T<:AbstractFloat}(h::AffineFunction{T})
-    CompositeRealFunction(SigmoidClass(h.a.value, h.c.value), h.f)
+    CompositeFunction(SigmoidClass(h.a.value, h.c.value), h.f)
 end
 
 

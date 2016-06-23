@@ -64,13 +64,13 @@ for f_obj in (pairwise_functions..., composite_functions...)
         @test h.c == a*c
         @test h.f == f1
 
-       #= h = a * convert(RealFunction{T}, SquaredDistanceRealFunction()) + c
-        @test k^(one(T)/2) == RealFunctionComposition(PowerClass(a, c, one(T)/2), h.f)
+        h = a * convert(RealFunction{T}, SquaredEuclidean()) + c
+        @test h^(one(T)/2) == CompositeFunction(PowerClass(a, c, one(T)/2), h.f)
         
-        h = a * convert(RealFunction{T}, ScalarProductRealFunction()) + c
-        @test k^3     == RealFunctionComposition(PolynomialClass(a, c, 3one(T)), h.f)
-        @test exp(h)  == RealFunctionComposition(ExponentiatedClass(a, c), h.f)
-        @test tanh(h) == RealFunctionComposition(SigmoidClass(a, c), h.f)=#
+        h = a * convert(RealFunction{T}, ScalarProduct()) + c
+        @test h^3     == CompositeFunction(PolynomialClass(a, c, 3), h.f)
+        @test exp(h)  == CompositeFunction(ExponentiatedClass(a, c), h.f)
+        @test tanh(h) == CompositeFunction(SigmoidClass(a, c), h.f)
 
     end
 end
