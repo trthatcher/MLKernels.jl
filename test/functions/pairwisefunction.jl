@@ -23,9 +23,13 @@ for f_obj in pairwise_functions
         @test_approx_eq s pairwise_functions_initiate[f_obj]
 
         for (x,y) in ((zero(T),zero(T)), (zero(T),one(T)), (one(T),zero(T)), (one(T),one(T)))
-            pw_agg = pairwise_functions_aggregate[f_obj]
-            @test_approx_eq MOD.pairwise_aggregate(f, zero(T), x, y) pw_agg(zero(T), x, y, default_args...)
+            s1 = pairwise_functions_aggregate[f_obj](zero(T), x, y, default_args...)
+            s2 = MOD.pairwise_aggregate(f, zero(T), x, y)
+            @test_approx_eq s1 s2
         end
+
+        s = MOD.pairwise_return(f, convert(T,2))
+        @test_approx_eq s get(pairwise_functions_return, f_obj, x -> x)(convert(T,2))
     end
 
     # Test conversions
