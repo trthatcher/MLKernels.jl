@@ -51,7 +51,7 @@ for class_obj in composition_classes
     @test MOD.attainsnegative(g) == properties[5]
     @test MOD.attainszero(g)     == properties[6]
     @test MOD.attainspositive(g) == properties[7]
-
+    
     # Test iscomposable() rules
     for f_obj in pairwise_functions
         f = (f_obj)()
@@ -78,6 +78,11 @@ for class_obj in composition_classes
             @test MOD.attainsnegative(h) == MOD.attainsnegative(g)
             @test MOD.attainszero(h)     == MOD.attainszero(g)
             @test MOD.attainspositive(h) == MOD.attainspositive(g)
+
+            @test MOD.isnonnegative(h) == !MOD.attainsnegative(h)
+            @test MOD.ispositive(h)    == (!MOD.attainsnegative(h) && !MOD.attainszero(h))
+            @test MOD.isnegative(h)    == (!MOD.attainspositive(h) && !MOD.attainszero(h))
+
             show(DevNull, h)
         else
             @test_throws ErrorException g ∘ f

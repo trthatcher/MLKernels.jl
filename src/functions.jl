@@ -36,7 +36,7 @@ doc"`ispositive(f)`: returns `true` if f(x,y;θ) ≧ 0 ∀x,y,θ"
 ispositive(f::RealFunction) = !attainsnegative(f) && !attainszero(f) &&  attainspositive(f)
 
 doc"`isnegative(f)`: returns `true` if f(x,y;θ) ≦ 0 ∀x,y,θ"
-isnegative(k::RealFunction) =  attainsnegative(f) && !attainszero(f) && !attainspositive(f)
+isnegative(f::RealFunction) =  attainsnegative(f) && !attainszero(f) && !attainspositive(f)
 
 function show(io::IO, f::RealFunction)
     print(io, description_string(f))

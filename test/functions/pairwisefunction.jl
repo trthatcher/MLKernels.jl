@@ -54,6 +54,10 @@ for f_obj in pairwise_functions
     @test MOD.attainszero(f)     == properties[6]
     @test MOD.attainspositive(f) == properties[7]
 
+    @test MOD.isnonnegative(f) == !MOD.attainsnegative(f)
+    @test MOD.ispositive(f)    == (!MOD.attainsnegative(f) && !MOD.attainszero(f))
+    @test MOD.isnegative(f)    == (!MOD.attainspositive(f) && !MOD.attainszero(f))
+
     # Test that output does not create error
     show(DevNull, f)
 
