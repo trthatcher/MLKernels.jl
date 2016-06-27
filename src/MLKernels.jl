@@ -85,7 +85,7 @@ using MLKernels.HyperParameters: Bound, Interval, leftbounded, rightbounded, unb
 
 include("meta.jl")
 include("functions.jl")
-#include("pairwise.jl")
+include("pairwise.jl")
 #include("kernelfunction.jl")
 
 end # MLKernels

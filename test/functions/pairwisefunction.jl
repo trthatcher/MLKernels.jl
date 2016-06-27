@@ -1,6 +1,7 @@
 info("Testing ", MOD.PairwiseFunction)
+steps = length(pairwise_functions)
+counter = 0
 for f_obj in pairwise_functions
-    info("Testing ", f_obj)
 
     # Test constructors
     for T in FloatingPointTypes
@@ -61,4 +62,6 @@ for f_obj in pairwise_functions
     # Test that output does not create error
     show(DevNull, f)
 
+    counter += 1
+    info("[", @sprintf("%3.0f", counter/steps*100), "%] ", f_obj)
 end

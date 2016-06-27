@@ -2,30 +2,69 @@ n = 200
 m = 100
 p = 25
 
-info("Testing ", MOD.pairwise)
-for kernelobj in additive_kernels
+info("Testing ", MOD.unsafe_pairwise)
+for f_obj in pairwise_functions
     for T in FloatingPointTypes
         x = rand(T,p)
         y = rand(T,p)
-        k = convert(Kernel{T}, (kernelobj)())
+        f = convert(RealFunction{T}, (f_obj)())
        
-        @test MOD.pairwise(k, x[1], y[1]) == MOD.phi(k, x[1], y[1])
-        @test MOD.pairwise(k, x, y)       == sum(map((x,y) -> MOD.phi(k,x,y), x, y))
+        s = MOD.pairwise_initiate(f)
+        for i in eachindex(y,x)
+            s = MOD.pairwise_aggregate(f, s, x[i], y[i])
+        end
+        @test MOD.unsafe_pairwise(f, x, y) == MOD.pairwise_return(f, s)
     end
 end
+
+info("Testing ", MOD.pairwise)
+for f_obj in pairwise_functions
+    for T in FloatingPointTypes
+        f = convert(RealFunction{T}, (f_obj)())
+        x = rand(T,p)
+        y = rand(T,p)
+
+        s1 = MOD.pairwise_return(f, MOD.pairwise_aggregate(f, MOD.pairwise_initiate(f), x[1], y[1]))
+        @test MOD.pairwise(f, x[1], y[1]) == s1
+
+        s2 = MOD.unsafe_pairwise(f, x, y)
+        @test MOD.pairwise(f, x, y) == s2
+
+        for g_obj in composition_classes
+            g = convert(CompositionClass{T}, (g_obj)())
+            if MOD.iscomposable(g,f)
+                h = convert(RealFunction{T}, CompositeFunction(g,f))
+                
+                @test MOD.pairwise(h, x[1], y[1]) == MOD.composition(g, s1)
+                @test MOD.pairwise(h, x, y) == MOD.composition(g, s2)
+            end
+        end
+    end
+end
+
+info("Testing ", MOD.pairwisematrix!)
+steps = length(pairwise_functions) + length(composite_functions)
+counter = 0
+for f_obj in (pairwise_functions..., composite_functions...)
+    counter += 1
+    info("[", @sprintf("%3.0f", counter/steps*100), "%] ", f_obj)
+end
+
+
+#=
 
 info("Testing ", MOD.pairwisematrix!)
 steps = length(additive_kernels) + 1
 counter = 0
 info("    Progress:   0.0%")
-for kernelobj in (additive_kernels..., MLKTest.PairwiseTestKernel)
+for f_obj in (additive_kernels..., MLKTest.PairwiseTestKernel)
     for T in FloatingPointTypes
         Set_X = [rand(T, p) for i = 1:n]
         Set_Y = [rand(T,p)  for i = 1:m]
 
         X = transpose(hcat(Set_X...))
         Y = transpose(hcat(Set_Y...))
-        k = convert(Kernel{T}, (kernelobj)())
+        k = convert(Kernel{T}, (f_obj)())
         #println("κ:", k, ", X:", typeof(X), ", Y:", typeof(Y))
                    
         P = [MOD.pairwise(k,x,y) for x in Set_X, y in Set_X]
@@ -80,3 +119,4 @@ for kernelobj in (additive_kernels..., MLKTest.PairwiseTestKernel)
     counter += 1
     info("    Progress: ", @sprintf("%5.1f", counter/steps*100), "%")
 end
+=#

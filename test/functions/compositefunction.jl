@@ -1,7 +1,7 @@
 info("Testing ", MOD.CompositionClass)
-#@test MOD.iscomposable(MLKTest.TestClass(), MLKTest.TestKernel()) == false
+steps = length(composition_classes)
+counter = 0
 for class_obj in composition_classes
-    info("Testing ", class_obj)
 
     # Test constructors
     for T in FloatingPointTypes
@@ -61,6 +61,9 @@ for class_obj in composition_classes
 
     # Test that output does not create error
     show(DevNull, g)
+
+    counter += 1
+    info("[", @sprintf("%3.0f", counter/steps*100), "%] ", class_obj)
 end
 
 info("Testing ", MOD.CompositeFunction)

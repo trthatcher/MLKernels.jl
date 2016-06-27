@@ -21,7 +21,7 @@ call{T}(f::RealFunction{T}, x::AbstractArray{T}, y::AbstractArray{T}) = pairwise
 ================================================#
 
 function pairwise{T}(f::PairwiseFunction{T}, x::T, y::T)
-    pairwise_return(pairwise_aggregate(f, pairwise_initiate(f), x, y))
+    pairwise_return(f, pairwise_aggregate(f, pairwise_initiate(f), x, y))
 end
 
 # No checks, assumes length(x) == length(y) >= 1
@@ -173,8 +173,8 @@ end
   CompositeFunction Matrix Operation
 ================================================#
 
-@inline function pairwise{T}(f::CompositeFunction{T}, x::T, y::T)
-    compose(h.g, pairwise(h.f, x, y))
+@inline function pairwise{T}(h::CompositeFunction{T}, x::T, y::T)
+    composition(h.g, pairwise(h.f, x, y))
 end
 
 @inline function unsafe_pairwise{T}(
@@ -182,12 +182,12 @@ end
         x::AbstractArray{T},
         y::AbstractArray{T}
     )
-    compose(h.g, unsafe_pairwise(h.f, x, y))
+    composition(h.g, unsafe_pairwise(h.f, x, y))
 end
 
 function rectangularcompose!{T}(g::CompositionClass{T}, P::AbstractMatrix{T})
     for i in eachindex(P)
-        @inbounds P[i] = compose(g, P[i])
+        @inbounds P[i] = composition(g, P[i])
     end
     P
 end
@@ -197,7 +197,7 @@ function symmetriccompose!{T}(g::CompositionClass{T}, P::AbstractMatrix{T}, symm
         throw(DimensionMismatch("PairwiseFunction matrix must be square."))
     end
     for j = 1:n, i = (1:j)
-        @inbounds P[i,j] = compose(g, P[i,j])
+        @inbounds P[i,j] = composition(g, P[i,j])
     end
     symmetrize ? LinAlg.copytri!(P, 'U') : P
 end

@@ -223,7 +223,7 @@ immutable CompositeFunction{T<:AbstractFloat} <: RealFunction{T}
     g::CompositionClass{T}
     f::PairwiseFunction{T}
     function CompositeFunction(g::CompositionClass{T}, f::PairwiseFunction{T})
-        iscomposable(g, f) || error("Kernel is not composable.")
+        iscomposable(g, f) || error("Function is not composable.")
         new(g, f)
     end
 end
