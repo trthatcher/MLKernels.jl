@@ -102,21 +102,24 @@ end
 
 info("Testing ", MOD.squared_distance!)
 for T in FloatingPointTypes
-    Set_X = [rand(T, p) for i = 1:n]
-    Set_Y = [rand(T,p)  for i = 1:m]
+    Set_X = [rand(T,p) for i = 1:n]
+    Set_Y = [rand(T,p) for i = 1:m]
 
     X = transpose(hcat(Set_X...))
     Y = transpose(hcat(Set_Y...))
-    f = SquaredEuclidean{T}()
 
-    P = [MOD.pairwise(f,x,y) for x in Set_X, y in Set_X]
+    P = [dot(x-y,x-y) for x in Set_X, y in Set_X]
+    G = MOD.gramian!(Val{:row}, Array(T,n,n), X, true)
+    xtx = MOD.dotvectors(Val{:row}, X)
 
-    #@test_approx_eq MOD.gramian!(Val{:row}, Array(T,n,n), X,  true) P
-    #@test_approx_eq MOD.gramian!(Val{:col}, Array(T,n,n), X', true) P
+    @test_approx_eq MOD.squared_distance!(G, xtx, true) P
 
-    P = [MOD.pairwise(f,x,y) for x in Set_X, y in Set_Y]
-    #@test_approx_eq MOD.gramian!(Val{:row}, Array(T,n,m), X,  Y)  P
-    #@test_approx_eq MOD.gramian!(Val{:col}, Array(T,n,m), X', Y') P
+    P = [dot(x-y,x-y) for x in Set_X, y in Set_Y]
+    G = MOD.gramian!(Val{:row}, Array(T,n,m), X, Y)
+    xtx = MOD.dotvectors(Val{:row}, X)
+    yty = MOD.dotvectors(Val{:row}, Y)
+
+    @test_approx_eq MOD.squared_distance!(G, xtx, yty)  P
     
     @test_throws DimensionMismatch MOD.squared_distance!(Array(T,3,4), Array(T,3), true)
     @test_throws DimensionMismatch MOD.squared_distance!(Array(T,4,3), Array(T,3), true)
