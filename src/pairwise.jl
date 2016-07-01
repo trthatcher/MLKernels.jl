@@ -5,20 +5,19 @@
 # Row major and column major ordering are supported
 MemoryOrder = Union{Type{Val{:col}},Type{Val{:row}}}
 
+call{T}(f::RealFunction{T}, x::T, y::T) = pairwise(f, x, y)
+call{T}(f::RealFunction{T}, x::AbstractArray{T}, y::AbstractArray{T}) = pairwise(f, x, y)
+
+#================================================
+  Generic Pairwise Matrix Operation
+================================================#
+
 function pairwise{T}(f::RealFunction{T}, x::AbstractArray{T}, y::AbstractArray{T})
     if (n = length(x)) != length(y)
         throw(DimensionMismatch("Arrays x and y must have the same length."))
     end
     n == 0 ? zero(T) : unsafe_pairwise(f, x, y)
 end
-
-call{T}(f::RealFunction{T}, x::T, y::T) = pairwise(f, x, y)
-call{T}(f::RealFunction{T}, x::AbstractArray{T}, y::AbstractArray{T}) = pairwise(f, x, y)
-
-
-#================================================
-  Generic Pairwise Matrix Operation
-================================================#
 
 for (order, dimension) in ((:(:row), 1), (:(:col), 2))
     isrowmajor = order == :(:row)
@@ -148,6 +147,11 @@ function pairwisematrix{T}(
     pairwisematrix(Val{:row}, f, X, Y)
 end
 
+# Identical definitions
+kernel = pairwise
+kernelmatrix  = pairwisematrix
+kernelmatrix! = pairwisematrix!
+
 
 #================================================
   PairwiseFunction Scalar/Vector Operation
@@ -169,7 +173,6 @@ function unsafe_pairwise{T}(f::PairwiseFunction{T}, x::AbstractArray{T}, y::Abst
 end
 
 
-
 #================================================
   CompositeFunction Matrix Operation
 ================================================#
@@ -186,14 +189,14 @@ end
     composition(h.g, unsafe_pairwise(h.f, x, y))
 end
 
-function rectangularcompose!{T}(g::CompositionClass{T}, P::AbstractMatrix{T})
+function rectangular_compose!{T}(g::CompositionClass{T}, P::AbstractMatrix{T})
     for i in eachindex(P)
         @inbounds P[i] = composition(g, P[i])
     end
     P
 end
 
-function symmetriccompose!{T}(g::CompositionClass{T}, P::AbstractMatrix{T}, symmetrize::Bool)
+function symmetric_compose!{T}(g::CompositionClass{T}, P::AbstractMatrix{T}, symmetrize::Bool)
     if !((n = size(P,1)) == size(P,2))
         throw(DimensionMismatch("PairwiseFunction matrix must be square."))
     end
@@ -211,7 +214,7 @@ function pairwisematrix!{T}(
         symmetrize::Bool
     )
     pairwisematrix!(σ, P, h.f, X, false)
-    symmetriccompose!(h.g, P, symmetrize)
+    symmetric_compose!(h.g, P, symmetrize)
 end
 
 function pairwisematrix!{T}(
@@ -222,7 +225,7 @@ function pairwisematrix!{T}(
         Y::AbstractMatrix{T}
     )
     pairwisematrix!(σ, P, h.f, X, Y)
-    rectangularcompose!(h.g, P)
+    rectangular_compose!(h.g, P)
 end
 
 
@@ -240,71 +243,106 @@ end
     h.a*unsafe_pairwise(h.f, x, y) + h.c
 end
 
+function rectangular_affine!{T}(P::AbstractMatrix{T}, a::T, c::T)
+    for i in eachindex(P)
+        @inbounds P[i] = a*P[i] + c
+    end
+    P
+end
 
-#=
+function symmetric_affine!{T}(P::AbstractMatrix{T}, a::T, c::T, symmetrize::Bool)
+    if !((n = size(P,1)) == size(P,2))
+        throw(DimensionMismatch("symmetric_affine! matrix must be square."))
+    end
+    for j = 1:n, i = (1:j)
+        @inbounds P[i,j] = a*P[i,j] + c
+    end
+    symmetrize ? LinAlg.copytri!(P, 'U') : P
+end
 
-for (kernel_object, scalar_op, identity, scalar) in (
-        (:KernelProduct, :*, :1, :a),
-        (:KernelSum,     :+, :0, :c)
+function pairwisematrix!{T}(
+        σ::MemoryOrder,
+        P::Matrix{T},
+        h::AffineFunction{T},
+        X::AbstractMatrix{T},
+        symmetrize::Bool = true
+    )
+    pairwisematrix!(σ, P, h.f, X, false)
+    symmetric_affine!(P, h.a.value, h.c.value, symmetrize)
+end
+
+function pairwisematrix!{T}(
+        σ::MemoryOrder,
+        P::Matrix{T},
+        h::AffineFunction{T},
+        X::AbstractMatrix{T},
+        Y::AbstractMatrix{T}
+    )
+    pairwisematrix!(σ, P, h.f, X, Y)
+    rectangular_affine!(P, h.a.value, h.c.value)
+end
+
+for (f_obj, scalar_op, identity, scalar) in (
+        (:FunctionProduct, :*, :1, :a),
+        (:FunctionSum,     :+, :0, :c)
     )
     @eval begin
 
-        @inline function pairwise{T}(h::$kernel_object{T}, x::T, y::T)
-            $scalar_op(pairwise(h.f, x, y), pairwise(h.g, x, y))
+        @inline function pairwise{T}(h::$f_obj{T}, x::T, y::T)
+            $scalar_op(pairwise(h.f, x, y), pairwise(h.g, x, y), h.$scalar)
         end
 
         @inline function unsafe_pairwise{T}(
-                h::$kernel_object{T},
+                h::$f_obj{T},
                 x::AbstractArray{T},
                 y::AbstractArray{T}
             )
-            $scalar_op(pairwise(h.f, x, y), pairwise(h.g, x, y))
+            $scalar_op(unsafe_pairwise(h.f, x, y), unsafe_pairwise(h.g, x, y), h.$scalar)
         end
 
-        function kernelmatrix!{T}(
-                σ::Union{Type{Val{:row}},Type{Val{:col}}},
-                K::Matrix{T},
-                κ::$kernel_object{T},
+        function pairwisematrix!{T}(
+                σ::MemoryOrder,
+                P::Matrix{T},
+                h::$f_obj{T},
                 X::AbstractMatrix{T},
                 symmetrize::Bool = true
             )
-            kernelmatrix!(σ, K, κ.kappa1, X, false)
-            broadcast!($scalar_op, K, kernelmatrix!(σ, similar(K), κ.kappa2, X, false))
-            if κ.$scalar != $identity
-                broadcast!($scalar_op, K, κ.$scalar)
+            pairwisematrix!(σ, P, h.f, X, false)
+            broadcast!($scalar_op, P, P, pairwisematrix!(σ, similar(P), h.g, X, false))
+            if h.$scalar != $identity
+                broadcast!($scalar_op, P, h.$scalar)
             end
-            symmetrize ? LinAlg.copytri!(K, 'U') : K
+            symmetrize ? LinAlg.copytri!(P, 'U') : P
         end
 
-        function kernelmatrix!{T}(
-                σ::Union{Type{Val{:row}},Type{Val{:col}}},
-                K::Matrix{T},
-                κ::$kernel_object{T},
+        function pairwisematrix!{T}(
+                σ::MemoryOrder,
+                P::Matrix{T},
+                h::$f_obj{T},
                 X::AbstractMatrix{T},
                 Y::AbstractMatrix{T}
             )
-            kernelmatrix!(σ, K, κ.kappa1, X, Y)
-            broadcast!($scalar_op, K, kernelmatrix!(σ, similar(K), κ.kappa2, X, Y))
-            κ.$scalar == $identity ? K : broadcast!($scalar_op, K, κ.$scalar)
+            pairwisematrix!(σ, P, h.f, X, Y)
+            broadcast!($scalar_op, P, P, pairwisematrix!(σ, similar(P), h.g, X, Y))
+            h.$scalar == $identity ? P : broadcast!($scalar_op, P, h.$scalar)
         end
     end
 end
 
-=#
 
 #================================================
   Centering matrix
 ================================================#
 
-# Centralize a kernel matrix K
+# Centralize a kernel matrix P
 #=
-function centerkernelmatrix!{T<:AbstractFloat}(K::Matrix{T})
-    (n = size(K, 1)) == size(K, 2) || throw(DimensionMismatch("Kernel matrix must be square"))
+function centerkernelmatrix!{T<:AbstractFloat}(P::Matrix{T})
+    (n = size(P, 1)) == size(P, 2) || throw(DimensionMismatch("Pernel matrix must be square"))
     μ_row = zeros(T,n)
     μ = zero(T)
     @inbounds for j = 1:n
         @simd for i = 1:n
-            μ_row[j] += K[i,j]
+            μ_row[j] += P[i,j]
         end
         μ += μ_row[j]
         μ_row[j] /= n
@@ -312,12 +350,12 @@ function centerkernelmatrix!{T<:AbstractFloat}(K::Matrix{T})
     μ /= n^2
     @inbounds for j = 1:n
         @simd for i = 1:n
-            K[i,j] += μ - μ_row[i] - μ_row[j]
+            P[i,j] += μ - μ_row[i] - μ_row[j]
         end
     end
-    K
+    P
 end
-centerkernelmatrix{T<:AbstractFloat}(K::Matrix{T}) = centerkernelmatrix!(copy(K))
+centerkernelmatrix{T<:AbstractFloat}(P::Matrix{T}) = centerkernelmatrix!(copy(P))
 =#
 
 
@@ -325,7 +363,7 @@ centerkernelmatrix{T<:AbstractFloat}(K::Matrix{T}) = centerkernelmatrix!(copy(K)
   ScalarProduct and SquaredDistance using BLAS/Built-In methods
 ===================================================================================================#
 
-function squareddistance!{T<:AbstractFloat}(G::Matrix{T}, xᵀx::Vector{T}, symmetrize::Bool)
+function squared_distance!{T<:AbstractFloat}(G::Matrix{T}, xᵀx::Vector{T}, symmetrize::Bool)
     if !((n = length(xᵀx)) == size(G,1) == size(G,2))
         throw(DimensionMismatch("Gramian matrix must be square."))
     end
@@ -335,7 +373,7 @@ function squareddistance!{T<:AbstractFloat}(G::Matrix{T}, xᵀx::Vector{T}, symm
     symmetrize ? LinAlg.copytri!(G, 'U') : G
 end
 
-function squareddistance!{T<:AbstractFloat}(G::Matrix{T}, xᵀx::Vector{T}, yᵀy::Vector{T})
+function squared_distance!{T<:AbstractFloat}(G::Matrix{T}, xᵀx::Vector{T}, yᵀy::Vector{T})
     if size(G,1) != length(xᵀx)
         throw(DimensionMismatch("Length of xᵀx must match rows of G"))
     elseif size(G,2) != length(yᵀy)
@@ -419,7 +457,7 @@ for (order, dimension) in ((:(:row), 1), (:(:col), 2))
             )
             gramian!(σ, P, X, false)
             xᵀx = dotvectors(σ, X)
-            squareddistance!(P, xᵀx, symmetrize)
+            squared_distance!(P, xᵀx, symmetrize)
         end
 
         function pairwisematrix!{T}(
@@ -432,7 +470,7 @@ for (order, dimension) in ((:(:row), 1), (:(:col), 2))
             gramian!(σ, P, X, Y)
             xᵀx = dotvectors(σ, X)
             yᵀy = dotvectors(σ, Y)
-            squareddistance!(P, xᵀx, yᵀy)
+            squared_distance!(P, xᵀx, yᵀy)
         end
     end
 end

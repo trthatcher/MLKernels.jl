@@ -1,44 +1,88 @@
-n = 3
-m = 2
-p = 2
+n = 300
+m = 200
+p = 25
+
+test_pairwise_functions  = [(f_obj)() for f_obj in pairwise_functions]
+test_composite_functions = [(f_obj)() for f_obj in composite_functions]
+test_sample = [SquaredEuclidean(), ChiSquared(), ScalarProduct(), GaussianKernel()]
 
 info("Testing ", MOD.unsafe_pairwise)
-for f_obj in pairwise_functions
-    for T in FloatingPointTypes
-        x = rand(T,p)
-        y = rand(T,p)
-        f = convert(RealFunction{T}, (f_obj)())
-       
+for T in FloatingPointTypes
+    x = rand(T,p)
+    y = rand(T,p)
+
+    for f_test in test_pairwise_functions
+        f = convert(RealFunction{T}, f_test)
         s = MOD.pairwise_initiate(f)
         for i in eachindex(y,x)
             s = MOD.pairwise_aggregate(f, s, x[i], y[i])
         end
         @test MOD.unsafe_pairwise(f, x, y) == MOD.pairwise_return(f, s)
     end
+
+    for h_test in test_composite_functions
+        h = convert(RealFunction{T}, h_test)
+        s = MOD.composition(h.g, MOD.unsafe_pairwise(h.f, x, y))
+        @test MOD.unsafe_pairwise(h, x, y) == s
+    end
+
+    for f_test in test_sample
+        h = convert(RealFunction{T}, 2*f_test+1)
+        s = h.a*MOD.unsafe_pairwise(h.f, x, y) + h.c
+        @test MOD.unsafe_pairwise(h, x, y) == s
+    end
+
+    for scalar_op in (+, *), f_test1 in test_sample, f_test2 in test_sample
+        h = convert(RealFunction{T}, (scalar_op)(f_test1, f_test2))
+        s = (scalar_op)(MOD.unsafe_pairwise(h.f, x, y), MOD.unsafe_pairwise(h.g, x, y))
+        @test MOD.unsafe_pairwise(h, x, y) == s
+
+        h = convert(RealFunction{T}, (scalar_op)(2*f_test1+1, f_test2))
+        s = (scalar_op)(MOD.unsafe_pairwise(h.f, x, y), MOD.unsafe_pairwise(h.g, x, y))
+        @test MOD.unsafe_pairwise(h, x, y) == s
+    end
 end
 
 info("Testing ", MOD.pairwise)
-for f_obj in pairwise_functions
-    for T in FloatingPointTypes
-        f = convert(RealFunction{T}, (f_obj)())
-        x = rand(T,p)
-        y = rand(T,p)
+for T in FloatingPointTypes
+    x = rand(T,p)
+    y = rand(T,p)
+
+    for f_test in test_pairwise_functions
+        f = convert(RealFunction{T}, f_test)
 
         s1 = MOD.pairwise_return(f, MOD.pairwise_aggregate(f, MOD.pairwise_initiate(f), x[1], y[1]))
         @test MOD.pairwise(f, x[1], y[1]) == s1
 
         s2 = MOD.unsafe_pairwise(f, x, y)
         @test MOD.pairwise(f, x, y) == s2
+    end
 
-        for g_obj in composition_classes
-            g = convert(CompositionClass{T}, (g_obj)())
-            if MOD.iscomposable(g,f)
-                h = convert(RealFunction{T}, CompositeFunction(g,f))
-                
-                @test MOD.pairwise(h, x[1], y[1]) == MOD.composition(g, s1)
-                @test MOD.pairwise(h, x, y) == MOD.composition(g, s2)
-            end
-        end
+    for h_test in test_composite_functions
+        h = convert(RealFunction{T}, h_test)
+        
+        @test MOD.pairwise(h, x[1], y[1]) == MOD.composition(h.g, MOD.pairwise(h.f, x[1], y[1]))
+        @test MOD.pairwise(h, x, y) == MOD.composition(h.g, MOD.unsafe_pairwise(h.f, x, y))
+    end
+
+    for f_test in test_sample
+        h = convert(RealFunction{T}, 2*f_test+1)
+
+        s1 = h.a*MOD.pairwise(h.f, x[1], y[1]) + h.c
+        @test MOD.pairwise(h, x[1], y[1]) == s1
+
+        s2 = h.a*MOD.pairwise(h.f, x, y) + h.c
+        @test MOD.pairwise(h, x, y) == s2
+    end
+
+    for scalar_op in (+, *), f_test1 in test_sample, f_test2 in test_sample
+        h = convert(RealFunction{T}, (scalar_op)(f_test1, f_test2))
+
+        s1 = (scalar_op)(MOD.pairwise(h.f, x[1], y[1]), MOD.pairwise(h.g, x[1], y[1]))
+        @test MOD.pairwise(h, x[1], y[1]) == s1
+
+        s2 = (scalar_op)(MOD.pairwise(h.f, x, y), MOD.pairwise(h.g, x, y))
+        @test MOD.pairwise(h, x, y) == s2
     end
 end
 
@@ -59,7 +103,6 @@ for T in FloatingPointTypes
     @test_throws DimensionMismatch MOD.dotvectors!(Val{:row}, Array(T,2), Array(T,3,2))
     @test_throws DimensionMismatch MOD.dotvectors!(Val{:row}, Array(T,4), Array(T,3,4))
     @test_throws DimensionMismatch MOD.dotvectors!(Val{:col}, Array(T,2), Array(T,2,3))
-
 end
 
 info("Testing ", MOD.gramian!)
@@ -99,7 +142,7 @@ for T in FloatingPointTypes
 
 end
 
-info("Testing ", MOD.squareddistance!)
+info("Testing ", MOD.squared_distance!)
 for T in FloatingPointTypes
     Set_X = [rand(T,p) for i = 1:n]
     Set_Y = [rand(T,p) for i = 1:m]
@@ -111,60 +154,109 @@ for T in FloatingPointTypes
     G = MOD.gramian!(Val{:row}, Array(T,n,n), X, true)
     xtx = MOD.dotvectors(Val{:row}, X)
 
-    @test_approx_eq MOD.squareddistance!(G, xtx, true) P
+    @test_approx_eq MOD.squared_distance!(G, xtx, true) P
 
     P = [dot(x-y,x-y) for x in Set_X, y in Set_Y]
     G = MOD.gramian!(Val{:row}, Array(T,n,m), X, Y)
     xtx = MOD.dotvectors(Val{:row}, X)
     yty = MOD.dotvectors(Val{:row}, Y)
 
-    @test_approx_eq MOD.squareddistance!(G, xtx, yty)  P
+    @test_approx_eq MOD.squared_distance!(G, xtx, yty)  P
     
-    @test_throws DimensionMismatch MOD.squareddistance!(Array(T,3,4), Array(T,3), true)
-    @test_throws DimensionMismatch MOD.squareddistance!(Array(T,4,3), Array(T,3), true)
+    @test_throws DimensionMismatch MOD.squared_distance!(Array(T,3,4), Array(T,3), true)
+    @test_throws DimensionMismatch MOD.squared_distance!(Array(T,4,3), Array(T,3), true)
 
-    @test_throws DimensionMismatch MOD.squareddistance!(Array(T,3,4), Array(T,2), Array(T,4))
-    @test_throws DimensionMismatch MOD.squareddistance!(Array(T,3,4), Array(T,4), Array(T,4))
-    @test_throws DimensionMismatch MOD.squareddistance!(Array(T,3,4), Array(T,3), Array(T,3))
-    @test_throws DimensionMismatch MOD.squareddistance!(Array(T,3,4), Array(T,3), Array(T,5))
+    @test_throws DimensionMismatch MOD.squared_distance!(Array(T,3,4), Array(T,2), Array(T,4))
+    @test_throws DimensionMismatch MOD.squared_distance!(Array(T,3,4), Array(T,4), Array(T,4))
+    @test_throws DimensionMismatch MOD.squared_distance!(Array(T,3,4), Array(T,3), Array(T,3))
+    @test_throws DimensionMismatch MOD.squared_distance!(Array(T,3,4), Array(T,3), Array(T,5))
 end
 
-info("Testing ", MOD.rectangularcompose!)
+info("Testing ", MOD.rectangular_compose!)
 for f_obj in composition_classes
     for T in FloatingPointTypes
         X = rand(T, n, m)
         f = convert(MOD.CompositionClass{T}, (f_obj)())
 
         P = [MOD.composition(f,X[i,j]) for i in 1:size(X,1), j in 1:size(X,2)]
-        @test_approx_eq MOD.rectangularcompose!(f, X)  P
+        @test_approx_eq MOD.rectangular_compose!(f, X)  P
     end
 end
 
-info("Testing ", MOD.symmetriccompose!)
+info("Testing ", MOD.symmetric_compose!)
 for f_obj in composition_classes
     for T in FloatingPointTypes
         X = rand(T, n, n)
         f = convert(CompositionClass{T}, (f_obj)())
 
         P = LinAlg.copytri!([MOD.composition(f,X[i,j]) for i in 1:size(X,1), j in 1:size(X,2)], 'U')
-        @test_approx_eq MOD.symmetriccompose!(f, X, true) P
+        @test_approx_eq MOD.symmetric_compose!(f, X, true) P
 
-        @test_throws DimensionMismatch MOD.symmetriccompose!(f, Array(T,n,n+1), true)
-        @test_throws DimensionMismatch MOD.symmetriccompose!(f, Array(T,n+1,n), true)
+        @test_throws DimensionMismatch MOD.symmetric_compose!(f, Array(T,n,n+1), true)
+        @test_throws DimensionMismatch MOD.symmetric_compose!(f, Array(T,n+1,n), true)
     end
 end
 
-info("Testing ", MOD.pairwisematrix)
-steps = length(pairwise_functions) + length(composite_functions)
+info("Testing ", MOD.pairwisematrix!)
+test_set = (test_pairwise_functions..., test_composite_functions..., 
+            [2*f+1 for f in test_sample]..., 
+            [f1+f2 for f1 in test_sample, f2 in test_sample]...,
+            [f1*f2 for f1 in test_sample, f2 in test_sample]...)
+steps = length(test_set)
 counter = 0
-for f_obj in (pairwise_functions..., composite_functions...)
+for f_test in test_set
+    info("[", @sprintf("%3.0f", counter/steps*100), "%] Case ", @sprintf("%2.0f", counter+1), "/", steps)
+    for T in FloatingPointTypes
+        Set_X = [rand(T,p) for i = 1:n]
+        Set_Y = [rand(T,p) for i = 1:m]
+
+        X = transpose(hcat(Set_X...))
+        Y = transpose(hcat(Set_Y...))
+        f = convert(RealFunction{T}, f_test)
+                   
+        P = [MOD.pairwise(f,x,y) for x in Set_X, y in Set_X]
+        @test_approx_eq MOD.pairwisematrix!(Val{:row}, Array(T,n,n), f, X,  true) P
+        @test_approx_eq MOD.pairwisematrix!(Val{:col}, Array(T,n,n), f, X', true) P
+
+        P = [MOD.pairwise(f,x,y) for x in Set_X, y in Set_Y]
+        @test_approx_eq MOD.pairwisematrix!(Val{:row}, Array(T,n,m), f, X,  Y)  P
+        @test_approx_eq MOD.pairwisematrix!(Val{:col}, Array(T,n,m), f, X', Y') P
+
+        @test_throws DimensionMismatch MOD.pairwisematrix!(Val{:row}, Array(T,n+1,n),   f, X, true)
+        @test_throws DimensionMismatch MOD.pairwisematrix!(Val{:row}, Array(T,n,n+1),   f, X, true)
+        @test_throws DimensionMismatch MOD.pairwisematrix!(Val{:row}, Array(T,n+1,n+1), f, X, true)
+
+        @test_throws DimensionMismatch MOD.pairwisematrix!(Val{:col}, Array(T,n+1,n),   f, X', true)
+        @test_throws DimensionMismatch MOD.pairwisematrix!(Val{:col}, Array(T,n,n+1),   f, X', true)
+        @test_throws DimensionMismatch MOD.pairwisematrix!(Val{:col}, Array(T,n+1,n+1), f, X', true)
+
+        @test_throws DimensionMismatch MOD.pairwisematrix!(Val{:row}, Array(T,n+1,m), f, X,  Y)
+        @test_throws DimensionMismatch MOD.pairwisematrix!(Val{:row}, Array(T,n,m+1), f, X,  Y)
+        @test_throws DimensionMismatch MOD.pairwisematrix!(Val{:col}, Array(T,n+1,m), f, X', Y')
+        @test_throws DimensionMismatch MOD.pairwisematrix!(Val{:col}, Array(T,n,m+1), f, X', Y')
+
+        @test_throws DimensionMismatch MOD.pairwisematrix!(Val{:row}, Array(T,m+1,n), f, Y,  X)
+        @test_throws DimensionMismatch MOD.pairwisematrix!(Val{:row}, Array(T,m,n+1), f, Y,  X)
+        @test_throws DimensionMismatch MOD.pairwisematrix!(Val{:col}, Array(T,m+1,n), f, Y', X')
+        @test_throws DimensionMismatch MOD.pairwisematrix!(Val{:col}, Array(T,m,n+1), f, Y', X')
+    end
+    counter += 1
+end
+info("[100%] Done")
+
+info("Testing ", MOD.pairwisematrix)
+test_set = test_sample
+steps = length(test_set)
+counter = 0
+for f_test in test_set
+    info("[", @sprintf("%3.0f", counter/steps*100), "%] Case ", @sprintf("%2.0f", counter+1), "/", steps)
     for T in FloatingPointTypes
         Set_X = [rand(T, p) for i = 1:n]
         Set_Y = [rand(T,p)  for i = 1:m]
 
         X = transpose(hcat(Set_X...))
         Y = transpose(hcat(Set_Y...))
-        f = convert(RealFunction{T}, (f_obj)())
+        f = convert(RealFunction{T}, f_test)
                    
         P = [MOD.pairwise(f,x,y) for x in Set_X, y in Set_X]
         @test_approx_eq MOD.pairwisematrix(Val{:row}, f, X)  P
@@ -176,79 +268,5 @@ for f_obj in (pairwise_functions..., composite_functions...)
 
     end
     counter += 1
-    info("[", @sprintf("%3.0f", counter/steps*100), "%] ", f_obj)
 end
-
-
-
-
-
-#=
-
-info("Testing ", MOD.pairwisematrix!)
-steps = length(additive_kernels) + 1
-counter = 0
-info("    Progress:   0.0%")
-for f_obj in (additive_kernels..., MLKTest.PairwiseTestKernel)
-    for T in FloatingPointTypes
-        Set_X = [rand(T, p) for i = 1:n]
-        Set_Y = [rand(T,p)  for i = 1:m]
-
-        X = transpose(hcat(Set_X...))
-        Y = transpose(hcat(Set_Y...))
-        k = convert(Kernel{T}, (f_obj)())
-        #println("κ:", k, ", X:", typeof(X), ", Y:", typeof(Y))
-                   
-        P = [MOD.pairwise(k,x,y) for x in Set_X, y in Set_X]
-        #@test_approx_eq MOD.pairwisematrix(Val{:row}, k, X)  P
-        #@test_approx_eq MOD.pairwisematrix(Val{:col}, k, X') P
-        @test_approx_eq MOD.pairwisematrix!(Val{:row}, Array(T,n,n), k, X,  true)  P
-        @test_approx_eq MOD.pairwisematrix!(Val{:col}, Array(T,n,n), k, X', true) P
-
-        P = [MOD.pairwise(k,x,y) for x in Set_X, y in Set_Y]
-        #@test_approx_eq MOD.pairwisematrix(Val{:row}, k, X,  Y)  P
-        #@test_approx_eq MOD.pairwisematrix(Val{:col}, k, X', Y') P
-        @test_approx_eq MOD.pairwisematrix!(Val{:row}, Array(T,n,m), k, X,  Y)  P
-        @test_approx_eq MOD.pairwisematrix!(Val{:col}, Array(T,n,m), k, X', Y') P
-
-        @test_throws DimensionMismatch MOD.pairwisematrix!(Val{:row}, Array(T,n+1,n),   k, X, true)
-        @test_throws DimensionMismatch MOD.pairwisematrix!(Val{:row}, Array(T,n,n+1),   k, X, true)
-        @test_throws DimensionMismatch MOD.pairwisematrix!(Val{:row}, Array(T,n+1,n+1), k, X, true)
-
-        @test_throws DimensionMismatch MOD.pairwisematrix!(Val{:col}, Array(T,n+1,n),   k, X', true)
-        @test_throws DimensionMismatch MOD.pairwisematrix!(Val{:col}, Array(T,n,n+1),   k, X', true)
-        @test_throws DimensionMismatch MOD.pairwisematrix!(Val{:col}, Array(T,n+1,n+1), k, X', true)
-
-        @test_throws DimensionMismatch MOD.pairwisematrix!(Val{:row}, Array(T,n+1,m), k, X,  Y)
-        @test_throws DimensionMismatch MOD.pairwisematrix!(Val{:row}, Array(T,n,m+1), k, X,  Y)
-        @test_throws DimensionMismatch MOD.pairwisematrix!(Val{:col}, Array(T,n+1,m), k, X', Y')
-        @test_throws DimensionMismatch MOD.pairwisematrix!(Val{:col}, Array(T,n,m+1), k, X', Y')
-
-        @test_throws DimensionMismatch MOD.pairwisematrix!(Val{:row}, Array(T,m+1,n), k, Y,  X)
-        @test_throws DimensionMismatch MOD.pairwisematrix!(Val{:row}, Array(T,m,n+1), k, Y,  X)
-        @test_throws DimensionMismatch MOD.pairwisematrix!(Val{:col}, Array(T,m+1,n), k, Y', X')
-        @test_throws DimensionMismatch MOD.pairwisematrix!(Val{:col}, Array(T,m,n+1), k, Y', X')
-
-        @test_approx_eq MOD.dotvectors(Val{:row}, X) sum((X.*X),2)
-        @test_approx_eq MOD.dotvectors(Val{:col}, X) sum((X.*X),1)
-
-        @test_approx_eq MOD.dotvectors!(Val{:row}, Array(T,n), X) sum((X.*X),2)
-        @test_approx_eq MOD.dotvectors!(Val{:col}, Array(T,p), X) sum((X.*X),1)
-
-        @test_throws DimensionMismatch MOD.dotvectors!(Val{:row}, Array(T,2), Array(T,3,2))
-        @test_throws DimensionMismatch MOD.dotvectors!(Val{:row}, Array(T,4), Array(T,3,4))
-        @test_throws DimensionMismatch MOD.dotvectors!(Val{:col}, Array(T,2), Array(T,2,3))
-        @test_throws DimensionMismatch MOD.dotvectors!(Val{:col}, Array(T,4), Array(T,4,3))
-
-        @test_throws DimensionMismatch MOD.squareddistance!(Array(T,3,4), Array(T,3), true)
-        @test_throws DimensionMismatch MOD.squareddistance!(Array(T,4,3), Array(T,3), true)
-
-        @test_throws DimensionMismatch MOD.squareddistance!(Array(T,3,4), Array(T,2), Array(T,4))
-        @test_throws DimensionMismatch MOD.squareddistance!(Array(T,3,4), Array(T,4), Array(T,4))
-        @test_throws DimensionMismatch MOD.squareddistance!(Array(T,3,4), Array(T,3), Array(T,3))
-        @test_throws DimensionMismatch MOD.squareddistance!(Array(T,3,4), Array(T,3), Array(T,5))
-    end
-    counter += 1
-    info("    Progress: ", @sprintf("%5.1f", counter/steps*100), "%")
-end
-=#
+info("[100%] Done")

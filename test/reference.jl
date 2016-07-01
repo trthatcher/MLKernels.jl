@@ -136,29 +136,3 @@ composite_functions = (
     LinearKernel,
     SigmoidKernel
 )
-
-
-
-#=
-
-
-all_kernelproperties = Dict( #|mercer |negdef |neg    |zero   |pos
-    SineSquaredKernel =>      (false,  true,   false,  true,   true),
-    ExponentiatedClass =>     (true,   false,  false,  false,  true),
-    ScalarProductKernel =>    (true,   false,  true,   true,   true),
-    SquaredDistanceKernel =>  (false,  true,   false,  true,   true),
-    SigmoidClass =>           (false,  false,  true,   true,   true),
-    ExponentialClass =>       (true,   false,  false,  false,  true),
-    GammaLogClass =>          (false,  true,   false,  true,   true),
-    GammaRationalClass =>     (true,   false,  false,  false,  true),
-    LogClass =>               (false,  true,   false,  true,   true),
-    MaternClass =>            (true,   false,  false,  false,  true),
-    PolynomialClass =>        (true,   false,  true,   true,   true),
-    PowerClass =>             (false,  true,   false,  true,   true),
-    GammaExponentialClass =>  (true,   false,  false,  false,  true),
-    ChiSquaredKernel =>       (false,  true,   false,  true,   true),
-    RationalClass =>          (true,   false,  false,  false,  true)
- )
-
-
-=#
