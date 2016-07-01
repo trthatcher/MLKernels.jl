@@ -17,27 +17,7 @@ call{T}(f::RealFunction{T}, x::AbstractArray{T}, y::AbstractArray{T}) = pairwise
 
 
 #================================================
-  PairwiseFunction Scalar/Vector Operation
-================================================#
-
-function pairwise{T}(f::PairwiseFunction{T}, x::T, y::T)
-    pairwise_return(f, pairwise_aggregate(f, pairwise_initiate(f), x, y))
-end
-
-# No checks, assumes length(x) == length(y) >= 1
-function unsafe_pairwise{T}(f::PairwiseFunction{T}, x::AbstractArray{T}, y::AbstractArray{T})
-    s = pairwise_initiate(f)
-    @simd for I in eachindex(x,y)
-        @inbounds xi = x[I]
-        @inbounds yi = y[I]
-        s = pairwise_aggregate(f, s, xi, yi)
-    end
-    pairwise_return(f, s)
-end
-
-
-#================================================
-  PairwiseFunction Matrix Operation
+  Generic Pairwise Matrix Operation
 ================================================#
 
 for (order, dimension) in ((:(:row), 1), (:(:col), 2))
@@ -136,7 +116,7 @@ end
 
 function pairwisematrix{T}(
         σ::MemoryOrder,
-        f::PairwiseFunction{T}, 
+        f::RealFunction{T}, 
         X::AbstractMatrix{T},
         symmetrize::Bool = true
     )
@@ -144,7 +124,7 @@ function pairwisematrix{T}(
 end
 
 function pairwisematrix{T}(
-        f::PairwiseFunction{T},
+        f::RealFunction{T},
         X::AbstractMatrix{T},
         symmetrize::Bool = true
     )
@@ -153,7 +133,7 @@ end
 
 function pairwisematrix{T}(
         σ::MemoryOrder,
-        f::PairwiseFunction{T}, 
+        f::RealFunction{T}, 
         X::AbstractMatrix{T},
         Y::AbstractMatrix{T}
     )
@@ -161,12 +141,33 @@ function pairwisematrix{T}(
 end
 
 function pairwisematrix{T}(
-        f::PairwiseFunction{T},
+        f::RealFunction{T},
         X::AbstractMatrix{T},
         Y::AbstractMatrix{T}
     )
     pairwisematrix(Val{:row}, f, X, Y)
 end
+
+
+#================================================
+  PairwiseFunction Scalar/Vector Operation
+================================================#
+
+function pairwise{T}(f::PairwiseFunction{T}, x::T, y::T)
+    pairwise_return(f, pairwise_aggregate(f, pairwise_initiate(f), x, y))
+end
+
+# No checks, assumes length(x) == length(y) >= 1
+function unsafe_pairwise{T}(f::PairwiseFunction{T}, x::AbstractArray{T}, y::AbstractArray{T})
+    s = pairwise_initiate(f)
+    @simd for I in eachindex(x,y)
+        @inbounds xi = x[I]
+        @inbounds yi = y[I]
+        s = pairwise_aggregate(f, s, xi, yi)
+    end
+    pairwise_return(f, s)
+end
+
 
 
 #================================================
@@ -221,7 +222,7 @@ function pairwisematrix!{T}(
         Y::AbstractMatrix{T}
     )
     pairwisematrix!(σ, P, h.f, X, Y)
-    symmetriccompose!(h.g, P, symmetrize)
+    rectangularcompose!(h.g, P)
 end
 
 
@@ -324,7 +325,7 @@ centerkernelmatrix{T<:AbstractFloat}(K::Matrix{T}) = centerkernelmatrix!(copy(K)
   ScalarProduct and SquaredDistance using BLAS/Built-In methods
 ===================================================================================================#
 
-function squared_distance!{T<:AbstractFloat}(G::Matrix{T}, xᵀx::Vector{T}, symmetrize::Bool)
+function squareddistance!{T<:AbstractFloat}(G::Matrix{T}, xᵀx::Vector{T}, symmetrize::Bool)
     if !((n = length(xᵀx)) == size(G,1) == size(G,2))
         throw(DimensionMismatch("Gramian matrix must be square."))
     end
@@ -334,7 +335,7 @@ function squared_distance!{T<:AbstractFloat}(G::Matrix{T}, xᵀx::Vector{T}, sym
     symmetrize ? LinAlg.copytri!(G, 'U') : G
 end
 
-function squared_distance!{T<:AbstractFloat}(G::Matrix{T}, xᵀx::Vector{T}, yᵀy::Vector{T})
+function squareddistance!{T<:AbstractFloat}(G::Matrix{T}, xᵀx::Vector{T}, yᵀy::Vector{T})
     if size(G,1) != length(xᵀx)
         throw(DimensionMismatch("Length of xᵀx must match rows of G"))
     elseif size(G,2) != length(yᵀy)
@@ -418,7 +419,7 @@ for (order, dimension) in ((:(:row), 1), (:(:col), 2))
             )
             gramian!(σ, P, X, false)
             xᵀx = dotvectors(σ, X)
-            squared_distance!(P, xᵀx, symmetrize)
+            squareddistance!(P, xᵀx, symmetrize)
         end
 
         function pairwisematrix!{T}(
@@ -431,7 +432,7 @@ for (order, dimension) in ((:(:row), 1), (:(:col), 2))
             gramian!(σ, P, X, Y)
             xᵀx = dotvectors(σ, X)
             yᵀy = dotvectors(σ, Y)
-            squared_distance!(P, xᵀx, yᵀy)
+            squareddistance!(P, xᵀx, yᵀy)
         end
     end
 end

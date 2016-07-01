@@ -1,6 +1,6 @@
-n = 200
-m = 100
-p = 25
+n = 3
+m = 2
+p = 2
 
 info("Testing ", MOD.unsafe_pairwise)
 for f_obj in pairwise_functions
@@ -99,8 +99,7 @@ for T in FloatingPointTypes
 
 end
 
-
-info("Testing ", MOD.squared_distance!)
+info("Testing ", MOD.squareddistance!)
 for T in FloatingPointTypes
     Set_X = [rand(T,p) for i = 1:n]
     Set_Y = [rand(T,p) for i = 1:m]
@@ -112,29 +111,70 @@ for T in FloatingPointTypes
     G = MOD.gramian!(Val{:row}, Array(T,n,n), X, true)
     xtx = MOD.dotvectors(Val{:row}, X)
 
-    @test_approx_eq MOD.squared_distance!(G, xtx, true) P
+    @test_approx_eq MOD.squareddistance!(G, xtx, true) P
 
     P = [dot(x-y,x-y) for x in Set_X, y in Set_Y]
     G = MOD.gramian!(Val{:row}, Array(T,n,m), X, Y)
     xtx = MOD.dotvectors(Val{:row}, X)
     yty = MOD.dotvectors(Val{:row}, Y)
 
-    @test_approx_eq MOD.squared_distance!(G, xtx, yty)  P
+    @test_approx_eq MOD.squareddistance!(G, xtx, yty)  P
     
-    @test_throws DimensionMismatch MOD.squared_distance!(Array(T,3,4), Array(T,3), true)
-    @test_throws DimensionMismatch MOD.squared_distance!(Array(T,4,3), Array(T,3), true)
+    @test_throws DimensionMismatch MOD.squareddistance!(Array(T,3,4), Array(T,3), true)
+    @test_throws DimensionMismatch MOD.squareddistance!(Array(T,4,3), Array(T,3), true)
 
-    @test_throws DimensionMismatch MOD.squared_distance!(Array(T,3,4), Array(T,2), Array(T,4))
-    @test_throws DimensionMismatch MOD.squared_distance!(Array(T,3,4), Array(T,4), Array(T,4))
-    @test_throws DimensionMismatch MOD.squared_distance!(Array(T,3,4), Array(T,3), Array(T,3))
-    @test_throws DimensionMismatch MOD.squared_distance!(Array(T,3,4), Array(T,3), Array(T,5))
+    @test_throws DimensionMismatch MOD.squareddistance!(Array(T,3,4), Array(T,2), Array(T,4))
+    @test_throws DimensionMismatch MOD.squareddistance!(Array(T,3,4), Array(T,4), Array(T,4))
+    @test_throws DimensionMismatch MOD.squareddistance!(Array(T,3,4), Array(T,3), Array(T,3))
+    @test_throws DimensionMismatch MOD.squareddistance!(Array(T,3,4), Array(T,3), Array(T,5))
 end
 
+info("Testing ", MOD.rectangularcompose!)
+for f_obj in composition_classes
+    for T in FloatingPointTypes
+        X = rand(T, n, m)
+        f = convert(MOD.CompositionClass{T}, (f_obj)())
 
-info("Testing ", MOD.pairwisematrix!)
+        P = [MOD.composition(f,X[i,j]) for i in 1:size(X,1), j in 1:size(X,2)]
+        @test_approx_eq MOD.rectangularcompose!(f, X)  P
+    end
+end
+
+info("Testing ", MOD.symmetriccompose!)
+for f_obj in composition_classes
+    for T in FloatingPointTypes
+        X = rand(T, n, n)
+        f = convert(CompositionClass{T}, (f_obj)())
+
+        P = LinAlg.copytri!([MOD.composition(f,X[i,j]) for i in 1:size(X,1), j in 1:size(X,2)], 'U')
+        @test_approx_eq MOD.symmetriccompose!(f, X, true) P
+
+        @test_throws DimensionMismatch MOD.symmetriccompose!(f, Array(T,n,n+1), true)
+        @test_throws DimensionMismatch MOD.symmetriccompose!(f, Array(T,n+1,n), true)
+    end
+end
+
+info("Testing ", MOD.pairwisematrix)
 steps = length(pairwise_functions) + length(composite_functions)
 counter = 0
 for f_obj in (pairwise_functions..., composite_functions...)
+    for T in FloatingPointTypes
+        Set_X = [rand(T, p) for i = 1:n]
+        Set_Y = [rand(T,p)  for i = 1:m]
+
+        X = transpose(hcat(Set_X...))
+        Y = transpose(hcat(Set_Y...))
+        f = convert(RealFunction{T}, (f_obj)())
+                   
+        P = [MOD.pairwise(f,x,y) for x in Set_X, y in Set_X]
+        @test_approx_eq MOD.pairwisematrix(Val{:row}, f, X)  P
+        @test_approx_eq MOD.pairwisematrix(Val{:col}, f, X') P
+
+        P = [MOD.pairwise(f,x,y) for x in Set_X, y in Set_Y]
+        @test_approx_eq MOD.pairwisematrix(Val{:row}, f, X,  Y)  P
+        @test_approx_eq MOD.pairwisematrix(Val{:col}, f, X', Y') P
+
+    end
     counter += 1
     info("[", @sprintf("%3.0f", counter/steps*100), "%] ", f_obj)
 end
@@ -200,13 +240,13 @@ for f_obj in (additive_kernels..., MLKTest.PairwiseTestKernel)
         @test_throws DimensionMismatch MOD.dotvectors!(Val{:col}, Array(T,2), Array(T,2,3))
         @test_throws DimensionMismatch MOD.dotvectors!(Val{:col}, Array(T,4), Array(T,4,3))
 
-        @test_throws DimensionMismatch MOD.squared_distance!(Array(T,3,4), Array(T,3), true)
-        @test_throws DimensionMismatch MOD.squared_distance!(Array(T,4,3), Array(T,3), true)
+        @test_throws DimensionMismatch MOD.squareddistance!(Array(T,3,4), Array(T,3), true)
+        @test_throws DimensionMismatch MOD.squareddistance!(Array(T,4,3), Array(T,3), true)
 
-        @test_throws DimensionMismatch MOD.squared_distance!(Array(T,3,4), Array(T,2), Array(T,4))
-        @test_throws DimensionMismatch MOD.squared_distance!(Array(T,3,4), Array(T,4), Array(T,4))
-        @test_throws DimensionMismatch MOD.squared_distance!(Array(T,3,4), Array(T,3), Array(T,3))
-        @test_throws DimensionMismatch MOD.squared_distance!(Array(T,3,4), Array(T,3), Array(T,5))
+        @test_throws DimensionMismatch MOD.squareddistance!(Array(T,3,4), Array(T,2), Array(T,4))
+        @test_throws DimensionMismatch MOD.squareddistance!(Array(T,3,4), Array(T,4), Array(T,4))
+        @test_throws DimensionMismatch MOD.squareddistance!(Array(T,3,4), Array(T,3), Array(T,3))
+        @test_throws DimensionMismatch MOD.squareddistance!(Array(T,3,4), Array(T,3), Array(T,5))
     end
     counter += 1
     info("    Progress: ", @sprintf("%5.1f", counter/steps*100), "%")
