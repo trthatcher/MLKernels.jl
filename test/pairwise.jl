@@ -1,6 +1,6 @@
-n = 300
-m = 200
-p = 25
+n = 30
+m = 20
+p = 5
 
 test_pairwise_functions  = [(f_obj)() for f_obj in pairwise_functions]
 test_composite_functions = [(f_obj)() for f_obj in composite_functions]
@@ -56,6 +56,9 @@ for T in FloatingPointTypes
 
         s2 = MOD.unsafe_pairwise(f, x, y)
         @test MOD.pairwise(f, x, y) == s2
+
+        @test_throws DimensionMismatch MOD.pairwise(f, Array(T,p), Array(T,p+1))
+        @test_throws DimensionMismatch MOD.pairwise(f, Array(T,p+1), Array(T,p))
     end
 
     for h_test in test_composite_functions
@@ -63,6 +66,9 @@ for T in FloatingPointTypes
         
         @test MOD.pairwise(h, x[1], y[1]) == MOD.composition(h.g, MOD.pairwise(h.f, x[1], y[1]))
         @test MOD.pairwise(h, x, y) == MOD.composition(h.g, MOD.unsafe_pairwise(h.f, x, y))
+
+        @test_throws DimensionMismatch MOD.pairwise(h, Array(T,p), Array(T,p+1))
+        @test_throws DimensionMismatch MOD.pairwise(h, Array(T,p+1), Array(T,p))
     end
 
     for f_test in test_sample
@@ -73,6 +79,9 @@ for T in FloatingPointTypes
 
         s2 = h.a*MOD.pairwise(h.f, x, y) + h.c
         @test MOD.pairwise(h, x, y) == s2
+
+        @test_throws DimensionMismatch MOD.pairwise(h, Array(T,p), Array(T,p+1))
+        @test_throws DimensionMismatch MOD.pairwise(h, Array(T,p+1), Array(T,p))
     end
 
     for scalar_op in (+, *), f_test1 in test_sample, f_test2 in test_sample
@@ -83,6 +92,9 @@ for T in FloatingPointTypes
 
         s2 = (scalar_op)(MOD.pairwise(h.f, x, y), MOD.pairwise(h.g, x, y))
         @test MOD.pairwise(h, x, y) == s2
+
+        @test_throws DimensionMismatch MOD.pairwise(h, Array(T,p), Array(T,p+1))
+        @test_throws DimensionMismatch MOD.pairwise(h, Array(T,p+1), Array(T,p))
     end
 end
 
@@ -261,11 +273,15 @@ for f_test in test_set
         P = [MOD.pairwise(f,x,y) for x in Set_X, y in Set_X]
         @test_approx_eq MOD.pairwisematrix(Val{:row}, f, X)  P
         @test_approx_eq MOD.pairwisematrix(Val{:col}, f, X') P
+        @test_approx_eq MOD.pairwisematrix(f, X) P
 
         P = [MOD.pairwise(f,x,y) for x in Set_X, y in Set_Y]
         @test_approx_eq MOD.pairwisematrix(Val{:row}, f, X,  Y)  P
         @test_approx_eq MOD.pairwisematrix(Val{:col}, f, X', Y') P
+        @test_approx_eq MOD.pairwisematrix(f, X, Y)  P
 
+        @test_approx_eq f(Set_X[1][1], Set_Y[1][1]) MOD.pairwise(f, Set_X[1][1], Set_Y[1][1])
+        @test_approx_eq f(Set_X[1],    Set_Y[1])    MOD.pairwise(f, Set_X[1],    Set_Y[1])
     end
     counter += 1
 end
