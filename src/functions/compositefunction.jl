@@ -43,7 +43,7 @@ abstract PositiveMercerClass{T<:AbstractFloat} <: CompositionClass{T}
 @inline attainsnegative(::PositiveMercerClass) = false
 @inline attainszero(::PositiveMercerClass) = false
 
-doc"GammaExponentialClass(α,γ) = exp(-α⋅fᵞ)  f:ℜⁿ×ℜⁿ→ℜ, α ∈ (0,∞), γ ∈ (0,1]"
+doc"GammaExponentialClass(α,γ) = exp(-α⋅fᵞ)   α ∈ (0,∞), γ ∈ (0,1]"
 immutable GammaExponentialClass{T<:AbstractFloat} <: PositiveMercerClass{T}
     alpha::HyperParameter{T}
     gamma::HyperParameter{T}
@@ -57,7 +57,7 @@ end
 @inline composition{T<:AbstractFloat}(g::GammaExponentialClass{T}, z::T) = exp(-g.alpha * z^g.gamma)
 
 
-doc"ExponentialClass(α) = exp(-α⋅f)"
+doc"ExponentialClass(α) = exp(-α⋅f)   α ∈ (0,∞)"
 immutable ExponentialClass{T<:AbstractFloat} <: PositiveMercerClass{T}
     alpha::HyperParameter{T}
     ExponentialClass(α::Variable{T}) = new(
@@ -69,7 +69,7 @@ end
 @inline composition{T<:AbstractFloat}(g::ExponentialClass{T}, z::T) = exp(-g.alpha * z)
 
 
-doc"GammaRationalClass(α,β,γ) = (1 + α⋅fᵞ)⁻ᵝ"
+doc"GammaRationalClass(α,β,γ) = (1 + α⋅fᵞ)⁻ᵝ   α ∈ (0,∞), β ∈ (0,∞), γ ∈ (0,1]"
 immutable GammaRationalClass{T<:AbstractFloat} <: PositiveMercerClass{T}
     alpha::HyperParameter{T}
     beta::HyperParameter{T}
@@ -85,7 +85,7 @@ end
 @inline composition{T<:AbstractFloat}(g::GammaRationalClass{T}, z::T) = (1 + g.alpha*z^g.gamma)^(-g.beta)
 
 
-doc"RationalClass(α,β,γ) = (1 + α⋅f)⁻ᵝ"
+doc"RationalClass(α,β) = (1 + α⋅f)⁻ᵝ   α ∈ (0,∞), β ∈ (0,∞)"
 immutable RationalClass{T<:AbstractFloat} <: PositiveMercerClass{T}
     alpha::HyperParameter{T}
     beta::HyperParameter{T}
@@ -99,7 +99,7 @@ end
 @inline composition{T<:AbstractFloat}(g::RationalClass{T}, z::T) = (1 + g.alpha*z)^(-g.beta)
 
 
-doc"MatérnClass(ν,ρ) = 2ᵛ⁻¹(√(2ν)f/ρ)ᵛKᵥ(√(2ν)f/ρ)/Γ(ν)"
+doc"MatérnClass(ν,ρ) = 2ᵛ⁻¹(√(2ν)f/ρ)ᵛKᵥ(√(2ν)f/ρ)/Γ(ν)   ν ∈ (0,∞), ρ ∈ (0,∞)"
 immutable MaternClass{T<:AbstractFloat} <: PositiveMercerClass{T}
     nu::HyperParameter{T}
     rho::HyperParameter{T}
@@ -117,7 +117,7 @@ end
 end
 
 
-doc"ExponentiatedClass(α) = exp(a⋅f + c)"
+doc"ExponentiatedClass(a,c) = exp(a⋅f + c)   a ∈ (0,∞), c ∈ [0,∞)"
 immutable ExponentiatedClass{T<:AbstractFloat} <: PositiveMercerClass{T}
     a::HyperParameter{T}
     c::HyperParameter{T}
@@ -133,7 +133,7 @@ end
 
 #== Other Mercer Classes ==#
 
-doc"PolynomialClass(a,c,d) = (a⋅f + c)ᵈ"
+doc"PolynomialClass(a,c,d) = (a⋅f + c)ᵈ   a ∈ (0,∞), c ∈ [0,∞), d ∈ ℤ+"
 immutable PolynomialClass{T<:AbstractFloat,U<:Integer} <: CompositionClass{T}
     a::HyperParameter{T}
     c::HyperParameter{T}
@@ -156,7 +156,7 @@ abstract NonNegNegDefClass{T<:AbstractFloat} <: CompositionClass{T}
 @inline isnegdef(::NonNegNegDefClass) = true
 @inline attainsnegative(::NonNegNegDefClass) = false
 
-doc"PowerClass(a,c,γ) = (a⋅f + c)ᵞ"
+doc"PowerClass(a,c,γ) = (a⋅f + c)ᵞ   a ∈ (0,∞), c ∈ (0,∞), γ ∈ (0,1]"
 immutable PowerClass{T<:AbstractFloat} <: NonNegNegDefClass{T}
     a::HyperParameter{T}
     c::HyperParameter{T}
@@ -172,7 +172,7 @@ end
 @inline composition{T<:AbstractFloat}(g::PowerClass{T}, z::T) = (g.a*z + g.c)^(g.gamma)
 
 
-doc"GammmaLogClass(α,γ) = log(1 + α⋅fᵞ)"
+doc"GammmaLogClass(α,γ) = log(1 + α⋅fᵞ)   α ∈ (0,∞), γ ∈ (0,1]"
 immutable GammaLogClass{T<:AbstractFloat} <: NonNegNegDefClass{T}
     alpha::HyperParameter{T}
     gamma::HyperParameter{T}
@@ -186,7 +186,7 @@ end
 @inline composition{T<:AbstractFloat}(g::GammaLogClass{T}, z::T) = log(g.alpha*z^(g.gamma) + 1)
 
 
-doc"LogClass(α) = log(1 + α⋅f)"
+doc"LogClass(α) = log(1 + α⋅f)   α ∈ (0,∞)"
 immutable LogClass{T<:AbstractFloat} <: NonNegNegDefClass{T}
     alpha::HyperParameter{T}
     LogClass(α::Variable{T}) = new(
@@ -200,7 +200,7 @@ end
 
 #== Non-Mercer, Non-Negative Definite Classes ==#
 
-doc"SigmoidClass(α,c) = tanh(a⋅f + c)"
+doc"SigmoidClass(a,c) = tanh(a⋅f + c)   a ∈ (0,∞), c ∈ (0,∞)"
 immutable SigmoidClass{T<:AbstractFloat} <: CompositionClass{T}
     a::HyperParameter{T}
     c::HyperParameter{T}
@@ -218,7 +218,7 @@ end
   Kernel Composition ψ = g(f(x,y))
 ===================================================================================================#
 
-doc"CompositeFunction(g,f) = g∘f"
+doc"CompositeFunction(g,f) = g∘f   f:ℜⁿ×ℜⁿ→ℜ, g:ℜ→ℜ"
 immutable CompositeFunction{T<:AbstractFloat} <: RealFunction{T}
     g::CompositionClass{T}
     f::PairwiseFunction{T}
@@ -257,20 +257,31 @@ attainsnegative(h::CompositeFunction) = attainsnegative(h.g)
 #== Composition Kernels ==#
 
 doc"GaussianKernel(α) = exp(-α⋅‖x-y‖²)"
-function GaussianKernel{T<:AbstractFloat}(α::Argument{T} = 1.0)
+function GaussianKernel{T<:AbstractFloat}(α::Argument{T})
     CompositeFunction(ExponentialClass(α), SquaredEuclidean{T}())
+end
+function GaussianKernel{T}(α::T=1.0)
+    T <: AbstractFloat ? GaussianKernel(α) : GaussianKernel(convert(Float64, α))
 end
 SquaredExponentialKernel = GaussianKernel
 RadialBasisKernel = GaussianKernel
 
 doc"LaplacianKernel(α) = exp(α⋅‖x-y‖)"
-function LaplacianKernel{T<:AbstractFloat}(α::Argument{T} = 1.0)
+function LaplacianKernel{T<:AbstractFloat}(α::Argument{T})
     CompositeFunction(GammaExponentialClass(α, convert(T, 0.5)), SquaredEuclidean{T}())
+end
+function LaplacianKernel{T}(α::T=1.0)
+    T <: AbstractFloat ? LaplacianKernel(α) : LaplacianKernel(convert(Argument{Float64}, α))
 end
 
 doc"PeriodicKernel(α,p) = exp(-α⋅Σⱼsin²(p(xⱼ-yⱼ)))"
-function PeriodicKernel{T<:AbstractFloat}(α::Argument{T} = 1.0, p::Argument{T} = convert(T, π))
+function PeriodicKernel{T<:AbstractFloat}(α::Argument{T}, p::Argument{T})
     CompositeFunction(ExponentialClass(α), SineSquaredKernel(p))
+end
+function PeriodicKernel{T1,T2}(α::Argument{T1} = 1.0, p::Argument{T2} = convert(Float64,π))
+    Tmax = promote_type(T1, T2)
+    T = Tmax <: AbstractFloat ? Tmax : Float64
+    PeriodicKernel(convert(Argument{T}, α), convert(Argument{T}, p))
 end
 
 doc"RationalQuadraticKernel(α,β) = (1 + α⋅‖x-y‖²)⁻ᵝ"

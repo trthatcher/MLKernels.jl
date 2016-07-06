@@ -19,6 +19,9 @@ export
     pairwise,
     pairwisematrix,
     pairwisematrix!,
+    kernel,
+    kernelmatrix,
+    kernelmatrix!,
 
     # Hyper Parameters
     Bound,
