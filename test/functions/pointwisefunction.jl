@@ -1,4 +1,4 @@
-info("Testing ", AffineFunction)
+info("Testing ", AffineFunction.name.name)
 for f_obj in (pairwise_functions..., composite_functions...)
     for T in FloatingPointTypes
 
@@ -76,7 +76,7 @@ for f_obj in (pairwise_functions..., composite_functions...)
 end
 
 
-info("Testing ", FunctionSum)
+info("Testing ", FunctionSum.name.name)
 for f_obj1 in (pairwise_functions..., composite_functions...)
     for f_obj2 in (pairwise_functions..., composite_functions...)
         for T in FloatingPointTypes
@@ -137,7 +137,7 @@ for f_obj1 in (pairwise_functions..., composite_functions...)
     end
 end
 
-info("Testing ", FunctionProduct)
+info("Testing ", FunctionProduct.name.name)
 for f_obj1 in (pairwise_functions..., composite_functions...)
     for f_obj2 in (pairwise_functions..., composite_functions...)
         for T in FloatingPointTypes

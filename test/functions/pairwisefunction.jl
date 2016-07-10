@@ -1,4 +1,4 @@
-info("Testing ", MOD.PairwiseFunction)
+info("Testing ", MOD.PairwiseFunction.name.name)
 steps = length(pairwise_functions)
 counter = 0
 for f_obj in pairwise_functions
@@ -63,5 +63,5 @@ for f_obj in pairwise_functions
     show(DevNull, f)
 
     counter += 1
-    info("[", @sprintf("%3.0f", counter/steps*100), "%] ", f_obj)
+    info("[", @sprintf("%3.0f", counter/steps*100), "%] ", f_obj.name.name)
 end

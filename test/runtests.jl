@@ -6,6 +6,14 @@ FloatingPointTypes = (Float32, Float64)
 IntegerTypes = (Int32, UInt32, Int64, UInt64)
 MOD = MLKernels
 
+test_print(f::RealFunction) = string(typeof(f).name)
+test_print(h::AffineFunction) = string(typeof(h).name, "(", typeof(h.f).name.name, ")")
+test_print(h::CompositeFunction) = string(typeof(h).name.name, "(", typeof(h.g).name.name, ",",
+                                          typeof(h.f).name.name, ")")
+test_print(h::FunctionSum) = string(typeof(h).name.name, "(", typeof(h.g).name.name, ",",
+                                    typeof(h.f).name.name, ")")
+test_print(h::FunctionProduct) = string(typeof(h).name.name, "(", typeof(h.g).name.name, ",",
+                                        typeof(h.f).name.name, ")")
 #=
 module MLKTest
 

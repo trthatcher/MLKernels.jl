@@ -148,6 +148,7 @@ fixed{T<:Real}(v::T) = Variable{T}(v, true)
 eltype{T<:Real}(::Variable{T}) = T
 
 convert{T<:Real}(::Type{Variable{T}}, var::Variable) = Variable(convert(T, var.value), var.isfixed)
+convert{T<:Real}(::Type{Variable{T}}, var::Real) = Variable(convert(T, var), false)
 
 typealias Argument{T<:Real} Union{T,Variable{T}}
 

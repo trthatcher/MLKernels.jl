@@ -1,4 +1,4 @@
-info("Testing ", MOD.CompositionClass)
+info("Testing ", MOD.CompositionClass.name.name)
 steps = length(composition_classes)
 counter = 0
 for class_obj in composition_classes
@@ -63,10 +63,10 @@ for class_obj in composition_classes
     show(DevNull, g)
 
     counter += 1
-    info("[", @sprintf("%3.0f", counter/steps*100), "%] ", class_obj)
+    info("[", @sprintf("%3.0f", counter/steps*100), "%] ", class_obj.name.name)
 end
 
-info("Testing ", MOD.CompositeFunction)
+info("Testing ", MOD.CompositeFunction.name.name)
 for class_obj in composition_classes
     g = (class_obj)()
     for f_obj in pairwise_functions

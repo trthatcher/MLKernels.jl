@@ -6,7 +6,7 @@ test_pairwise_functions  = [(f_obj)() for f_obj in pairwise_functions]
 test_composite_functions = [(f_obj)() for f_obj in composite_functions]
 test_sample = [SquaredEuclidean(), ChiSquared(), ScalarProduct(), GaussianKernel()]
 
-info("Testing ", MOD.unsafe_pairwise)
+info("Testing ", MOD.unsafe_pairwise.env.name)
 for T in FloatingPointTypes
     x = rand(T,p)
     y = rand(T,p)
@@ -43,7 +43,7 @@ for T in FloatingPointTypes
     end
 end
 
-info("Testing ", MOD.pairwise)
+info("Testing ", MOD.pairwise.env.name)
 for T in FloatingPointTypes
     x = rand(T,p)
     y = rand(T,p)
@@ -98,7 +98,7 @@ for T in FloatingPointTypes
     end
 end
 
-info("Testing ", MOD.dotvectors!)
+info("Testing ", MOD.dotvectors!.env.name)
 for T in FloatingPointTypes
     Set_X = [rand(T, p) for i = 1:n]
     Set_Y = [rand(T,p)  for i = 1:m]
@@ -117,7 +117,7 @@ for T in FloatingPointTypes
     @test_throws DimensionMismatch MOD.dotvectors!(Val{:col}, Array(T,2), Array(T,2,3))
 end
 
-info("Testing ", MOD.gramian!)
+info("Testing ", MOD.gramian!.env.name)
 for T in FloatingPointTypes
     Set_X = [rand(T, p) for i = 1:n]
     Set_Y = [rand(T,p)  for i = 1:m]
@@ -154,7 +154,7 @@ for T in FloatingPointTypes
 
 end
 
-info("Testing ", MOD.squared_distance!)
+info("Testing ", MOD.squared_distance!.env.name)
 for T in FloatingPointTypes
     Set_X = [rand(T,p) for i = 1:n]
     Set_Y = [rand(T,p) for i = 1:m]
@@ -184,7 +184,7 @@ for T in FloatingPointTypes
     @test_throws DimensionMismatch MOD.squared_distance!(Array(T,3,4), Array(T,3), Array(T,5))
 end
 
-info("Testing ", MOD.rectangular_compose!)
+info("Testing ", MOD.rectangular_compose!.env.name)
 for f_obj in composition_classes
     for T in FloatingPointTypes
         X = rand(T, n, m)
@@ -195,7 +195,7 @@ for f_obj in composition_classes
     end
 end
 
-info("Testing ", MOD.symmetric_compose!)
+info("Testing ", MOD.symmetric_compose!.env.name)
 for f_obj in composition_classes
     for T in FloatingPointTypes
         X = rand(T, n, n)
@@ -209,7 +209,7 @@ for f_obj in composition_classes
     end
 end
 
-info("Testing ", MOD.pairwisematrix!)
+info("Testing ", MOD.pairwisematrix!.env.name)
 test_set = (test_pairwise_functions..., test_composite_functions..., 
             [2*f+1 for f in test_sample]..., 
             [f1+f2 for f1 in test_sample, f2 in test_sample]...,
@@ -217,7 +217,8 @@ test_set = (test_pairwise_functions..., test_composite_functions...,
 steps = length(test_set)
 counter = 0
 for f_test in test_set
-    info("[", @sprintf("%3.0f", counter/steps*100), "%] Case ", @sprintf("%2.0f", counter+1), "/", steps)
+    info("[", @sprintf("%3.0f", counter/steps*100), "%] Case ", @sprintf("%2.0f", counter+1), "/",
+         steps, " - ", test_print(f_test))
     for T in FloatingPointTypes
         Set_X = [rand(T,p) for i = 1:n]
         Set_Y = [rand(T,p) for i = 1:m]
@@ -256,7 +257,7 @@ for f_test in test_set
 end
 info("[100%] Done")
 
-info("Testing ", MOD.pairwisematrix)
+info("Testing ", MOD.pairwisematrix.env.name)
 test_set = test_sample
 steps = length(test_set)
 counter = 0

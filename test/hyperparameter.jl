@@ -1,4 +1,4 @@
-info("Testing ", Bound)
+info("Testing ", Bound.name.name)
 for T in (FloatingPointTypes..., IntegerTypes...)
     for isopen in (true, false)
         B = Bound(one(T), isopen)
@@ -18,7 +18,7 @@ for T in (FloatingPointTypes..., IntegerTypes...)
     end
 end
 
-info("Testing ", Interval)
+info("Testing ", Interval.name.name)
 for T in (FloatingPointTypes..., IntegerTypes...)
     for lisopen in (true, false), uisopen in (true, false)
         Bl = Bound(zero(T), lisopen)
@@ -113,7 +113,7 @@ for T in (FloatingPointTypes..., IntegerTypes...)
     end
 end
 
-info("Testing ", Variable)
+info("Testing ", Variable.name.name)
 for T in (FloatingPointTypes..., IntegerTypes...)
 
     v = Variable(one(T))
@@ -135,7 +135,7 @@ for T in (FloatingPointTypes..., IntegerTypes...)
     end
 end
 
-info("Testing ", HyperParameter)
+info("Testing ", HyperParameter.name.name)
 for T in (FloatingPointTypes..., IntegerTypes...)
     I = rightbounded(one(T), :open)
 
