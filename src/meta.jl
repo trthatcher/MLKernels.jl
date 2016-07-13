@@ -122,9 +122,9 @@ function generate_conversion_TU(obj::DataType)
     
     args = [:(Variable{$(field_params[i])}(f.$(fields[i]))) for i in eachindex(fields)]
 
-    ex3 = Expr(:call, sym_obj, args...)
+    ex3 = Expr(:call, :($sym_obj{T,U}), args...)
 
-    Expr(:block, Expr(:(=), ex1, ex3), Expr(:(=), ex2, ex3))
+    return Expr(:block, Expr(:(=), ex1, ex3), Expr(:(=), ex2, ex3))
 end
 
 function generate_conversion_T(obj::DataType)
@@ -132,10 +132,13 @@ function generate_conversion_T(obj::DataType)
     sym_obj = obj.name.name
     
     ex1 = :(convert{T}(::Type{$sym_obj{T}}, f::$sym_obj))
-    
-    args = [:(Variable{T}(f.$(fields[i]))) for i in eachindex(fields)]
 
-    Expr(:(=), ex1, Expr(:call, sym_obj, args...))
+    if length(fields) == 0
+        return Expr(:(=), ex1, Expr(:call, :($sym_obj{T}))) 
+    else
+        args = [:(Variable{T}(f.$(fields[i]))) for i in eachindex(fields)]
+        return Expr(:(=), ex1, Expr(:call, :($sym_obj{T}), args...))
+    end
 end
 
 function generate_conversions(obj::DataType)
