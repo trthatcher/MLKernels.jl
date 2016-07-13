@@ -175,6 +175,10 @@ function convert{T<:Real}(::Type{HyperParameter{T}}, θ::HyperParameter)
     HyperParameter{T}(convert(T, θ.value), convert(Interval{T}, θ.bounds), θ.isfixed)
 end
 
+function convert{T<:Real}(::Type{Variable{T}}, θ::HyperParameter)
+    Variable{T}(convert(T, θ.value), θ.isfixed)
+end
+
 function show{T}(io::IO, θ::HyperParameter{T})
     print(io, "HyperParameter{" * string(T) * "}(", θ.value, ") ∈ ", θ.bounds)
 end
