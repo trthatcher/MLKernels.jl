@@ -218,7 +218,7 @@ end
   Kernel Composition ψ = g(f(x,y))
 ===================================================================================================#
 
-doc"CompositeFunction(g,f) = g∘f   f:ℜⁿ×ℜⁿ→ℜ, g:ℜ→ℜ"
+doc"CompositeFunction(g,f) = g∘f   f:ℝⁿ×ℝⁿ→ℝ, g:ℝ→ℝ"
 immutable CompositeFunction{T<:AbstractFloat} <: RealFunction{T}
     g::CompositionClass{T}
     f::PairwiseFunction{T}

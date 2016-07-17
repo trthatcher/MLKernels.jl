@@ -1,3 +1,7 @@
+#===================================================================================================
+  Kernel Standardization
+===================================================================================================#
+
 #=
 type KernelStandardizer{T<:AbstractFloat}
     normalize::Bool
@@ -29,14 +33,26 @@ end
 =#
 
 #eps(real(float(one(eltype(M)))))*maximum(size(A))
-function nystrom{T<:AbstractFloat,U<:Integer}(
+
+#===================================================================================================
+  Nystrom Approximation
+===================================================================================================#
+
+function srswr(n::Integer, r::AbstractFloat)
+    0 < r <= 1 || error("Sample rate must be between 0 and 1")
+    ns = Int64(trunc(n*r))
+    return Int64[Int64(trunc(u*n +1)) for u in rand(ns)]
+end
+
+function nystrom{T<:AbstractFloat}(
         σ::MemoryOrder,
-        κ::RealFunction{T},
+        f::RealFunction{T},
         X::Matrix{T},
-        s::Vector{U}
+        s::Vector{Int64}
     )
     n = length(s)
-    C = kernelmatrix(σ, κ, σ == Val{:row} ? X[s,:] : X[:,s], X)
+    Xs = σ == Val{:row} ? X[s,:] : X[:,s]
+    C = kernelmatrix(σ, f, Xs, X)
     tol = eps(T)*n
     VDVᵀ = eigfact!(Symmetric(C[:,s]))
     D = VDVᵀ.values
@@ -49,23 +65,38 @@ function nystrom{T<:AbstractFloat,U<:Integer}(
     return (LinAlg.copytri!(W, 'U'), C)
 end
 
+function nystrom{T<:AbstractFloat}(
+        σ::MemoryOrder,
+        f::RealFunction{T},
+        X::Matrix{T},
+        r::AbstractFloat = 0.15
+    )
+    n = size(X, σ == Val{:row} ? 1 : 2)
+    s = srswr(n, r)
+    nystrom(σ, f, X, s)
+end
+
 immutable NystromFact{T<:AbstractFloat}
     W::Matrix{T}
     C::Matrix{T}
 end
 
-function srswr(n::Integer, r::AbstractFloat)
-    0 <= r <= 1 || error("Sample rate must be between 0 and 1")
-    convert(Vector{Int64}, trunc(rand(Int64(trunc(n*r)))*n+1))
+function NystromFact{T<:AbstractFloat}(
+        σ::MemoryOrder,
+        f::RealFunction{T},
+        X::Matrix{T},
+        r::AbstractFloat = 0.15
+    )
+    W, C = nystrom(σ, f, X, r)
+    NystromFact{T}(W, C)
 end
 
-function NystromFact{T<:AbstractFloat,U<:Integer}(
-        σ::MemoryOrder,
-        κ::RealFunction{T},
+function NystromFact{T<:AbstractFloat}(
+        f::RealFunction{T},
         X::Matrix{T},
-        s::Vector{U} = srswr(size(X, σ == Val{:row} ? 1 : 2), 0.15)
+        r::AbstractFloat = 0.15
     )
-    NystromFact{T}(nystrom(σ, κ, X, s)...)
+    NystromFact(Val{:row}, f, X, r)
 end
 
 function pairwisematrix{T<:AbstractFloat}(CᵀWC::NystromFact{T})
