@@ -53,6 +53,7 @@ end
 include("reference.jl")
 
 include("hyperparameter.jl")
+include("common.jl")
 include("functions/pairwisefunction.jl")
 include("functions/compositefunction.jl")
 include("functions/pointwisefunction.jl")
