@@ -1,3 +1,6 @@
+==============
+Kernel Methods
+==============
 ----------------
 The Kernel Trick
 ----------------
@@ -26,29 +29,30 @@ example of a feature map can be shown with the Polynomial Kernel:
 .. math::
 
     \kappa(\mathbf{x},\mathbf{y}) = (a\mathbf{x}^\intercal\mathbf{y} + c)^{d}
-    \qquad \mathbf{x}, \mathbf{y} \in \mathbb{R}^n, 
+    \qquad \mathbf{x},\mathbf{y} \in \mathbb{R}^n, 
     \quad a, c \in \mathbb{R}_+
     \quad d \in \mathbb{Z}_+
 
-In our example, we will use :math:`n=1`, :math:`d=2`, :math:`a=1` and
-:math:`c=1/2`. Substituting these values in, we get the following kernel
+In our example, we will use :math:`n=2`, :math:`d=2`, :math:`a=1` and
+:math:`c=0`. Substituting these values in, we get the following kernel
 function:
 
 .. math::
 
-    \kappa(x,y) = \left(xy + \frac{1}{2}\right)^2 = x^2y^2 + xy + \frac{1}{2^2}
-    = \phi(x)^\intercal\phi(y)
+    \kappa(\mathbf{x},\mathbf{y}) = \left(x_1 y_1 + x_2 y_2\right)^2
+    = x_1^2 y_1^2 + x_1 x_2 y_1 y_2 + x_2^2 y_2^2
+    = \phi(\mathbf{x})^\intercal\phi(\mathbf{y})
 
-Where the feature map :math:`\phi : \mathbb{R} \rightarrow \mathbb{R}^3` is
+Where the feature map :math:`\phi : \mathbb{R}^2 \rightarrow \mathbb{R}^3` is
 defined by:
 
 .. math::
 
-    \phi(x) = 
+    \phi(\mathbf{x}) = 
     \begin{bmatrix}
-        x^2 \\
-        x \\
-        1/2
+        x_1^2 \\
+        x_1 x_2 \\
+        x_2^2
     \end{bmatrix}
 
 The advantage of the implicit feature map is that we may transform non-linearly
@@ -56,11 +60,9 @@ data into linearly separable data in the implicit space. For example, suppose
 we have a single feature and two classes that cannot be separated using a 
 linear function of that feature:
 
-.. image:: images/kerneltrick/Feature.png
 
 Using the feature map above, we create a data set that is linearly separable:
 
-.. image:: images/kerneltrick/FeatureMap.png
 
 -------
 Kernels

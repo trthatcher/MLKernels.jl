@@ -12,11 +12,9 @@ dependencies beyond base Julia.
 .. toctree::
     :maxdepth: 1
 
-    exportedfunctions
-    kernelfunctions
-    kernelclasses
+    interface
+    kernels
     kernelmethods
-    kerneloperations
     references
 
 .. _MLKernels.jl: https://github.com/trthatcher/MLKernels.jl
