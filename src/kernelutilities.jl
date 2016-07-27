@@ -2,17 +2,69 @@
   Kernel Standardization
 ===================================================================================================#
 
-#=
-type KernelStandardizer{T<:AbstractFloat}
-    normalize::Bool
-    center::Bool
-    kappa::Vector{T}
-    k::T
+function kernelstatistics{T<:AbstractFloat}(K::Matrix{T})
+    (n = size(K,1)) == size(K,2) || throw(DimensionMismatch("Kernel matrix must be square."))
+    μ_κ = vec(sum(K,1))
+    μ_k = sum(κ)/(n^2)
+    broadcast!(/, κ, κ, n)
+    return (μ_κ, μ_k)
 end
 
+type KernelCenterer{T<:AbstractFloat}
+    mu_kappa::Vector{T}
+    mu_k::T
+end
+KernelCenterer{T<:AbstractFloat}(K::Matrix{T}) = KernelCenterer{T}(kernelstatistics(K)...)
+
+function center_symmetric!{T<:AbstractFloat}(KC::KernelCenterer{T}, K::Matrix{T})
+    (n = size(K,1)) == size(K,2) || throw(DimensionMismatch("Kernel matrix must be square."))
+    μ_k = KC.mu_k
+    μ_κ = KC.mu_kappa
+    length(μ_κ) == n || throw(DimensionMismatch("Kernel statistics do not match matrix."))
+    for j = 1:n, i = 1:n
+        @inbounds K[i,j] += μ_k - 2*μ_κ[i]
+    end
+    return K
+end
+
+function center_rectangular!{T<:AbstractFloat}(KC::KernelCenterer{T}, K::Matrix{T})
+    n, m = size(K)
+    μx_k = KC.mu_k
+    μx_κ = KC.mu_kappa
+    length(μ_κ) == n || throw(DimensionMismatch("Kernel statistics do not match matrix."))
+    μy_κ = vec(sum(K,1))
+    broadcast!(/, μy_κ, m)
+    for j = 1:n, i = 1:n
+        @inbounds K[i,j] += μx_k - μx_κ[i] - μy_κ[j]
+    end
+    return K
+end
+
+type KernelTransformer{T<:AbstractFloat}
+    order::MemoryOrder
+    kappa::RealFunction{T}
+    X::Matrix{T}
+    KC::KernelCenterer{T}
+end
+
+function KernelTransformer{T<:AbstractFloat}(
+        σ::MemoryOrder,
+        κ::RealFunction{T},
+        X::Matrix{T};
+        copy_X::Bool = true
+        )
+    KC = KernelCenterer(kernelmatrix(σ, κ, X, true))
+    KernelTransformer{T}(σ, κ, copy_X ? copy(X) : X, KC)
+end
+
+function pairwisematrix!{T<:AbstractFloat}(K::Matrix{T}, KT::KernelTransformer{T}) # Symmetrize?
+    center_symmetric!(KT.KC, kernelmatrix!(KT.order, K, KT.kappa, KT.X))
+end
+
+#=
 KernelStandardizer{T<:AbstractFloat}(X::Matrix{T}
 
-centerkernelmatrix!(K::AbstractMatrix{T}, diag_K::Vector{T}, 
+centerkernelmatrix!(K::AbstractMatrix{T}, diag_K::Vector{T},
 =#
 
 #=

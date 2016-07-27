@@ -66,46 +66,74 @@ A list of pre-defined kernels is available here
 Kernel Constructors
 -------------------
 
-The following operators are short hand for the constructors outlined above:
+.. function:: CompositeFunction(g, f)
 
-=========== =============================
-Operation   Constructor
-=========== =============================
-``g + f``   ``FunctionProduct(g, f)``
-``g * f``   ``FunctionSum(g, f)``
-``g ∘ f``   ``CompositeFunction(g, f)``
-=========== =============================
+    Constructs a ``CompositeFunction`` type. Argument ``g`` must be a 
+    ``CompositionClass``. Argument ``f`` must be a ``PairwiseFunction`` that can
+    be composed with ``g``.
 
-.. function:: CompositeFunction(g, f), g ∘ f
-
-    Constructs a ``CompositeFunction`` type from ``CompositionClass`` ``g`` and
-    ``PairwiseFunction`` ``f`` when ``g`` and ``f`` can be composed.
-
-    A list of pre-defined composition classes is available here.
+    The binary operator ``∘`` (``\circ`` in the terminal) is shorthand for this
+    constructor. The code block below illustrates how to manually create the
+    Gaussian kernel:
 
     .. code-block:: julia
 
-        g = ExponentialClass()
+        α = 1.0
+        g = ExponentialClass(α)
         f = Euclidean()
 
-        h = CompositeFunction(g,f)
-        h == (g ∘ f)
+        CompositeFunction(g,f) == (g ∘ f)
 
+    A list of pre-defined composition classes is available here.
 
 .. function:: AffineFunction(a, c, f)
 
-    Constructs an ``AffineFunction`` from positive variable ``a``, non-negative
-    variable ``c`` and ``RealFunction`` ``f``.
+    Constructs an ``AffineFunction`` type. Argument ``a`` must be a positive
+    variable. Argument ``c`` must be a non-negative variable. Argument ``f``
+    must be a ``RealFunction``.
 
-.. function:: FunctionSum(g, f), g + f
+    The ``AffineFunction`` will be constructed from arithmetic between a
+    ``RealFunction`` type and a ``Real`` type:
 
-    Constructs an ``FunctionSum`` from ``RealFunction`` ``g`` and
-    ``RealFunction`` ``f``. 
+    .. code-block:: julia
 
-.. function:: FunctionProduct(g, f), g * f
+        a = 2.0
+        c = 3.0
+        f = ChiSquared()
 
-    Constructs an ``FunctionSum`` from ``RealFunction`` ``g`` and
-    ``RealFunction`` ``f``. 
+        AffineFunction(a,c,f) == a*f + c
+
+
+.. function:: FunctionSum(g, f)
+
+    Constructs an ``FunctionSum`` type. Argument ``g`` must be a 
+    ``RealFunction``. Argument ``f`` must be a ``RealFunction``.
+
+    The ``FunctionSum`` will be constructed from arithmetic between two
+    ``RealFunction`` types:
+
+    .. code-block:: julia
+
+        g = Euclidean()
+        f = ChiSquared()
+
+        FunctionSum(g,f) == g + f
+
+
+.. function:: FunctionProduct(g, f)
+
+    Constructs an ``FunctionProduct`` type. Argument ``g`` must be a 
+    ``RealFunction``. Argument ``f`` must be a ``RealFunction``.
+
+    The ``FunctionProduct`` will be constructed from arithmetic between two
+    ``RealFunction`` types:
+
+    .. code-block:: julia
+
+        g = Euclidean()
+        f = ChiSquared()
+
+        FunctionProduct(g,f) == g * f
 
 --------------------
 Pairwise Computation

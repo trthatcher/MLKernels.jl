@@ -93,9 +93,6 @@ end
 centerkernelmatrix{T<:AbstractFloat}(P::Matrix{T}) = centerkernelmatrix!(copy(P))
 =#
 
-immutable KernelCenterer{T<:AbstractFloat}
-    
-end
 
 #centerleft
 #centerright
