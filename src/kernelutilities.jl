@@ -5,8 +5,8 @@
 function kernelstatistics{T<:AbstractFloat}(K::Matrix{T})
     (n = size(K,1)) == size(K,2) || throw(DimensionMismatch("Kernel matrix must be square."))
     μ_κ = vec(sum(K,1))
-    μ_k = sum(κ)/(n^2)
-    broadcast!(/, κ, κ, n)
+    μ_k = sum(μ_κ)/(n^2)
+    broadcast!(/, μ_κ, μ_κ, n)
     return (μ_κ, μ_k)
 end
 
@@ -22,7 +22,7 @@ function center_symmetric!{T<:AbstractFloat}(KC::KernelCenterer{T}, K::Matrix{T}
     μ_κ = KC.mu_kappa
     length(μ_κ) == n || throw(DimensionMismatch("Kernel statistics do not match matrix."))
     for j = 1:n, i = 1:n
-        @inbounds K[i,j] += μ_k - 2*μ_κ[i]
+        @inbounds K[i,j] += μ_k - μ_κ[i] - μ_κ[j]
     end
     return K
 end
