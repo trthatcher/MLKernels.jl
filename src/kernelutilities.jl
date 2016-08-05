@@ -2,89 +2,76 @@
   Kernel Standardization
 ===================================================================================================#
 
-function kernelstatistics{T<:AbstractFloat}(K::Matrix{T})
-    (n = size(K,1)) == size(K,2) || throw(DimensionMismatch("Kernel matrix must be square."))
-    μ_κ = vec(sum(K,1))
-    μ_k = sum(μ_κ)/(n^2)
-    broadcast!(/, μ_κ, μ_κ, n)
-    return (μ_κ, μ_k)
+function centerkernelmatrix!{T<:AbstractFloat}(
+        K::Matrix{T},
+        μx_κ::Vector{T},
+        μy_κ::Vector{T},
+        μ_κ::T = mean(K)
+    )
+    n, m = size(K)
+    length(μx_κ) == n || throw(DimensionMismatch("Kernel statistics do not match matrix."))
+    length(μy_κ) == m || throw(DimensionMismatch("Kernel statistics do not match matrix."))
+    for j = 1:m, i = 1:n
+        @inbounds K[i,j] += μ_κ - μx_κ[i] - μy_κ[j]
+    end
+    return K
 end
+
+function centerkernel!{T<:AbstractFloat}(K::Matrix{T})
+    centerkernelmatrix!(K, vec(mean(K,2)), vec(mean(K,1)), mean(K))
+end
+centerkernel{T<:AbstractFloat}(K::Matrix{T}) = centerkernel!(copy(K))
+
+
+#== Kernel Centerer ==#
 
 type KernelCenterer{T<:AbstractFloat}
-    mu_kappa::Vector{T}
-    mu_k::T
+    mux_kappa::Vector{T}
+    mu_kappa::T
 end
-KernelCenterer{T<:AbstractFloat}(K::Matrix{T}) = KernelCenterer{T}(kernelstatistics(K)...)
-
-function center_symmetric!{T<:AbstractFloat}(KC::KernelCenterer{T}, K::Matrix{T})
-    (n = size(K,1)) == size(K,2) || throw(DimensionMismatch("Kernel matrix must be square."))
-    μ_k = KC.mu_k
-    μ_κ = KC.mu_kappa
-    length(μ_κ) == n || throw(DimensionMismatch("Kernel statistics do not match matrix."))
-    for j = 1:n, i = 1:n
-        @inbounds K[i,j] += μ_k - μ_κ[i] - μ_κ[j]
-    end
-    return K
+function KernelCenterer{T<:AbstractFloat}(K::Matrix{T})
+    μx_κ = vec(mean(K,2))
+    μ_κ = mean(μx_κ)
+    KernelCenterer{T}(μx_κ, μ_κ)
 end
 
-function center_rectangular!{T<:AbstractFloat}(KC::KernelCenterer{T}, K::Matrix{T})
-    n, m = size(K)
-    μx_k = KC.mu_k
-    μx_κ = KC.mu_kappa
-    length(μ_κ) == n || throw(DimensionMismatch("Kernel statistics do not match matrix."))
-    μy_κ = vec(sum(K,1))
-    broadcast!(/, μy_κ, m)
-    for j = 1:n, i = 1:n
-        @inbounds K[i,j] += μx_k - μx_κ[i] - μy_κ[j]
-    end
-    return K
+function centerkernel!{T<:AbstractFloat}(KC::KernelCenterer{T}, K::Matrix{T})
+    centerkernelmatrix!(K, KC.mux_kappa, vec(mean(K,1)), KC.mu_kappa)
 end
+centerkernel{T<:AbstractFloat}(KC::KernelCenterer{T}, K::Matrix{T}) = centerkernel!(KC, copy(K))
+
+
+#== Kernel Transformer ==#
 
 type KernelTransformer{T<:AbstractFloat}
     order::MemoryOrder
     kappa::RealFunction{T}
-    X::Matrix{T}
+    X::AbstractMatrix{T}
     KC::KernelCenterer{T}
 end
 
 function KernelTransformer{T<:AbstractFloat}(
         σ::MemoryOrder,
         κ::RealFunction{T},
-        X::Matrix{T};
+        X::AbstractMatrix{T};
         copy_X::Bool = true
         )
     KC = KernelCenterer(kernelmatrix(σ, κ, X, true))
     KernelTransformer{T}(σ, κ, copy_X ? copy(X) : X, KC)
 end
 
-function pairwisematrix!{T<:AbstractFloat}(K::Matrix{T}, KT::KernelTransformer{T}) # Symmetrize?
-    center_symmetric!(KT.KC, kernelmatrix!(KT.order, K, KT.kappa, KT.X))
+function pairwisematrix!{T<:AbstractFloat}(
+        K::Matrix{T},
+        KT::KernelTransformer{T},
+        Y::AbstractMatrix{T}
+    )
+    K = kernelmatrix!(K, KT.order, K, KT.kappa, KT.X, Y)
+    centerkernel!(KT.KC, K)
+end
+function pairwisematrix{T<:AbstractFloat}(KT::KernelTransformer{T}, Y::AbstractMatrix{T})
+    pairwisematrix!(init_pairwise(KT.order, KT.X, Y), KT, Y)
 end
 
-#=
-KernelStandardizer{T<:AbstractFloat}(X::Matrix{T}
-
-centerkernelmatrix!(K::AbstractMatrix{T}, diag_K::Vector{T},
-=#
-
-#=
-function rankedapproximation!{T<:AbstractFloat}(W::Matrix{T}, D::Vector{T}, U::Matrix{T}, k::Integer)
-    n = size(W,1)
-    for j = 1:n, i = 1:j
-        s = zero(T)
-        @simd for l = 1:k
-            @inbounds Uik = U[i,k]
-            @inbounds Ujk = U[j,k]
-            tmp = Uik * Ujk
-            s += D[k]*tmp
-        end
-        W[i,j] = s
-    end
-    W
-end
-=#
-
-#eps(real(float(one(eltype(M)))))*maximum(size(A))
 
 #===================================================================================================
   Nystrom Approximation

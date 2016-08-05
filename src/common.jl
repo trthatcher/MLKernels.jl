@@ -64,36 +64,3 @@ function squared_distance!{T<:AbstractFloat}(G::Matrix{T}, xᵀx::Vector{T}, y�
     end
     G
 end
-
-#================================================
-  Centering matrix
-================================================#
-
-# Centralize a kernel matrix P
-#=
-function centerkernelmatrix!{T<:AbstractFloat}(P::Matrix{T})
-    (n = size(P, 1)) == size(P, 2) || throw(DimensionMismatch("Pernel matrix must be square"))
-    μ_row = zeros(T,n)
-    μ = zero(T)
-    @inbounds for j = 1:n
-        @simd for i = 1:n
-            μ_row[j] += P[i,j]
-        end
-        μ += μ_row[j]
-        μ_row[j] /= n
-    end
-    μ /= n^2
-    @inbounds for j = 1:n
-        @simd for i = 1:n
-            P[i,j] += μ - μ_row[i] - μ_row[j]
-        end
-    end
-    P
-end
-centerkernelmatrix{T<:AbstractFloat}(P::Matrix{T}) = centerkernelmatrix!(copy(P))
-=#
-
-
-#centerleft
-#centerright
-
