@@ -238,7 +238,7 @@ function convert{T<:AbstractFloat}(::Type{CompositeFunction{T}}, h::CompositeFun
 end
 
 function description_string(f::CompositeFunction, showtype::Bool = true)
-    obj_str = string("∘", showtype ? string("{", eltype(f), "}") : "")
+    obj_str = string("Composition", showtype ? string("{", eltype(f), "}") : "")
     class_str = description_string(f.g, false)
     kernel_str = description_string(f.f, false)
     string(obj_str, "(g=", class_str, ",f=", kernel_str, ")")
@@ -257,78 +257,75 @@ attainsnegative(h::CompositeFunction) = attainsnegative(h.g)
 #== Composition Kernels ==#
 
 doc"GaussianKernel(α) = exp(-α⋅‖x-y‖²)"
-function GaussianKernel{T<:AbstractFloat}(α::Variable{T})
-    CompositeFunction(ExponentialClass(α), SquaredEuclidean{T}())
-end
-function GaussianKernel{T}(α::Argument{T}=1.0)
-    GaussianKernel(Variable{T <: AbstractFloat ? T : Float64}(α))
+function GaussianKernel{T1<:Real}(α::Argument{T1} = 1.0)
+    T = promote_type_float(T1)
+    CompositeFunction(ExponentialClass(Variable{T}(α)), SquaredEuclidean{T}())
 end
 SquaredExponentialKernel = GaussianKernel
 RadialBasisKernel = GaussianKernel
 
 doc"LaplacianKernel(α) = exp(α⋅‖x-y‖)"
-function LaplacianKernel{T<:AbstractFloat}(α::Variable{T})
-    CompositeFunction(GammaExponentialClass(α, Variable{T}(0.5)), SquaredEuclidean{T}())
-end
-function LaplacianKernel{T<:Real}(α::Argument{T}=1.0)
-    LaplacianKernel(Variable{T <: AbstractFloat ? T : Float64}(α))
+function LaplacianKernel{T1<:Real}(α::Argument{T1} = 1.0)
+    T = promote_type_float(T1)
+    CompositeFunction(GammaExponentialClass(Variable{T}(α), Variable{T}(0.5)),
+                      SquaredEuclidean{T}())
 end
 
 doc"PeriodicKernel(α,p) = exp(-α⋅Σⱼsin²(p(xⱼ-yⱼ)))"
-function PeriodicKernel{T<:AbstractFloat}(α::Variable{T}, p::Variable{T})
-    CompositeFunction(ExponentialClass(α), SineSquaredKernel(p))
-end
 function PeriodicKernel{T1<:Real,T2<:Real}(
         α::Argument{T1} = 1.0,
-        p::Argument{T2} = convert(T1 <: AbstractFloat ? T1 : Float64,π)
+        p::Argument{T2} = convert(promote_type_float(T1), π)
     )
-    Tmax = promote_type(T1, T2)
-    T = Tmax <: AbstractFloat ? Tmax : Float64
-    PeriodicKernel(Variable{T}(α), Variable{T}(p))
+    T = promote_type_float(T1, T2)
+    CompositeFunction(ExponentialClass(Variable{T}(α)), SineSquaredKernel(Variable{T}(p)))
 end
 
 doc"RationalQuadraticKernel(α,β) = (1 + α⋅‖x-y‖²)⁻ᵝ"
-function RationalQuadraticKernel{T<:AbstractFloat}(α::Variable{T}, β::Variable{T})
-    CompositeFunction(RationalClass(α, β), SquaredEuclidean{T}())
-end
 function RationalQuadraticKernel{T1<:Real,T2<:Real}(
         α::Argument{T1} = 1.0,
-        β::Argument{T2} =one(T1)
+        β::Argument{T2} = one(T1)
     )
-    Tmax = promote_type(T1, T2)
-    T = Tmax <: AbstractFloat ? Tmax : Float64
-    RationalQuadraticKernel(Variable{T}(α), Variable{T}(β))
+    T = promote_type_float(T1, T2)
+    CompositeFunction(RationalClass(Variable{T}(α), Variable{T}(β)), SquaredEuclidean{T}())
 end
 
 doc"MatérnKernel(ν,θ) = 2ᵛ⁻¹(√(2ν)‖x-y‖²/θ)ᵛKᵥ(√(2ν)‖x-y‖²/θ)/Γ(ν)"
-function MaternKernel{T<:AbstractFloat}(ν::Variable{T}, θ::Variable{T})
-    CompositeFunction(MaternClass(ν, θ), SquaredEuclidean{T}())
+function MaternKernel{T1<:Real,T2<:Real}(
+        ν::Argument{T1} = 1.0,
+        θ::Argument{T2} = one(T1)
+    )
+    T = promote_type_float(T1, T2)
+    CompositeFunction(MaternClass(Variable{T}(ν), Variable{T}(θ)), SquaredEuclidean{T}())
 end
-function MaternKernel{T1<:Real,T2<:Real}(ν::Argument{T1} = 1.0, θ::Argument{T2} = one(T1))
-    Tmax = promote_type(T1, T2)
-    T = Tmax <: AbstractFloat ? Tmax : Float64
-    MaternKernel(Variable{T}(ν), Variable{T}(θ))
-end
-
 MatérnKernel = MaternKernel
 
 doc"PolynomialKernel(a,c,d) = (a⋅xᵀy + c)ᵈ"
-function PolynomialKernel{T<:AbstractFloat,U<:Integer}(
-        a::Argument{T} = 1.0,
-        c::Argument{T} = one(T),
+function PolynomialKernel{T1<:Real,T2<:Real,U<:Integer}(
+        a::Argument{T1} = 1.0,
+        c::Argument{T2} = one(T1),
         d::Argument{U} = 3
     )
-    CompositeFunction(PolynomialClass(a, c, d), ScalarProduct{T}())
+    T = promote_type_float(T1, T2)
+    CompositeFunction(PolynomialClass(Variable{T}(a), Variable{T}(c), Variable{U}(d)),
+                      ScalarProduct{T}())
 end
 
 doc"LinearKernel(α,c,d) = a⋅xᵀy + c"
-function LinearKernel{T<:AbstractFloat}(a::Argument{T} = 1.0, c::Argument{T} = one(T))
-    CompositeFunction(PolynomialClass(a, c, 1), ScalarProduct{T}())
+function LinearKernel{T1<:Real,T2<:Real}(
+        a::Argument{T1} = 1.0,
+        c::Argument{T2} = one(T1)
+    )
+    T = promote_type_float(T1, T2)
+    CompositeFunction(PolynomialClass(Variable{T}(a), Variable{T}(c), 1), ScalarProduct{T}())
 end
 
 doc"SigmoidKernel(α,c) = tanh(a⋅xᵀy + c)"
-function SigmoidKernel{T<:Real}(a::Argument{T} = 1.0, c::Argument{T} = one(T))
-    CompositeFunction(SigmoidClass(a, c), ScalarProduct{T}())
+function SigmoidKernel{T1<:Real,T2<:Real}(
+        a::Argument{T1} = 1.0,
+        c::Argument{T2} = one(T1)
+    )
+    T = promote_type_float(T1, T2)
+    CompositeFunction(SigmoidClass(Variable{T}(a), Variable{T}(c)), ScalarProduct{T}())
 end
 
 
