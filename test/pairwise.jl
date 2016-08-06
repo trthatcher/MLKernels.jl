@@ -11,6 +11,10 @@ for T in FloatingPointTypes
     x = rand(T,p)
     y = rand(T,p)
 
+    x_U = convert(Vector{Float64}, x)
+    y_U = convert(Vector{Float32}, y)
+    U = promote_type(T, Float64)
+
     for f_test in test_pairwise_functions
         f = convert(RealFunction{T}, f_test)
         s = MOD.pairwise_initiate(f)
@@ -18,18 +22,24 @@ for T in FloatingPointTypes
             s = MOD.pairwise_aggregate(f, s, x[i], y[i])
         end
         @test MOD.unsafe_pairwise(f, x, y) == MOD.pairwise_return(f, s)
+
+        @test typeof(MOD.unsafe_pairwise(f, x_U, y_U)) == U
     end
 
     for h_test in test_composite_functions
         h = convert(RealFunction{T}, h_test)
         s = MOD.composition(h.g, MOD.unsafe_pairwise(h.f, x, y))
         @test MOD.unsafe_pairwise(h, x, y) == s
+
+        @test typeof(MOD.unsafe_pairwise(h, x_U, y_U)) == U
     end
 
     for f_test in test_sample
         h = convert(RealFunction{T}, 2*f_test+1)
         s = h.a*MOD.unsafe_pairwise(h.f, x, y) + h.c
         @test MOD.unsafe_pairwise(h, x, y) == s
+
+        @test typeof(MOD.unsafe_pairwise(h, x_U, y_U)) == U
     end
 
     for scalar_op in (+, *), f_test1 in test_sample, f_test2 in test_sample
@@ -37,9 +47,13 @@ for T in FloatingPointTypes
         s = (scalar_op)(MOD.unsafe_pairwise(h.f, x, y), MOD.unsafe_pairwise(h.g, x, y))
         @test MOD.unsafe_pairwise(h, x, y) == s
 
+        @test typeof(MOD.unsafe_pairwise(h, x_U, y_U)) == U
+
         h = convert(RealFunction{T}, (scalar_op)(2*f_test1+1, f_test2))
         s = (scalar_op)(MOD.unsafe_pairwise(h.f, x, y), MOD.unsafe_pairwise(h.g, x, y))
         @test MOD.unsafe_pairwise(h, x, y) == s
+
+        @test typeof(MOD.unsafe_pairwise(h, x_U, y_U)) == U
     end
 end
 
@@ -48,14 +62,22 @@ for T in FloatingPointTypes
     x = rand(T,p)
     y = rand(T,p)
 
+    x_U = convert(Vector{Float64}, x)
+    y_U = convert(Vector{Float32}, y)
+    U = promote_type(T, Float64)
+
     for f_test in test_pairwise_functions
         f = convert(RealFunction{T}, f_test)
 
         s1 = MOD.pairwise_return(f, MOD.pairwise_aggregate(f, MOD.pairwise_initiate(f), x[1], y[1]))
         @test MOD.pairwise(f, x[1], y[1]) == s1
 
+        @test typeof(MOD.pairwise(f, x_U[1], y_U[1])) == U
+
         s2 = MOD.unsafe_pairwise(f, x, y)
         @test MOD.pairwise(f, x, y) == s2
+
+        @test typeof(MOD.pairwise(f, x_U, y_U)) == U
 
         @test_throws DimensionMismatch MOD.pairwise(f, Array(T,p), Array(T,p+1))
         @test_throws DimensionMismatch MOD.pairwise(f, Array(T,p+1), Array(T,p))
@@ -65,7 +87,12 @@ for T in FloatingPointTypes
         h = convert(RealFunction{T}, h_test)
         
         @test MOD.pairwise(h, x[1], y[1]) == MOD.composition(h.g, MOD.pairwise(h.f, x[1], y[1]))
+
+        @test typeof(MOD.pairwise(h, x_U[1], y_U[1])) == U
+
         @test MOD.pairwise(h, x, y) == MOD.composition(h.g, MOD.unsafe_pairwise(h.f, x, y))
+
+        @test typeof(MOD.pairwise(h, x_U, y_U)) == U
 
         @test_throws DimensionMismatch MOD.pairwise(h, Array(T,p), Array(T,p+1))
         @test_throws DimensionMismatch MOD.pairwise(h, Array(T,p+1), Array(T,p))
@@ -82,6 +109,8 @@ for T in FloatingPointTypes
 
         @test_throws DimensionMismatch MOD.pairwise(h, Array(T,p), Array(T,p+1))
         @test_throws DimensionMismatch MOD.pairwise(h, Array(T,p+1), Array(T,p))
+
+        @test typeof(MOD.pairwise(h, x_U, y_U)) == U
     end
 
     for scalar_op in (+, *), f_test1 in test_sample, f_test2 in test_sample
@@ -90,8 +119,12 @@ for T in FloatingPointTypes
         s1 = (scalar_op)(MOD.pairwise(h.f, x[1], y[1]), MOD.pairwise(h.g, x[1], y[1]))
         @test MOD.pairwise(h, x[1], y[1]) == s1
 
+        @test typeof(MOD.pairwise(h, x_U[1], y_U[1])) == U
+
         s2 = (scalar_op)(MOD.pairwise(h.f, x, y), MOD.pairwise(h.g, x, y))
         @test MOD.pairwise(h, x, y) == s2
+
+        @test typeof(MOD.pairwise(h, x_U, y_U)) == U
 
         @test_throws DimensionMismatch MOD.pairwise(h, Array(T,p), Array(T,p+1))
         @test_throws DimensionMismatch MOD.pairwise(h, Array(T,p+1), Array(T,p))

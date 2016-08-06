@@ -229,6 +229,10 @@ Pairwise Computation
         \qquad \text{where} \quad 
         \mathbf{\mu}_\phi =  \frac{1}{n} \sum_{i=1}^n \phi(\mathbf{x}_i)
 
+----------------
+Kernel Centering
+----------------
+
 .. function:: centerkernelmatrix(X)
 
     Same as ``centerkernelmatrix!`` but makes a copy of ``X``.

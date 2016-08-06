@@ -348,6 +348,17 @@ function pairwise{T1<:AbstractFloat,T2<:Real,T3<:Real}(f::RealFunction{T1}, x::T
     pairwise(convert(RealFunction{T}, f), convert(T, x), convert(T, y))
 end
 
+function unsafe_pairwise{T1<:AbstractFloat,T2<:Real,T3<:Real}(
+        f::RealFunction{T1},
+        x::AbstractArray{T2},
+        y::AbstractArray{T3}
+    )
+    T = promote_type(T1, T2, T3)
+    u = convert(AbstractArray{T}, x)
+    v = convert(AbstractArray{T}, y)
+    unsafe_pairwise(convert(RealFunction{T}, f), u, v)
+end
+
 function pairwise{T1<:AbstractFloat,T2<:Real,T3<:Real}(
         f::RealFunction{T1},
         x::AbstractArray{T2},
