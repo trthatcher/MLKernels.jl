@@ -71,12 +71,12 @@ for T in FloatingPointTypes
 
         s1 = MOD.pairwise_return(f, MOD.pairwise_aggregate(f, MOD.pairwise_initiate(f), x[1], y[1]))
         @test MOD.pairwise(f, x[1], y[1]) == s1
-
+        @test f(x[1], y[1]) == s1
         @test typeof(MOD.pairwise(f, x_U[1], y_U[1])) == U
 
         s2 = MOD.unsafe_pairwise(f, x, y)
         @test MOD.pairwise(f, x, y) == s2
-
+        @test f(x, y) == s2
         @test typeof(MOD.pairwise(f, x_U, y_U)) == U
 
         @test_throws DimensionMismatch MOD.pairwise(f, Array(T,p), Array(T,p+1))
@@ -87,11 +87,11 @@ for T in FloatingPointTypes
         h = convert(RealFunction{T}, h_test)
         
         @test MOD.pairwise(h, x[1], y[1]) == MOD.composition(h.g, MOD.pairwise(h.f, x[1], y[1]))
-
+        @test h(x[1], y[1]) == MOD.pairwise(h, x[1], y[1])
         @test typeof(MOD.pairwise(h, x_U[1], y_U[1])) == U
 
         @test MOD.pairwise(h, x, y) == MOD.composition(h.g, MOD.unsafe_pairwise(h.f, x, y))
-
+        @test h(x, y) == MOD.pairwise(h, x, y)
         @test typeof(MOD.pairwise(h, x_U, y_U)) == U
 
         @test_throws DimensionMismatch MOD.pairwise(h, Array(T,p), Array(T,p+1))
@@ -103,14 +103,16 @@ for T in FloatingPointTypes
 
         s1 = h.a*MOD.pairwise(h.f, x[1], y[1]) + h.c
         @test MOD.pairwise(h, x[1], y[1]) == s1
+        @test h(x[1], y[1]) == s1
+        @test typeof(MOD.pairwise(h, x_U[1], y_U[1])) == U
 
         s2 = h.a*MOD.pairwise(h.f, x, y) + h.c
         @test MOD.pairwise(h, x, y) == s2
+        @test h(x, y) == s2
+        @test typeof(MOD.pairwise(h, x_U, y_U)) == U
 
         @test_throws DimensionMismatch MOD.pairwise(h, Array(T,p), Array(T,p+1))
         @test_throws DimensionMismatch MOD.pairwise(h, Array(T,p+1), Array(T,p))
-
-        @test typeof(MOD.pairwise(h, x_U, y_U)) == U
     end
 
     for scalar_op in (+, *), f_test1 in test_sample, f_test2 in test_sample
@@ -118,12 +120,12 @@ for T in FloatingPointTypes
 
         s1 = (scalar_op)(MOD.pairwise(h.f, x[1], y[1]), MOD.pairwise(h.g, x[1], y[1]))
         @test MOD.pairwise(h, x[1], y[1]) == s1
-
+        @test h(x[1], y[1]) == s1
         @test typeof(MOD.pairwise(h, x_U[1], y_U[1])) == U
 
         s2 = (scalar_op)(MOD.pairwise(h.f, x, y), MOD.pairwise(h.g, x, y))
         @test MOD.pairwise(h, x, y) == s2
-
+        @test h(x, y) == s2
         @test typeof(MOD.pairwise(h, x_U, y_U)) == U
 
         @test_throws DimensionMismatch MOD.pairwise(h, Array(T,p), Array(T,p+1))
@@ -175,13 +177,25 @@ for f_test in test_set
         Y = transpose(hcat(Set_Y...))
         f = convert(RealFunction{T}, f_test)
                    
-        P = [MOD.pairwise(f,x,y) for x in Set_X, y in Set_X]
-        @test_approx_eq MOD.pairwisematrix!(Val{:row}, Array(T,n,n), f, X,  true) P
-        @test_approx_eq MOD.pairwisematrix!(Val{:col}, Array(T,n,n), f, X', true) P
+        P = T[MOD.pairwise(f,x,y) for x in Set_X, y in Set_X]
 
-        P = [MOD.pairwise(f,x,y) for x in Set_X, y in Set_Y]
-        @test_approx_eq MOD.pairwisematrix!(Val{:row}, Array(T,n,m), f, X,  Y)  P
-        @test_approx_eq MOD.pairwisematrix!(Val{:col}, Array(T,n,m), f, X', Y') P
+        P_test = MOD.pairwisematrix!(Val{:row}, Array(T,n,n), f, X,  true)
+        @test_approx_eq P_test P
+        @test eltype(P_test) == T
+
+        P_test = MOD.pairwisematrix!(Val{:col}, Array(T,n,n), f, X', true)
+        @test_approx_eq P_test P
+        @test eltype(P_test) == T
+
+        P = T[MOD.pairwise(f,x,y) for x in Set_X, y in Set_Y]
+
+        P_test = MOD.pairwisematrix!(Val{:row}, Array(T,n,m), f, X, Y)
+        @test_approx_eq P_test P
+        @test eltype(P_test) == T
+
+        P_test = MOD.pairwisematrix!(Val{:col}, Array(T,n,m), f, X', Y')
+        @test_approx_eq P_test P
+        @test eltype(P_test) == T
 
         @test_throws DimensionMismatch MOD.pairwisematrix!(Val{:row}, Array(T,n+1,n),   f, X, true)
         @test_throws DimensionMismatch MOD.pairwisematrix!(Val{:row}, Array(T,n,n+1),   f, X, true)
@@ -218,19 +232,28 @@ for f_test in test_set
         X = transpose(hcat(Set_X...))
         Y = transpose(hcat(Set_Y...))
         f = convert(RealFunction{T}, f_test)
+
+        X_U = convert(Matrix{T == Float64 ? Float32 : Float64}, X)
+        Y_U = convert(Matrix{T == Float64 ? Float32 : Float64}, Y)
+        U = promote_type(T == Float64 ? Float32 : Float64, T)
                    
-        P = [MOD.pairwise(f,x,y) for x in Set_X, y in Set_X]
+        P = T[MOD.pairwise(f,x,y) for x in Set_X, y in Set_X]
         @test_approx_eq MOD.pairwisematrix(Val{:row}, f, X)  P
         @test_approx_eq MOD.pairwisematrix(Val{:col}, f, X') P
         @test_approx_eq MOD.pairwisematrix(f, X) P
 
-        P = [MOD.pairwise(f,x,y) for x in Set_X, y in Set_Y]
+        @test eltype(MOD.pairwisematrix(Val{:row}, f, X_U))  == U
+        @test eltype(MOD.pairwisematrix(Val{:col}, f, X_U')) == U
+        @test eltype(MOD.pairwisematrix(f, X_U)) == U
+
+        P = T[MOD.pairwise(f,x,y) for x in Set_X, y in Set_Y]
         @test_approx_eq MOD.pairwisematrix(Val{:row}, f, X,  Y)  P
         @test_approx_eq MOD.pairwisematrix(Val{:col}, f, X', Y') P
         @test_approx_eq MOD.pairwisematrix(f, X, Y)  P
 
-        @test_approx_eq f(Set_X[1][1], Set_Y[1][1]) MOD.pairwise(f, Set_X[1][1], Set_Y[1][1])
-        @test_approx_eq f(Set_X[1],    Set_Y[1])    MOD.pairwise(f, Set_X[1],    Set_Y[1])
+        @test eltype(MOD.pairwisematrix(Val{:row}, f, X_U, Y_U))   == U
+        @test eltype(MOD.pairwisematrix(Val{:col}, f, X_U', Y_U')) == U
+        @test eltype(MOD.pairwisematrix(f, X_U, Y_U)) == U
     end
     counter += 1
 end
