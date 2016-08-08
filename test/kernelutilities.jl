@@ -36,6 +36,57 @@ for T in FloatingPointTypes
     @test_approx_eq K Kc
 end
 
+info("Testing ", MOD.centerkernel!.env.name)
+for T in FloatingPointTypes
+    X = rand(T, n, p)
+
+    K1 = X*transpose(X)
+    K2 = copy(K1)
+
+    Xc = X .- mean(X,1)
+    Kc = Xc*transpose(Xc)
+
+    KC = MOD.KernelCenterer(K1)
+
+    MOD.centerkernel!(KC, K1)
+    @test_approx_eq K1 Kc
+
+    MOD.centerkernel!(K2)
+    @test_approx_eq K2 Kc
+end
+
+info("Testing ", MOD.centerkernel.env.name)
+for T in FloatingPointTypes
+    X = rand(T, n, p)
+
+    K1 = X*transpose(X)
+    K2 = copy(K1)
+
+    Xc = X .- mean(X,1)
+    Kc = Xc*transpose(Xc)
+
+    KC = MOD.KernelCenterer(K1)
+    
+    @test_approx_eq MOD.centerkernel(KC, K1) Kc
+    @test_approx_eq K1 K2
+    
+    @test_approx_eq MOD.centerkernel(K1) Kc
+    @test_approx_eq K1 K2
+end
+
+info("Testing ", MOD.KernelTransformer.name.name)
+for T in FloatingPointTypes
+    X = rand(T, n, p)
+    Y = rand(T, m, p)
+    k = convert(RealFunction{T}, ScalarProduct())
+
+    KT = MOD.KernelTransformer(Val{:row}, k, X, true)
+    @test KT.order == Val{:row}
+    @test KT.kappa == k
+    @test KT.X == X
+    @test !(KT.X === X)
+end
+
 info("Testing ", MOD.nystrom.env.name)
 for T in FloatingPointTypes
     X = rand(T, n, p)

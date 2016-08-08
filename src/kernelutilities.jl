@@ -53,11 +53,20 @@ end
 function KernelTransformer{T<:AbstractFloat}(
         σ::MemoryOrder,
         κ::RealFunction{T},
-        X::AbstractMatrix{T};
+        X::AbstractMatrix{T},
         copy_X::Bool = true
-        )
+    )
     KC = KernelCenterer(kernelmatrix(σ, κ, X, true))
-    KernelTransformer{T}(σ, κ, copy_X ? copy(X) : X, KC)
+    KernelTransformer{T}(σ, deepcopy(κ), copy_X ? copy(X) : X, KC)
+end
+
+function KernelTransformer{T1<:Real,T2<:Real}(
+        σ::MemoryOrder,
+        κ::RealFunction{T1},
+        X::AbstractMatrix{T2}
+    )
+    T = promote_type_float(T1, T2)
+    KernelTransformer(σ, convert(RealFunction{T}, κ), convert(AbstractMatrix{T}, X), false)
 end
 
 function pairwisematrix!{T<:AbstractFloat}(
