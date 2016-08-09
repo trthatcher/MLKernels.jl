@@ -47,26 +47,43 @@ type KernelTransformer{T<:AbstractFloat}
     order::MemoryOrder
     kappa::RealFunction{T}
     X::AbstractMatrix{T}
-    KC::KernelCenterer{T}
+    KC::Nullable{KernelCenterer{T}}
 end
 
 function KernelTransformer{T<:AbstractFloat}(
         σ::MemoryOrder,
         κ::RealFunction{T},
         X::AbstractMatrix{T},
-        copy_X::Bool = true
+        center_kernel::Bool = true,
+        copy_data::Bool = true
     )
-    KC = KernelCenterer(kernelmatrix(σ, κ, X, true))
-    KernelTransformer{T}(σ, deepcopy(κ), copy_X ? copy(X) : X, KC)
+    KC = center_kernel ? Nullable(KernelCenterer(kernelmatrix(σ, κ, X, true))) :
+                         Nullable{KernelCenterer{T}}()
+    KernelTransformer{T}(σ, deepcopy(κ), copy_data ? copy(X) : X, KC)
 end
 
 function KernelTransformer{T1<:Real,T2<:Real}(
         σ::MemoryOrder,
         κ::RealFunction{T1},
-        X::AbstractMatrix{T2}
+        X::AbstractMatrix{T2},
+        center_kernel::Bool = true,
+        copy_data::Bool = true
     )
     T = promote_type_float(T1, T2)
-    KernelTransformer(σ, convert(RealFunction{T}, κ), convert(AbstractMatrix{T}, X), false)
+    if T2 != T && copy_data == false
+        warn("Argument copy_data = false will be ignored due to implicit conversion-copy")
+    end
+    KernelTransformer(σ, convert(RealFunction{T}, κ), convert(AbstractMatrix{T}, X), 
+                      center_kernel, copy_data)
+end
+
+function KernelTransformer(
+        κ::RealFunction,
+        X::AbstractMatrix,
+        center_kernel::Bool = true,
+        copy_data::Bool = true
+    )
+    KernelTransformer(Val{:row}, κ, X, center_kernel, copy_data)
 end
 
 function pairwisematrix!{T<:AbstractFloat}(
@@ -74,11 +91,11 @@ function pairwisematrix!{T<:AbstractFloat}(
         KT::KernelTransformer{T},
         Y::AbstractMatrix{T}
     )
-    K = kernelmatrix!(K, KT.order, K, KT.kappa, KT.X, Y)
-    centerkernel!(KT.KC, K)
+    pairwisematrix!(KT.order, K, KT.kappa, KT.X, Y)
+    isnull(KT.KC) ? K : centerkernel!(get(KT.KC), K)
 end
 function pairwisematrix{T<:AbstractFloat}(KT::KernelTransformer{T}, Y::AbstractMatrix{T})
-    pairwisematrix!(init_pairwise(KT.order, KT.X, Y), KT, Y)
+    pairwisematrix!(init_pairwisematrix(KT.order, KT.X, Y), KT, Y)
 end
 
 

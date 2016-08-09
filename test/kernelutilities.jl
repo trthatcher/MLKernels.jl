@@ -79,12 +79,31 @@ for T in FloatingPointTypes
     X = rand(T, n, p)
     Y = rand(T, m, p)
     k = convert(RealFunction{T}, ScalarProduct())
+    K = pairwisematrix(Val{:row}, k, X)
 
-    KT = MOD.KernelTransformer(Val{:row}, k, X, true)
+    KT = MOD.KernelTransformer(Val{:col}, k, X, true, false)
+    @test KT.order == Val{:col}
+    @test KT.kappa == k
+    @test KT.X == X
+    @test KT.X === X
+
+    KT = MOD.KernelTransformer(Val{:row}, k, X, true, true)
     @test KT.order == Val{:row}
     @test KT.kappa == k
     @test KT.X == X
     @test !(KT.X === X)
+
+    K_tst = MOD.centerkernel(MOD.KernelCenterer(K), pairwisematrix(Val{:row}, k, X, Y))
+    @test_approx_eq MOD.pairwisematrix(KT, Y) K_tst
+
+    X_U = rand(T == Float64 ? Float32 : Float64, n, p)
+    U = promote_type(T, eltype(X_U))
+
+    KT = MOD.KernelTransformer(k, X_U)
+    @test KT.order == Val{:row}
+    @test eltype(KT.X) == U
+    @test !(KT.X === X)
+
 end
 
 info("Testing ", MOD.nystrom.env.name)
