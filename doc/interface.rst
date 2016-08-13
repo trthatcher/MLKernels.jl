@@ -6,15 +6,14 @@ Interface
 Installation
 ------------
 
-The package may be
-added by running one of the following lines of code:
+The package may be added by running one of the following lines of code:
 
 .. code-block:: julia
 
-    # Latest stable release
+    # Latest stable release in Metadata:
     Pkg.add("MLKernels")
 
-    # Most up to date
+    # Most up-to-date:
     Pkg.checkout("MLKernels")
 
     # Development:
@@ -26,11 +25,150 @@ Kernel Functions
 
 Kernel functions are implemented as a subtype of ``RealFunction``, a generic
 type to represent scalar, real-valued functions such as Mercer kernels or metric
-functions. A list of pre-defined kernels is avaiable here.
+functions. The ``RealFunction`` type has three subtypes: 
 
-A number of constructors are provided to construct kernels and functions beyond
-the constructors provided above. See the `properties & constructors`_ section 
-for additional constructors and for properties of ``RealFunction`` subtypes.
+  ``PairwiseFunction``
+      A type to represent real-valued functions of the form :math:`\mathbb{R}^n 
+      \times \mathbb{R}^n \rightarrow \mathbb{R}`.
+  ``CompositeFunction``
+      A type used to represent real-valued functions of the form :math:`g \circ
+      f` where :math:`f:\mathbb{R}^n \times \mathbb{R}^n \rightarrow \mathbb{R}`
+      and :math:`g:\mathbb{R} \rightarrow \mathbb{R}`. This type is constructed
+      useing a ``PairwiseFunction`` type for :math:`f` and a
+      ``CompositionClass`` type for :math:`g`.
+  ``PointwiseFunction``
+      A type used to represent scalar transformations of the form :math:`a \cdot
+      f(x) + c` for :math:`a \in \mathbb{R}_{++}` and :math:`c \in 
+      \mathbb{R}_{+}`, as well as function products and sums of the form 
+      :math:`f(x) \cdot g(x)` and :math:`f(x) + g(x)`.
+
+
+..................
+Pairwise Functions
+..................
+
+The following ``PairwiseFunction`` types have been pre-defined:
+
+========================== ==========================
+Pairwise Function          Constructor
+========================== ==========================
+:ref:`Euclidean`           ``Euclidean()``
+:ref:`Squared Euclidean`   ``SquaredEuclidean()``
+:ref:`Chi Squared`         ``ChiSquared()``
+:ref:`Scalar Product`      ``ScalarProduct(t)``
+:ref:`Sine Squared Kernel` ``SineSquaredKernel(p=π)``
+========================== ==========================
+
+...................
+Composite Functions
+...................
+
+A number of pre-defined composite function kernels are defined below:
+
+================================ ====================================
+Kernel                           Constructor
+================================ ====================================
+:ref:`Gaussian Kernel`           ``GaussianKernel(α=1)`` 
+:ref:`Laplacian Kernel`          ``LaplacianKernel(α=1)``
+:ref:`Periodic Kernel`           ``PeriodicKernel(α=1,p=π)``
+:ref:`Rational Quadratic Kernel` ``RationalQuadraticKernel(α=1,β=1)`` 
+:ref:`Matern Kernel`             ``MaternKernel(ν=1,θ=1)``
+:ref:`Polynomial Kernel`         ``PolynomialKernel(a=1,c=1,d=3)``
+:ref:`Sigmoid Kernel`            ``SigmoidKernel(α=1,c=1)``
+================================ ====================================
+
+Additional kernels can be constructed using the ``CompositeFunction`` type:
+
+.. function:: CompositeFunction(g, f)
+
+    Constructs a ``CompositeFunction`` type. Argument ``g`` must be a 
+    ``CompositionClass``. Argument ``f`` must be a ``PairwiseFunction`` that can
+    be composed with ``g``.
+
+    The binary operator ``∘`` (``\circ`` in the terminal) is shorthand for this
+    constructor. The code block below illustrates how to manually create the
+    Gaussian kernel:
+
+    .. code-block:: julia
+
+        α = 1.0
+        g = ExponentialClass(α)
+        f = Euclidean()
+
+        CompositeFunction(g,f) == (g ∘ f)
+
+    Below is a listing of pre-defined ``CompositionClass`` types that may be
+    combined with the ``PairwiseFunction`` types listed above:
+
+    ============================== =====================================
+    Composition Class              Constructor
+    ============================== =====================================
+    :ref:`Exponential Class`       ``ExponentialClass(α=1)``
+    :ref:`Gamma Exponential Class` ``GammaExponentialClass(α=1,γ=0.5)``
+    :ref:`Rational Class`          ``RationalClass(α=1,β=1)``
+    :ref:`Gamma Rational Class`    ``GammaRationalClass(α=1,γ=0.5,β=1)``
+    :ref:`Matern Class`            ``MaternClass(ν=1,ρ=1)``
+    :ref:`Exponentiated Class`     ``ExponentiatedClass(a=1,c=1)``
+    :ref:`Polynomial Class`        ``PolynomialClass(a=1,c=0,d=3)``
+    :ref:`Power Class`             ``PowerClass(a=1,c=1,γ=0.5)``
+    :ref:`Log Class`               ``LogClass(α=1)``
+    :ref:`Gamma Log Class`         ``GammaLogClass(α=1,γ=0.5)``
+    :ref:`Sigmoid Class`           ``SigmoidClass(a=1,c=1)``
+    ============================== =====================================
+
+...................
+Pointwise Functions
+...................
+
+.. function:: AffineFunction(a, c, f)
+
+    Constructs an ``AffineFunction`` type. Argument ``a`` must be a positive
+    variable. Argument ``c`` must be a non-negative variable. Argument ``f``
+    must be a ``RealFunction``.
+
+    The ``AffineFunction`` will be constructed from arithmetic between a
+    ``RealFunction`` type and a ``Real`` type:
+
+    .. code-block:: julia
+
+        a = 2.0
+        c = 3.0
+        f = ChiSquared()
+
+        AffineFunction(a,c,f) == a*f + c
+
+
+.. function:: FunctionSum(g, f)
+
+    Constructs an ``FunctionSum`` type. Argument ``g`` must be a 
+    ``RealFunction``. Argument ``f`` must be a ``RealFunction``.
+
+    The ``FunctionSum`` will be constructed from arithmetic between two
+    ``RealFunction`` types:
+
+    .. code-block:: julia
+
+        g = Euclidean()
+        f = ChiSquared()
+
+        FunctionSum(g,f) == g + f
+
+
+.. function:: FunctionProduct(g, f)
+
+    Constructs an ``FunctionProduct`` type. Argument ``g`` must be a 
+    ``RealFunction``. Argument ``f`` must be a ``RealFunction``.
+
+    The ``FunctionProduct`` will be constructed from arithmetic between two
+    ``RealFunction`` types:
+
+    .. code-block:: julia
+
+        g = Euclidean()
+        f = ChiSquared()
+
+        FunctionProduct(g,f) == g * f
+
 
 -------------------------
 Kernel Matrix Calculation
@@ -182,11 +320,10 @@ Kernel Matrix Approximation
 
     The same as ``nystrom!`` with matrix ``K`` automatically allocated.
 
-.. _`properties & constructors`:
 
--------------------------
-Properties & Constructors
--------------------------
+----------
+Properties
+----------
 
 .. _ismercer:
 
@@ -219,75 +356,6 @@ Properties & Constructors
 
     Returns ``true`` if the kernel ``f`` is *always* greater than zero over its
     domain and parameter space; ``false`` otherwise.
-
-.. function:: CompositeFunction(g, f)
-
-    Constructs a ``CompositeFunction`` type. Argument ``g`` must be a 
-    ``CompositionClass``. Argument ``f`` must be a ``PairwiseFunction`` that can
-    be composed with ``g``.
-
-    The binary operator ``∘`` (``\circ`` in the terminal) is shorthand for this
-    constructor. The code block below illustrates how to manually create the
-    Gaussian kernel:
-
-    .. code-block:: julia
-
-        α = 1.0
-        g = ExponentialClass(α)
-        f = Euclidean()
-
-        CompositeFunction(g,f) == (g ∘ f)
-
-    A list of pre-defined composition classes is available here.
-
-.. function:: AffineFunction(a, c, f)
-
-    Constructs an ``AffineFunction`` type. Argument ``a`` must be a positive
-    variable. Argument ``c`` must be a non-negative variable. Argument ``f``
-    must be a ``RealFunction``.
-
-    The ``AffineFunction`` will be constructed from arithmetic between a
-    ``RealFunction`` type and a ``Real`` type:
-
-    .. code-block:: julia
-
-        a = 2.0
-        c = 3.0
-        f = ChiSquared()
-
-        AffineFunction(a,c,f) == a*f + c
-
-
-.. function:: FunctionSum(g, f)
-
-    Constructs an ``FunctionSum`` type. Argument ``g`` must be a 
-    ``RealFunction``. Argument ``f`` must be a ``RealFunction``.
-
-    The ``FunctionSum`` will be constructed from arithmetic between two
-    ``RealFunction`` types:
-
-    .. code-block:: julia
-
-        g = Euclidean()
-        f = ChiSquared()
-
-        FunctionSum(g,f) == g + f
-
-
-.. function:: FunctionProduct(g, f)
-
-    Constructs an ``FunctionProduct`` type. Argument ``g`` must be a 
-    ``RealFunction``. Argument ``f`` must be a ``RealFunction``.
-
-    The ``FunctionProduct`` will be constructed from arithmetic between two
-    ``RealFunction`` types:
-
-    .. code-block:: julia
-
-        g = Euclidean()
-        f = ChiSquared()
-
-        FunctionProduct(g,f) == g * f
 
 -----
 Notes
