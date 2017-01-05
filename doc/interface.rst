@@ -20,23 +20,23 @@ The package may be added by running one of the following lines of code:
     Pkg.checkout("MLKernels", "dev")
 
 ----------------
-Kernel Functions
+Kernel Kernels
 ----------------
 
-Kernel functions are implemented as a subtype of ``RealFunction``, a generic
+Kernel functions are implemented as a subtype of ``RealKernel``, a generic
 type to represent scalar, real-valued functions such as Mercer kernels or metric
-functions. The ``RealFunction`` type has three subtypes: 
+functions. The ``RealKernel`` type has three subtypes: 
 
-  ``PairwiseFunction``
+  ``PairwiseKernel``
       A type to represent real-valued functions of the form :math:`\mathbb{R}^n 
       \times \mathbb{R}^n \rightarrow \mathbb{R}`.
-  ``CompositeFunction``
+  ``CompositeKernel``
       A type used to represent real-valued functions of the form :math:`g \circ
       f` where :math:`f:\mathbb{R}^n \times \mathbb{R}^n \rightarrow \mathbb{R}`
       and :math:`g:\mathbb{R} \rightarrow \mathbb{R}`. This type is constructed
-      useing a ``PairwiseFunction`` type for :math:`f` and a
+      useing a ``PairwiseKernel`` type for :math:`f` and a
       ``CompositionClass`` type for :math:`g`.
-  ``PointwiseFunction``
+  ``PointwiseKernel``
       A type used to represent scalar transformations of the form :math:`a \cdot
       f(x) + c` for :math:`a \in \mathbb{R}_{++}` and :math:`c \in 
       \mathbb{R}_{+}`, as well as function products and sums of the form 
@@ -44,13 +44,13 @@ functions. The ``RealFunction`` type has three subtypes:
 
 
 ..................
-Pairwise Functions
+Pairwise Kernels
 ..................
 
-The following ``PairwiseFunction`` types have been pre-defined:
+The following ``PairwiseKernel`` types have been pre-defined:
 
 ========================== ==========================
-Pairwise Function          Constructor
+Pairwise Kernel          Constructor
 ========================== ==========================
 :ref:`Euclidean`           ``Euclidean()``
 :ref:`Squared Euclidean`   ``SquaredEuclidean()``
@@ -60,7 +60,7 @@ Pairwise Function          Constructor
 ========================== ==========================
 
 ...................
-Composite Functions
+Composite Kernels
 ...................
 
 A number of pre-defined composite function kernels are defined below:
@@ -77,12 +77,12 @@ Kernel                           Constructor
 :ref:`Sigmoid Kernel`            ``SigmoidKernel(α=1,c=1)``
 ================================ ====================================
 
-Additional kernels can be constructed using the ``CompositeFunction`` type:
+Additional kernels can be constructed using the ``CompositeKernel`` type:
 
-.. function:: CompositeFunction(g, f)
+.. function:: CompositeKernel(g, f)
 
-    Constructs a ``CompositeFunction`` type. Argument ``g`` must be a 
-    ``CompositionClass``. Argument ``f`` must be a ``PairwiseFunction`` that can
+    Constructs a ``CompositeKernel`` type. Argument ``g`` must be a 
+    ``CompositionClass``. Argument ``f`` must be a ``PairwiseKernel`` that can
     be composed with ``g``.
 
     The binary operator ``∘`` (``\circ`` in the terminal) is shorthand for this
@@ -95,10 +95,10 @@ Additional kernels can be constructed using the ``CompositeFunction`` type:
         g = ExponentialClass(α)
         f = Euclidean()
 
-        CompositeFunction(g,f) == (g ∘ f)
+        CompositeKernel(g,f) == (g ∘ f)
 
     Below is a listing of pre-defined ``CompositionClass`` types that may be
-    combined with the ``PairwiseFunction`` types listed above:
+    combined with the ``PairwiseKernel`` types listed above:
 
     ============================== =====================================
     Composition Class              Constructor
@@ -117,17 +117,17 @@ Additional kernels can be constructed using the ``CompositeFunction`` type:
     ============================== =====================================
 
 ...................
-Pointwise Functions
+Pointwise Kernels
 ...................
 
-.. function:: AffineFunction(a, c, f)
+.. function:: AffineKernel(a, c, f)
 
-    Constructs an ``AffineFunction`` type. Argument ``a`` must be a positive
+    Constructs an ``AffineKernel`` type. Argument ``a`` must be a positive
     variable. Argument ``c`` must be a non-negative variable. Argument ``f``
-    must be a ``RealFunction``.
+    must be a ``RealKernel``.
 
-    The ``AffineFunction`` will be constructed from arithmetic between a
-    ``RealFunction`` type and a ``Real`` type:
+    The ``AffineKernel`` will be constructed from arithmetic between a
+    ``RealKernel`` type and a ``Real`` type:
 
     .. code-block:: julia
 
@@ -135,39 +135,39 @@ Pointwise Functions
         c = 3.0
         f = ChiSquared()
 
-        AffineFunction(a,c,f) == a*f + c
+        AffineKernel(a,c,f) == a*f + c
 
 
-.. function:: FunctionSum(g, f)
+.. function:: KernelSum(g, f)
 
-    Constructs an ``FunctionSum`` type. Argument ``g`` must be a 
-    ``RealFunction``. Argument ``f`` must be a ``RealFunction``.
+    Constructs an ``KernelSum`` type. Argument ``g`` must be a 
+    ``RealKernel``. Argument ``f`` must be a ``RealKernel``.
 
-    The ``FunctionSum`` will be constructed from arithmetic between two
-    ``RealFunction`` types:
-
-    .. code-block:: julia
-
-        g = Euclidean()
-        f = ChiSquared()
-
-        FunctionSum(g,f) == g + f
-
-
-.. function:: FunctionProduct(g, f)
-
-    Constructs an ``FunctionProduct`` type. Argument ``g`` must be a 
-    ``RealFunction``. Argument ``f`` must be a ``RealFunction``.
-
-    The ``FunctionProduct`` will be constructed from arithmetic between two
-    ``RealFunction`` types:
+    The ``KernelSum`` will be constructed from arithmetic between two
+    ``RealKernel`` types:
 
     .. code-block:: julia
 
         g = Euclidean()
         f = ChiSquared()
 
-        FunctionProduct(g,f) == g * f
+        KernelSum(g,f) == g + f
+
+
+.. function:: KernelProduct(g, f)
+
+    Constructs an ``KernelProduct`` type. Argument ``g`` must be a 
+    ``RealKernel``. Argument ``f`` must be a ``RealKernel``.
+
+    The ``KernelProduct`` will be constructed from arithmetic between two
+    ``RealKernel`` types:
+
+    .. code-block:: julia
+
+        g = Euclidean()
+        f = ChiSquared()
+
+        KernelProduct(g,f) == g * f
 
 
 -------------------------
@@ -175,21 +175,21 @@ Kernel Matrix Calculation
 -------------------------
 
 A generic ``pairwise`` and ``pairwisematrix`` function is given for computation
-of ``RealFunction`` pairwise matrices. If a function is a kernel, then the
+of ``RealKernel`` pairwise matrices. If a function is a kernel, then the
 corresponding pairwise matrix would be referred to as a kernel matrix.
 Similarly, if the real function is a metric, then the pairwise matrix would be a
 distance matrix.
 
 .. function:: pairwise(f, x, y) 
 
-    Apply the ``RealFunction`` ``f`` to ``x`` and ``y`` where ``x`` and ``y``
+    Apply the ``RealKernel`` ``f`` to ``x`` and ``y`` where ``x`` and ``y``
     are vectors or scalars of some subtype of ``Real``.
 
     This function may also be called using ``kernel`` instead.
 
 .. function:: pairwisematrix([σ,] f, X [, symmetrize])
 
-    Calculate the pairwise matrix of ``X`` with respect to ``RealFunction``
+    Calculate the pairwise matrix of ``X`` with respect to ``RealKernel``
     ``f``. Set ``symmetrize`` to ``false`` to populate only the upper triangle 
     of the pairwise matrix.
 
@@ -209,7 +209,7 @@ distance matrix.
 .. function:: pairwisematrix([σ,] f, X, Y)
 
     Calculate the pairwise matrix of ``X`` and ``Y`` with respect to 
-    ``RealFunction`` ``f``.
+    ``RealKernel`` ``f``.
 
     See the `format notes`_ to determine the value of ``σ``. By default ``σ`` is
     set to ``Val{:row}``.

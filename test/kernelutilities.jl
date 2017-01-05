@@ -78,7 +78,7 @@ info("Testing ", MOD.KernelTransformer.name.name)
 for T in FloatingPointTypes
     X = rand(T, n, p)
     Y = rand(T, m, p)
-    k = convert(RealFunction{T}, ScalarProduct())
+    k = convert(RealKernel{T}, ScalarProduct())
     K = pairwisematrix(Val{:row}, k, X)
 
     KT = MOD.KernelTransformer(Val{:col}, k, X, true, false)
@@ -109,7 +109,7 @@ end
 info("Testing ", MOD.nystrom.env.name)
 for T in FloatingPointTypes
     X = rand(T, n, p)
-    k = convert(RealFunction{T}, GaussianKernel(1/(2*p)))
+    k = convert(RealKernel{T}, GaussianKernel(1/(2*p)))
     K = pairwisematrix(Val{:row}, k, X)
 
     W, C = MOD.nystrom(Val{:row}, k, X, Int64[i for i = 1:n])

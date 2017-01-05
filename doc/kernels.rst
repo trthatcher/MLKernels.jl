@@ -1,5 +1,5 @@
 ----------------
-Kernel Functions
+Kernel Kernels
 ----------------
 
 A number of popular kernels have been pre-defined for ease of use. Below is a

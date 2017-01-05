@@ -2,14 +2,6 @@
   Generic pairwisematrix functions for kernels consuming two vectors
 ===================================================================================================#
 
-# Row major and column major ordering are supported
-abstract MemoryLayout
-
-immutable ColumnMajor <: MemoryLayout end
-immutable RowMajor    <: MemoryLayout end
-
-
-
 #================================================
   Generic Pairwise Vector Operation
 ================================================#

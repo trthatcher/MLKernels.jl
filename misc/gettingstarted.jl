@@ -17,7 +17,7 @@ isnegdef(ψ)
 w = round(rand(5),3);
 ARD(κ, w)
 
-# Kernel Functions
+# Kernel Kernels
 
 x = rand(3); y = rand(3);
 kernel(ψ, x[1], y[1])

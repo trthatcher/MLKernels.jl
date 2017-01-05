@@ -66,7 +66,7 @@ for class_obj in composition_classes
     info("[", @sprintf("%3.0f", counter/steps*100), "%] ", class_obj.name.name)
 end
 
-info("Testing ", MOD.CompositeFunction.name.name)
+info("Testing ", MOD.CompositeKernel.name.name)
 for class_obj in composition_classes
     g = (class_obj)()
     for f_obj in pairwise_functions
@@ -94,7 +94,7 @@ for class_obj in composition_classes
 end
 
 for h_obj in composite_functions
-    @test typeof((h_obj)()) <: CompositeFunction
+    @test typeof((h_obj)()) <: CompositeKernel
 end
 
 for f_obj in pairwise_functions

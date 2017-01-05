@@ -16,7 +16,7 @@ for T in FloatingPointTypes
     U = promote_type(T, Float64)
 
     for f_test in test_pairwise_functions
-        f = convert(RealFunction{T}, f_test)
+        f = convert(RealKernel{T}, f_test)
         s = MOD.pairwise_initiate(f)
         for i in eachindex(y,x)
             s = MOD.pairwise_aggregate(f, s, x[i], y[i])
@@ -27,7 +27,7 @@ for T in FloatingPointTypes
     end
 
     for h_test in test_composite_functions
-        h = convert(RealFunction{T}, h_test)
+        h = convert(RealKernel{T}, h_test)
         s = MOD.composition(h.g, MOD.unsafe_pairwise(h.f, x, y))
         @test MOD.unsafe_pairwise(h, x, y) == s
 
@@ -35,7 +35,7 @@ for T in FloatingPointTypes
     end
 
     for f_test in test_sample
-        h = convert(RealFunction{T}, 2*f_test+1)
+        h = convert(RealKernel{T}, 2*f_test+1)
         s = h.a*MOD.unsafe_pairwise(h.f, x, y) + h.c
         @test MOD.unsafe_pairwise(h, x, y) == s
 
@@ -43,13 +43,13 @@ for T in FloatingPointTypes
     end
 
     for scalar_op in (+, *), f_test1 in test_sample, f_test2 in test_sample
-        h = convert(RealFunction{T}, (scalar_op)(f_test1, f_test2))
+        h = convert(RealKernel{T}, (scalar_op)(f_test1, f_test2))
         s = (scalar_op)(MOD.unsafe_pairwise(h.f, x, y), MOD.unsafe_pairwise(h.g, x, y))
         @test MOD.unsafe_pairwise(h, x, y) == s
 
         @test typeof(MOD.unsafe_pairwise(h, x_U, y_U)) == U
 
-        h = convert(RealFunction{T}, (scalar_op)(2*f_test1+1, f_test2))
+        h = convert(RealKernel{T}, (scalar_op)(2*f_test1+1, f_test2))
         s = (scalar_op)(MOD.unsafe_pairwise(h.f, x, y), MOD.unsafe_pairwise(h.g, x, y))
         @test MOD.unsafe_pairwise(h, x, y) == s
 
@@ -67,7 +67,7 @@ for T in FloatingPointTypes
     U = promote_type(T, Float64)
 
     for f_test in test_pairwise_functions
-        f = convert(RealFunction{T}, f_test)
+        f = convert(RealKernel{T}, f_test)
 
         s1 = MOD.pairwise_return(f, MOD.pairwise_aggregate(f, MOD.pairwise_initiate(f), x[1], y[1]))
         @test MOD.pairwise(f, x[1], y[1]) == s1
@@ -84,7 +84,7 @@ for T in FloatingPointTypes
     end
 
     for h_test in test_composite_functions
-        h = convert(RealFunction{T}, h_test)
+        h = convert(RealKernel{T}, h_test)
         
         @test MOD.pairwise(h, x[1], y[1]) == MOD.composition(h.g, MOD.pairwise(h.f, x[1], y[1]))
         @test h(x[1], y[1]) == MOD.pairwise(h, x[1], y[1])
@@ -99,7 +99,7 @@ for T in FloatingPointTypes
     end
 
     for f_test in test_sample
-        h = convert(RealFunction{T}, 2*f_test+1)
+        h = convert(RealKernel{T}, 2*f_test+1)
 
         s1 = h.a*MOD.pairwise(h.f, x[1], y[1]) + h.c
         @test MOD.pairwise(h, x[1], y[1]) == s1
@@ -116,7 +116,7 @@ for T in FloatingPointTypes
     end
 
     for scalar_op in (+, *), f_test1 in test_sample, f_test2 in test_sample
-        h = convert(RealFunction{T}, (scalar_op)(f_test1, f_test2))
+        h = convert(RealKernel{T}, (scalar_op)(f_test1, f_test2))
 
         s1 = (scalar_op)(MOD.pairwise(h.f, x[1], y[1]), MOD.pairwise(h.g, x[1], y[1]))
         @test MOD.pairwise(h, x[1], y[1]) == s1
@@ -175,7 +175,7 @@ for f_test in test_set
 
         X = transpose(hcat(Set_X...))
         Y = transpose(hcat(Set_Y...))
-        f = convert(RealFunction{T}, f_test)
+        f = convert(RealKernel{T}, f_test)
                    
         P = T[MOD.pairwise(f,x,y) for x in Set_X, y in Set_X]
 
@@ -231,7 +231,7 @@ for f_test in test_set
 
         X = transpose(hcat(Set_X...))
         Y = transpose(hcat(Set_Y...))
-        f = convert(RealFunction{T}, f_test)
+        f = convert(RealKernel{T}, f_test)
 
         X_U = convert(Matrix{T == Float64 ? Float32 : Float64}, X)
         Y_U = convert(Matrix{T == Float64 ? Float32 : Float64}, Y)

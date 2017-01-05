@@ -1,4 +1,4 @@
-info("Testing ", MOD.PairwiseFunction.name.name)
+info("Testing ", MOD.PairwiseKernel.name.name)
 steps = length(pairwise_functions)
 counter = 0
 for f_obj in pairwise_functions
@@ -37,7 +37,7 @@ for f_obj in pairwise_functions
     for T in FloatingPointTypes
         f = (f_obj)()
         for U in FloatingPointTypes
-            @test U == eltype(convert(RealFunction{U}, f))
+            @test U == eltype(convert(RealKernel{U}, f))
         end
     end
 

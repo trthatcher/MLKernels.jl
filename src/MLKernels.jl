@@ -21,6 +21,11 @@ export
     Argument,
     HyperParameter,
 
+    # Memory
+    MemoryLayout,
+    RowMajor,
+    ColumnMajor,
+
     # Pairwise Function Type
     PairwiseFunction,
         InnerProduct,
@@ -71,6 +76,14 @@ export
 include("hyperparameter.jl")
 using MLKernels.HyperParameters: Bound, Interval, leftbounded, rightbounded, unbounded, checkbounds,
     Variable, fixed, Argument, HyperParameter
+
+
+# Row major and column major ordering are supported
+abstract MemoryLayout
+
+immutable ColumnMajor <: MemoryLayout end
+immutable RowMajor    <: MemoryLayout end
+
 
 include("common.jl")
 include("pairwisefunction.jl")

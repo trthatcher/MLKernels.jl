@@ -8,32 +8,36 @@ function promote_type_int(U_i::DataType...)
     U_max <: Signed ? U_max : Int64
 end
 
-for (order, dimension) in ((:(:row), 1), (:(:col), 2))
-    isrowmajor = order == :(:row)
+for layout in (RowMajor, ColumnMajor)
+
+    isrowmajor = layout == RowMajor
+    dim_obs    = isrowmajor ? 1 : 2
+    dim_param  = isrowmajor ? 2 : 1
+
     @eval begin
 
         function dotvectors!{T<:AbstractFloat}(
-                 ::Type{Val{$order}},
+                 ::$layout,
                 xᵀx::Vector{T},
                 X::Matrix{T}
             )
-            if !(size(X,$dimension) == length(xᵀx))
-                errorstring = string("Dimension mismatch on dimension ", $dimension)
+            if !(size(X,$dim_obs) == length(xᵀx))
+                errorstring = string("Dimension mismatch on dimension ", $dim_obs)
                 throw(DimensionMismatch(errorstring))
             end
             fill!(xᵀx, zero(T))
             for I in CartesianRange(size(X))
-                xᵀx[I.I[$dimension]] += X[I]^2
+                xᵀx[I.I[$dim_obs]] += X[I]^2
             end
             xᵀx
         end
 
-        @inline function dotvectors{T<:AbstractFloat}(σ::Type{Val{$order}}, X::Matrix{T})
-            dotvectors!(σ, Array(T, size(X,$dimension)), X)
+        @inline function dotvectors{T<:AbstractFloat}(σ::$layout, X::Matrix{T})
+            dotvectors!(σ, Array(T, size(X,$dim_obs)), X)
         end
 
         function gramian!{T<:AbstractFloat}(
-                 ::Type{Val{$order}},
+                 ::$layout,
                 G::Matrix{T},
                 X::Matrix{T},
                 symmetrize::Bool
@@ -43,7 +47,7 @@ for (order, dimension) in ((:(:row), 1), (:(:col), 2))
         end
 
         @inline function gramian!{T<:AbstractFloat}(
-                 ::Type{Val{$order}}, 
+                 ::$layout, 
                 G::Matrix{T}, 
                 X::Matrix{T}, 
                 Y::Matrix{T}

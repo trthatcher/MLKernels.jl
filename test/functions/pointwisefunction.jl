@@ -1,19 +1,19 @@
-info("Testing ", AffineFunction.name.name)
+info("Testing ", AffineKernel.name.name)
 for f_obj in (pairwise_functions..., composite_functions...)
     for T in FloatingPointTypes
 
-        f1 = convert(RealFunction{T}, (f_obj)())
+        f1 = convert(RealKernel{T}, (f_obj)())
         a = convert(T,2)
         c = convert(T,3)
 
-        h = AffineFunction(a, c, f1)
+        h = AffineKernel(a, c, f1)
         @test h.a.value == a
         @test h.c.value == c
 
-        @test eltype(convert(AffineFunction{Float16},  h)) == Float16
-        @test eltype(convert(AffineFunction{Float32},  h)) == Float32
-        @test eltype(convert(AffineFunction{Float64},  h)) == Float64
-        @test eltype(convert(AffineFunction{BigFloat}, h)) == BigFloat
+        @test eltype(convert(AffineKernel{Float16},  h)) == Float16
+        @test eltype(convert(AffineKernel{Float32},  h)) == Float32
+        @test eltype(convert(AffineKernel{Float64},  h)) == Float64
+        @test eltype(convert(AffineKernel{BigFloat}, h)) == BigFloat
 
         @test MOD.attainszero(h) == MOD.attainszero(h.f)
         @test MOD.attainspositive(h) == MOD.attainspositive(h.f)
@@ -64,32 +64,32 @@ for f_obj in (pairwise_functions..., composite_functions...)
         @test h.c == a*c
         @test h.f == f1
 
-        h = a * convert(RealFunction{T}, SquaredEuclidean()) + c
-        @test h^(one(T)/2) == CompositeFunction(PowerClass(a, c, one(T)/2), h.f)
+        h = a * convert(RealKernel{T}, SquaredEuclidean()) + c
+        @test h^(one(T)/2) == CompositeKernel(PowerClass(a, c, one(T)/2), h.f)
         
-        h = a * convert(RealFunction{T}, ScalarProduct()) + c
-        @test h^3     == CompositeFunction(PolynomialClass(a, c, 3), h.f)
-        @test exp(h)  == CompositeFunction(ExponentiatedClass(a, c), h.f)
-        @test tanh(h) == CompositeFunction(SigmoidClass(a, c), h.f)
+        h = a * convert(RealKernel{T}, ScalarProduct()) + c
+        @test h^3     == CompositeKernel(PolynomialClass(a, c, 3), h.f)
+        @test exp(h)  == CompositeKernel(ExponentiatedClass(a, c), h.f)
+        @test tanh(h) == CompositeKernel(SigmoidClass(a, c), h.f)
 
     end
 end
 
 
-info("Testing ", FunctionSum.name.name)
+info("Testing ", KernelSum.name.name)
 for f_obj1 in (pairwise_functions..., composite_functions...)
     for f_obj2 in (pairwise_functions..., composite_functions...)
         for T in FloatingPointTypes
-            f1 = convert(RealFunction{T}, (f_obj1)())
-            f2 = convert(RealFunction{T}, (f_obj2)())
+            f1 = convert(RealKernel{T}, (f_obj1)())
+            f2 = convert(RealKernel{T}, (f_obj2)())
             h = f1 + f2
             @test h.c.value == zero(T)
             @test h.f == f1
             @test h.g == f2
 
-            @test eltype(convert(RealFunction{Float32}, h))  == Float32
-            @test eltype(convert(RealFunction{Float64}, h))  == Float64
-            @test eltype(convert(RealFunction{BigFloat}, h)) == BigFloat
+            @test eltype(convert(RealKernel{Float32}, h))  == Float32
+            @test eltype(convert(RealKernel{Float64}, h))  == Float64
+            @test eltype(convert(RealKernel{BigFloat}, h)) == BigFloat
 
             @test ismercer(h) == (ismercer(f1) && ismercer(f2))
             @test isnegdef(h) == (isnegdef(f1) && isnegdef(f2))
@@ -137,20 +137,20 @@ for f_obj1 in (pairwise_functions..., composite_functions...)
     end
 end
 
-info("Testing ", FunctionProduct.name.name)
+info("Testing ", KernelProduct.name.name)
 for f_obj1 in (pairwise_functions..., composite_functions...)
     for f_obj2 in (pairwise_functions..., composite_functions...)
         for T in FloatingPointTypes
-            f1 = convert(RealFunction{T}, (f_obj1)())
-            f2 = convert(RealFunction{T}, (f_obj2)())
+            f1 = convert(RealKernel{T}, (f_obj1)())
+            f2 = convert(RealKernel{T}, (f_obj2)())
             h = f1 * f2
             @test h.a.value == one(T)
             @test h.f == f1
             @test h.g == f2
 
-            @test eltype(convert(RealFunction{Float32}, h))  == Float32
-            @test eltype(convert(RealFunction{Float64}, h))  == Float64
-            @test eltype(convert(RealFunction{BigFloat}, h)) == BigFloat
+            @test eltype(convert(RealKernel{Float32}, h))  == Float32
+            @test eltype(convert(RealKernel{Float64}, h))  == Float64
+            @test eltype(convert(RealKernel{BigFloat}, h)) == BigFloat
 
             @test ismercer(h) == (ismercer(f1) && ismercer(f2))
 

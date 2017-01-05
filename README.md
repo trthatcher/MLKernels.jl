@@ -133,7 +133,7 @@ julia> ARD(κ, w)
 ARD{Float64}(κ=SquaredDistance(t=1.0),w=[0.358,0.924,0.034,0.11,0.21])
 ```
 
-#### Kernel Functions
+#### Kernel Kernels
 
 The `kernel` function may be used to evaluate the kernel function for a pair of
 scalar values or a pair of vectors for a given kernel:
