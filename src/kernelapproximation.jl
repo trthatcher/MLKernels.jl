@@ -45,14 +45,14 @@ centerkernel{T<:AbstractFloat}(KC::KernelCenterer{T}, K::Matrix{T}) = centerkern
 
 type KernelTransformer{T<:AbstractFloat}
     order::MemoryOrder
-    kappa::RealFunction{T}
+    kappa::RealKernel{T}
     X::AbstractMatrix{T}
     KC::Nullable{KernelCenterer{T}}
 end
 
 function KernelTransformer{T<:AbstractFloat}(
         σ::MemoryOrder,
-        κ::RealFunction{T},
+        κ::RealKernel{T},
         X::AbstractMatrix{T},
         center_kernel::Bool = true,
         copy_data::Bool = true
@@ -64,7 +64,7 @@ end
 
 function KernelTransformer{T1<:Real,T2<:Real}(
         σ::MemoryOrder,
-        κ::RealFunction{T1},
+        κ::RealKernel{T1},
         X::AbstractMatrix{T2},
         center_kernel::Bool = true,
         copy_data::Bool = true
@@ -73,12 +73,12 @@ function KernelTransformer{T1<:Real,T2<:Real}(
     if T2 != T && copy_data == false
         warn("Argument copy_data = false will be ignored due to implicit conversion-copy")
     end
-    KernelTransformer(σ, convert(RealFunction{T}, κ), convert(AbstractMatrix{T}, X), 
+    KernelTransformer(σ, convert(RealKernel{T}, κ), convert(AbstractMatrix{T}, X), 
                       center_kernel, copy_data)
 end
 
 function KernelTransformer(
-        κ::RealFunction,
+        κ::RealKernel,
         X::AbstractMatrix,
         center_kernel::Bool = true,
         copy_data::Bool = true
@@ -111,7 +111,7 @@ end
 
 function nystrom{T<:AbstractFloat}(
         σ::MemoryOrder,
-        f::RealFunction{T},
+        f::RealKernel{T},
         X::Matrix{T},
         s::Vector{Int64}
     )
@@ -132,7 +132,7 @@ end
 
 function nystrom{T<:AbstractFloat}(
         σ::MemoryOrder,
-        f::RealFunction{T},
+        f::RealKernel{T},
         X::Matrix{T},
         r::AbstractFloat = 0.15
     )
@@ -148,7 +148,7 @@ end
 
 function NystromFact{T<:AbstractFloat}(
         σ::MemoryOrder,
-        f::RealFunction{T},
+        f::RealKernel{T},
         X::Matrix{T},
         r::AbstractFloat = 0.15
     )
@@ -157,7 +157,7 @@ function NystromFact{T<:AbstractFloat}(
 end
 
 function NystromFact{T<:AbstractFloat}(
-        f::RealFunction{T},
+        f::RealKernel{T},
         X::Matrix{T},
         r::AbstractFloat = 0.15
     )

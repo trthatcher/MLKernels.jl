@@ -1,5 +1,5 @@
 #===================================================================================================
-  Kernel Functions Module
+  Kernel Kernels Module
 ===================================================================================================#
 
 module MLKernels
@@ -8,20 +8,6 @@ import Base: call, convert, eltype, print, show, string, ==, *, /, +, -, ^, bess
              tanh
 
 export
-    # Functions
-    ismercer,
-    isnegdef,
-    ismetric,
-    isinnerprod,
-    ispositive,
-    isnonnegative,
-    ∘,
-    pairwise,
-    pairwisematrix,
-    pairwisematrix!,
-    kernel,
-    kernelmatrix,
-    kernelmatrix!,
 
     # Hyper Parameters
     Bound,
@@ -35,62 +21,60 @@ export
     Argument,
     HyperParameter,
 
-    # Kernel Type
-    MathematicalFunction,
-        RealFunction,
-            PairwiseFunction,
-                SymmetricFunction,
-                    Metric,
-                        Euclidean,
-                        SquaredEuclidean,
-                        ChiSquared,
-                    InnerProduct,
-                        ScalarProduct,
-                    SineSquaredKernel,
-            CompositeFunction,
-            PointwiseFunction,
-                AffineFunction,
-                FunctionSum,
-                FunctionProduct,
-    
-    # Composition Classes
-    CompositionClass,
-        PositiveMercerClass,
-            ExponentialClass,
-            GammaExponentialClass,
-            RationalClass,
-            GammaRationalClass,
-            MaternClass,
-            ExponentiatedClass,
-        PolynomialClass,
-        NonNegativeNegativeDefiniteClass,
-            PowerClass,
-            LogClass,
-            GammaLogClass,
-        SigmoidClass,
+    # Pairwise Function Type
+    PairwiseFunction,
+        InnerProduct,
+            ScalarProduct,
+        PreMetric,
+            ChiSquared,
+            SineSquared,
+            Metric,
+                Eucidean,
+                SquaredEuclidean,
 
-    
-    # Kernel Constructors
-        GaussianKernel,
+    # Pairwise Matrix
+    pairwise,
+    pairwisematrix,
+    pairwisematrix!,
+
+
+    # Kernel Function Type
+    Kernel,
+        MercerKernel, 
+            ExponentialKernel,
+                LaplacianKernel,
             SquaredExponentialKernel,
-            RadialBasisKernel,
-        LaplacianKernel,
-        PeriodicKernel,
-        RationalQuadraticKernel,
-        MaternKernel,
-            MatérnKernel,
-        PolynomialKernel,
-        LinearKernel,
-        SigmoidKernel
+                GaussianKernel,
+                RadialBasisKernel,
+            GammaExponentialKernel,
+            RationalQuadraticKernel,
+            GammaRationalKernel,
+            MaternKernel,
+            LinearKernel,
+            PolynomialKernel,
+            ExponentiatedKernel,
+            PeriodicKernel,
+        NegativeDefiniteKernel,
+            PowerKernel,
+            LogKernel,
+        SigmoidKernel,
+
+    # Kernel Functions
+    ismercer,
+
+    # Kernel Matrix
+    kernel,
+    kernelmatrix,
+    kernelmatrix!
+
 
 include("hyperparameter.jl")
 using MLKernels.HyperParameters: Bound, Interval, leftbounded, rightbounded, unbounded, checkbounds,
     Variable, fixed, Argument, HyperParameter
 
-include("meta.jl")
 include("common.jl")
-include("functions.jl")
-include("pairwise.jl")
-include("kernelutilities.jl")
-
+include("pairwisefunction.jl")
+include("pairwisematrix.jl")
+include("kernelfunction.jl")
+    
 end # MLKernels

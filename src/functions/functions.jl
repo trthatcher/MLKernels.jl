@@ -1,52 +1,52 @@
 #===================================================================================================
-  RealFunctions
+  RealKernels
 ===================================================================================================#
 
-abstract MathematicalFunction{T}
+abstract MathematicalKernel{T}
 
-abstract RealFunction{T<:AbstractFloat} <: MathematicalFunction{T}
+abstract RealKernel{T<:AbstractFloat} <: MathematicalKernel{T}
 
-eltype{T}(::RealFunction{T}) = T 
+eltype{T}(::RealKernel{T}) = T 
 
 doc"`ismercer(f)`: returns `true` if `f` is a valid real-valued Mercer kernel"
-ismercer(::RealFunction) = false
+ismercer(::RealKernel) = false
 
 doc"`isnegdef(f)`: returns `true` if `f` is a valid real-valued negative-definite kernel"
-isnegdef(::RealFunction) = false
+isnegdef(::RealKernel) = false
 
 doc"`ismetric(f)`: returns `true` if `f` is a valid metric"
-ismetric(::RealFunction) = false
+ismetric(::RealKernel) = false
 
 doc"`isinnerprod(f)`: returns `true` if `f` is a valid inner product"
-isinnerprod(::RealFunction) = false
+isinnerprod(::RealKernel) = false
 
 doc"`attainszero(f)`: returns `true` if ∃x,y,θ such that f(x,y;θ) = 0"
-attainszero(::RealFunction) = true
+attainszero(::RealKernel) = true
 
 doc"`attainspositive(f)`: returns `true` if ∃x,y,θ such that f(x,y;θ) > 0"
-attainspositive(::RealFunction) = true
+attainspositive(::RealKernel) = true
 
 doc"`attainsnegative(f)`: returns `true` if ∃x,y,θ such that f(x,y;θ) < 0"
-attainsnegative(::RealFunction) = true
+attainsnegative(::RealKernel) = true
 
 doc"`isnonnegative(f)`: returns `true` if f(x,y;θ) > 0 ∀x,y,θ"
-isnonnegative(f::RealFunction) = !attainsnegative(f)
+isnonnegative(f::RealKernel) = !attainsnegative(f)
 
 doc"`ispositive(f)`: returns `true` if f(x,y;θ) ≧ 0 ∀x,y,θ"
-ispositive(f::RealFunction) = !attainsnegative(f) && !attainszero(f) &&  attainspositive(f)
+ispositive(f::RealKernel) = !attainsnegative(f) && !attainszero(f) &&  attainspositive(f)
 
 doc"`isnegative(f)`: returns `true` if f(x,y;θ) ≦ 0 ∀x,y,θ"
-isnegative(f::RealFunction) =  attainsnegative(f) && !attainszero(f) && !attainspositive(f)
+isnegative(f::RealKernel) =  attainsnegative(f) && !attainszero(f) && !attainspositive(f)
 
-function show(io::IO, f::RealFunction)
+function show(io::IO, f::RealKernel)
     print(io, description_string(f))
 end
 
-function convert{T<:AbstractFloat,F<:RealFunction}(::Type{RealFunction{T}}, f::F)
+function convert{T<:AbstractFloat,F<:RealKernel}(::Type{RealKernel{T}}, f::F)
     convert(F.name.primary{T}, f)
 end
 
-# Functions
+# Kernels
 
 include("functions/pairwisefunction.jl")
 include("functions/compositefunction.jl")

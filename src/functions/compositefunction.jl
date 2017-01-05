@@ -6,7 +6,7 @@ abstract CompositionClass{T<:AbstractFloat}
 
 @inline eltype{T}(::CompositionClass{T}) = T 
 
-@inline iscomposable(::CompositionClass, ::RealFunction) = false
+@inline iscomposable(::CompositionClass, ::RealKernel) = false
 
 @inline ismercer(::CompositionClass) = false
 @inline isnegdef(::CompositionClass) = false
@@ -53,7 +53,7 @@ immutable GammaExponentialClass{T<:AbstractFloat} <: PositiveMercerClass{T}
     )
 end
 @outer_constructor(GammaExponentialClass, (1,0.5))
-@inline iscomposable(::GammaExponentialClass, f::RealFunction) = isnegdef(f) && isnonnegative(f)
+@inline iscomposable(::GammaExponentialClass, f::RealKernel) = isnegdef(f) && isnonnegative(f)
 @inline composition{T<:AbstractFloat}(g::GammaExponentialClass{T}, z::T) = exp(-g.alpha * z^g.gamma)
 
 
@@ -65,7 +65,7 @@ immutable ExponentialClass{T<:AbstractFloat} <: PositiveMercerClass{T}
     )
 end
 @outer_constructor(ExponentialClass, (1,))
-@inline iscomposable(::ExponentialClass, f::RealFunction) = isnegdef(f) && isnonnegative(f)
+@inline iscomposable(::ExponentialClass, f::RealKernel) = isnegdef(f) && isnonnegative(f)
 @inline composition{T<:AbstractFloat}(g::ExponentialClass{T}, z::T) = exp(-g.alpha * z)
 
 
@@ -81,7 +81,7 @@ immutable GammaRationalClass{T<:AbstractFloat} <: PositiveMercerClass{T}
     )
 end
 @outer_constructor(GammaRationalClass, (1,1,0.5))
-@inline iscomposable(::GammaRationalClass, f::RealFunction) = isnegdef(f) && isnonnegative(f)
+@inline iscomposable(::GammaRationalClass, f::RealKernel) = isnegdef(f) && isnonnegative(f)
 @inline composition{T<:AbstractFloat}(g::GammaRationalClass{T}, z::T) = (1 + g.alpha*z^g.gamma)^(-g.beta)
 
 
@@ -95,7 +95,7 @@ immutable RationalClass{T<:AbstractFloat} <: PositiveMercerClass{T}
     )
 end
 @outer_constructor(RationalClass, (1,1))
-@inline iscomposable(::RationalClass, f::RealFunction) = isnegdef(f) && isnonnegative(f)
+@inline iscomposable(::RationalClass, f::RealKernel) = isnegdef(f) && isnonnegative(f)
 @inline composition{T<:AbstractFloat}(g::RationalClass{T}, z::T) = (1 + g.alpha*z)^(-g.beta)
 
 
@@ -109,7 +109,7 @@ immutable MaternClass{T<:AbstractFloat} <: PositiveMercerClass{T}
     )
 end
 @outer_constructor(MaternClass, (1,1))
-@inline iscomposable(::MaternClass, f::RealFunction) = isnegdef(f) && isnonnegative(f)
+@inline iscomposable(::MaternClass, f::RealKernel) = isnegdef(f) && isnonnegative(f)
 @inline function composition{T<:AbstractFloat}(g::MaternClass{T}, z::T)
     v1 = sqrt(2g.nu) * z / g.rho
     v1 = v1 < eps(T) ? eps(T) : v1  # Overflow risk, z -> Inf
@@ -127,7 +127,7 @@ immutable ExponentiatedClass{T<:AbstractFloat} <: PositiveMercerClass{T}
     )
 end
 @outer_constructor(ExponentiatedClass, (1,0))
-@inline iscomposable(::ExponentiatedClass, f::RealFunction) = ismercer(f)
+@inline iscomposable(::ExponentiatedClass, f::RealKernel) = ismercer(f)
 @inline composition{T<:AbstractFloat}(g::ExponentiatedClass{T}, z::T) = exp(g.a*z + g.c)
 
 
@@ -145,7 +145,7 @@ immutable PolynomialClass{T<:AbstractFloat,U<:Integer} <: CompositionClass{T}
     )
 end
 @outer_constructor(PolynomialClass, (1,0,3))
-@inline iscomposable(::PolynomialClass, f::RealFunction) = ismercer(f)
+@inline iscomposable(::PolynomialClass, f::RealKernel) = ismercer(f)
 @inline composition{T<:AbstractFloat}(g::PolynomialClass{T}, z::T) = (g.a*z + g.c)^g.d
 @inline ismercer(::PolynomialClass) = true
 
@@ -168,7 +168,7 @@ immutable PowerClass{T<:AbstractFloat} <: NonNegNegDefClass{T}
     )
 end
 @outer_constructor(PowerClass, (1,0,0.5))
-@inline iscomposable(::PowerClass, f::RealFunction) = isnegdef(f) && isnonnegative(f)
+@inline iscomposable(::PowerClass, f::RealKernel) = isnegdef(f) && isnonnegative(f)
 @inline composition{T<:AbstractFloat}(g::PowerClass{T}, z::T) = (g.a*z + g.c)^(g.gamma)
 
 
@@ -182,7 +182,7 @@ immutable GammaLogClass{T<:AbstractFloat} <: NonNegNegDefClass{T}
     )
 end
 @outer_constructor(GammaLogClass, (1,0.5))
-@inline iscomposable(::GammaLogClass, f::RealFunction) = isnegdef(f) && isnonnegative(f)
+@inline iscomposable(::GammaLogClass, f::RealKernel) = isnegdef(f) && isnonnegative(f)
 @inline composition{T<:AbstractFloat}(g::GammaLogClass{T}, z::T) = log(g.alpha*z^(g.gamma) + 1)
 
 
@@ -194,7 +194,7 @@ immutable LogClass{T<:AbstractFloat} <: NonNegNegDefClass{T}
     )
 end
 @outer_constructor(LogClass, (1,))
-@inline iscomposable(::LogClass, f::RealFunction) = isnegdef(f) && isnonnegative(f)
+@inline iscomposable(::LogClass, f::RealKernel) = isnegdef(f) && isnonnegative(f)
 @inline composition{T<:AbstractFloat}(g::LogClass{T}, z::T) = log(g.alpha*z + 1)
 
 
@@ -210,7 +210,7 @@ immutable SigmoidClass{T<:AbstractFloat} <: CompositionClass{T}
     )
 end
 @outer_constructor(SigmoidClass, (1,0))
-@inline iscomposable(::SigmoidClass, f::RealFunction) = ismercer(f)
+@inline iscomposable(::SigmoidClass, f::RealKernel) = ismercer(f)
 @inline composition{T<:AbstractFloat}(g::SigmoidClass{T}, z::T) = tanh(g.a*z + g.c)
 
 
@@ -218,40 +218,40 @@ end
   Kernel Composition ψ = g(f(x,y))
 ===================================================================================================#
 
-doc"CompositeFunction(g,f) = g∘f   f:ℝⁿ×ℝⁿ→ℝ, g:ℝ→ℝ"
-immutable CompositeFunction{T<:AbstractFloat} <: RealFunction{T}
+doc"CompositeKernel(g,f) = g∘f   f:ℝⁿ×ℝⁿ→ℝ, g:ℝ→ℝ"
+immutable CompositeKernel{T<:AbstractFloat} <: RealKernel{T}
     g::CompositionClass{T}
-    f::PairwiseFunction{T}
-    function CompositeFunction(g::CompositionClass{T}, f::PairwiseFunction{T})
-        iscomposable(g, f) || error("Function is not composable.")
+    f::PairwiseKernel{T}
+    function CompositeKernel(g::CompositionClass{T}, f::PairwiseKernel{T})
+        iscomposable(g, f) || error("Kernel is not composable.")
         new(g, f)
     end
 end
-function CompositeFunction{T<:AbstractFloat}(g::CompositionClass{T}, f::PairwiseFunction{T})
-    CompositeFunction{T}(g, f)
+function CompositeKernel{T<:AbstractFloat}(g::CompositionClass{T}, f::PairwiseKernel{T})
+    CompositeKernel{T}(g, f)
 end
 
-∘(g::CompositionClass, f::PairwiseFunction) = CompositeFunction(g, f)
+∘(g::CompositionClass, f::PairwiseKernel) = CompositeKernel(g, f)
 
-function convert{T<:AbstractFloat}(::Type{CompositeFunction{T}}, h::CompositeFunction)
-    CompositeFunction(convert(CompositionClass{T}, h.g), convert(RealFunction{T}, h.f))
+function convert{T<:AbstractFloat}(::Type{CompositeKernel{T}}, h::CompositeKernel)
+    CompositeKernel(convert(CompositionClass{T}, h.g), convert(RealKernel{T}, h.f))
 end
 
-function description_string(f::CompositeFunction, showtype::Bool = true)
+function description_string(f::CompositeKernel, showtype::Bool = true)
     obj_str = string("Composition", showtype ? string("{", eltype(f), "}") : "")
     class_str = description_string(f.g, false)
     kernel_str = description_string(f.f, false)
     string(obj_str, "(g=", class_str, ",f=", kernel_str, ")")
 end
 
-==(h1::CompositeFunction, h2::CompositeFunction) = (h1.g == h2.g) && (h1.f == h2.f)
+==(h1::CompositeKernel, h2::CompositeKernel) = (h1.g == h2.g) && (h1.f == h2.f)
 
-ismercer(h::CompositeFunction) = ismercer(h.g)
-isnegdef(h::CompositeFunction) = isnegdef(h.g)
+ismercer(h::CompositeKernel) = ismercer(h.g)
+isnegdef(h::CompositeKernel) = isnegdef(h.g)
 
-attainszero(h::CompositeFunction)     = attainszero(h.g)
-attainspositive(h::CompositeFunction) = attainspositive(h.g)
-attainsnegative(h::CompositeFunction) = attainsnegative(h.g)
+attainszero(h::CompositeKernel)     = attainszero(h.g)
+attainspositive(h::CompositeKernel) = attainspositive(h.g)
+attainsnegative(h::CompositeKernel) = attainsnegative(h.g)
 
 
 #== Composition Kernels ==#
@@ -259,7 +259,7 @@ attainsnegative(h::CompositeFunction) = attainsnegative(h.g)
 doc"GaussianKernel(α) = exp(-α⋅‖x-y‖²)"
 function GaussianKernel{T1<:Real}(α::Argument{T1} = 1.0)
     T = promote_type_float(T1)
-    CompositeFunction(ExponentialClass(Variable{T}(α)), SquaredEuclidean{T}())
+    CompositeKernel(ExponentialClass(Variable{T}(α)), SquaredEuclidean{T}())
 end
 SquaredExponentialKernel = GaussianKernel
 RadialBasisKernel = GaussianKernel
@@ -267,7 +267,7 @@ RadialBasisKernel = GaussianKernel
 doc"LaplacianKernel(α) = exp(α⋅‖x-y‖)"
 function LaplacianKernel{T1<:Real}(α::Argument{T1} = 1.0)
     T = promote_type_float(T1)
-    CompositeFunction(GammaExponentialClass(Variable{T}(α), Variable{T}(0.5)),
+    CompositeKernel(GammaExponentialClass(Variable{T}(α), Variable{T}(0.5)),
                       SquaredEuclidean{T}())
 end
 
@@ -277,7 +277,7 @@ function PeriodicKernel{T1<:Real,T2<:Real}(
         p::Argument{T2} = convert(promote_type_float(T1), π)
     )
     T = promote_type_float(T1, T2)
-    CompositeFunction(ExponentialClass(Variable{T}(α)), SineSquaredKernel(Variable{T}(p)))
+    CompositeKernel(ExponentialClass(Variable{T}(α)), SineSquaredKernel(Variable{T}(p)))
 end
 
 doc"RationalQuadraticKernel(α,β) = (1 + α⋅‖x-y‖²)⁻ᵝ"
@@ -286,7 +286,7 @@ function RationalQuadraticKernel{T1<:Real,T2<:Real}(
         β::Argument{T2} = one(T1)
     )
     T = promote_type_float(T1, T2)
-    CompositeFunction(RationalClass(Variable{T}(α), Variable{T}(β)), SquaredEuclidean{T}())
+    CompositeKernel(RationalClass(Variable{T}(α), Variable{T}(β)), SquaredEuclidean{T}())
 end
 
 doc"MatérnKernel(ν,θ) = 2ᵛ⁻¹(√(2ν)‖x-y‖²/θ)ᵛKᵥ(√(2ν)‖x-y‖²/θ)/Γ(ν)"
@@ -295,7 +295,7 @@ function MaternKernel{T1<:Real,T2<:Real}(
         θ::Argument{T2} = one(T1)
     )
     T = promote_type_float(T1, T2)
-    CompositeFunction(MaternClass(Variable{T}(ν), Variable{T}(θ)), SquaredEuclidean{T}())
+    CompositeKernel(MaternClass(Variable{T}(ν), Variable{T}(θ)), SquaredEuclidean{T}())
 end
 MatérnKernel = MaternKernel
 
@@ -306,7 +306,7 @@ function PolynomialKernel{T1<:Real,T2<:Real,U<:Integer}(
         d::Argument{U} = 3
     )
     T = promote_type_float(T1, T2)
-    CompositeFunction(PolynomialClass(Variable{T}(a), Variable{T}(c), Variable{U}(d)),
+    CompositeKernel(PolynomialClass(Variable{T}(a), Variable{T}(c), Variable{U}(d)),
                       ScalarProduct{T}())
 end
 
@@ -316,7 +316,7 @@ function LinearKernel{T1<:Real,T2<:Real}(
         c::Argument{T2} = one(T1)
     )
     T = promote_type_float(T1, T2)
-    CompositeFunction(PolynomialClass(Variable{T}(a), Variable{T}(c), 1), ScalarProduct{T}())
+    CompositeKernel(PolynomialClass(Variable{T}(a), Variable{T}(c), 1), ScalarProduct{T}())
 end
 
 doc"SigmoidKernel(α,c) = tanh(a⋅xᵀy + c)"
@@ -325,24 +325,24 @@ function SigmoidKernel{T1<:Real,T2<:Real}(
         c::Argument{T2} = one(T1)
     )
     T = promote_type_float(T1, T2)
-    CompositeFunction(SigmoidClass(Variable{T}(a), Variable{T}(c)), ScalarProduct{T}())
+    CompositeKernel(SigmoidClass(Variable{T}(a), Variable{T}(c)), ScalarProduct{T}())
 end
 
 
 #== Special Compositions ==#
 
-function ^{T<:AbstractFloat}(f::PairwiseFunction{T}, d::Integer)
-    CompositeFunction(PolynomialClass(one(T), zero(T), d), f)
+function ^{T<:AbstractFloat}(f::PairwiseKernel{T}, d::Integer)
+    CompositeKernel(PolynomialClass(one(T), zero(T), d), f)
 end
 
-function ^{T<:AbstractFloat}(f::PairwiseFunction{T}, γ::T)
-    CompositeFunction(PowerClass(one(T), zero(T), γ), f)
+function ^{T<:AbstractFloat}(f::PairwiseKernel{T}, γ::T)
+    CompositeKernel(PowerClass(one(T), zero(T), γ), f)
 end
 
-function exp{T<:AbstractFloat}(f::PairwiseFunction{T})
-    CompositeFunction(ExponentiatedClass(one(T), zero(T)), f)
+function exp{T<:AbstractFloat}(f::PairwiseKernel{T})
+    CompositeKernel(ExponentiatedClass(one(T), zero(T)), f)
 end
 
-function tanh{T<:AbstractFloat}(f::PairwiseFunction{T})
-    CompositeFunction(SigmoidClass(one(T), zero(T)), f)
+function tanh{T<:AbstractFloat}(f::PairwiseKernel{T})
+    CompositeKernel(SigmoidClass(one(T), zero(T)), f)
 end
