@@ -114,7 +114,10 @@ immutable GammaExponentialKernel{T} <: MercerKernel{T}
         HyperParameter(γ, Interval(Bound(zero(T), :open), Bound(one(T), :closed)))
     )
 end
-function GammaExponentialKernel{T1<:Real,T2<:Real}(α::Argument{T1} = 1.0, γ::Argument{T2} = 0.25)
+function GammaExponentialKernel{T1<:Real,T2<:Real}(
+        α::Argument{T1} = 1.0,
+        γ::Argument{T2} = one(T1)
+    )
     T = promote_type_float(T1, T2)
     GammaExponentialKernel{T}(Variable{T}(α), Variable{T}(γ))
 end
@@ -138,7 +141,7 @@ function RationalQuadraticKernel{T1<:Real,T2<:Real}(
         β::Argument{T2} = one(T1)
     )
     T = promote_type_float(T1, T2)
-    CompositeKernel(RationalClass(Variable{T}(α), Variable{T}(β)))
+    RationalQuadraticKernel{T}(Variable{T}(α), Variable{T}(β))
 end
 
 @inline pairwisefunction(::RationalQuadraticKernel) = SquaredEuclidean()
@@ -287,13 +290,11 @@ abstract NegativeDefiniteKernel{T} <: Kernel{T}
 doc"PowerKernel(a,c,γ) = ‖x-y‖²ᵞ   γ ∈ (0,1]"
 immutable PowerKernel{T} <: NegativeDefiniteKernel{T}
     gamma::HyperParameter{T}
-    PowerKernel(a::Variable{T}, c::Variable{T}, γ::Variable{T}) = new(
+    PowerKernel(γ::Variable{T}) = new(
         HyperParameter(γ, Interval(Bound(zero(T), :open), Bound(one(T), :closed)))
     )
 end
-function PowerKernel{T1}(
-        γ::Argument{T1} = 1.0
-    )
+function PowerKernel{T1<:Real}(γ::Argument{T1} = 1.0)
     T = promote_type_float(T1)
     PowerKernel{T}(Variable{T}(γ))
 end

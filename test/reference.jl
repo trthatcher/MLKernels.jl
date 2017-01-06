@@ -1,4 +1,4 @@
-# Additive Kernel References
+# Pairwise Function References
 
 pairwise_functions = (
     Euclidean,
@@ -27,6 +27,43 @@ pairwise_functions_aggregate = Dict(
 pairwise_functions_return = Dict(
     Euclidean => s -> sqrt(s)
 )
+
+
+
+# Kernel Function References
+
+kernel_functions = (
+    ExponentialKernel,
+    SquaredExponentialKernel,
+    GammaExponentialKernel,
+    RationalQuadraticKernel,
+    GammaRationalKernel,
+    MaternKernel,
+    LinearKernel,
+    PolynomialKernel,
+    ExponentiatedKernel,
+    PeriodicKernel,
+    PowerKernel,
+    LogKernel,
+    SigmoidKernel
+)
+
+kernel_functions_arguments = Dict(
+    ExponentialKernel        => ((1.0,),        (2.0,)),
+    SquaredExponentialKernel => ((1.0,),        (2.0,)),
+    GammaExponentialKernel   => ((1.0,1.0),     (2.0,0.5)),
+    RationalQuadraticKernel  => ((1.0,1.0),     (2.0,2.0)),
+    GammaRationalKernel      => ((1.0,1.0,1.0), (2.0,2.0,0.5)),
+    MaternKernel             => ((1.0,1.0),     (2.0,2.0)),
+    LinearKernel             => ((1.0,1.0),     (2.0,2.0)),
+    PolynomialKernel         => ((1.0,1.0,3),   (2.0,2.0,2)),
+    ExponentiatedKernel      => ((1.0,),        (2.0,)),
+    PeriodicKernel           => ((1.0,),        (2.0,)),
+    PowerKernel              => ((1.0,),        (0.5,)),
+    LogKernel                => ((1.0,1.0),     (2.0,0.5)),
+    SigmoidKernel            => ((1.0,1.0),     (2.0,2.0))
+)
+
 
 
 #=
