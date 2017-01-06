@@ -27,7 +27,7 @@ end
 
 doc"SineSquared(p) = Σⱼsin²(xⱼ-yⱼ)"
 immutable SineSquared <: PreMetric end
-@inline pairwise_aggregate{T}(f::SineSquared, s::T, x::T, y::T) = s + sin(f.p*(x-y))^2
+@inline pairwise_aggregate{T}(f::SineSquared, s::T, x::T, y::T) = s + sin(x-y)^2
 
 
 

@@ -59,7 +59,9 @@ end
 
 
 
-
+#================================================
+  Mercer Kernels
+================================================#
 
 abstract MercerKernel{T} <: Kernel{T}
 ismercer(κ::MercerKernel) = true
@@ -274,7 +276,13 @@ end
 
 
 
+#================================================
+  Negative Definite Kernels
+================================================#
+
 abstract NegativeDefiniteKernel{T} <: Kernel{T}
+
+
 
 doc"PowerKernel(a,c,γ) = ‖x-y‖²ᵞ   γ ∈ (0,1]"
 immutable PowerKernel{T} <: NegativeDefiniteKernel{T}

@@ -8,3 +8,6 @@ MOD = MLKernels
 
 include("hyperparameter.jl")
 include("common.jl")
+
+include("reference.jl")
+include("pairwisefunction.jl")

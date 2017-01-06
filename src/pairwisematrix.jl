@@ -177,7 +177,7 @@ function pairwisematrix(
         X::AbstractMatrix,
         Y::AbstractMatrix
     )
-    pairwisematrix(RowMajor, f, X, Y)
+    pairwisematrix(RowMajor(), f, X, Y)
 end
 
 

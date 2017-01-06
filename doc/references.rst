@@ -7,4 +7,4 @@ References
 
 .. [gen] Genton M.G. 2002. *Classes of kernels for machine learning: a statistics perspective*. The Journal of Machine Learning Research. Volume 2 (March 2002), 299-312.
 
-.. [ras] Rasmussen C, Williams CKI. 2005. *Gaussian Processes for Machine Learning (Adaptive Computation and Machine Learning)*. The MIT Press. Chapter 4, Covariance Kernels; p. 79-104.
+.. [ras] Rasmussen C, Williams CKI. 2005. *Gaussian Processes for Machine Learning (Adaptive Computation and Machine Learning)*. The MIT Press. Chapter 4, Covariance Functions; p. 79-104.

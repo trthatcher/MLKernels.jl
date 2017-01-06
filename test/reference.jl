@@ -3,39 +3,33 @@
 pairwise_functions = (
     Euclidean,
     SquaredEuclidean,
-    SineSquaredKernel,
+    SineSquared,
     ChiSquared,
     ScalarProduct
 )
 
-pairwise_functions_defaults = Dict(
-    Euclidean         => ([], Int[]),
-    SquaredEuclidean  => ([], Int[]),
-    SineSquaredKernel => ([π], Int[]),
-    ChiSquared        => ([], Int[]),
-    ScalarProduct     => ([], Int[])
-)
-
 pairwise_functions_initiate = Dict(
-    Euclidean         => 0,
-    SquaredEuclidean  => 0,
-    SineSquaredKernel => 0,
-    ChiSquared        => 0,
-    ScalarProduct     => 0
+    Euclidean        => 0,
+    SquaredEuclidean => 0,
+    SineSquared      => 0,
+    ChiSquared       => 0,
+    ScalarProduct    => 0
 )
 
 pairwise_functions_aggregate = Dict(
-    Euclidean         => (s,x,y)   -> s + (x-y)^2,
-    SquaredEuclidean  => (s,x,y)   -> s + (x-y)^2,
-    SineSquaredKernel => (s,x,y,p) -> s + sin(p*(x-y))^2,
-    ChiSquared        => (s,x,y)   -> x == y == 0 ? s : s + ((x-y)^2/(x+y)),
-    ScalarProduct     => (s,x,y)   -> s + x*y
+    Euclidean        => (s,x,y) -> s + (x-y)^2,
+    SquaredEuclidean => (s,x,y) -> s + (x-y)^2,
+    SineSquared      => (s,x,y) -> s + sin((x-y))^2,
+    ChiSquared       => (s,x,y) -> x == y == 0 ? s : s + ((x-y)^2/(x+y)),
+    ScalarProduct    => (s,x,y) -> s + x*y
 )
 
 pairwise_functions_return = Dict(
     Euclidean => s -> sqrt(s)
 )
 
+
+#=
 pairwise_functions_properties = Dict( 
                         #|mercer|negdef|metric|inprod|neg   |zero |pos
     SineSquaredKernel => (false, true,  false, false, false, true, true),
@@ -136,3 +130,4 @@ composite_functions = (
     LinearKernel,
     SigmoidKernel
 )
+=#

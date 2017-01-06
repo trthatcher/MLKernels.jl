@@ -13,14 +13,14 @@ The package may be added by running one of the following lines of code:
     # Latest stable release in Metadata:
     Pkg.add("MLKernels")
 
-    # Most up-to-date:
+    # Most up-to-date (not stable):
     Pkg.checkout("MLKernels")
 
-    # Development:
+    # Development (bleeding edge):
     Pkg.checkout("MLKernels", "dev")
 
 ----------------
-Kernel Kernels
+Kernel Functions
 ----------------
 
 Kernel functions are implemented as a subtype of ``RealKernel``, a generic

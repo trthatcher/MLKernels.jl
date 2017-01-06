@@ -34,7 +34,7 @@ export
             ChiSquared,
             SineSquared,
             Metric,
-                Eucidean,
+                Euclidean,
                 SquaredEuclidean,
 
     # Pairwise Matrix
@@ -89,5 +89,6 @@ include("common.jl")
 include("pairwisefunction.jl")
 include("pairwisematrix.jl")
 include("kernelfunction.jl")
+include("kernelmatrix.jl")
     
 end # MLKernels
