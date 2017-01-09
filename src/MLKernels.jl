@@ -72,10 +72,15 @@ export
     kernelmatrix,
     kernelmatrix!
 
-
-include("hyperparameter.jl")
-using MLKernels.HyperParameters: Bound, Interval, leftbounded, rightbounded, unbounded, checkbounds,
-    Variable, fixed, Argument, HyperParameter
+include("HyperParameters/HyperParameters.jl")
+using MLKernels.HyperParameters: 
+    Bound,
+    Interval,
+    leftbounded,
+    rightbounded,
+    unbounded,
+    checkbounds,
+    HyperParameter
 
 
 # Row major and column major ordering are supported

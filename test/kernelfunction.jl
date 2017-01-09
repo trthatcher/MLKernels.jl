@@ -1,3 +1,5 @@
+#= Test Constructors =#
+
 for k in kernel_functions
     info("Testing ", k)
     for T in FloatingPointTypes

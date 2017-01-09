@@ -25,6 +25,9 @@ function pairwisefunction(::Kernel)
     error("No pairwise function specified for kernel")
 end
 
+
+
+
 function hyperparameters{T}(κ::Kernel{T})
     fields = fieldnames(κ)
     θ = Array(HyperParameter{T}, length(fields))
@@ -41,21 +44,24 @@ doc"SigmoidKernel(a,c) = tanh(a⋅xᵀy + c)   a ∈ (0,∞), c ∈ (0,∞)"
 immutable SigmoidKernel{T} <: Kernel{T}
     a::HyperParameter{T}
     c::HyperParameter{T}
-    SigmoidKernel(a::Variable{T}, c::Variable{T}) = new(
+    SigmoidKernel(a::T, c::T) = new(
         HyperParameter(a, leftbounded(zero(T), :open)),
         HyperParameter(c, leftbounded(zero(T), :closed))   
     )
 end
 function SigmoidKernel{T1<:Real,T2<:Real}(
-        a::Argument{T1} = 1.0,
-        c::Argument{T2} = one(T1)
+        a::T1 = 1.0,
+        c::T2 = one(T1)
     )
     T = promote_type_float(T1, T2)
-    SigmoidKernel{T}(Variable{T}(a), Variable{T}(c))
+    SigmoidKernel{T}(convert(T,a), convert(T,c))
 end
 
+
+@inline sigmoidkernel{T<:AbstractFloat}(z::T, a::T, c::T) = tanh(a*z + c)
+
 @inline pairwisefunction(::SigmoidKernel) = ScalarProduct()
-@inline kappa{T}(κ::SigmoidKernel{T}, z::T) = tanh(κ.a*z + κ.c)
+@inline kappa{T}(κ::SigmoidKernel{T}, z::T) = sigmoidkernel(z, κ.a.value, κ.c.value)
 
 
 
@@ -71,37 +77,45 @@ ismercer(κ::MercerKernel) = true
 doc"ExponentialKernel(α) = exp(-α⋅‖x-y‖)   α ∈ (0,∞)"
 immutable ExponentialKernel{T} <: MercerKernel{T}
     alpha::HyperParameter{T}
-    ExponentialKernel(α::Variable{T}) = new(
+    ExponentialKernel(α::T) = new(
         HyperParameter(α, leftbounded(zero(T), :open))
     )
 end
-function ExponentialKernel{T1<:Real}(α::Argument{T1} = 1.0)
+function ExponentialKernel{T1<:Real}(α::T1 = 1.0)
     T = promote_type_float(T1)
-    ExponentialKernel{T}(Variable{T}(α))
+    ExponentialKernel{T}(convert(T,α))
 end
 LaplacianKernel = ExponentialKernel
 
+@inline exponentialkernel{T<:AbstractFloat}(z::T, α::T) = exp(-α*sqrt(z))
+
 @inline pairwisefunction(::ExponentialKernel) = Euclidean()
-@inline kappa{T<:AbstractFloat}(g::ExponentialKernel{T}, z::T) = exp(-g.alpha * z)
+@inline function kappa{T<:AbstractFloat}(κ::ExponentialKernel{T}, z::T)
+    exponentialkernel(z, g.alpha.value)
+end
 
 
 
 doc"SquaredExponentialKernel(α) = exp(-α⋅‖x-y‖²)   α ∈ (0,∞)"
 immutable SquaredExponentialKernel{T} <: MercerKernel{T}
     alpha::HyperParameter{T}
-    SquaredExponentialKernel(α::Variable{T}) = new(
+    SquaredExponentialKernel(α::T) = new(
         HyperParameter(α, leftbounded(zero(T), :open))
     )
 end
-function SquaredExponentialKernel{T1<:Real}(α::Argument{T1} = 1.0)
+function SquaredExponentialKernel{T1<:Real}(α::T1 = 1.0)
     T = promote_type_float(T1)
-    SquaredExponentialKernel{T}(Variable{T}(α))
+    SquaredExponentialKernel{T}(convert(T,α))
 end
 GaussianKernel = SquaredExponentialKernel
 RadialBasisKernel = SquaredExponentialKernel
 
+@inline squaredexponentialkernel{T<:AbstractFloat}(z::T, α::T) = exp(-α*z)
+
 @inline pairwisefunction(::SquaredExponentialKernel) = SquaredEuclidean()
-@inline kappa{T}(g::SquaredExponentialKernel{T}, z::T) = exp(-g.alpha * z)
+@inline function kappa{T}(κ::SquaredExponentialKernel{T}, z::T)
+    squaredexponentialkernel(z, κ.alpha.value)
+end
 
 
 
@@ -109,21 +123,25 @@ doc"GammaExponentialKernel(α,γ) = exp(-α⋅‖x-y‖ᵞ)   α ∈ (0,∞), γ
 immutable GammaExponentialKernel{T} <: MercerKernel{T}
     alpha::HyperParameter{T}
     gamma::HyperParameter{T}
-    GammaExponentialKernel(α::Variable{T}, γ::Variable{T}) = new(
+    GammaExponentialKernel(α::T, γ::T) = new(
         HyperParameter(α, leftbounded(zero(T), :open)),
         HyperParameter(γ, Interval(Bound(zero(T), :open), Bound(one(T), :closed)))
     )
 end
 function GammaExponentialKernel{T1<:Real,T2<:Real}(
-        α::Argument{T1} = 1.0,
-        γ::Argument{T2} = one(T1)
+        α::T1 = 1.0,
+        γ::T2 = one(T1)
     )
     T = promote_type_float(T1, T2)
-    GammaExponentialKernel{T}(Variable{T}(α), Variable{T}(γ))
+    GammaExponentialKernel{T}(convert(T,α), convert(T,γ))
 end
 
+@inline gammaexponentialkernel{T<:AbstractFloat}(z::T, α::T, γ::T) = exp(-α*z^γ)
+
 @inline pairwisefunction(::GammaExponentialKernel) = SquaredEuclidean()
-@inline kappa{T}(κ::GammaExponentialKernel{T}, z::T) = exp(-κ.alpha * z^κ.gamma)
+@inline function kappa{T}(κ::GammaExponentialKernel{T}, z::T)
+    gammaexponentialkernel(z, κ.alpha.value, κ.gamma.value)
+end
 
 
 
@@ -131,17 +149,17 @@ doc"RationalQuadraticKernel(α,β) = (1 + α⋅‖x-y‖²)⁻ᵝ   α ∈ (0,�
 immutable RationalQuadraticKernel{T} <: MercerKernel{T}
     alpha::HyperParameter{T}
     beta::HyperParameter{T}
-    RationalQuadraticKernel(α::Variable{T}, β::Variable{T}) = new(
+    RationalQuadraticKernel(α::T, β::T) = new(
         HyperParameter(α, leftbounded(zero(T), :open)),
         HyperParameter(β, leftbounded(zero(T), :open))
     )
 end
 function RationalQuadraticKernel{T1<:Real,T2<:Real}(
-        α::Argument{T1} = 1.0,
-        β::Argument{T2} = one(T1)
+        α::T1 = 1.0,
+        β::T2 = one(T1)
     )
     T = promote_type_float(T1, T2)
-    RationalQuadraticKernel{T}(Variable{T}(α), Variable{T}(β))
+    RationalQuadraticKernel{T}(convert(T,α), convert(T,β))
 end
 
 @inline pairwisefunction(::RationalQuadraticKernel) = SquaredEuclidean()
@@ -154,19 +172,19 @@ immutable GammaRationalKernel{T} <: MercerKernel{T}
     alpha::HyperParameter{T}
     beta::HyperParameter{T}
     gamma::HyperParameter{T}
-    GammaRationalKernel(α::Variable{T}, β::Variable{T}, γ::Variable{T}) = new(
+    GammaRationalKernel(α::T, β::T, γ::T) = new(
         HyperParameter(α, leftbounded(zero(T), :open)),
         HyperParameter(β, leftbounded(zero(T), :open)),
         HyperParameter(γ, Interval(Bound(zero(T), :open), Bound(one(T), :closed)))
     )
 end
 function GammaRationalKernel{T1<:Real,T2<:Real,T3<:Real}(
-        α::Argument{T1} = 1.0,
-        β::Argument{T2} = one(T1),
-        γ::Argument{T3} = one(promote_type_float(T1,T2))
+        α::T1 = 1.0,
+        β::T2 = one(T1),
+        γ::T3 = one(promote_type_float(T1,T2))
     )
     T = promote_type_float(T1, T2, T3)
-    GammaRationalKernel{T}(Variable{T}(α), Variable{T}(β), Variable{T}(γ))
+    GammaRationalKernel{T}(convert(T,α), convert(T,β), convert(T,γ))
 end
 
 @inline pairwisefunction(::GammaRationalKernel) = SquaredEuclidean()
@@ -178,17 +196,17 @@ doc"MaternKernel(ν,ρ) = 2ᵛ⁻¹(√(2ν)‖x-y‖²/θ)ᵛKᵥ(√(2ν)‖x-
 immutable MaternKernel{T} <: MercerKernel{T}
     nu::HyperParameter{T}
     rho::HyperParameter{T}
-    MaternKernel(ν::Variable{T}, ρ::Variable{T}) = new(
+    MaternKernel(ν::T, ρ::T) = new(
         HyperParameter(ν, leftbounded(zero(T), :open)),
         HyperParameter(ρ, leftbounded(zero(T), :open))
     )
 end
 function MaternKernel{T1<:Real,T2<:Real}(
-        ν::Argument{T1} = 1.0,
-        ρ::Argument{T2} = one(T1)
+        ν::T1 = 1.0,
+        ρ::T2 = one(T1)
     )
     T = promote_type_float(T1, T2)
-    MaternKernel{T}(Variable{T}(ν), Variable{T}(ρ))
+    MaternKernel{T}(convert(T,ν), convert(T,ρ))
 end
 
 @inline pairwisefunction(::MaternKernel) = SquaredEuclidean()
@@ -204,17 +222,17 @@ doc"LinearKernel(a,c) = a⋅xᵀy + c   a ∈ (0,∞), c ∈ [0,∞)"
 immutable LinearKernel{T} <: MercerKernel{T}
     a::HyperParameter{T}
     c::HyperParameter{T}
-    LinearKernel(a::Variable{T}, c::Variable{T}) = new(
+    LinearKernel(a::T, c::T) = new(
         HyperParameter(a, leftbounded(zero(T), :open)),
         HyperParameter(c, leftbounded(zero(T), :closed))
     )
 end
 function LinearKernel{T1<:Real,T2<:Real}(
-        a::Argument{T1} = 1.0,
-        c::Argument{T2} = one(T1)
+        a::T1 = 1.0,
+        c::T2 = one(T1)
     )
     T = promote_type_float(T1, T2)
-    LinearKernel{T}(Variable{T}(a), Variable{T}(c))
+    LinearKernel{T}(convert(T,a), convert(T,c))
 end
 
 @inline pairwisefunction(::LinearKernel) = ScalarProduct()
@@ -227,19 +245,19 @@ immutable PolynomialKernel{T,U<:Integer} <: MercerKernel{T}
     a::HyperParameter{T}
     c::HyperParameter{T}
     d::HyperParameter{U}
-    PolynomialKernel(a::Variable{T}, c::Variable{T}, d::Variable{U}) = new(
+    PolynomialKernel(a::T, c::T, d::U) = new(
         HyperParameter(a, leftbounded(zero(T), :open)),
         HyperParameter(c, leftbounded(zero(T), :closed)),
         HyperParameter(d, leftbounded(one(U),  :closed))
     )
 end
 function PolynomialKernel{T1<:Real,T2<:Real,U<:Integer}(
-        a::Argument{T1} = 1.0,
-        c::Argument{T2} = one(T1),
-        d::Argument{U} = 3
+        a::T1 = 1.0,
+        c::T2 = one(T1),
+        d::U = 3
     )
     T = promote_type_float(T1, T2)
-    PolynomialKernel{T,U}(Variable{T}(a), Variable{T}(c), Variable{U}(d))
+    PolynomialKernel{T,U}(convert(T,a), convert(T,c), d)
 end
 
 @inline pairwisefunction(::PolynomialKernel) = ScalarProduct()
@@ -250,11 +268,11 @@ end
 doc"ExponentiatedKernel(α) = exp(α⋅xᵀy)   α ∈ (0,∞)"
 immutable ExponentiatedKernel{T} <: MercerKernel{T}
     alpha::HyperParameter{T}
-    ExponentiatedKernel(α::Variable{T}) = new(HyperParameter(α, leftbounded(zero(T), :open)))
+    ExponentiatedKernel(α::T) = new(HyperParameter(α, leftbounded(zero(T), :open)))
 end
-function ExponentiatedKernel{T1<:Real}(α::Argument{T1} = 1.0)
+function ExponentiatedKernel{T1<:Real}(α::T1 = 1.0)
     T = promote_type_float(T1)
-    ExponentiatedKernel{T}(Variable{T}(α))
+    ExponentiatedKernel{T}(convert(T,α))
 end
 
 @inline pairwisefunction(::ExponentiatedKernel) = ScalarProduct()
@@ -265,13 +283,13 @@ end
 doc"PeriodicKernel(α,p) = exp(-α⋅Σⱼsin²(xⱼ-yⱼ))"
 immutable PeriodicKernel{T} <: MercerKernel{T}
     alpha::HyperParameter{T}
-    PeriodicKernel(α::Variable{T}) = new(
+    PeriodicKernel(α::T) = new(
         HyperParameter(α, leftbounded(zero(T), :open))
     )
 end
-function PeriodicKernel{T1<:Real}(α::Argument{T1} = 1.0)
+function PeriodicKernel{T1<:Real}(α::T1 = 1.0)
     T = promote_type_float(T1)
-    PeriodicKernel{T}(Variable{T}(α))
+    PeriodicKernel{T}(convert(T,α))
 end
 
 @inline pairwisefunction(::PeriodicKernel) = SquaredSine()
@@ -290,13 +308,13 @@ abstract NegativeDefiniteKernel{T} <: Kernel{T}
 doc"PowerKernel(a,c,γ) = ‖x-y‖²ᵞ   γ ∈ (0,1]"
 immutable PowerKernel{T} <: NegativeDefiniteKernel{T}
     gamma::HyperParameter{T}
-    PowerKernel(γ::Variable{T}) = new(
+    PowerKernel(γ::T) = new(
         HyperParameter(γ, Interval(Bound(zero(T), :open), Bound(one(T), :closed)))
     )
 end
-function PowerKernel{T1<:Real}(γ::Argument{T1} = 1.0)
+function PowerKernel{T1<:Real}(γ::T1 = 1.0)
     T = promote_type_float(T1)
-    PowerKernel{T}(Variable{T}(γ))
+    PowerKernel{T}(convert(T,γ))
 end
 
 @inline pairwisefunction(::PowerKernel) = SquaredEuclidean()
@@ -308,17 +326,17 @@ doc"LogKernel(α,γ) = log(1 + α⋅‖x-y‖²ᵞ)   α ∈ (0,∞), γ ∈ (0,
 immutable LogKernel{T} <: NegativeDefiniteKernel{T}
     alpha::HyperParameter{T}
     gamma::HyperParameter{T}
-    LogKernel(α::Variable{T}, γ::Variable{T}) = new(
+    LogKernel(α::T, γ::T) = new(
         HyperParameter(α, leftbounded(zero(T), :open)),
         HyperParameter(γ, Interval(Bound(zero(T), :open), Bound(one(T), :closed)))
     )
 end
 function LogKernel{T1,T2}(
-        α::Argument{T1} = 1.0,
-        γ::Argument{T2} = one(T1)
+        α::T1 = 1.0,
+        γ::T2 = one(T1)
     )
     T = promote_type_float(T1, T2)
-    LogKernel{T}(Variable{T}(α), Variable{T}(γ))
+    LogKernel{T}(convert(T,α), convert(T,γ))
 end
 
 @inline pairwisefunction(::LogKernel) = SquaredEuclidean()

@@ -112,7 +112,7 @@ for T in (FloatingPointTypes..., IntegerTypes...)
         @test MOD.checkbounds(I,  one(T)) == true
     end
 end
-
+#=
 info("Testing ", Variable.name.name)
 for T in (FloatingPointTypes..., IntegerTypes...)
 
@@ -134,22 +134,20 @@ for T in (FloatingPointTypes..., IntegerTypes...)
         @test eltype(convert(Variable{Int64}, v)) == Int64
     end
 end
+=#
 
 info("Testing ", HyperParameter.name.name)
 for T in (FloatingPointTypes..., IntegerTypes...)
     I = rightbounded(one(T), :open)
 
-    for fixedvar in (true, false)
-        P = HyperParameter(zero(T), I, fixedvar)
-        @test P.value == zero(T)
-        @test P.isfixed == fixedvar
-    end
+    P = HyperParameter(zero(T), I)
+    @test P.value == zero(T)
 
-    @test_throws ErrorException HyperParameter(one(T), I, true)
+    @test_throws ErrorException HyperParameter(one(T), I)
 
-    show(DevNull, HyperParameter(zero(T), I, true))
+    show(DevNull, HyperParameter(zero(T), I))
 
-    P = HyperParameter(convert(T,2), unbounded(T), false)
+    P = HyperParameter(convert(T,2), unbounded(T))
 
     @test_approx_eq 3*P 3*2
     @test_approx_eq P*3 3*2
