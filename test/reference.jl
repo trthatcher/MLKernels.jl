@@ -65,23 +65,23 @@ kernel_functions_arguments = Dict(
 )
 
 kernel_functions_kappa = Dict(
-    ExponentialKernel        => (α,z)     -> exp(-α*sqrt(z)),
-    SquaredExponentialKernel => (α,z)     -> exp(-α*z),
-    GammaExponentialKernel   => (α,γ,z)   -> exp(-α*z^γ),
-    RationalQuadraticKernel  => (α,β,z)   -> (1 + α*z)^(-β),
-    GammaRationalKernel      => (α,β,γ,z) -> (1 + α*z^γ)^(-β),
-    MaternKernel             => (ν,θ,z)   -> begin 
+    ExponentialKernel        => (z,α)     -> exp(-α*sqrt(z)),
+    SquaredExponentialKernel => (z,α)     -> exp(-α*z),
+    GammaExponentialKernel   => (z,α,γ)   -> exp(-α*z^γ),
+    RationalQuadraticKernel  => (z,α,β)   -> (1 + α*z)^(-β),
+    GammaRationalKernel      => (z,α,β,γ) -> (1 + α*z^γ)^(-β),
+    MaternKernel             => (z,ν,θ)   -> begin 
                                                 v1 = sqrt(2*ν) * z / θ
                                                 v1 = v1 < eps(typeof(z)) ? eps(typeof(z)) : v1
                                                 2*(v1/2)^ν * besselk(ν,v1)/gamma(ν)
                                              end,
-    LinearKernel             => (a,c,z)   -> (a*z+c),
-    PolynomialKernel         => (a,c,d,z) -> (a*z+c)^d,
-    ExponentiatedKernel      => (a,c,z)   -> exp(a*z+c),
-    PeriodicKernel           => (α,z)     -> exp(-α*z),
-    PowerKernel              => (a,c,γ,z) -> (a*z+c)^γ,
-    LogKernel                => (α,γ,z)   -> log(α*z^γ+1),
-    SigmoidKernel            => (a,c,z)   -> tanh(a*z+c)
+    LinearKernel             => (z,a,c)   -> (a*z+c),
+    PolynomialKernel         => (z,a,c,d) -> (a*z+c)^d,
+    ExponentiatedKernel      => (z,a)     -> exp(a*z),
+    PeriodicKernel           => (z,α)     -> exp(-α*z),
+    PowerKernel              => (z,γ)     -> z^γ,
+    LogKernel                => (z,α,γ)   -> log(α*z^γ+1),
+    SigmoidKernel            => (z,a,c)   -> tanh(a*z+c)
 )
 
 #=

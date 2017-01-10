@@ -25,18 +25,6 @@ function pairwisefunction(::Kernel)
     error("No pairwise function specified for kernel")
 end
 
-
-
-
-function hyperparameters{T}(κ::Kernel{T})
-    fields = fieldnames(κ)
-    θ = Array(HyperParameter{T}, length(fields))
-    for i in eachindex(fields)
-        θ[i] = getfield(κ, fields[i])
-    end
-    return θ
-end
-
 @inline eltype{T}(::Kernel{T}) = T
 
 
@@ -91,7 +79,7 @@ LaplacianKernel = ExponentialKernel
 
 @inline pairwisefunction(::ExponentialKernel) = Euclidean()
 @inline function kappa{T<:AbstractFloat}(κ::ExponentialKernel{T}, z::T)
-    exponentialkernel(z, g.alpha.value)
+    exponentialkernel(z, κ.alpha.value)
 end
 
 
@@ -162,8 +150,12 @@ function RationalQuadraticKernel{T1<:Real,T2<:Real}(
     RationalQuadraticKernel{T}(convert(T,α), convert(T,β))
 end
 
+@inline rationalquadratickernel{T<:AbstractFloat}(z::T, α::T, β::T) = (1 + α*z)^(-β)
+
 @inline pairwisefunction(::RationalQuadraticKernel) = SquaredEuclidean()
-@inline kappa{T}(κ::RationalQuadraticKernel{T}, z::T) = (1 + κ.alpha*z)^(-κ.beta)
+@inline function kappa{T}(κ::RationalQuadraticKernel{T}, z::T)
+    rationalquadratickernel(z, κ.alpha.value, κ.beta.value)
+end
 
 
 
@@ -187,8 +179,12 @@ function GammaRationalKernel{T1<:Real,T2<:Real,T3<:Real}(
     GammaRationalKernel{T}(convert(T,α), convert(T,β), convert(T,γ))
 end
 
+@inline gammarationalkernel{T<:AbstractFloat}(z::T, α::T, β::T, γ::T) = (1 + α*(z^γ))^(-β)
+
 @inline pairwisefunction(::GammaRationalKernel) = SquaredEuclidean()
-@inline kappa{T}(κ::GammaRationalKernel{T}, z::T) = (1 + κ.alpha*(z^(κ.gamma)))^(-κ.beta)
+@inline function kappa{T}(κ::GammaRationalKernel{T}, z::T)
+    gammarationalkernel(z, κ.alpha.value, κ.beta.value, κ.gamma.value)
+end
 
 
 
@@ -209,11 +205,15 @@ function MaternKernel{T1<:Real,T2<:Real}(
     MaternKernel{T}(convert(T,ν), convert(T,ρ))
 end
 
+@inline function maternkernel{T}(z::T, ν::T, ρ::T)
+    v1 = sqrt(2ν) * z / ρ
+    v1 = v1 < eps(T) ? eps(T) : v1  # Overflow risk, z -> Inf
+    2 * (v1/2)^(ν) * besselk(ν, v1) / gamma(ν)
+end
+
 @inline pairwisefunction(::MaternKernel) = SquaredEuclidean()
 @inline function kappa{T}(κ::MaternKernel{T}, z::T)
-    v1 = sqrt(2κ.nu) * z / κ.rho
-    v1 = v1 < eps(T) ? eps(T) : v1  # Overflow risk, z -> Inf
-    2 * (v1/2)^(κ.nu) * besselk(κ.nu, v1) / gamma(κ.nu)
+    maternkernel(z, κ.nu.value, κ.rho.value)
 end
 
 
@@ -235,8 +235,10 @@ function LinearKernel{T1<:Real,T2<:Real}(
     LinearKernel{T}(convert(T,a), convert(T,c))
 end
 
+@inline linearkernel{T<:AbstractFloat}(z::T, a::T, c::T) = a*z + c
+
 @inline pairwisefunction(::LinearKernel) = ScalarProduct()
-@inline kappa{T}(κ::LinearKernel{T}, z::T) = κ.a*z + κ.c
+@inline kappa{T}(κ::LinearKernel{T}, z::T) = linearkernel(z, κ.a.value, κ.c.value)
 
 
 
@@ -260,8 +262,12 @@ function PolynomialKernel{T1<:Real,T2<:Real,U<:Integer}(
     PolynomialKernel{T,U}(convert(T,a), convert(T,c), d)
 end
 
+@inline polynomialkernel{T<:AbstractFloat,U<:Integer}(z::T, a::T, c::T, d::U) = (a*z + c)^d
+
 @inline pairwisefunction(::PolynomialKernel) = ScalarProduct()
-@inline kappa{T}(κ::PolynomialKernel{T}, z::T) = (κ.a*z + κ.c)^κ.d
+@inline function kappa{T}(κ::PolynomialKernel{T}, z::T)
+    polynomialkernel(z, κ.a.value, κ.c.value, κ.d.value)
+end
 
 
 
@@ -275,8 +281,10 @@ function ExponentiatedKernel{T1<:Real}(α::T1 = 1.0)
     ExponentiatedKernel{T}(convert(T,α))
 end
 
+@inline exponentiatedkernel{T<:AbstractFloat}(z::T, α::T) = exp(α*z)
+
 @inline pairwisefunction(::ExponentiatedKernel) = ScalarProduct()
-@inline kappa{T}(κ::ExponentiatedKernel{T}, z::T) = exp(κ.alpha*z)
+@inline kappa{T}(κ::ExponentiatedKernel{T}, z::T) = exponentiatedkernel(z, κ.alpha.value)
 
 
 
@@ -293,7 +301,7 @@ function PeriodicKernel{T1<:Real}(α::T1 = 1.0)
 end
 
 @inline pairwisefunction(::PeriodicKernel) = SquaredSine()
-@inline kappa{T}(κ::PeriodicKernel{T}, z::T) = exp(-κ.alpha*z)
+@inline kappa{T}(κ::PeriodicKernel{T}, z::T) = squaredexponentialkernel(z, κ.alpha.value)
 
 
 
@@ -317,9 +325,10 @@ function PowerKernel{T1<:Real}(γ::T1 = 1.0)
     PowerKernel{T}(convert(T,γ))
 end
 
-@inline pairwisefunction(::PowerKernel) = SquaredEuclidean()
-@inline kappa{T}(κ::PowerKernel{T}, z::T) = z^(κ.gamma)
+@inline powerkernel{T<:AbstractFloat}(z::T, γ::T) = z^γ
 
+@inline pairwisefunction(::PowerKernel) = SquaredEuclidean()
+@inline kappa{T}(κ::PowerKernel{T}, z::T) = powerkernel(z, κ.gamma.value)
 
 
 doc"LogKernel(α,γ) = log(1 + α⋅‖x-y‖²ᵞ)   α ∈ (0,∞), γ ∈ (0,1]"
@@ -339,5 +348,7 @@ function LogKernel{T1,T2}(
     LogKernel{T}(convert(T,α), convert(T,γ))
 end
 
+@inline powerkernel{T<:AbstractFloat}(z::T, α::T, γ::T) = log(α*z^γ+1)
+
 @inline pairwisefunction(::LogKernel) = SquaredEuclidean()
-@inline kappa{T}(κ::LogKernel{T}, z::T) = z^(κ.gamma)
+@inline kappa{T}(κ::LogKernel{T}, z::T) = powerkernel(z, κ.alpha.value, κ.gamma.value)
