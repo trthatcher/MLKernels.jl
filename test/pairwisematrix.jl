@@ -39,3 +39,30 @@ for f in pairwise_functions
         @test_throws DimensionMismatch MOD.pairwise(F, T[], T[])
     end
 end
+
+info("Testing ", MOD.allocate_pairwisematrix)
+for T in FloatingPointTypes
+    X = rand(T,n,m)
+
+    for layout in (RowMajor(), ColumnMajor())
+        n_tmp = layout == RowMajor() ? n : m
+
+        K = MOD.allocate_pairwisematrix(layout, X)
+        @test size(K) == (n_tmp,n_tmp)
+        @test eltype(K) == T
+    end
+end
+
+info("Testing ", MOD.checkdimensions)
+for layout in (RowMajor(), ColumnMajor())
+
+    isrowmajor = layout == RowMajor()
+    dim = isrowmajor ? 1 : 2
+
+    X = isrowmajor ? Array(Float64,n,p) : Array(Float64,p,n)
+    Y = isrowmajor ? Array(Float64,m,p) : Array(Float64,p,m)
+
+    @test MOD.checkdimensions(layout, Array(Float64,n,n), X) == n
+    @test_throws DimensionMismatch MOD.checkdimensions(layout, Array(Float64,n,n+1), X)
+    @test_throws DimensionMismatch MOD.checkdimensions(layout, Array(Float64,n+1,n+1), X)
+end
