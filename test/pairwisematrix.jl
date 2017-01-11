@@ -55,14 +55,19 @@ end
 
 info("Testing ", MOD.checkdimensions)
 for layout in (RowMajor(), ColumnMajor())
-
     isrowmajor = layout == RowMajor()
     dim = isrowmajor ? 1 : 2
 
     X = isrowmajor ? Array(Float64,n,p) : Array(Float64,p,n)
     Y = isrowmajor ? Array(Float64,m,p) : Array(Float64,p,m)
+    Y_bad = isrowmajor ? Array(Float64,m,p+1) : Array(Float64,p+1,m)
 
     @test MOD.checkdimensions(layout, Array(Float64,n,n), X) == n
     @test_throws DimensionMismatch MOD.checkdimensions(layout, Array(Float64,n,n+1), X)
     @test_throws DimensionMismatch MOD.checkdimensions(layout, Array(Float64,n+1,n+1), X)
+
+    @test MOD.checkdimensions(layout, Array(Float64,n,m), X, Y) == (n,m)
+    @test_throws DimensionMismatch MOD.checkdimensions(layout, Array(Float64,n,m+1), X, Y)
+    @test_throws DimensionMismatch MOD.checkdimensions(layout, Array(Float64,n+1,m), X, Y)
+    @test_throws DimensionMismatch MOD.checkdimensions(layout, Array(Float64,n,m), X, Y_bad)
 end
