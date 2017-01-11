@@ -7,7 +7,7 @@
 ================================================#
 
 function pairwise{T<:AbstractFloat}(f::PairwiseFunction, x::T, y::T)
-    pairwise_return(f, pairwise_aggregate(f, pairwise_initiate(f), x, y))
+    pairwise_return(f, pairwise_aggregate(f, pairwise_initiate(f,T), x, y))
 end
 
 # No checks, assumes length(x) == length(y) >= 1

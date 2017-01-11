@@ -10,5 +10,6 @@ include("hyperparameter.jl")
 include("common.jl")
 
 include("reference.jl")
-include("pairwisefunction.jl")
-include("kernelfunction.jl")
+include("pairwise.jl")
+include("pairwisematrix.jl")
+include("kernel.jl")

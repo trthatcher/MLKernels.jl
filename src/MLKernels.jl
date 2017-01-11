@@ -91,9 +91,9 @@ immutable RowMajor    <: MemoryLayout end
 
 
 include("common.jl")
-include("pairwisefunction.jl")
+include("pairwise.jl")
 include("pairwisematrix.jl")
-include("kernelfunction.jl")
+include("kernel.jl")
 include("kernelmatrix.jl")
     
 end # MLKernels
