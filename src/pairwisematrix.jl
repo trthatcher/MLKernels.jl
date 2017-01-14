@@ -182,58 +182,6 @@ end
 
 
 
-#================================================
-  Generic Catch-All Methods
-================================================#
-
-function pairwise{T1<:Real,T2<:Real}(f::PairwiseFunction, x::T1, y::T2)
-    T = promote_type(T1, T2)
-    pairwise(f, convert(T, x), convert(T, y))
-end
-
-function unsafe_pairwise{T1<:Real,T2<:Real}(
-        f::PairwiseFunction,
-        x::AbstractArray{T1},
-        y::AbstractArray{T2}
-    )
-    T = promote_type(T1, T2)
-    unsafe_pairwise(f, convert(AbstractArray{T}, x), convert(AbstractArray{T}, y))
-end
-
-function pairwise{T1<:Real,T2<:Real}(
-        f::PairwiseFunction,
-        x::AbstractArray{T1},
-        y::AbstractArray{T2}
-    )
-    T = promote_type(T1, T2)
-    pairwise(f, convert(AbstractArray{T}, x), convert(AbstractArray{T}, y))
-end
-
-function pairwisematrix{T1<:Real}(
-        σ::MemoryLayout,
-        f::PairwiseFunction, 
-        X::AbstractMatrix{T1},
-        symmetrize::Bool = true
-    )
-    T = promote_type(T1)
-    U = convert(AbstractMatrix{T}, X)
-    pairwisematrix!(σ, allocate_pairwisematrix(σ, U), f, U, symmetrize)
-end
-
-function pairwisematrix{T1<:Real,T2<:Real}(
-        σ::MemoryLayout,
-        f::PairwiseFunction, 
-        X::AbstractMatrix{T1},
-        Y::AbstractMatrix{T2}
-    )
-    T = promote_type(T1, T2)
-    U = convert(AbstractMatrix{T}, X)
-    V = convert(AbstractMatrix{T}, Y)
-    pairwisematrix!(σ, allocate_pairwisematrix(σ, U, V),f, U, V)
-end
-
-
-
 #===================================================================================================
   ScalarProduct and SquaredDistance using BLAS/Built-In methods
 ===================================================================================================#

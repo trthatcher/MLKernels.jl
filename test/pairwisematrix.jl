@@ -71,3 +71,27 @@ for layout in (RowMajor(), ColumnMajor())
     @test_throws DimensionMismatch MOD.checkdimensions(layout, Array(Float64,n+1,m), X, Y)
     @test_throws DimensionMismatch MOD.checkdimensions(layout, Array(Float64,n,m), X, Y_bad)
 end
+
+info("Testing ", MOD.pairwisematrix!)
+for T in (Float32, Float64)
+    X_set = [rand(T,p) for i = 1:n]
+    Y_set = [rand(T,p) for i = 1:m]
+
+    P_tst_nn = Array(T, n, n)
+    P_tst_nm = Array(T, n, m)
+
+    for layout in (RowMajor(), ColumnMajor())
+        X = layout == RowMajor() ? transpose(hcat(X_set...)) : hcat(X_set...)
+        Y = layout == RowMajor() ? transpose(hcat(Y_set...)) : hcat(Y_set...)
+
+        for f in pairwise_functions
+            F = (f)()
+
+            P = [MOD.pairwise(F,x,y) for x in X_set, y in X_set]
+            @test_approx_eq P MOD.pairwisematrix!(layout, P_tst_nn, F, X, true)
+
+            P = [MOD.pairwise(F,x,y) for x in X_set, y in Y_set]
+            @test_approx_eq P MOD.pairwisematrix!(layout, P_tst_nm, F, X, Y)
+        end
+    end
+end

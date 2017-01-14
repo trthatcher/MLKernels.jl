@@ -4,29 +4,6 @@
 
 abstract Kernel{T<:AbstractFloat}
 
-function show(io::IO, κ::Kernel)
-    print(io, description_string(κ))
-end
-
-function description_string(κ::Kernel)
-    sym_map = Dict(
-        :alpha => :α,
-        :beta  => :β,
-        :gamma => :γ,
-        :nu    => :ν,
-        :rho   => :ρ
-    )
-    args = ["$(get(sym_map, θ, θ))=$(getfield(κ,θ).value)" for θ in fieldnames(κ)]
-    kernelname = typeof(κ).name.name
-    string(kernelname, "(", join(args, ","), ")")
-end
-
-function pairwisefunction(::Kernel)
-    error("No pairwise function specified for kernel")
-end
-
-@inline eltype{T}(::Kernel{T}) = T
-
 
 doc"SigmoidKernel(a,c) = tanh(a⋅xᵀy + c)   a ∈ (0,∞), c ∈ (0,∞)"
 immutable SigmoidKernel{T} <: Kernel{T}
@@ -352,3 +329,52 @@ end
 
 @inline pairwisefunction(::LogKernel) = SquaredEuclidean()
 @inline kappa{T}(κ::LogKernel{T}, z::T) = powerkernel(z, κ.alpha.value, κ.gamma.value)
+
+
+
+#================================================
+  Kernel Functions
+================================================#
+
+function show(io::IO, κ::Kernel)
+    print(io, description_string(κ))
+end
+
+function description_string(κ::Kernel)
+    sym_map = Dict(
+        :alpha => :α,
+        :beta  => :β,
+        :gamma => :γ,
+        :nu    => :ν,
+        :rho   => :ρ
+    )
+    args = ["$(get(sym_map, θ, θ))=$(getfield(κ,θ).value)" for θ in fieldnames(κ)]
+    kernelname = typeof(κ).name.name
+    string(kernelname, "(", join(args, ","), ")")
+end
+
+function pairwisefunction(::Kernel)
+    error("No pairwise function specified for kernel")
+end
+
+@inline eltype{T}(::Kernel{T}) = T
+
+#=
+
+    fieldtype(κ, :a)
+
+    convertfield(θ::DataType) = :(convert($(θ.parameters[1].name]), κ.$(θ
+
+    κ = kernel.name.name
+    θ = fieldnames(κ)
+    θ = [:convert(T, κ.$(θ).value) for θ in fieldnames(κ)]
+    function convert($(kernel){T},a...)
+        $(kernel){T}, convert(T,a)...)
+    end
+
+
+    need: 
+
+        convert(Kernel{T}, ...)
+        convert(Kernel{T,U}, ...)
+=#

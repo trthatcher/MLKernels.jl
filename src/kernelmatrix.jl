@@ -90,3 +90,46 @@ function kernelmatrix{T<:AbstractFloat}(
     σ = RowMajor()
     kernelmatrix!(σ, allocate_pairwisematrix(σ, X, Y), κ, X, Y)
 end
+
+
+
+#================================================
+  Generic Catch-All Methods
+================================================#
+
+function kernel{T1<:Real,T2<:Real,T3<:Real}(κ::Kernel{T1}, x::T2, y::T3)
+    T = promote_type(T1, T2, T3)
+    kernel(κ, convert(T, x), convert(T, y))
+end
+
+function kernel{T1<:Real,T2<:Real,T3<:Real}(
+        κ::Kernel{T1},
+        x::AbstractArray{T2},
+        y::AbstractArray{T3}
+    )
+    T = promote_type_float(T1, T2)
+    kernel(κ, convert(AbstractArray{T}, x), convert(AbstractArray{T}, y))
+end
+
+function kernelmatrix{T1<:Real}(
+        σ::MemoryLayout,
+        κ::Kernel, 
+        X::AbstractMatrix{T1},
+        symmetrize::Bool = true
+    )
+    T = promote_type_float(T1)
+    U = convert(AbstractMatrix{T}, X)
+    kernelmatrix(σ, κ, U, symmetrize)
+end
+
+function kernelmatrix{T1<:Real,T2<:Real}(
+        σ::MemoryLayout,
+        κ::Kernel, 
+        X::AbstractMatrix{T1},
+        Y::AbstractMatrix{T2}
+    )
+    T = promote_type_float(T1, T2)
+    U = convert(AbstractMatrix{T}, X)
+    V = convert(AbstractMatrix{T}, Y)
+    kernelmatrix(σ,κ, U, V)
+end
