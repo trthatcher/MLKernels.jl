@@ -80,7 +80,7 @@ for layout in (RowMajor, ColumnMajor)
             if size(P,2) != n
                 throw(DimensionMismatch("Pairwise matrix P must be square"))
             elseif size(X, $dim_obs) != n
-                errorstring = string("Dimensions of P must match dimension ", $dim_obs, "of X")
+                errorstring = string("Dimensions of P must match dimension ", $dim_obs, " of X")
                 throw(DimensionMismatch(errorstring))
             end
             return n
@@ -107,44 +107,45 @@ for layout in (RowMajor, ColumnMajor)
             end
             return (n, m)
         end
-
-        function pairwisematrix!{T<:AbstractFloat}(
-                σ::$layout,
-                P::Matrix{T}, 
-                f::PairwiseFunction,
-                X::AbstractMatrix{T},
-                symmetrize::Bool
-            )
-            n = checkdimensions(σ, P, X)
-            for j = 1:n
-                xj = subvector(σ, X, j)
-                for i = 1:j
-                    xi = subvector(σ, X, i)
-                    @inbounds P[i,j] = unsafe_pairwise(f, xi, xj)
-                end
-            end
-            symmetrize ? LinAlg.copytri!(P, 'U', false) : P
-        end
-
-        function pairwisematrix!{T<:AbstractFloat}(
-                σ::$layout,
-                P::Matrix{T}, 
-                f::PairwiseFunction,
-                X::AbstractMatrix{T},
-                Y::AbstractMatrix{T},
-            )
-            n, m = checkdimensions(σ, P, X, Y)
-            for j = 1:m
-                yj = subvector(σ, Y, j)
-                for i = 1:n
-                    xi = subvector(σ, X, i)
-                    @inbounds P[i,j] = unsafe_pairwise(f, xi, yj)
-                end
-            end
-            P
-        end
     end
 end
+
+function pairwisematrix!{T<:AbstractFloat}(
+        σ::MemoryLayout,
+        P::Matrix{T}, 
+        f::PairwiseFunction,
+        X::AbstractMatrix{T},
+        symmetrize::Bool
+    )
+    n = checkdimensions(σ, P, X)
+    for j = 1:n
+        xj = subvector(σ, X, j)
+        for i = 1:j
+            xi = subvector(σ, X, i)
+            @inbounds P[i,j] = unsafe_pairwise(f, xi, xj)
+        end
+    end
+    symmetrize ? LinAlg.copytri!(P, 'U', false) : P
+end
+
+function pairwisematrix!{T<:AbstractFloat}(
+        σ::MemoryLayout,
+        P::Matrix{T}, 
+        f::PairwiseFunction,
+        X::AbstractMatrix{T},
+        Y::AbstractMatrix{T},
+    )
+    n, m = checkdimensions(σ, P, X, Y)
+    for j = 1:m
+        yj = subvector(σ, Y, j)
+        for i = 1:n
+            xi = subvector(σ, X, i)
+            @inbounds P[i,j] = unsafe_pairwise(f, xi, yj)
+        end
+    end
+    P
+end
+
 
 function pairwisematrix{T<:AbstractFloat}(
         σ::MemoryLayout,
@@ -186,56 +187,47 @@ end
   ScalarProduct and SquaredDistance using BLAS/Built-In methods
 ===================================================================================================#
 
-for layout in (RowMajor, ColumnMajor)
+@inline function pairwisematrix!{T<:AbstractFloat}(
+        σ::MemoryLayout,
+        P::Matrix{T}, 
+        f::ScalarProduct,
+        X::Matrix{T},
+        symmetrize::Bool
+    )
+    gramian!(σ, P, X, symmetrize)
+end
 
-    isrowmajor = layout == :(:row)
-    dimension  = isrowmajor ? 1 : 2
+@inline function pairwisematrix!{T<:AbstractFloat}(
+        σ::MemoryLayout,
+        P::Matrix{T}, 
+        f::ScalarProduct,
+        X::Matrix{T},
+        Y::Matrix{T},
+    )
+    gramian!(σ, P, X, Y)
+end
 
-    @eval begin
+function pairwisematrix!{T<:AbstractFloat}(
+        σ::MemoryLayout,
+        P::Matrix{T}, 
+        f::SquaredEuclidean,
+        X::Matrix{T},
+        symmetrize::Bool
+    )
+    gramian!(σ, P, X, false)
+    xᵀx = dotvectors(σ, X)
+    squared_distance!(P, xᵀx, symmetrize)
+end
 
-        @inline function pairwisematrix!{T<:AbstractFloat}(
-                σ::Type{$layout},
-                P::Matrix{T}, 
-                f::ScalarProduct,
-                X::Matrix{T},
-                symmetrize::Bool
-            )
-            gramian!(σ, P, X, symmetrize)
-        end
-
-        @inline function pairwisematrix!{T<:AbstractFloat}(
-                σ::Type{$layout},
-                P::Matrix{T}, 
-                f::ScalarProduct,
-                X::Matrix{T},
-                Y::Matrix{T},
-            )
-            gramian!(σ, P, X, Y)
-        end
-
-        function pairwisematrix!{T<:AbstractFloat}(
-                σ::Type{$layout},
-                P::Matrix{T}, 
-                f::SquaredEuclidean,
-                X::Matrix{T},
-                symmetrize::Bool
-            )
-            gramian!(σ, P, X, false)
-            xᵀx = dotvectors(σ, X)
-            squared_distance!(P, xᵀx, symmetrize)
-        end
-
-        function pairwisematrix!{T<:AbstractFloat}(
-                σ::Type{$layout},
-                P::Matrix{T}, 
-                f::SquaredEuclidean,
-                X::Matrix{T},
-                Y::Matrix{T},
-            )
-            gramian!(σ, P, X, Y)
-            xᵀx = dotvectors(σ, X)
-            yᵀy = dotvectors(σ, Y)
-            squared_distance!(P, xᵀx, yᵀy)
-        end
-    end
+function pairwisematrix!{T<:AbstractFloat}(
+        σ::MemoryLayout,
+        P::Matrix{T}, 
+        f::SquaredEuclidean,
+        X::Matrix{T},
+        Y::Matrix{T},
+    )
+    gramian!(σ, P, X, Y)
+    xᵀx = dotvectors(σ, X)
+    yᵀy = dotvectors(σ, Y)
+    squared_distance!(P, xᵀx, yᵀy)
 end
