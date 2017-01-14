@@ -44,7 +44,7 @@ function kernelmatrix!{T}(
     symmetric_kappamatrix!(κ, P, symmetrize)
 end
 
-function kernelmatrix!{T<:AbstractFloat}(
+function kernelmatrix!{T}(
         σ::MemoryLayout,
         P::Matrix{T}, 
         κ::Kernel{T},
@@ -73,7 +73,7 @@ function kernelmatrix{T}(
     kernelmatrix!(σ, allocate_pairwisematrix(σ, X), κ, X, symmetrize)
 end
 
-function kernelmatrix{T<:AbstractFloat}(
+function kernelmatrix{T}(
         σ::MemoryLayout,
         κ::Kernel{T},
         X::AbstractMatrix{T},
@@ -82,7 +82,7 @@ function kernelmatrix{T<:AbstractFloat}(
     kernelmatrix!(σ, allocate_pairwisematrix(σ, X, Y), κ, X, Y)
 end
 
-function kernelmatrix{T<:AbstractFloat}(
+function kernelmatrix{T}(
         κ::Kernel{T},
         X::AbstractMatrix{T},
         Y::AbstractMatrix{T}
@@ -97,12 +97,12 @@ end
   Generic Catch-All Methods
 ================================================#
 
-function kernel{T1<:Real,T2<:Real,T3<:Real}(κ::Kernel{T1}, x::T2, y::T3)
-    T = promote_type(T1, T2, T3)
+function kernel{T1,T2<:Real,T3<:Real}(κ::Kernel{T1}, x::T2, y::T3)
+    T = promote_type_float(T1, T2, T3)
     kernel(κ, convert(T, x), convert(T, y))
 end
 
-function kernel{T1<:Real,T2<:Real,T3<:Real}(
+function kernel{T1,T2<:Real,T3<:Real}(
         κ::Kernel{T1},
         x::AbstractArray{T2},
         y::AbstractArray{T3}
