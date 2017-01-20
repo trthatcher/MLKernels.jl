@@ -359,22 +359,57 @@ end
 
 @inline eltype{T}(::Kernel{T}) = T
 
-#=
 
-    fieldtype(κ, :a)
 
-    convertfield(θ::DataType) = :(convert($(θ.parameters[1].name]), κ.$(θ
+# Conversion Code Generation
 
-    κ = kernel.name.name
+for κ in (
+        ExponentialKernel,
+        SquaredExponentialKernel,
+        GammaExponentialKernel,
+        RationalQuadraticKernel,
+        GammaRationalKernel,
+        MaternKernel,
+        LinearKernel,
+        PolynomialKernel,
+        ExponentiatedKernel,
+        PeriodicKernel,
+        PowerKernel,
+        LogKernel,
+        SigmoidKernel
+    )
+
     θ = fieldnames(κ)
-    θ = [:convert(T, κ.$(θ).value) for θ in fieldnames(κ)]
-    function convert($(kernel){T},a...)
-        $(kernel){T}, convert(T,a)...)
+
+    kernel_args = Array(Any, length(θ))
+    for i in eachindex(θ)
+        T_i = fieldtype(κ, θ[i]).parameters[1].name
+        if !(T_i in (:T, :U))
+            error("Type parameters must be T (AbstractFloat) or U (Integer)")
+        end
+        kernel_args[i] = :(convert($(fieldtype(κ, θ[i]).parameters[1].name), κ.$(θ[i]).value))
     end
 
+    kernel_sym = κ.name.name
+    kernel_expr = Expr(:call, kernel_sym, kernel_args...)
 
-    need: 
+    if length(κ.parameters) == 2
+        @eval begin
+            function convert{T,U}(::Type{$(kernel_sym){T,U}}, κ::$(kernel_sym))
+                $kernel_expr
+            end
 
-        convert(Kernel{T}, ...)
-        convert(Kernel{T,U}, ...)
-=#
+            function convert{T,_,U}(::Type{$(kernel_sym){T}}, κ::$(kernel_sym){_,U})
+                convert($(kernel_sym){T,U}, κ)
+            end
+        end
+    elseif length(κ.parameters) == 1
+        @eval begin
+            function convert{T}(::Type{$(kernel_sym){T}}, κ::$(kernel_sym))
+                $kernel_expr
+            end
+        end
+    else
+        error("Incorrect number of parameters for code generation.")
+    end
+end
