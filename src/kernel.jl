@@ -277,7 +277,7 @@ function PeriodicKernel{T1<:Real}(α::T1 = 1.0)
     PeriodicKernel{T}(convert(T,α))
 end
 
-@inline pairwisefunction(::PeriodicKernel) = SquaredSine()
+@inline pairwisefunction(::PeriodicKernel) = SineSquared()
 @inline kappa{T}(κ::PeriodicKernel{T}, z::T) = squaredexponentialkernel(z, κ.alpha.value)
 
 
@@ -381,7 +381,9 @@ for κ in (
 
     θ = fieldnames(κ)
 
+    kernel_sym = κ.name.name
     kernel_args = Array(Any, length(θ))
+
     for i in eachindex(θ)
         T_i = fieldtype(κ, θ[i]).parameters[1].name
         if !(T_i in (:T, :U))
@@ -390,13 +392,10 @@ for κ in (
         kernel_args[i] = :(convert($(fieldtype(κ, θ[i]).parameters[1].name), κ.$(θ[i]).value))
     end
 
-    kernel_sym = κ.name.name
-    kernel_expr = Expr(:call, kernel_sym, kernel_args...)
-
     if length(κ.parameters) == 2
         @eval begin
             function convert{T,U}(::Type{$(kernel_sym){T,U}}, κ::$(kernel_sym))
-                $kernel_expr
+                $(Expr(:call, kernel_sym, kernel_args...))
             end
 
             function convert{T,_,U}(::Type{$(kernel_sym){T}}, κ::$(kernel_sym){_,U})
@@ -406,7 +405,7 @@ for κ in (
     elseif length(κ.parameters) == 1
         @eval begin
             function convert{T}(::Type{$(kernel_sym){T}}, κ::$(kernel_sym))
-                $kernel_expr
+                $(Expr(:call, kernel_sym, kernel_args...))
             end
         end
     else

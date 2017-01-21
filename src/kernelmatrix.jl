@@ -65,29 +65,11 @@ function kernelmatrix{T}(
 end
 
 function kernelmatrix{T}(
-        κ::Kernel{T},
-        X::AbstractMatrix{T},
-        symmetrize::Bool = true
-    )
-    σ = RowMajor()
-    kernelmatrix!(σ, allocate_pairwisematrix(σ, X), κ, X, symmetrize)
-end
-
-function kernelmatrix{T}(
         σ::MemoryLayout,
         κ::Kernel{T},
         X::AbstractMatrix{T},
         Y::AbstractMatrix{T}
     )
-    kernelmatrix!(σ, allocate_pairwisematrix(σ, X, Y), κ, X, Y)
-end
-
-function kernelmatrix{T}(
-        κ::Kernel{T},
-        X::AbstractMatrix{T},
-        Y::AbstractMatrix{T}
-    )
-    σ = RowMajor()
     kernelmatrix!(σ, allocate_pairwisematrix(σ, X, Y), κ, X, Y)
 end
 
@@ -97,39 +79,51 @@ end
   Generic Catch-All Methods
 ================================================#
 
-function kernel{T1,T2<:Real,T3<:Real}(κ::Kernel{T1}, x::T2, y::T3)
-    T = promote_type_float(T1, T2, T3)
-    kernel(κ, convert(T, x), convert(T, y))
+function kernel{T}(κ::Kernel{T}, x::Real, y::Real)
+    kernel(κ, T(x), T(y))
 end
 
-function kernel{T1,T2<:Real,T3<:Real}(
-        κ::Kernel{T1},
-        x::AbstractArray{T2},
-        y::AbstractArray{T3}
+function kernel{T,T1,T2}(
+        κ::Kernel{T},
+        x::AbstractArray{T1},
+        y::AbstractArray{T2}
     )
-    T = promote_type_float(T1, T2)
     kernel(κ, convert(AbstractArray{T}, x), convert(AbstractArray{T}, y))
 end
 
-function kernelmatrix{T1<:Real}(
+function kernelmatrix{T,T1}(
         σ::MemoryLayout,
-        κ::Kernel, 
+        κ::Kernel{T}, 
         X::AbstractMatrix{T1},
         symmetrize::Bool = true
     )
-    T = promote_type_float(T1)
     U = convert(AbstractMatrix{T}, X)
     kernelmatrix(σ, κ, U, symmetrize)
 end
 
-function kernelmatrix{T1<:Real,T2<:Real}(
+function kernelmatrix(
+        κ::Kernel,
+        X::AbstractMatrix,
+        symmetrize::Bool = true
+    )
+    kernelmatrix(RowMajor(), κ, X, symmetrize)
+end
+
+function kernelmatrix{T,T1,T2}(
         σ::MemoryLayout,
-        κ::Kernel, 
+        κ::Kernel{T}, 
         X::AbstractMatrix{T1},
         Y::AbstractMatrix{T2}
     )
-    T = promote_type_float(T1, T2)
     U = convert(AbstractMatrix{T}, X)
     V = convert(AbstractMatrix{T}, Y)
-    kernelmatrix(σ,κ, U, V)
+    kernelmatrix(σ, κ, U, V)
+end
+
+function kernelmatrix(
+        κ::Kernel,
+        X::AbstractMatrix,
+        Y::AbstractMatrix
+    )
+    kernelmatrix(RowMajor(), κ, X, Y)
 end
