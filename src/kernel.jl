@@ -6,7 +6,7 @@ abstract Kernel{T<:AbstractFloat}
 
 
 doc"SigmoidKernel(a,c) = tanh(a⋅xᵀy + c)   a ∈ (0,∞), c ∈ (0,∞)"
-immutable SigmoidKernel{T} <: Kernel{T}
+immutable SigmoidKernel{T<:AbstractFloat} <: Kernel{T}
     a::HyperParameter{T}
     c::HyperParameter{T}
     SigmoidKernel(a::T, c::T) = new(
@@ -40,7 +40,7 @@ ismercer(κ::MercerKernel) = true
 
 
 doc"ExponentialKernel(α) = exp(-α⋅‖x-y‖)   α ∈ (0,∞)"
-immutable ExponentialKernel{T} <: MercerKernel{T}
+immutable ExponentialKernel{T<:AbstractFloat} <: MercerKernel{T}
     alpha::HyperParameter{T}
     ExponentialKernel(α::T) = new(
         HyperParameter(α, leftbounded(zero(T), :open))
@@ -62,7 +62,7 @@ end
 
 
 doc"SquaredExponentialKernel(α) = exp(-α⋅‖x-y‖²)   α ∈ (0,∞)"
-immutable SquaredExponentialKernel{T} <: MercerKernel{T}
+immutable SquaredExponentialKernel{T<:AbstractFloat} <: MercerKernel{T}
     alpha::HyperParameter{T}
     SquaredExponentialKernel(α::T) = new(
         HyperParameter(α, leftbounded(zero(T), :open))
@@ -85,7 +85,7 @@ end
 
 
 doc"GammaExponentialKernel(α,γ) = exp(-α⋅‖x-y‖ᵞ)   α ∈ (0,∞), γ ∈ (0,1]"
-immutable GammaExponentialKernel{T} <: MercerKernel{T}
+immutable GammaExponentialKernel{T<:AbstractFloat} <: MercerKernel{T}
     alpha::HyperParameter{T}
     gamma::HyperParameter{T}
     GammaExponentialKernel(α::T, γ::T) = new(
@@ -111,7 +111,7 @@ end
 
 
 doc"RationalQuadraticKernel(α,β) = (1 + α⋅‖x-y‖²)⁻ᵝ   α ∈ (0,∞), β ∈ (0,∞)"
-immutable RationalQuadraticKernel{T} <: MercerKernel{T}
+immutable RationalQuadraticKernel{T<:AbstractFloat} <: MercerKernel{T}
     alpha::HyperParameter{T}
     beta::HyperParameter{T}
     RationalQuadraticKernel(α::T, β::T) = new(
@@ -137,7 +137,7 @@ end
 
 
 doc"GammaRationalKernel(α,β) = (1 + α⋅‖x-y‖²ᵞ)⁻ᵝ   α ∈ (0,∞), β ∈ (0,∞), γ ∈ (0,∞)"
-immutable GammaRationalKernel{T} <: MercerKernel{T}
+immutable GammaRationalKernel{T<:AbstractFloat} <: MercerKernel{T}
     alpha::HyperParameter{T}
     beta::HyperParameter{T}
     gamma::HyperParameter{T}
@@ -166,7 +166,7 @@ end
 
 
 doc"MaternKernel(ν,ρ) = 2ᵛ⁻¹(√(2ν)‖x-y‖²/θ)ᵛKᵥ(√(2ν)‖x-y‖²/θ)/Γ(ν)   ν ∈ (0,∞), ρ ∈ (0,∞)"
-immutable MaternKernel{T} <: MercerKernel{T}
+immutable MaternKernel{T<:AbstractFloat} <: MercerKernel{T}
     nu::HyperParameter{T}
     rho::HyperParameter{T}
     MaternKernel(ν::T, ρ::T) = new(
@@ -196,7 +196,7 @@ end
 
 
 doc"LinearKernel(a,c) = a⋅xᵀy + c   a ∈ (0,∞), c ∈ [0,∞)"
-immutable LinearKernel{T} <: MercerKernel{T}
+immutable LinearKernel{T<:AbstractFloat} <: MercerKernel{T}
     a::HyperParameter{T}
     c::HyperParameter{T}
     LinearKernel(a::T, c::T) = new(
@@ -220,7 +220,7 @@ end
 
 
 doc"PolynomialKernel(a,c,d) = (a⋅xᵀy + c)ᵈ   a ∈ (0,∞), c ∈ [0,∞), d ∈ ℤ+"
-immutable PolynomialKernel{T,U<:Integer} <: MercerKernel{T}
+immutable PolynomialKernel{T<:AbstractFloat,U<:Integer} <: MercerKernel{T}
     a::HyperParameter{T}
     c::HyperParameter{T}
     d::HyperParameter{U}
@@ -249,7 +249,7 @@ end
 
 
 doc"ExponentiatedKernel(α) = exp(α⋅xᵀy)   α ∈ (0,∞)"
-immutable ExponentiatedKernel{T} <: MercerKernel{T}
+immutable ExponentiatedKernel{T<:AbstractFloat} <: MercerKernel{T}
     alpha::HyperParameter{T}
     ExponentiatedKernel(α::T) = new(HyperParameter(α, leftbounded(zero(T), :open)))
 end
@@ -266,7 +266,7 @@ end
 
 
 doc"PeriodicKernel(α,p) = exp(-α⋅Σⱼsin²(xⱼ-yⱼ))"
-immutable PeriodicKernel{T} <: MercerKernel{T}
+immutable PeriodicKernel{T<:AbstractFloat} <: MercerKernel{T}
     alpha::HyperParameter{T}
     PeriodicKernel(α::T) = new(
         HyperParameter(α, leftbounded(zero(T), :open))
@@ -291,7 +291,7 @@ abstract NegativeDefiniteKernel{T} <: Kernel{T}
 
 
 doc"PowerKernel(a,c,γ) = ‖x-y‖²ᵞ   γ ∈ (0,1]"
-immutable PowerKernel{T} <: NegativeDefiniteKernel{T}
+immutable PowerKernel{T<:AbstractFloat} <: NegativeDefiniteKernel{T}
     gamma::HyperParameter{T}
     PowerKernel(γ::T) = new(
         HyperParameter(γ, Interval(Bound(zero(T), :open), Bound(one(T), :closed)))
@@ -309,7 +309,7 @@ end
 
 
 doc"LogKernel(α,γ) = log(1 + α⋅‖x-y‖²ᵞ)   α ∈ (0,∞), γ ∈ (0,1]"
-immutable LogKernel{T} <: NegativeDefiniteKernel{T}
+immutable LogKernel{T<:AbstractFloat} <: NegativeDefiniteKernel{T}
     alpha::HyperParameter{T}
     gamma::HyperParameter{T}
     LogKernel(α::T, γ::T) = new(
@@ -379,17 +379,37 @@ for κ in (
         SigmoidKernel
     )
 
+    p = length(κ.parameters)
+
+    if 1 <= p && p <= 2
+        if κ.parameters[1].ub != AbstractFloat
+            error("First parameter in ", κ, " must be bounded by AbstractFloat")
+        end
+        if p == 2
+            if κ.parameters[2].ub != Integer
+                error("Second parameter in ", κ, " must be bounded by Integer")
+            end
+        end
+    else
+        error("Kernel ", κ, " must have 1 or 2 type parameters")
+    end
+
     θ = fieldnames(κ)
 
     kernel_sym = κ.name.name
     kernel_args = Array(Any, length(θ))
 
     for i in eachindex(θ)
-        T_i = fieldtype(κ, θ[i]).parameters[1].name
-        if !(T_i in (:T, :U))
-            error("Type parameters must be T (AbstractFloat) or U (Integer)")
+        T_θ = fieldtype(κ, θ[i])
+        T_θ <: HyperParameter || error(κ, " must be composed strictly of HyperParameters")
+        
+        if T_θ.parameters[1].ub == AbstractFloat
+            kernel_args[i] = :(convert(T, κ.$(θ[i]).value))
+        elseif T_θ.parameters[1].ub == Integer
+            kernel_args[i] = :(convert(U, κ.$(θ[i]).value))
+        else
+            error("Type parameters must be bounded by AbstractFloat or Integer")
         end
-        kernel_args[i] = :(convert($(fieldtype(κ, θ[i]).parameters[1].name), κ.$(θ[i]).value))
     end
 
     if length(κ.parameters) == 2
@@ -410,5 +430,19 @@ for κ in (
         end
     else
         error("Incorrect number of parameters for code generation.")
+    end
+
+    for ψ in (
+            Kernel,
+            MercerKernel,
+            NegativeDefiniteKernel
+        )
+        if κ <: ψ
+            @eval begin
+                function convert{T}(::Type{$(ψ.name.name){T}}, κ::$(kernel_sym))
+                    convert($(kernel_sym){T}, κ)
+                end
+            end
+        end
     end
 end
