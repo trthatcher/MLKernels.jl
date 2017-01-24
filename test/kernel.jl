@@ -25,15 +25,17 @@ for k in kernel_functions
             end
         end
     end
+end
 
-    # Test kappa function
+info("Testing ", MOD.kappa)
+for k in kernel_functions
     k_tmp = get(kernel_functions_kappa, k, x->error(""))
     for T in FloatingPointTypes
-        def_args_T = [typeof(θ) <: AbstractFloat ? convert(T,θ) : θ for θ in def_args]
-        K = (k)(def_args_T...)
+        K = convert(Kernel{T}, (k)())
+        args = T[getfield(K,theta).value for theta in fieldnames(K)]
         for z in (zero(T), one(T), convert(T,2))
             v = MOD.kappa(K, z)
-            v_tmp = (k_tmp)(z, def_args_T...)
+            v_tmp = (k_tmp)(z, args...)
             @test_approx_eq v v_tmp
         end
     end

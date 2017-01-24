@@ -71,3 +71,56 @@ for T in (Float32, Float64)
 end
 
 info("Testing ", MOD.kernelmatrix)
+for T in (Float32, Float64)
+    X_set = [rand(Float32,p) for i = 1:n]
+    Y_set = [rand(Float32,p) for i = 1:m]
+
+    K_tst_nn = Array(T, n, n)
+    K_tst_nm = Array(T, n, m)
+
+    for layout in (RowMajor(), ColumnMajor())
+        isrowmajor = layout == RowMajor()
+        X = convert(Array{T}, isrowmajor ? transpose(hcat(X_set...)) : hcat(X_set...))
+        Y = convert(Array{T}, isrowmajor ? transpose(hcat(Y_set...)) : hcat(Y_set...))
+
+        X_alt = convert(Array{T == Float32 ? Float64 : Float32}, X)
+        Y_alt = convert(Array{T == Float32 ? Float64 : Float32}, Y)
+
+        for f in kernel_functions
+            F = convert(f{T}, (f)())
+
+            K_tmp = MOD.kernelmatrix!(layout, K_tst_nn, F, X, true)
+
+            K_tst = MOD.kernelmatrix(layout, F, X, true)
+            @test_approx_eq K_tmp K_tst
+            @test eltype(K_tst) == T
+
+            K_tst = MOD.kernelmatrix(layout, F, X_alt)
+            @test_approx_eq K_tmp K_tst
+            @test eltype(K_tst) == T
+
+            if isrowmajor
+                K_tst = MOD.kernelmatrix(F, X_alt)
+                @test_approx_eq K_tmp K_tst
+                @test eltype(K_tst) == T
+            end
+
+            K_tmp = MOD.kernelmatrix!(layout, K_tst_nm, F, X, Y)
+
+            K_tst = MOD.kernelmatrix(layout, F, X, Y)
+            @test_approx_eq K_tmp K_tst
+            @test eltype(K_tst) == T
+
+            K_tst = MOD.kernelmatrix(layout, F, X_alt, Y_alt)
+            @test_approx_eq K_tmp K_tst
+            @test eltype(K_tst) == T
+
+            if isrowmajor
+                K_tst = MOD.kernelmatrix(F, X_alt, Y_alt)
+                @test_approx_eq K_tmp K_tst
+                @test eltype(K_tst) == T
+            end
+        end
+    end
+end
+

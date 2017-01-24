@@ -16,14 +16,18 @@ end
   Generic Kernel Matrix Calculation
 ================================================#
 
-function kappamatrix!{T}(κ::Kernel{T}, P::AbstractMatrix{T})
+function kappamatrix!{T<:AbstractFloat}(κ::Kernel{T}, P::AbstractMatrix{T})
     for i in eachindex(P)
         @inbounds P[i] = kappa(κ, P[i])
     end
     P
 end
 
-function symmetric_kappamatrix!{T}(κ::Kernel{T}, P::AbstractMatrix{T}, symmetrize::Bool)
+function symmetric_kappamatrix!{T<:AbstractFloat}(
+        κ::Kernel{T},
+        P::AbstractMatrix{T},
+        symmetrize::Bool
+    )
     if !((n = size(P,1)) == size(P,2))
         throw(DimensionMismatch("Pairwise matrix must be square."))
     end
@@ -33,7 +37,7 @@ function symmetric_kappamatrix!{T}(κ::Kernel{T}, P::AbstractMatrix{T}, symmetri
     symmetrize ? LinAlg.copytri!(P, 'U') : P
 end
 
-function kernelmatrix!{T}(
+function kernelmatrix!{T<:AbstractFloat}(
         σ::MemoryLayout,
         P::Matrix{T}, 
         κ::Kernel{T},
@@ -44,7 +48,7 @@ function kernelmatrix!{T}(
     symmetric_kappamatrix!(κ, P, symmetrize)
 end
 
-function kernelmatrix!{T}(
+function kernelmatrix!{T<:AbstractFloat}(
         σ::MemoryLayout,
         P::Matrix{T}, 
         κ::Kernel{T},
@@ -55,7 +59,7 @@ function kernelmatrix!{T}(
     kappamatrix!(κ, P)
 end
 
-function kernelmatrix{T}(
+function kernelmatrix{T<:AbstractFloat}(
         σ::MemoryLayout,
         κ::Kernel{T},
         X::AbstractMatrix{T},
@@ -64,7 +68,7 @@ function kernelmatrix{T}(
     kernelmatrix!(σ, allocate_pairwisematrix(σ, X), κ, X, symmetrize)
 end
 
-function kernelmatrix{T}(
+function kernelmatrix{T<:AbstractFloat}(
         σ::MemoryLayout,
         κ::Kernel{T},
         X::AbstractMatrix{T},
