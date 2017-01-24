@@ -84,6 +84,17 @@ kernel_functions_kappa = Dict(
     SigmoidKernel            => (z,a,c)   -> tanh(a*z+c)
 )
 
+
+kernel_functions_pairwise = Dict(
+    ExponentialKernel        => Euclidean,
+    LinearKernel             => ScalarProduct,
+    PolynomialKernel         => ScalarProduct,
+    ExponentiatedKernel      => ScalarProduct,
+    PeriodicKernel           => SineSquared,
+    SigmoidKernel            => ScalarProduct
+)
+
+
 #=
 pairwise_functions_properties = Dict( 
                         #|mercer|negdef|metric|inprod|neg   |zero |pos

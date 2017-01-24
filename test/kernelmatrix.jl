@@ -2,6 +2,50 @@ n = 30
 m = 20
 p = 5
 
+info("Testing ", MOD.kernel)
+for T in (Float32, Float64)
+    x = rand(T,p)
+    y = rand(T,p)
+
+    for f in kernel_functions
+        P = (get(kernel_functions_pairwise, f, SquaredEuclidean))()
+        F = convert(f{T}, (f)())
+        
+        @test_approx_eq MOD.kernel(F, x[1], y[1]) MOD.kappa(F, MOD.pairwise(P, x[1], y[1]))
+        @test_approx_eq MOD.kernel(F, x, y)       MOD.kappa(F, MOD.pairwise(P, x, y))
+    end
+end
+
+info("Testing ", MOD.kappamatrix!)
+for T in (Float32, Float64)
+    X = rand(T,n,m)
+
+    for f in kernel_functions
+        F = convert(f{T}, (f)())
+
+        K_tmp = [MOD.kappa(F,X[i]) for i in CartesianRange(size(X))]
+        K_tst = MOD.kappamatrix!(F, copy(X))
+        
+        @test_approx_eq K_tmp K_tst
+    end
+end
+
+
+info("Testing ", MOD.symmetric_kappamatrix!)
+for T in (Float32, Float64)
+    X = LinAlg.copytri!(rand(T,n,n), 'U')
+
+    for f in kernel_functions
+        F = convert(f{T}, (f)())
+
+        K_tmp = [MOD.kappa(F,X[i]) for i in CartesianRange(size(X))]
+        K_tst = MOD.symmetric_kappamatrix!(F, copy(X), true)
+        
+        @test_approx_eq K_tmp K_tst
+    end
+end
+
+
 info("Testing ", MOD.kernelmatrix!)
 for T in (Float32, Float64)
     X_set = [rand(T,p) for i = 1:n]
@@ -25,3 +69,5 @@ for T in (Float32, Float64)
         end
     end
 end
+
+info("Testing ", MOD.kernelmatrix)

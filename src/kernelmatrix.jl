@@ -2,11 +2,11 @@
   Generic Kernel Vector Operation
 ================================================#
 
-function kernel{T}(κ::Kernel{T}, x::T, y::T)
+function kernel{T<:AbstractFloat}(κ::Kernel{T}, x::T, y::T)
     kappa(κ, pairwise(pairwisefunction(κ), x, y))
 end
 
-function kernel{T}(κ::Kernel{T}, x::AbstractArray{T}, y::AbstractArray{T})
+function kernel{T<:AbstractFloat}(κ::Kernel{T}, x::AbstractArray{T}, y::AbstractArray{T})
     kappa(κ, pairwise(pairwisefunction(κ), x, y))
 end
 
