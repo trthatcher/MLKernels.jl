@@ -3,34 +3,40 @@
 ===================================================================================================#
 
 for layout in (RowMajor, ColumnMajor)
-    isrowmajor = layout == RowMajor
+    (dim, S, fulldim) = layout == RowMajor ? (1, :S, :(:)) : (2, :(:), :S)
+
     @eval begin
-        function samplematrix(
+        function samplematrix{T<:AbstractFloat}(
                 σ::$layout,
-                X::Matrix{T},
+                X::Matrix,
                 r::T
             )
             0 < r <= 1 || error("Sample rate must be in range (0,1]")
-            n = size(X,$(isrowmajor ? 1 : 2))
+            n = size(X, $dim)
             s = max(Int64(trunc(n*r)),1)
             S = [rand(1:n) for i = 1:s]
-            X = getindex(X, $(isrowmajor ? :S : :(:)), $(isrowmajor ? :(:) : :S))
+            
         end
+
+        function nystrom_sample{T<:AbstractFloat,U<:Integer}(
+                σ::$layout,
+                κ::Kernel{T},
+                X::Matrix{T},
+                S::Vector{U}
+            )
+            Xs = getindex(X, $S, $fulldim)
+            C = kernelmatrix(σ, κ, Xs, X)   # kernel matrix of X and sampled X
+            Cs = getindex(C, :, S)  # purely sampled component of C
+            return (C, Cs)
+        end
+
     end
 end
 
-function nystrom{T<:Base.LinAlg.BlasReal}(
-        σ::MemoryOrder,
-        κ::Kernel{T},
-        X::Matrix{T},
-        Xs::Matrix{T}
-    )
-    # Get kernel matrix of X and Xs (sampled observations of X)
-    C = kernelmatrix(σ, κ, Xs, X)
-
-    # Compute eigendecomposition and get D
-    tol = eps(T)*n
-    QΛQᵀ = eigfact!(Symmetric(C[:,s]))
+function nystrom_pinv!{T<:Base.LinAlg.BlasReal}(Cs::Matrix{T})
+    # Compute eigendecomposition of sampled component of C
+    tol = eps(T)*size(Cs,2)
+    QΛQᵀ = eigfact!(Symmetric(Cs))
 
     # Solve for D = Λ^(-1/2) (pseudo inverse - use tolerance from before factorization)
     D = QΛQᵀ.values
@@ -39,13 +45,13 @@ function nystrom{T<:Base.LinAlg.BlasReal}(
     end
 
     # Scale eigenvectors by D
-    V = VΛVᵀ.vectors
-    VD = scale!(V, D)  # Scales column i of V by D[i]
+    Q = QΛQᵀ.vectors
+    QD = scale!(Q, D)  # Scales column i of Q by D[i]
 
-    # W := (VD)(VD)ᵀ = (VΛVᵀ)^(-1)  (pseudo inverse)
-    W = LinAlg.syrk_wrapper!(Array(T,n,n), 'N', DV)
+    # W := (QD)(QD)ᵀ = (QΛQᵀ)^(-1)  (pseudo inverse)
+    W = LinAlg.syrk_wrapper!(similar(QD), 'N', QD)
 
-    return (LinAlg.copytri!(W, 'U'), C)
+    return LinAlg.copytri!(W, 'U')
 end
 
 immutable NystromFact{T<:Base.LinAlg.BlasReal}
@@ -54,12 +60,13 @@ immutable NystromFact{T<:Base.LinAlg.BlasReal}
 end
 
 function NystromFact{T<:Base.LinAlg.BlasReal}(
-        σ::MemoryOrder,
+        σ::MemoryLayout,
         κ::Kernel{T},
         X::Matrix{T},
         r::AbstractFloat = convert(T,0.15)
     )
-    W, C = nystrom(σ, κ, X, samplematrix(X,r))
+    C, Cs = nystrom_sample(σ, κ, X, samplematrix(σ, X, r))
+    W = nystrom_pinv!(Cs)
     NystromFact{T}(W, C)
 end
 

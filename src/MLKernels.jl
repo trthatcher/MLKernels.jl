@@ -95,5 +95,6 @@ include("pairwise.jl")
 include("pairwisematrix.jl")
 include("kernel.jl")
 include("kernelmatrix.jl")
+include("kernelmatrixapproximation.jl")
     
 end # MLKernels
