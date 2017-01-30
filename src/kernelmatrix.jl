@@ -131,3 +131,21 @@ function kernelmatrix(
     )
     kernelmatrix(RowMajor(), κ, X, Y)
 end
+
+
+
+#===================================================================================================
+  Kernel Centering
+===================================================================================================#
+
+function centerkernelmatrix!{T<:AbstractFloat}(K::Matrix{T})
+    μx = vec(mean(K,2))
+    μy = vec(mean(K,1))
+    μ  = mean(K)
+
+    for I in CartesianRange(size(K))
+        K[I] += μ - μx[I[1]] - μy[I[2]]
+    end
+    return K
+end
+centerkernelmatrix(K::Matrix) = centerkernelmatrix!(copy(K))

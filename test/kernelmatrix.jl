@@ -7,12 +7,20 @@ for T in (Float32, Float64)
     x = rand(T,p)
     y = rand(T,p)
 
+    x_alt = rand(T == Float32 ? Float64 : Float32, p)
+
     for f in kernel_functions
         P = (get(kernel_functions_pairwise, f, SquaredEuclidean))()
         F = convert(f{T}, (f)())
         
         @test_approx_eq MOD.kernel(F, x[1], y[1]) MOD.kappa(F, MOD.pairwise(P, x[1], y[1]))
         @test_approx_eq MOD.kernel(F, x, y)       MOD.kappa(F, MOD.pairwise(P, x, y))
+
+        z = MOD.kernel(F, x_alt[1], y[1])
+        @test typeof(z) == T
+
+        z = MOD.kernel(F, x_alt, y)
+        @test typeof(z) == T
     end
 end
 
@@ -42,6 +50,7 @@ for T in (Float32, Float64)
         K_tst = MOD.symmetric_kappamatrix!(F, copy(X), true)
         
         @test_approx_eq K_tmp K_tst
+        @test_throws DimensionMismatch MOD.symmetric_kappamatrix!(F, rand(T, p, p+1), true)
     end
 end
 
@@ -124,3 +133,24 @@ for T in (Float32, Float64)
     end
 end
 
+info("Testing ", MOD.centerkernelmatrix!)
+for T in FloatingPointTypes
+    X = rand(T, n, p)
+    Y = rand(T, m, p)
+
+    K = X*transpose(X)
+    MOD.centerkernelmatrix!(K)
+
+    Xc = X .- mean(X,1)
+    Kc = Xc*transpose(Xc)
+
+    @test_approx_eq K Kc
+
+    K = X*transpose(Y)
+    MOD.centerkernelmatrix!(K)
+
+    Yc = Y .- mean(Y,1)
+    Kc = Xc*transpose(Yc)
+
+    @test_approx_eq K Kc
+end

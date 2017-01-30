@@ -1,170 +1,77 @@
 #===================================================================================================
-  Kernel Standardization
-===================================================================================================#
-
-function centerkernelmatrix!{T<:AbstractFloat}(
-        K::Matrix{T},
-        μx_κ::Vector{T},
-        μy_κ::Vector{T},
-        μ_κ::T = mean(K)
-    )
-    n, m = size(K)
-    length(μx_κ) == n || throw(DimensionMismatch("Kernel statistics do not match matrix."))
-    length(μy_κ) == m || throw(DimensionMismatch("Kernel statistics do not match matrix."))
-    for j = 1:m, i = 1:n
-        @inbounds K[i,j] += μ_κ - μx_κ[i] - μy_κ[j]
-    end
-    return K
-end
-
-function centerkernel!{T<:AbstractFloat}(K::Matrix{T})
-    centerkernelmatrix!(K, vec(mean(K,2)), vec(mean(K,1)), mean(K))
-end
-centerkernel{T<:AbstractFloat}(K::Matrix{T}) = centerkernel!(copy(K))
-
-
-#== Kernel Centerer ==#
-
-type KernelCenterer{T<:AbstractFloat}
-    mux_kappa::Vector{T}
-    mu_kappa::T
-end
-function KernelCenterer{T<:AbstractFloat}(K::Matrix{T})
-    μx_κ = vec(mean(K,2))
-    μ_κ = mean(μx_κ)
-    KernelCenterer{T}(μx_κ, μ_κ)
-end
-
-function centerkernel!{T<:AbstractFloat}(KC::KernelCenterer{T}, K::Matrix{T})
-    centerkernelmatrix!(K, KC.mux_kappa, vec(mean(K,1)), KC.mu_kappa)
-end
-centerkernel{T<:AbstractFloat}(KC::KernelCenterer{T}, K::Matrix{T}) = centerkernel!(KC, copy(K))
-
-
-#== Kernel Transformer ==#
-
-type KernelTransformer{T<:AbstractFloat}
-    order::MemoryOrder
-    kappa::RealKernel{T}
-    X::AbstractMatrix{T}
-    KC::Nullable{KernelCenterer{T}}
-end
-
-function KernelTransformer{T<:AbstractFloat}(
-        σ::MemoryOrder,
-        κ::RealKernel{T},
-        X::AbstractMatrix{T},
-        center_kernel::Bool = true,
-        copy_data::Bool = true
-    )
-    KC = center_kernel ? Nullable(KernelCenterer(kernelmatrix(σ, κ, X, true))) :
-                         Nullable{KernelCenterer{T}}()
-    KernelTransformer{T}(σ, deepcopy(κ), copy_data ? copy(X) : X, KC)
-end
-
-function KernelTransformer{T1<:Real,T2<:Real}(
-        σ::MemoryOrder,
-        κ::RealKernel{T1},
-        X::AbstractMatrix{T2},
-        center_kernel::Bool = true,
-        copy_data::Bool = true
-    )
-    T = promote_type_float(T1, T2)
-    if T2 != T && copy_data == false
-        warn("Argument copy_data = false will be ignored due to implicit conversion-copy")
-    end
-    KernelTransformer(σ, convert(RealKernel{T}, κ), convert(AbstractMatrix{T}, X), 
-                      center_kernel, copy_data)
-end
-
-function KernelTransformer(
-        κ::RealKernel,
-        X::AbstractMatrix,
-        center_kernel::Bool = true,
-        copy_data::Bool = true
-    )
-    KernelTransformer(Val{:row}, κ, X, center_kernel, copy_data)
-end
-
-function pairwisematrix!{T<:AbstractFloat}(
-        K::Matrix{T},
-        KT::KernelTransformer{T},
-        Y::AbstractMatrix{T}
-    )
-    pairwisematrix!(KT.order, K, KT.kappa, KT.X, Y)
-    isnull(KT.KC) ? K : centerkernel!(get(KT.KC), K)
-end
-function pairwisematrix{T<:AbstractFloat}(KT::KernelTransformer{T}, Y::AbstractMatrix{T})
-    pairwisematrix!(init_pairwisematrix(KT.order, KT.X, Y), KT, Y)
-end
-
-
-#===================================================================================================
   Nystrom Approximation
 ===================================================================================================#
 
-function srswr(n::Integer, r::AbstractFloat)
-    0 < r <= 1 || error("Sample rate must be between 0 and 1")
-    ns = Int64(trunc(n*r))
-    return Int64[Int64(trunc(u*n +1)) for u in rand(ns)]
+for layout in (RowMajor, ColumnMajor)
+    isrowmajor = layout == RowMajor
+    @eval begin
+        function samplematrix(
+                σ::$layout,
+                X::Matrix{T},
+                r::T
+            )
+            0 < r <= 1 || error("Sample rate must be in range (0,1]")
+            n = size(X,$(isrowmajor ? 1 : 2))
+            s = max(Int64(trunc(n*r)),1)
+            S = [rand(1:n) for i = 1:s]
+            X = getindex(X, $(isrowmajor ? :S : :(:)), $(isrowmajor ? :(:) : :S))
+        end
+    end
 end
 
-function nystrom{T<:AbstractFloat}(
+function nystrom{T<:Base.LinAlg.BlasReal}(
         σ::MemoryOrder,
-        f::RealKernel{T},
+        κ::Kernel{T},
         X::Matrix{T},
-        s::Vector{Int64}
+        Xs::Matrix{T}
     )
-    n = length(s)
-    Xs = σ == Val{:row} ? X[s,:] : X[:,s]
-    C = kernelmatrix(σ, f, Xs, X)
+    # Get kernel matrix of X and Xs (sampled observations of X)
+    C = kernelmatrix(σ, κ, Xs, X)
+
+    # Compute eigendecomposition and get D
     tol = eps(T)*n
-    VDVᵀ = eigfact!(Symmetric(C[:,s]))
-    D = VDVᵀ.values
+    QΛQᵀ = eigfact!(Symmetric(C[:,s]))
+
+    # Solve for D = Λ^(-1/2) (pseudo inverse - use tolerance from before factorization)
+    D = QΛQᵀ.values
     for i in eachindex(D)
         @inbounds D[i] = abs(D[i]) <= tol ? zero(T) : 1/sqrt(D[i])
     end
-    V = VDVᵀ.vectors
-    DV = scale!(V,D)
+
+    # Scale eigenvectors by D
+    V = VΛVᵀ.vectors
+    VD = scale!(V, D)  # Scales column i of V by D[i]
+
+    # W := (VD)(VD)ᵀ = (VΛVᵀ)^(-1)  (pseudo inverse)
     W = LinAlg.syrk_wrapper!(Array(T,n,n), 'N', DV)
+
     return (LinAlg.copytri!(W, 'U'), C)
 end
 
-function nystrom{T<:AbstractFloat}(
-        σ::MemoryOrder,
-        f::RealKernel{T},
-        X::Matrix{T},
-        r::AbstractFloat = 0.15
-    )
-    n = size(X, σ == Val{:row} ? 1 : 2)
-    s = srswr(n, r)
-    nystrom(σ, f, X, s)
-end
-
-immutable NystromFact{T<:AbstractFloat}
+immutable NystromFact{T<:Base.LinAlg.BlasReal}
     W::Matrix{T}
     C::Matrix{T}
 end
 
-function NystromFact{T<:AbstractFloat}(
+function NystromFact{T<:Base.LinAlg.BlasReal}(
         σ::MemoryOrder,
-        f::RealKernel{T},
+        κ::Kernel{T},
         X::Matrix{T},
-        r::AbstractFloat = 0.15
+        r::AbstractFloat = convert(T,0.15)
     )
-    W, C = nystrom(σ, f, X, r)
+    W, C = nystrom(σ, κ, X, samplematrix(X,r))
     NystromFact{T}(W, C)
 end
 
-function NystromFact{T<:AbstractFloat}(
-        f::RealKernel{T},
+function NystromFact{T<:Base.LinAlg.BlasReal}(
+        κ::Kernel{T},
         X::Matrix{T},
         r::AbstractFloat = 0.15
     )
-    NystromFact(Val{:row}, f, X, r)
+    NystromFact(RowMajor(), κ, X, r)
 end
 
-function pairwisematrix{T<:AbstractFloat}(CᵀWC::NystromFact{T})
+function pairwisematrix{T<:Base.LinAlg.BlasReal}(CᵀWC::NystromFact{T})
     W = CᵀWC.W
     C = CᵀWC.C
     At_mul_B(C,W)*C
