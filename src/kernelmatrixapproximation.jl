@@ -59,26 +59,26 @@ immutable NystromFact{T<:Base.LinAlg.BlasReal}
     C::Matrix{T}
 end
 
-function NystromFact{T<:Base.LinAlg.BlasReal}(
+function NystromFact{T<:Base.LinAlg.BlasReal,U<:Integer}(
         σ::MemoryLayout,
         κ::Kernel{T},
         X::Matrix{T},
-        r::AbstractFloat = convert(T,0.15)
+        S::Vector{U} = samplematrix(σ, X, convert(T,0.15))
     )
-    C, Cs = nystrom_sample(σ, κ, X, samplematrix(σ, X, r))
+    C, Cs = nystrom_sample(σ, κ, X, S)
     W = nystrom_pinv!(Cs)
     NystromFact{T}(W, C)
 end
 
-function NystromFact{T<:Base.LinAlg.BlasReal}(
+function NystromFact{T<:Base.LinAlg.BlasReal,U<:Integer}(
         κ::Kernel{T},
         X::Matrix{T},
-        r::AbstractFloat = 0.15
+        S::Vector{U} = samplematrix(RowMajor(), X, convert(T,0.15))
     )
-    NystromFact(RowMajor(), κ, X, r)
+    NystromFact(RowMajor(), κ, X, S)
 end
 
-function pairwisematrix{T<:Base.LinAlg.BlasReal}(CᵀWC::NystromFact{T})
+function kernelmatrix{T<:Base.LinAlg.BlasReal}(CᵀWC::NystromFact{T})
     W = CᵀWC.W
     C = CᵀWC.C
     At_mul_B(C,W)*C

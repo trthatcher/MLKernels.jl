@@ -26,23 +26,6 @@ export
     RowMajor,
     ColumnMajor,
 
-    # Pairwise Function Type
-    PairwiseFunction,
-        InnerProduct,
-            ScalarProduct,
-        PreMetric,
-            ChiSquared,
-            SineSquared,
-            Metric,
-                Euclidean,
-                SquaredEuclidean,
-
-    # Pairwise Matrix
-    pairwise,
-    pairwisematrix,
-    pairwisematrix!,
-
-
     # Kernel Function Type
     Kernel,
         MercerKernel, 
@@ -70,7 +53,10 @@ export
     # Kernel Matrix
     kernel,
     kernelmatrix,
-    kernelmatrix!
+    kernelmatrix!,
+
+    # Kernel Approximation
+    NystromFact
 
 include("HyperParameters/HyperParameters.jl")
 using MLKernels.HyperParameters: 

@@ -1,12 +1,12 @@
-n = 30
+n = 2
 m = 20
 p = 5
 
 info("Testing ", MOD.samplematrix)
 X = Array(Int64, n, m)
 r = 0.15
-@test length(MOD.samplematrix(RowMajor(), X, r)) == Int64(trunc(n*r))
-@test length(MOD.samplematrix(ColumnMajor(), X, r)) == Int64(trunc(m*r))
+@test length(MOD.samplematrix(RowMajor(), X, r)) == max(Int64(trunc(n*r)),1)
+@test length(MOD.samplematrix(ColumnMajor(), X, r)) == max(Int64(trunc(m*r)),1)
 
 
 info("Testing ", MOD.nystrom_sample)
@@ -28,24 +28,29 @@ for T in FloatingPointTypes
     end
 end
 
-#=
-info("Testing ", MOD.nystrom)
+info("Testing ", MOD.nystrom_pinv!)
 for T in FloatingPointTypes
     X = rand(T, n, p)
-    F = convert(Kernel{T}, GaussianKernel())
+    XtX = X'X
 
-    K = kernelmatrix(RowMajor(), F, X)
+    @test_approx_eq pinv(XtX) MOD.nystrom_pinv!(copy(X'X))
+end
+
+info("Testing ", MOD.NystromFact)
+for T in FloatingPointTypes
+    F = convert(Kernel{T}, GaussianKernel())
+    X = rand(T, n+3, p)
+    S = [i for i = 1:n]
 
     for layout in (RowMajor(), ColumnMajor())
-        X_tst = layout == RowMajor ? X : X'
+        X_tst, Xs_tst = layout == RowMajor() ? (X, X[S,:]) : (X', transpose(X[S,:]))
 
-        W, C = MOD.nystrom(layout, F, X_tst, X_tst)
-        N = (C'W)*C
-        @test_approx_eq N K
+        C_tst = transpose(kernelmatrix(layout, F, X_tst, Xs_tst))
+        W_tst = pinv(kernelmatrix(layout, F, Xs_tst))
+
+        KF = NystromFact(layout, F, X_tst, S)
+
+        @test_approx_eq KF.C C_tst
+        @test_approx_eq KF.W W_tst
     end
-
-    W, C = MOD.nystrom(ColumnMajor(), F, X', X')
-    N = (C'W)*C
-    @test_approx_eq N K
 end
-=#
