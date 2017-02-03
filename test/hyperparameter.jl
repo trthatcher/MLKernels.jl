@@ -1,4 +1,4 @@
-info("Testing ", Bound.name.name)
+info("Testing ", MOD.Bound)
 for T in (FloatingPointTypes..., IntegerTypes...)
     for isopen in (true, false)
         B = Bound(one(T), isopen)
@@ -18,7 +18,7 @@ for T in (FloatingPointTypes..., IntegerTypes...)
     end
 end
 
-info("Testing ", Interval.name.name)
+info("Testing ", MOD.Interval)
 for T in (FloatingPointTypes..., IntegerTypes...)
     for lisopen in (true, false), uisopen in (true, false)
         Bl = Bound(zero(T), lisopen)
@@ -112,31 +112,8 @@ for T in (FloatingPointTypes..., IntegerTypes...)
         @test MOD.checkbounds(I,  one(T)) == true
     end
 end
-#=
-info("Testing ", Variable.name.name)
-for T in (FloatingPointTypes..., IntegerTypes...)
 
-    v = Variable(one(T))
-    @test v.value   == one(T)
-    @test v.isfixed == false
-
-    @test Variable(one(T), true).value   == one(T)
-    @test Variable(one(T), true).isfixed == false
-
-    @test fixed(one(T)).value   == one(T)
-    @test fixed(one(T)).isfixed == true
-
-    if T in FloatingPointTypes
-        @test eltype(convert(Variable{Float32}, v)) == Float32
-        @test eltype(convert(Variable{Float64}, v)) == Float64
-    else
-        @test eltype(convert(Variable{Int32}, v)) == Int32
-        @test eltype(convert(Variable{Int64}, v)) == Int64
-    end
-end
-=#
-
-info("Testing ", HyperParameter.name.name)
+info("Testing ", MOD.HyperParameter)
 for T in (FloatingPointTypes..., IntegerTypes...)
     I = rightbounded(one(T), :open)
 
@@ -148,27 +125,4 @@ for T in (FloatingPointTypes..., IntegerTypes...)
     show(DevNull, HyperParameter(zero(T), I))
 
     P = HyperParameter(convert(T,2), unbounded(T))
-
-    @test_approx_eq 3*P 3*2
-    @test_approx_eq P*3 3*2
-
-    @test_approx_eq 3/P 3/2
-    @test_approx_eq P/3 2/3
-
-    if !(T <: Unsigned)
-        @test_approx_eq -P  -2
-        @test_approx_eq 3-P 3-2
-        @test_approx_eq P-3 2-3
-    end
-
-    @test_approx_eq 3^P 3^2
-    if !(T <: Integer)
-        @test_approx_eq P^convert(T,0.5) 2^convert(T,0.5)
-    end
-    @test_approx_eq P^3 2^3
-
-    @test_approx_eq besselk(P, 1) besselk(2,1)
-    @test_approx_eq exp(P) exp(2)
-    @test_approx_eq gamma(P) gamma(2)
-    @test_approx_eq tanh(P) tanh(2)
 end

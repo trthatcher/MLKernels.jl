@@ -19,29 +19,3 @@ end
 function show{T}(io::IO, θ::HyperParameter{T})
     print(io, "HyperParameter{" * string(T) * "}(", θ.value, ") ∈ ", θ.bounds)
 end
-
-@inline *(a::Real, v::HyperParameter) = *(a, v.value)
-@inline *(v::HyperParameter, a::Real) = *(v.value, a)
-
-@inline /(a::Real, v::HyperParameter) = /(a, v.value)
-@inline /(v::HyperParameter, a::Real) = /(v.value, a)
-
-@inline +(a::Real, v::HyperParameter) = +(a, v.value)
-@inline +(v::HyperParameter, a::Real) = +(v.value, a)
-
-@inline -(v::HyperParameter) = -(v.value)
-@inline -(a::Real, v::HyperParameter) = -(a, v.value)
-@inline -(v::HyperParameter, a::Real) = -(v.value, a)
-
-@inline ^(a::Real, v::HyperParameter)          = ^(a, v.value)
-@inline ^(v::HyperParameter, a::Integer)       = ^(v.value, a)
-@inline ^(v::HyperParameter, a::AbstractFloat) = ^(v.value, a)
-
-@inline besselk(v::HyperParameter, x::Real) = besselk(v.value, x)
-@inline exp(v::HyperParameter)   = exp(v.value)
-@inline gamma(v::HyperParameter) = gamma(v.value)
-@inline tanh(v::HyperParameter)  = tanh(v.value)
-
-@inline ==(a::Real, v::HyperParameter) = ==(a, v.value)
-@inline ==(v::HyperParameter, a::Real) = ==(v.value, a)
-@inline ==(v1::HyperParameter, v2::HyperParameter) = ==(v1.value, v2.value)
