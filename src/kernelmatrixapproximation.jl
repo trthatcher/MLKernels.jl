@@ -33,15 +33,16 @@ for layout in (RowMajor, ColumnMajor)
     end
 end
 
-function nystrom_pinv!{T<:Base.LinAlg.BlasReal}(Cs::Matrix{T})
+function nystrom_pinv!{T<:Base.LinAlg.BlasReal}(Cs::Matrix{T}, tol::T = eps(T)*size(Cs,1))
     # Compute eigendecomposition of sampled component of C
-    tol = eps(T)*size(Cs,2)
     QΛQᵀ = eigfact!(Symmetric(Cs))
 
     # Solve for D = Λ^(-1/2) (pseudo inverse - use tolerance from before factorization)
     D = QΛQᵀ.values
+    λ_tol = maximum(D)*tol
+
     for i in eachindex(D)
-        @inbounds D[i] = abs(D[i]) <= tol ? zero(T) : 1/sqrt(D[i])
+        @inbounds D[i] = abs(D[i]) <= λ_tol ? zero(T) : one(T)/sqrt(D[i])
     end
 
     # Scale eigenvectors by D

@@ -1,372 +1,185 @@
 ----------------
-Kernel Kernels
+Kernel Functions
 ----------------
 
-A number of popular kernels have been pre-defined for ease of use. Below is a
-summary table for quick reference:
 
-=================== ================================== ======= =================
-Kernel              Constructor                        Mercer  Negative Definite
-=================== ================================== ======= =================
-:ref:`kern-scprod`  ``ScalarProductKernel()``          ✓       ✗
-:ref:`kern-sqdist`  ``SquaredDistanceKernel(t)``       ✗       ✓
-:ref:`kern-sinsq`   ``SineSquaredKernel(p,t)``         ✗       ✓
-:ref:`kern-chisq`   ``ChiSquaredKernel(t)``            ✗       ✓
-:ref:`kern-gauss`   ``GaussianKernel(α)``              ✓       ✗
-:ref:`kern-lapla`   ``LaplacianKernel(α)``             ✓       ✗
-:ref:`kern-period`  ``PeriodicKernel(α,p)``            ✓       ✗
-:ref:`kern-ratquad` ``RationalQuadraticKernel(α,β,γ)`` ✓       ✗
-:ref:`kern-matern`  ``MaternKernel(ν,θ)``              ✓       ✗
-:ref:`kern-poly`    ``PolynomialKernel(a,c,d)``        ✓       ✗
-:ref:`kern-sigmoid` ``SigmoidKernel(α,c)``             ✗       ✗
-=================== ================================== ======= =================
-
-.. _kern-scprod:
-
-Scalar Product Kernel
-.....................
-
-.. code-block:: julia
-
-    ScalarProductKernel()           # Construct 64 bit kernel (default)
-    ScalarProductKernel{Float32}()  # Construct 32 bit kernel
-
-The scalar product kernel, or linear kernel, is the dot product of two vectors:
-
-.. math::
-    
-    \kappa(\mathbf{x},\mathbf{y}) = \mathbf{x}^{\intercal} \mathbf{y}
-
-The scalar product is a **Mercer** kernel [berg]_. This kernel is provided 
-primarily for constructing new kernels (ex. polynomial kernel) since usage of 
-this kernel in a kernel-based algorithm will often be equivalent to the 
-non-kernelized version of the algorithm. For example, kernel principal 
-components analysis with a scalar product kernel is equivalent to normal 
-principal components analysis.
-
-
-.. _kern-sqdist:
-
-Squared Distance Kernel
-.......................
-
-.. code-block:: julia
-
-    SquaredDistanceKernel(t=1)
-
-The squared distance kernel is a modification of the squared Euclidean distance
-with an additional shape parameter:
-
-.. math::
-    
-    \kappa(\mathbf{x},\mathbf{y}) = \sum_{i=1}^n (x_i - y_i)^{2t} \qquad 0 < t \leq 1
-
-The squared distance is a **negative definite** stationary kernel [berg]_. The 
-first three components of kernel PCA over an ellipse in :math:`\mathbb{R}^2`
-with a squared distance kernel (:math:`t=0.5`) are visualized below:
-
-.. image:: images/kernels/squared-distance_kernel.png
-    :alt: The first three components of KPCA with a squared distance kernel.
-
-
-.. _kern-sinsq:
-
-Sine Squared Kernel
-...................
-
-.. code-block:: julia
-
-  SineSquaredKernel(p=π,t=1)
-
-The sine squared kernel is another **negative definite** stationary kernel
-[berg]_. It can be used to construct the periodic kernel which is useful in
-situations where data may be periodic:
-
-.. math::
-    
-    \kappa(\mathbf{x},\mathbf{y}) = \sum_{i=1}^n \sin^{2t}(p(x_i - y_i)) \qquad p >0, \;0 < t \leq 1
-
-The first three components of kernel PCA over an ellipse in :math:`\mathbb{R}^2`
-with a sine squared kernel (:math:`p=1`, :math:`t=1`) are visualized below:
-
-.. image:: images/kernels/sine-squared_kernel.png
-    :alt: The first three components of KPCA with a sine-squared kernel.
-
-Over a larger range, the projected surface can be seen to fold in on itself and
-repeat the shape.
-
-
-.. _kern-chisq:
-
-Chi-Squared Kernel
+Exponential Kernel
 ..................
 
-.. code-block:: julia
-  
-  ChiSquaredKernel(t=1)
+.. class:: ExponentialKernel([α::Real=1]) <: MercerKernel
 
-The chi-squared kernel is a **negative definite** most often used with 
-bag-of-words models:
+  The exponential kernel is given by the formula:
 
-.. math::
-    
-    \kappa(\mathbf{x},\mathbf{y}) = \sum_{i=1}^n \left(\frac{(x_i - y_i)^2}{x_i + y_i}\right)^t \qquad 0 < t \leq 1, \; x_i > 0 \; \forall i, \; y_i > 0 \; \forall i
+  .. math::
 
-The first three components of kernel PCA over an ellipse in :math:`\mathbb{R}^2`
-with a chi-squared kernel (:math:`t=1`) are visualized below:
+      \kappa(\mathbf{x},\mathbf{y}) = \exp\left(-\alpha ||\mathbf{x} - \mathbf{y}||\right) \qquad \alpha > 0
 
-.. image:: images/kernels/chi-squared_kernel.png
-    :alt: The first three components of KPCA with a chi-squared kernel.
+  where :math:`\alpha` is a scaling parameter of the Euclidean distance. The
+  exponential kernel, also known as the Laplacian kernel, is an isotropic Mercer 
+  kernel. The constructor is aliased by ``LaplacianKernel``, so both names may 
+  be used:
 
-    
-.. _kern-gauss:
+  .. code-block:: julia
 
-Gaussian Kernel
-...............
-
-.. code-block:: julia
-
-  GaussianKernel(α=1)
-  RadialBasisKernel(α=1)
-  SquaredExponentialKernel(α=1)
-
-The Gaussian kernel is an isotropic Mercer kernel given by:
-
-.. math::
-
-    k(\mathbf{x},\mathbf{y}) = \exp\left(-\alpha ||\mathbf{x} - \mathbf{y}||^2\right) \qquad \alpha > 0
-
-where :math:`\alpha` is a scaling parameter of the squared distance. The 
-Gaussian kernel often goes by two other names: the radial basis kernel and the 
-squared exponential covariance function (Gaussian processes). The first three 
-components of kernel PCA over an ellipse in :math:`\mathbb{R}^2` with a 
-Gaussian kernel are visualized below:
-
-.. image:: images/kernels/gaussian_kernel.png
-    :alt: The first three components of KPCA with a Gaussian Kernel.
+      ExponentialKernel()  # Default is Float64 with α = 1.0
+      LaplacianKernel(1)   # Integers will be converted to Float64
 
 
-.. _kern-lapla:
+Squared Exponential Kernel
+..........................
 
-Laplacian Kernel
-................
+.. class:: SquaredExponentialKernel([α::Real=1]) <: MercerKernel
 
-.. code-block:: julia
+  The squared exponential kernel, or alternatively the Gaussian kernel, is 
+  identical to the exponential kernel except that the Euclidean distance is 
+  squared:
 
-  LaplacianKernel(α=1)
+  .. math::
 
-The Laplacian kernel is given by:
+      \kappa(\mathbf{x},\mathbf{y}) = \exp\left(-\alpha ||\mathbf{x} - \mathbf{y}||^2\right) \qquad \alpha > 0
 
-.. math::
+  where :math:`\alpha` is a scaling parameter of the squared Euclidean distance.
+  Just like the exponential kernel, the squared exponential kernel is an
+  isotropic Mercer kernel. The squared exponential kernel is more commonly known
+  as the radial basis kernel within machine learning communities. All aliases
+  may be used in MLKernels.jl:
 
-    k(\mathbf{x},\mathbf{y}) = \exp\left(-\alpha ||\mathbf{x} - \mathbf{y}||\right) \qquad \alpha > 0
+  .. code-block:: julia
 
-where :math:`\alpha` is a scaling parameter of the Euclidean distance. The 
-Laplacian kernel is closely related to the Gaussian kernel; the difference is 
-that the Laplacian kernel makes use of the Euclidean distance and the Gaussian 
-kernel uses the squared Euclidean distance. The first three components of kernel
-PCA over an ellipse in :math:`\mathbb{R}^2` with a Laplacian kernel 
-(:math:`t=1`) for a similar surface to a Gaussian kernel:
-
-.. image:: images/kernels/laplacian_kernel.png
-    :alt: The first three components of KPCA with a Laplacian Kernel.
-
-.. _kern-period:
-
-Periodic Kernel
-...............
-
-.. code-block:: julia
-
-  PeriodicKernel(α=1,p=π)
-
-The periodic kernel is given by:
-
-.. math::
-
-    k(\mathbf{x},\mathbf{y}) = \exp\left(-\alpha \sum_{i=1}^n \sin(p(x_i - y_i))^2\right) \qquad p >0, \; \alpha > 0
-
-where :math:`\mathbf{x}` and :math:`\mathbf{y}` are :math:`n` dimensional 
-vectors. The parameters :math:`p` and :math:`\alpha` are scaling parameters for
-the periodicity and the magnitude, respectively. This kernel is useful when data
-has periodicity to it. The first three components of kernel PCA over an ellipse 
-in :math:`\mathbb{R}^2` with a periodic kernel (:math:`\alpha=1`, :math:`p=\pi`) 
-are visualized below:
-
-.. image:: images/kernels/periodic_kernel.png
-    :alt: The first three components of KPCA with a Periodic Kernel.
+    GaussianKernel()
+    RadialBasisKernel()
+    SquaredExponentialKernel()
 
 
-.. _kern-ratquad:
+Gamma Exponential Kernel
+........................
+
+.. class:: GammaExponentialKernel([α::Real=1 [,γ::Real=1]]) <: MercerKernel
+
+  The gamma exponential kernel is a generalization of the exponential and
+  squared exponential kernels:
+
+  .. math::
+
+    \kappa(\mathbf{x},\mathbf{y}) = \exp\left(-\alpha ||\mathbf{x} - \mathbf{y}||^{\gamma}\right) \qquad \alpha > 0, \; 0 < \gamma \leq 1
+
+  where :math:`\alpha` is a scaling parameter and :math:`\gamma` is a shape
+  parameter.
+
 
 Rational-Quadratic Kernel
 .........................
 
-.. code-block:: julia
+.. class:: RationalQuadraticKernel([α::Real=1 [,β::Real=1]]) <: MercerKernel
 
-  RationalQuadraticKernel(α=1,β=1,γ=1)
+  The rational-quadratic kernel is given by:
 
-The rational-quadratic kernel is given by:
+  .. math::
 
-.. math::
+      \kappa(\mathbf{x},\mathbf{y}) = \left(1 +\alpha ||\mathbf{x},\mathbf{y}||^2\right)^{-\beta} \qquad \alpha > 0, \; \beta > 0
 
-    k(\mathbf{x},\mathbf{y}) = \left(1 +\alpha ||\mathbf{x},\mathbf{y}||^2\right)^{-\beta} \qquad \alpha > 0, \; \beta > 0
+  where :math:`\alpha` is a scaling parameter and :math:`\beta` is a shape
+  parameter. This kernel can be seen as an infinite sum of Gaussian kernels. If
+  one sets :math:`\alpha = \alpha_0 / \beta`, then taking the limit :math:`\beta
+  \rightarrow \infty` results in the Gaussian kernel with scaling parameter
+  :math:`\alpha_0`. 
 
-where :math:`\alpha` is a scaling parameter and :math:`\beta` is a shape
-parameter. This kernel can be seen as an infinite sum of Gaussian kernels. If
-one sets :math:`\alpha = \alpha_0 / \beta`, then taking the limit :math:`\beta
-\rightarrow \infty` results in the Gaussian kernel with scaling parameter
-:math:`\alpha_0`. The first three components of kernel PCA over an ellipse 
-in :math:`\mathbb{R}^2` with a rational-quadratic kernel (:math:`\alpha=1`, 
-:math:`\beta=1`, :math:`\gamma=1`) are visualized below:
 
-.. image:: images/kernels/rational-quadratic_kernel.png
-    :alt: The first three components of KPCA with a Rational-Quadratic Kernel.
-    
+Gamma-Rational Kernel
+.....................
 
-.. _kern-matern:
+.. class:: RationalQuadraticClass([α::Real [,β::Real [,γ::Real]]]) <: MercerKernel
+  
+  The gamma-rational kernel is a generalization of the rational-quadratic kernel
+  with an additional shape parameter:
+
+  .. math::
+
+    \kappa(\mathbf{x},\mathbf{y}) = \left(1 +\alpha ||\mathbf{x},\mathbf{y}||^{\gamma}\right)^{-\beta} \qquad \alpha > 0, \; \beta > 0, \; 0 < \gamma \leq 1
+
+  where :math:`\alpha` is a scaling parameter and :math:`\beta` and
+  :math:`\gamma` are shape parameters.
+
 
 Matern Kernel
 .............
 
-.. code-block:: julia
+.. class:: MaternKernel([ν::Real=1 [,θ::Real=1]]) <: MercerKernel
 
-  MaternKernel(ν=1,θ=1)
-  MatérnKernel(ν=1,θ=1)
+  The Matern kernel is a **Mercer** kernel [ras]_ given by:
 
-The Matern kernel is a **Mercer** Kernel [ras]_ given by:
+  .. math::
 
-.. math::
+      \kappa(\mathbf{x},\mathbf{y}) = \frac{1}{2^{\nu-1}\Gamma(\nu)} \left(\frac{2\sqrt{\nu}||\mathbf{x}-\mathbf{y}||}{\theta}\right)^{\nu} K_{\nu}\left(\frac{2\sqrt{\nu}||\mathbf{x}-\mathbf{y}||}{\theta}\right)
 
-    k(\mathbf{x},\mathbf{y}) = \frac{1}{2^{\nu-1}\Gamma(\nu)} \left(\frac{2\sqrt{\nu}||\mathbf{x}-\mathbf{y}||}{\theta}\right)^{\nu} K_{\nu}\left(\frac{2\sqrt{\nu}||\mathbf{x}-\mathbf{y}||}{\theta}\right)
-
-where math:`\Gamma` is the gamma function, :math:`K_{\nu}` is the modified 
-Bessel function of the second kind, :math:`\nu > 0` and :math:`\theta > 0`. The 
-first three components of kernel PCA over an ellipse in :math:`\mathbb{R}^2` 
-with a Matern kernel (:math:`\nu=1`, :math:`\theta=1`) are visualized below:
-
-.. image:: images/kernels/matern_kernel.png
-    :alt: The first three components of KPCA with a Matern Kernel.
+  where :math:`\Gamma` is the gamma function, :math:`K_{\nu}` is the modified 
+  Bessel function of the second kind, :math:`\nu > 0` and :math:`\theta > 0`.
 
 
-.. _kern-poly:
+Linear Kernel
+.............
 
-Linear & Polynomial Kernel
-..........................
+.. class:: LinearKernel([a::Real=1 [,c::Real=1]]) <: MercerKernel
 
-.. code-block:: julia
-
-  LinearKernel(a=1,c=1)
-  PolynomialKernel(a=1,c=1,d=3)
-
-The polynomial kernel is a **Mercer** kernel given by:
+  The linear kernel is a **Mercer** kernel given by:
 
 .. math::
 
-    k(\mathbf{x},\mathbf{y}) = (\alpha \mathbf{x}^\intercal \mathbf{y} + c)^d \qquad \alpha > 0, \; c \geq 0, \; d \in \mathbb{Z}_{+}
-
-The first three components of kernel PCA over an ellipse in :math:`\mathbb{R}^2` 
-with a polynomial kernel (:math:`a=1`, :math:`c=1`, :math:`d=3`) are visualized 
-below:
-
-.. image:: images/kernels/polynomial_kernel.png
-    :alt: The first three components of KPCA with a Polynomial Kernel.
+    \kappa(\mathbf{x},\mathbf{y}) = a \mathbf{x}^\intercal \mathbf{y} + c \qquad \alpha > 0, \; c \geq 0
 
 
-.. _kern-sigmoid:
+Polynomial Kernel
+.................
+
+.. class:: PolynomialKernel([a::Real=1 [,c::Real=1 [,d::Integer=3]]]) <: MercerKernel
+
+  The polynomial kernel is a **Mercer** kernel given by:
+
+  .. math::
+
+    \kappa(\mathbf{x},\mathbf{y}) = (a \mathbf{x}^\intercal \mathbf{y} + c)^d \qquad \alpha > 0, \; c \geq 0, \; d \in \mathbb{Z}_{+}
+
+
+Exponentiated Kernel
+....................
+
+.. class:: ExponentiatedKernel([a::Real=1]) <: MercerKernel
+
+  The exponentiated kernel is a **Mercer** kernel given by:
+
+  .. math::
+
+    \kappa(\mathbf{x},\mathbf{y}) = \exp\left(a \mathbf{x}^\intercal \mathbf{y} \right) \qquad a > 0
+
+
+Periodic Kernel
+...............
+
+.. class:: PeriodicKernel([α::Real=1 [,p::Real=π]]) <: MercerKernel
+
+  The periodic kernel is given by:
+
+  .. math::
+
+      \kappa(\mathbf{x},\mathbf{y}) = \exp\left(-\alpha \sum_{i=1}^n \sin(p(x_i - y_i))^2\right) \qquad p >0, \; \alpha > 0
+
+  where :math:`\mathbf{x}` and :math:`\mathbf{y}` are :math:`n` dimensional 
+  vectors. The parameters :math:`p` and :math:`\alpha` are scaling parameters 
+  for the periodicity and the magnitude, respectively. This kernel is useful 
+  when data has periodicity to it. 
+
+
 
 Sigmoid Kernel
 ..............
 
-.. code-block:: julia
+.. class:: SigmoidKernel([a::Real=1 [,c::Real=1]]) <: Kernel
 
-  SigmoidKernel(a=1,c=1)
-
-The sigmoid kernel is given by:
-
-.. math::
-
-    k(\mathbf{x},\mathbf{y}) = \tanh(\alpha \mathbf{x}^\intercal \mathbf{y} + c) \qquad \alpha > 0, \; c \geq 0
-
-The sigmoid kernel is a not a true kernel, although it has been used in 
-application. The first three components of kernel PCA over an ellipse in 
-:math:`\mathbb{R}^2` with a sigmoid kernel (:math:`a=1`, :math:`c=1`) are 
-visualized below:
-
-.. image:: images/kernels/sigmoid_kernel.png
-    :alt: The first three components of KPCA with a Polynomial Kernel.
-
---------------------------
-Kernel Composition Classes
---------------------------
-
-.. function:: KernelComposition(ϕ,κ)
-
-  The ``KernelComposition`` type is used to construct new kernels. The composite
-  type consists of two objects: ``ϕ``, a ``CompositionClass``, and ``κ``, a 
-  ``BaseKernel``. Mathematically, it constructs a new kernel such that if
-  :math:`\phi` is the function composing the kernel :math:`\kappa`, then:
+  The sigmoid kernel is given by:
 
   .. math::
 
-    \Psi(\mathbf{x}, \mathbf{y}) = \phi(\kappa(\mathbf{y}, \mathbf{x}))
+      \kappa(\mathbf{x},\mathbf{y}) = \tanh(a \mathbf{x}^\intercal \mathbf{y} + c) \qquad \alpha > 0, \; c \geq 0
 
-The implemented ``CompositionClass`` types are listed below:
-
-.. function:: ExponentialClass(α,γ)
-
-  .. math::
-
-    \Psi(\mathbf{x},\mathbf{y}) = \exp\left(-\alpha \kappa(\mathbf{x},\mathbf{y})^{\gamma}\right) \qquad \alpha > 0, \; 0 < \gamma \leq 1
-
-
-.. function:: RationalQuadraticClass(α,β,γ)
-  
-  .. math::
-
-    \Psi(\mathbf{x},\mathbf{y}) = \left(1 +\alpha \kappa(\mathbf{x},\mathbf{y})^{\gamma}\right)^{-\beta} \qquad \alpha > 0, \; \beta > 0, \; 0 < \gamma \leq 1
-
-.. function:: MaternClass(ν,θ)
-  
-  .. math::
-
-    \Psi(\mathbf{x},\mathbf{y}) = \frac{1}{2^{\nu-1}\Gamma(\nu)} \left(\frac{2\sqrt{\nu}\kappa(\mathbf{x},\mathbf{y})}{\theta}\right)^{\nu} K_{\nu}\left(\frac{2\sqrt{\nu}\kappa(\mathbf{x},\mathbf{y})}{\theta}\right)
-
-.. _polynomialclass:
-
-.. function:: PolynomialClass(a,c,d)
-
-  .. math::
-
-    \Psi(\mathbf{x},\mathbf{y}) = (\alpha\kappa(\mathbf{x},\mathbf{y}) + c)^d \qquad \alpha > 0, \; c \geq 0, \; d \in \mathbb{Z}_{+}
-
-.. _exponentiatedclass:
-
-.. function:: ExponentiatedClass(a,c)
-
-  .. math::
-
-    \Psi(\mathbf{x},\mathbf{y}) = \exp(\alpha\kappa(\mathbf{x},\mathbf{y}) + c) \qquad \alpha > 0, \; c \geq 0
-
-.. _powerclass:
-
-.. function:: PowerClass(a,c,γ)
-
-  .. math::
-
-    \Psi(\mathbf{x},\mathbf{y}) = \kappa(\mathbf{x},\mathbf{y})^{\gamma} \qquad 0 < \gamma \leq 1
-
-.. function:: LogClass(α,γ)
-
-.. math::
-
-    \Psi(\mathbf{x},\mathbf{y}) = \log(1 + \alpha\kappa(\mathbf{x},\mathbf{y})^{\gamma}) \qquad \alpha > 0, \; 0 < \gamma \leq 1
-
-.. _sigmoidclass:
-
-.. function:: SigmoidClass(a,c)
-
-  .. math::
-
-    \Psi(\mathbf{x},\mathbf{y}) = \tanh(\alpha\kappa(\mathbf{x},\mathbf{y}) + c) \qquad \alpha > 0, \; c \geq 0
- 
+  The sigmoid kernel is a not a true kernel, although it has been used in 
+  application. 
