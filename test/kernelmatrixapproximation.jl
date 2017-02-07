@@ -36,7 +36,7 @@ for T in FloatingPointTypes
     @test_approx_eq pinv(XtX) MOD.nystrom_pinv!(copy(X'X))
 end
 
-info("Testing ", MOD.NystromFact)
+info("Testing ", MOD.nystrom)
 for T in FloatingPointTypes
     F = convert(Kernel{T}, GaussianKernel())
     X = rand(T, n+3, p)
@@ -48,7 +48,7 @@ for T in FloatingPointTypes
         C_tst = transpose(kernelmatrix(layout, F, X_tst, Xs_tst))
         W_tst = pinv(kernelmatrix(layout, F, Xs_tst))
 
-        KF = NystromFact(layout, F, X_tst, S)
+        KF = nystrom(layout, F, X_tst, S)
 
         @test_approx_eq KF.C C_tst
         @test_approx_eq KF.W W_tst

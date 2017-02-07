@@ -2,44 +2,9 @@
 Interface
 =========
 
-.. _format notes:
-
-.. note::
-
-    By default, the input matrices ``X`` and ``Y`` are assumed to be stored in 
-    the same format as a data matrix (or design matrix) in multivariate 
-    statsitics. In other words, each row of ``X`` and ``Y`` is assumed to
-    correspond to an observation vector:
-
-    .. math:: \mathbf{X}_{row} = 
-                  \begin{bmatrix} 
-                      \leftarrow \mathbf{x}_1 \rightarrow \\ 
-                      \leftarrow \mathbf{x}_2 \rightarrow \\ 
-                      \vdots \\ 
-                      \leftarrow \mathbf{x}_n \rightarrow 
-                   \end{bmatrix}
-              \qquad
-              \mathbf{X}_{col} = \mathbf{X}_{row}^{\intercal} = 
-                  \begin{bmatrix}
-                      \uparrow & \uparrow & & \uparrow  \\
-                      \mathbf{x}_1 & \mathbf{x}_2 & \cdots & \mathbf{x_n} \\
-                      \downarrow & \downarrow & & \downarrow
-                  \end{bmatrix}
-
-    Two subtypes of ``MemoryLayout`` have been created to specify whether a data
-    matrix is stored in row-major or column-major ordering:
-
-      * ``RowMajor`` is used to specify that each row of a data matrix 
-        corresponds to an observation. 
-      * ``ColumnMajor`` is used to specify that each column of a data matrix 
-        corresponds to an observation.
-               
-    When row-major ordering is used, then the kernel matrix of ``X`` will match
-    the dimensions of `X'X``. Otherwise, the kernel matrix will match the 
-    dimensions of ``X * X'``. Similarly, the kernel matrix will match the 
-    dimension of ``X'Y`` for row-major ordering of ``X`` and ``Y``. Otherwise, 
-    the pairwise matrix will match the dimensions of ``X * Y'``.
-
+----------
+Essentials
+----------
 
 .. function:: ismercer(κ::Kernel) -> Bool
 
@@ -59,14 +24,43 @@ Interface
     are vectors or scalars of some subtype of ``Real``.
 
 
+.. function:: centerkernelmatrix(K::Matrix)
+
+    Centers the (rectangular) kernel matrix ``K`` with respect to the implicit
+    Kernel Hilbert Space according to the following formula:
+
+    .. math:: [\mathbf{K}]_{ij} = 
+        \langle\phi(\mathbf{x}_i) -\mathbf{\mu}_{\phi\mathbf{x}}, 
+        \phi(\mathbf{y}_j) - \mathbf{\mu}_{\phi\mathbf{y}} \rangle 
+    
+    Where :math:`\mathbf{\mu}_{\phi\mathbf{x}}` and 
+    :math:`\mathbf{\mu}_{\phi\mathbf{x}}` are given by:
+
+    .. math::
+
+        \mathbf{\mu}_{\phi\mathbf{x}} =  \frac{1}{n} \sum_{i=1}^n \phi(\mathbf{x}_i)
+        \qquad \qquad
+        \mathbf{\mu}_{\phi\mathbf{y}} =  \frac{1}{m} \sum_{i=1}^m \phi(\mathbf{y}_i)
+
+
+
+.. function:: centerkernelmatrix!(K::Matrix)
+
+    The same as ``centerkernelmatrix`` except that ``K`` is overwritten.
+
+
+---------------
+Kernel Matrices
+---------------
+
 .. function:: kernelmatrix([σ::MemoryLayout,] κ::Kernel, X::Matrix [, symmetrize::Bool])
 
-    Calculate the kernel matrix of ``X`` with respect to kernel ``κ``. The 
-    following arguments can be used:
+    Calculate the kernel matrix of ``X`` with respect to kernel ``κ``. 
     
-      * ``σ`` - see the `format notes`_ to determine the value of ``σ``
-      * ``symmetrize`` - set to ``false`` to fill only the upper triangle of 
-        ``K``, otherwise the upper triangle will be copied to the lower triangle
+    See the `format notes`_ to determine the value of ``σ``; by default ``σ`` is
+    set to ``RowMajor()``. Set ``symmetrize`` to ``false`` to fill only the 
+    upper triangle of ``K``, otherwise the upper triangle will be copied to the
+    lower triangle.
 
 
 .. function:: kernelmatrix!(P::Matrix, σ::MemoryLayout, κ::Kernel, X::Matrix, symmetrize::Bool)
@@ -78,7 +72,9 @@ Interface
 .. function:: kernelmatrix([σ::MemoryLayout,] κ::Kernel, X::Matrix, Y::Matrix)
 
     Calculate the pairwise matrix of ``X`` and ``Y`` with respect to kernel 
-    ``κ``. See the `format notes`_ to determine the value of ``σ``. By default 
+    ``κ``. 
+    
+    See the `format notes`_ to determine the value of ``σ``. By default 
     ``σ`` is set to ``RowMajor``.
 
 
@@ -88,37 +84,72 @@ Interface
     ``K`` will be overwritten with the kernel matrix.
 
 
-.. function:: centerkernelmatrix(K::Matrix)
+.. class:: MemoryLayout()
 
-    Centers the square kernel matrix ``K`` with respect to the implicit Kernel 
-    Hilbert Space according to the following formula:
+    The ``MemoryLayout`` abstract type is used to designate which storage layout
+    is utilized by a data matrix. There are two concrete subtypes that
+    correspond to the two ways of storing a dense matrix:
 
-    .. math:: [\mathbf{K}]_{ij} = 
-        \langle\phi(\mathbf{x}_i) -\mathbf{\mu}_\phi, 
-        \phi(\mathbf{x}_j) - \mathbf{\mu}_\phi \rangle 
-        \qquad \text{where} \quad 
-        \mathbf{\mu}_\phi =  \frac{1}{n} \sum_{i=1}^n \phi(\mathbf{x}_i)
+        * ``RowMajor`` is used to specify that each row of a data matrix 
+          corresponds to an observation. 
 
-.. function:: centerkernelmatrix!(K::Matrix)
+        * ``ColumnMajor`` is used to specify that each column of a data matrix 
+          corresponds to an observation.
 
-    The same as ``centerkernelmatrix`` except that ``K`` is overwritten.
+    Note that row-major and column-major ordering in this context do not refer
+    to the physical storage ordering of the underlying matrices (in the case of
+    Julia, all arrays are in column-major ordering). These properties refer to
+    the ordering of observations within a data matrix; either per-row or
+    per-column. See the `format notes`_ below.
 
 
-.. function:: nystrom!(K, κ, X, s, is_trans, store_upper, symmetrize)
+.. _format notes:
 
-    Overwrite the pre-allocated square matrix ``K`` with the Nystrom 
-    approximation of the kernel matrix of ``X``. Returns matrix ``K``. Type 
-    ``T`` may be any  subtype of ``AbstractFloat`` and ``U`` may be any subtype 
-    of ``Integer``. The array ``S`` must be a 1-indexed sample of the 
-    observations of ``X`` (with replacement). When ``is_trans`` is set to 
-    ``true``, then ``K`` must match the dimensions of ``X'X`` and ``S`` must 
-    sample the columns of ``X``. Otherwise, ``K`` must match the dimensions of 
-    ``X * X'`` and ``S`` must sample the rows of ``X``.
+.. note::
 
-    Set ``store_upper`` to ``true`` to compute the upper triangle of the kernel 
-    matrix of ``X`` or ``false`` to compute the lower triangle. If
-    ``symmetrize`` is set to ``false``, then only the specified triangle will be
-    computed.
+    Data matrices :math:`X` and :math:`Y` may be stored in one of two formats: 
+    row-major ordering or column-major ordering with respect to obversations. 
+    Row major ordering is used when each observation vector corresponds to a row
+    in the matrix. Conversely,column-major ordering is used when each column 
+    corresponds to an observation. For example, for data matrix :math:`X` 
+    consisting of observations 
+    :math:`\mathbf{x}_1, \mathbf{x}_2, \ldots, \mathbf{x}_n`:
+    
+    .. math:: \mathbf{X}_{row} = 
+                  \begin{bmatrix} 
+                      \leftarrow \mathbf{x}_1 \rightarrow \\ 
+                      \leftarrow \mathbf{x}_2 \rightarrow \\ 
+                      \vdots \\ 
+                      \leftarrow \mathbf{x}_n \rightarrow 
+                   \end{bmatrix}
+              \qquad
+              \mathbf{X}_{col} = \mathbf{X}_{row}^{\intercal} = 
+                  \begin{bmatrix}
+                      \uparrow & \uparrow & & \uparrow  \\
+                      \mathbf{x}_1 & \mathbf{x}_2 & \cdots & \mathbf{x_n} \\
+                      \downarrow & \downarrow & & \downarrow
+                  \end{bmatrix}
+
+    When row-major ordering is used, then the kernel matrix of :math:`X` will 
+    match the dimensions of :math:`X^{\intercal}X`. Otherwise, the kernel matrix
+    will match the dimensions of :math:`XX^{\intercal}`. Similarly, the kernel
+    matrix will match the dimension of :math:`X^{\intercal}Y` for row-major 
+    ordering of :math:`X` and :math:`Y`. Otherwise, the pairwise matrix will 
+    match the dimensions of :math:`XY^{\intercal}`.
+
+
+---------------------------
+Kernel Matrix Approximation
+---------------------------
+
+.. class:: NystromFact{<:Union{Float32,Float64}}
+
+    A factorization of the Nystrom approximation of some kernel matrix.
+
+.. function:: nystrom(σ::MemoryLayout, κ::Kernel, X::Matrix, S::Vector) -> NystromFact
+
+    Computes a factorization of Nystrom approximation of the square kernel
+    matrix of data matrix ``X`` with respect to kernel ``κ``.
 
     .. note::
 
@@ -127,10 +158,5 @@ Interface
         the sampling ratio small (ex. 15% or less) for the cost of the computing 
         the full kernel matrix to exceed that of the eigendecomposition. This
         method will be more effective for kernels that are not a direct function
-        of the dot product (Chi-Squared, Sine-Squared, etc.) as they are not
-        able to make use of BLAS in computing the full ``K`` and the cross-over
-        point will occur for smaller ``K``.
-
-.. function:: nystrom(κ, X, s, [; is_trans, store_upper, symmetrize])
-
-    The same as ``nystrom!`` with matrix ``K`` automatically allocated.
+        of the dot product as they are not able to make use of BLAS in computing
+        the full ``K`` and the cross-over point will occur for smaller ``K``.

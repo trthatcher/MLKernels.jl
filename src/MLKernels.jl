@@ -56,7 +56,8 @@ export
     kernelmatrix!,
 
     # Kernel Approximation
-    NystromFact
+    NystromFact,
+    nystrom
 
 include("HyperParameters/HyperParameters.jl")
 using MLKernels.HyperParameters: 

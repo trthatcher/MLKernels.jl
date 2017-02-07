@@ -60,7 +60,7 @@ immutable NystromFact{T<:Base.LinAlg.BlasReal}
     C::Matrix{T}
 end
 
-function NystromFact{T<:Base.LinAlg.BlasReal,U<:Integer}(
+function nystrom{T<:Base.LinAlg.BlasReal,U<:Integer}(
         σ::MemoryLayout,
         κ::Kernel{T},
         X::Matrix{T},
@@ -71,12 +71,12 @@ function NystromFact{T<:Base.LinAlg.BlasReal,U<:Integer}(
     NystromFact{T}(W, C)
 end
 
-function NystromFact{T<:Base.LinAlg.BlasReal,U<:Integer}(
+function nystrom{T<:Base.LinAlg.BlasReal,U<:Integer}(
         κ::Kernel{T},
         X::Matrix{T},
         S::Vector{U} = samplematrix(RowMajor(), X, convert(T,0.15))
     )
-    NystromFact(RowMajor(), κ, X, S)
+    nystrom(RowMajor(), κ, X, S)
 end
 
 function kernelmatrix{T<:Base.LinAlg.BlasReal}(CᵀWC::NystromFact{T})
