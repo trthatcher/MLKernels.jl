@@ -1,7 +1,6 @@
 # Pairwise Function References
 
 pairwise_functions = (
-    Euclidean,
     SquaredEuclidean,
     SineSquared,
     ChiSquared,
@@ -9,7 +8,6 @@ pairwise_functions = (
 )
 
 pairwise_functions_initiate = Dict(
-    Euclidean        => 0,
     SquaredEuclidean => 0,
     SineSquared      => 0,
     ChiSquared       => 0,
@@ -17,17 +15,13 @@ pairwise_functions_initiate = Dict(
 )
 
 pairwise_functions_aggregate = Dict(
-    Euclidean        => (s,x,y) -> s + (x-y)^2,
     SquaredEuclidean => (s,x,y) -> s + (x-y)^2,
     SineSquared      => (s,x,y) -> s + sin((x-y))^2,
     ChiSquared       => (s,x,y) -> x == y == 0 ? s : s + ((x-y)^2/(x+y)),
     ScalarProduct    => (s,x,y) -> s + x*y
 )
 
-pairwise_functions_return = Dict(
-    Euclidean => s -> sqrt(s)
-)
-
+pairwise_functions_return = Dict{DataType,Any}()
 
 
 # Kernel Function References
@@ -86,7 +80,6 @@ kernel_functions_kappa = Dict(
 
 
 kernel_functions_pairwise = Dict(
-    ExponentialKernel        => Euclidean,
     LinearKernel             => ScalarProduct,
     PolynomialKernel         => ScalarProduct,
     ExponentiatedKernel      => ScalarProduct,

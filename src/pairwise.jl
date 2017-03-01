@@ -33,11 +33,6 @@ immutable SineSquared <: PreMetric end
 
 abstract Metric <: PreMetric
 
-doc"Euclidean() = √((x-y)ᵀ(x-y))"
-immutable Euclidean <: PreMetric end
-@inline pairwise_aggregate{T}(::Euclidean, s::T, x::T, y::T) = s + (x-y)^2
-@inline pairwise_return{T}(::Euclidean, s::T) = sqrt(s)
-
 doc"SquaredEuclidean() = (x-y)ᵀ(x-y)"
 immutable SquaredEuclidean <: PreMetric end
 @inline pairwise_aggregate{T}(f::SquaredEuclidean, s::T, x::T, y::T) = s + (x-y)^2

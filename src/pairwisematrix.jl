@@ -187,7 +187,7 @@ end
   ScalarProduct and SquaredDistance using BLAS/Built-In methods
 ===================================================================================================#
 
-@inline function pairwisematrix!{T<:AbstractFloat}(
+@inline function pairwisematrix!{T<:BLAS.BlasReal}(
         σ::MemoryLayout,
         P::Matrix{T}, 
         f::ScalarProduct,
@@ -197,7 +197,7 @@ end
     gramian!(σ, P, X, symmetrize)
 end
 
-@inline function pairwisematrix!{T<:AbstractFloat}(
+@inline function pairwisematrix!{T<:BLAS.BlasReal}(
         σ::MemoryLayout,
         P::Matrix{T}, 
         f::ScalarProduct,
@@ -207,7 +207,7 @@ end
     gramian!(σ, P, X, Y)
 end
 
-function pairwisematrix!{T<:AbstractFloat}(
+function pairwisematrix!{T<:BLAS.BlasReal}(
         σ::MemoryLayout,
         P::Matrix{T}, 
         f::SquaredEuclidean,
@@ -219,7 +219,7 @@ function pairwisematrix!{T<:AbstractFloat}(
     squared_distance!(P, xᵀx, symmetrize)
 end
 
-function pairwisematrix!{T<:AbstractFloat}(
+function pairwisematrix!{T<:BLAS.BlasReal}(
         σ::MemoryLayout,
         P::Matrix{T}, 
         f::SquaredEuclidean,

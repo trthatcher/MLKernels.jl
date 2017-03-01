@@ -10,7 +10,6 @@ using MLKernels:
             ChiSquared,
             SineSquared,
             Metric,
-                Euclidean,
                 SquaredEuclidean
 
 FloatingPointTypes = (Float32, Float64)

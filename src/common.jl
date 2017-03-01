@@ -11,8 +11,8 @@ end
 for layout in (RowMajor, ColumnMajor)
 
     isrowmajor = layout == RowMajor
-    dim_obs    = isrowmajor ? 1 : 2
-    dim_param  = isrowmajor ? 2 : 1
+    dim_obs, dim_param = isrowmajor ? (1, 2) : (2, 1)
+    NT, TN = isrowmajor ? ('N', 'T') : ('T', 'N')
 
     @eval begin
 
@@ -36,23 +36,23 @@ for layout in (RowMajor, ColumnMajor)
             dotvectors!(σ, Array(T, size(X,$dim_obs)), X)
         end
 
-        function gramian!{T<:AbstractFloat}(
+        function gramian!{T<:BLAS.BlasReal}(
                  ::$layout,
                 G::Matrix{T},
                 X::Matrix{T},
                 symmetrize::Bool
             )
-            LinAlg.syrk_wrapper!(G, $(isrowmajor ? 'N' : 'T'), X)
+            BLAS.syrk!('U', $NT, one(T), X, zero(T), G)
             symmetrize ? LinAlg.copytri!(G, 'U') : G
         end
 
-        @inline function gramian!{T<:AbstractFloat}(
+        @inline function gramian!{T<:BLAS.BlasReal}(
                  ::$layout, 
                 G::Matrix{T}, 
                 X::Matrix{T}, 
                 Y::Matrix{T}
             )
-            LinAlg.gemm_wrapper!(G, $(isrowmajor ? 'N' : 'T'), $(isrowmajor ? 'T' : 'N'), X, Y)
+            BLAS.gemm!($NT, $TN, one(T), X, Y, zero(T), G)
         end
     end
 end

@@ -80,7 +80,7 @@ LaplacianKernel = ExponentialKernel
 
 @inline exponentialkernel{T<:AbstractFloat}(z::T, α::T) = exp(-α*sqrt(z))
 
-@inline pairwisefunction(::ExponentialKernel) = Euclidean()
+@inline pairwisefunction(::ExponentialKernel) = SquaredEuclidean()
 @inline function kappa{T<:AbstractFloat}(κ::ExponentialKernel{T}, z::T)
     exponentialkernel(z, κ.alpha.value)
 end
