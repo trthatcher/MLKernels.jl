@@ -30,9 +30,6 @@ end
 ismercer(::Kernel) = false
 isnegdef(::Kernel) = false
 
-function =={K<:Kernel}(κ1::K, κ2::K)
-    mapreduce(θ -> getfield(κ1,θ) == getfield(κ2,θ), &, true, fieldnames(K))
-end
 
 
 doc"SigmoidKernel(a,c) = tanh(a⋅xᵀy + c)   a ∈ (0,∞), c ∈ (0,∞)"
@@ -383,6 +380,13 @@ for κ in (
         SigmoidKernel
     )
     kernel_sym = κ.name.name
+
+    @eval begin
+        function ==(κ1::$kernel_sym, κ2::$kernel_sym)
+            mapreduce(θ -> getfield(κ1,θ) == getfield(κ2,θ), &, true, fieldnames($kernel_sym))
+        end
+    end
+
     kernel_args = [:(getvalue(κ.$(θ))) for θ in fieldnames(κ)]
     if length(κ.parameters) == 2
         @eval begin
