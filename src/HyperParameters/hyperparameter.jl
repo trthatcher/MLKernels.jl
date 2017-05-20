@@ -4,17 +4,19 @@ immutable HyperParameter{T<:Real}
     value::Base.RefValue{T}
     interval::Interval{T}
     function HyperParameter(x::T, I::Interval{T})
-        checkbounds(I, x) || error("Value $(x) must be in range " * string(I))
+        checkvalue(I, x) || error("Value $(x) must be in range " * string(I))
         new(Ref(x), I)
     end
 end
-HyperParameter{T<:Real}(x::T, I::Interval{T} = unbounded(T)) = HyperParameter{T}(x, I)
+HyperParameter{T<:Real}(x::T, I::Interval{T} = interval(T)) = HyperParameter{T}(x, I)
+
+eltype{T}(::HyperParameter{T}) = T
 
 @inline getvalue{T}(θ::HyperParameter{T}) = getindex(θ.value)
 
 function setvalue!{T}(θ::HyperParameter{T}, x::T)
     checkvalue(θ.interval, x) || error("Value $(x) must be in range " * string(θ.interval))
-    θ.setindex!(θ.value, x)
+    setindex!(θ.value, x)
     return θ
 end
 

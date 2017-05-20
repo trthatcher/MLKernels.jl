@@ -16,6 +16,8 @@ immutable Interval{T<:Real,A<:Bound,B<:Bound}
 end
 Interval{T<:Real}(a::Bound{T}, b::Bound{T}) = Interval{T,typeof(a),typeof(b)}(a,b)
 
+eltype{T}(::Interval{T}) = T
+
 checkvalue(I::Interval, x::Real) = checkvalue(I.a, x) && checkvalue(x, I.b)
 
 function link{T<:AbstractFloat}(I::Interval{T,OpenBound{T},OpenBound{T}}, x::T)
@@ -30,7 +32,7 @@ interval(a::Void, b::Void) = Interval(NullBound{Float64}(), NullBound{Float64}()
 interval{T<:Real}(a::Bound{T}, b::Void) = Interval(a, NullBound{T}())
 interval{T<:Real}(a::Void, b::Bound{T}) = Interval(NullBound{T}(), b)
 interval{T<:Real}(::Type{T}) = Interval(NullBound{T}(), NullBound{T}())
-
+interval{T<:Real}(a::Bound{T}, b::Bound{T}) = Interval(a,b)
 
 function string{T1,T2,T3}(I::Interval{T1,T2,T3})
     if T2 <: NullBound

@@ -10,7 +10,7 @@ for k in kernel_functions
         for i = 1:length(alt_args)
             K = (k)([typeof(θ) <: AbstractFloat ? convert(T,θ) : θ for θ in alt_args[1:i]]...)
             for j = 1:length(alt_args)
-                @test getfield(K,j).value == (j <= i ? alt_args[j] : def_args[j])
+                @test MOD.getvalue(getfield(K,j)) == (j <= i ? alt_args[j] : def_args[j])
             end
         end
     end
@@ -32,7 +32,7 @@ for k in kernel_functions
     k_tmp = get(kernel_functions_kappa, k, x->error(""))
     for T in FloatingPointTypes
         K = convert(Kernel{T}, (k)())
-        args = T[getfield(K,theta).value for theta in fieldnames(K)]
+        args = T[MOD.getvalue(getfield(K,theta)) for theta in fieldnames(K)]
         for z in (zero(T), one(T), convert(T,2))
             v = MOD.kappa(K, z)
             v_tmp = (k_tmp)(z, args...)

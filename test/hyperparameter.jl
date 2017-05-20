@@ -84,110 +84,73 @@ for T in (FloatingPointTypes..., IntegerTypes...)
 end
 
 info("Testing ", MOD.Interval)
-for T in (FloatingPointTypes..., IntegerTypes...)
-    for lisopen in (true, false), uisopen in (true, false)
-        Bl = Bound(zero(T), lisopen)
-        Br = Bound(convert(T,2),  uisopen)
+for T in FloatingPointTypes
+    @test_throws ErrorException MOD.Interval(MOD.ClosedBound(one(T)), MOD.OpenBound(one(T)))
+    @test_throws ErrorException MOD.Interval(MOD.OpenBound(one(T)),   MOD.ClosedBound(one(T)))
+    @test_throws ErrorException MOD.Interval(MOD.OpenBound(one(T)),   MOD.OpenBound(one(T)))
 
-        I = Interval(Bl, Br)
+    a = MOD.ClosedBound(one(T))
+    b = MOD.ClosedBound(one(T))
+    B = MOD.Interval(a,b)
+    @test B.a == a
+    @test B.b == b
+    @test eltype(B) == T
 
-        @test eltype(I) == T
+    for a in (NullBound(T), ClosedBound(-one(T)), OpenBound(-one(T)))
+        for b in (NullBound(T), ClosedBound(one(T)), OpenBound(one(T)))
+            I = MOD.Interval(a, b)
+            @test I.a == a
+            @test I.b == b
+            @test eltype(I) == T
 
-        @test get(I.left) == Bl
-        @test get(I.right) == Br
-
-        @test MOD.checkinterval(I, -one(T)) == false
-        @test MOD.checkinterval(I, convert(T,3)) == false
-
-        @test MOD.checkinterval(I, one(T))
-
-        if lisopen
-            @test MOD.checkinterval(I, zero(T)) == false
-        else
-            @test MOD.checkinterval(I, zero(T)) == true
-        end
-
-        if uisopen
-            @test MOD.checkinterval(I, convert(T,2)) == false
-        else
-            @test MOD.checkinterval(I, convert(T,2)) == true
-        end
-
-        for lnull in (true, false), unull in (true, false)
-            I = Interval(lnull ? Nullable{Bound{T}}() : Nullable(Bl),
-                         unull ? Nullable{Bound{T}}() : Nullable(Br))
-            @test lnull ? isnull(I.left) : get(I.left) == Bl
-            @test unull ? isnull(I.right) : get(I.right) == Br
-
-            if T in FloatingPointTypes
-                I2 = convert(Interval{Float32}, I)
-                @test lnull ? isnull(I2.left) : get(I2.left) == convert(Bound{Float32}, Bl)
-                @test unull ? isnull(I2.right) : get(I2.right) == convert(Bound{Float32}, Br)
-                I2 = convert(Interval{Float64}, I)
-                @test lnull ? isnull(I2.left) : get(I2.left) == convert(Bound{Float64}, Bl)
-                @test unull ? isnull(I2.right) : get(I2.right) == convert(Bound{Float64}, Br)
-            end
-
-            # Test that output does not create error
-            show(DevNull, I)
-        end
-
-        Br = Bound(zero(T), uisopen)
-
-        if lisopen || uisopen
-            @test_throws ErrorException Interval(Bl, Br)
-        else
-            I = Interval(Bl, Br)
-            @test get(I.left) == Bl
-            @test get(I.right) == Br
+            @test MOD.checkvalue(I, convert(T,-2)) == (typeof(a) <: NullBound ? true  : false)
+            @test MOD.checkvalue(I, -one(T))       == (typeof(a) <: OpenBound ? false : true)
+            @test MOD.checkvalue(I, zero(T))       == true
+            @test MOD.checkvalue(I,  one(T))       == (typeof(b) <: OpenBound ? false : true)
+            @test MOD.checkvalue(I, convert(T,2))  == (typeof(b) <: NullBound ? true  : false)
         end
     end
-    for isopen in (true, false)
-        B = Bound(convert(T,2), isopen)
+end
 
-        I = leftbounded(B)
-        @test isnull(I.right)
-        @test get(I.left) == B
-        @test MOD.checkinterval(I, one(T)) == false
-        @test MOD.checkinterval(I, convert(T,3)) == true
-        @test MOD.checkinterval(I, convert(T,2)) == (isopen ? false : true)
+info("Testing ", MOD.interval)
+@test typeof(MOD.interval(nothing, nothing)) == MOD.Interval{Float64,NullBound{Float64},NullBound{Float64}}
+for T in FloatingPointTypes
+    for a in (NullBound(T), ClosedBound(-one(T)), OpenBound(-one(T)))
+        for b in (NullBound(T), ClosedBound(one(T)), OpenBound(one(T)))
+            null_a = typeof(a) <: NullBound
+            null_b = typeof(b) <: NullBound
 
-        I = leftbounded(convert(T,2), isopen ? :open : :closed)
-        @test isnull(I.right)
-        @test get(I.left) == B
+            I = interval(null_a ? nothing : a, null_b ? nothing : b)
 
-        @test_throws ErrorException leftbounded(one(T), :test)
-
-        I = rightbounded(B)
-        @test isnull(I.left)
-        @test get(I.right) == B
-        @test MOD.checkinterval(I, one(T)) == true
-        @test MOD.checkinterval(I, convert(T,3)) == false
-        @test MOD.checkinterval(I, convert(T,2)) == (isopen ? false : true)
-
-        I = rightbounded(convert(T,2), isopen ? :open : :closed)
-        @test isnull(I.left)
-        @test get(I.right) == B
-
-        @test_throws ErrorException rightbounded(zero(T), :test)
-
-        I = unbounded(T)
-        @test MOD.checkinterval(I, -one(T)) == true
-        @test MOD.checkinterval(I, zero(T)) == true
-        @test MOD.checkinterval(I,  one(T)) == true
+            if null_a && null_b
+                @test typeof(I) == MOD.Interval{Float64,NullBound{Float64},NullBound{Float64}}
+            else
+                @test I.a == a
+                @test I.b == b
+                @test eltype(T) == T
+            end
+        end
     end
 end
 
 info("Testing ", MOD.HyperParameter)
 for T in (FloatingPointTypes..., IntegerTypes...)
-    I = rightbounded(one(T), :open)
-
-    P = HyperParameter(zero(T), I)
-    @test P.value == zero(T)
+    I = interval(nothing, ClosedBound(zero(T)))
 
     @test_throws ErrorException HyperParameter(one(T), I)
 
-    show(DevNull, HyperParameter(zero(T), I))
+    P = HyperParameter(one(T), interval(nothing, ClosedBound(one(T))))
+    @test getindex(P.value) == one(T)
+    @test eltype(P) == T
 
-    P = HyperParameter(convert(T,2), unbounded(T))
+    @test getvalue(P) == one(T)
+
+    @test checkvalue(P, convert(T,2)) == false
+    @test checkvalue(P, zero(T)) == true
+
+    setvalue!(P, zero(T))
+    @test getindex(P.value) == zero(T)
+    @test getvalue(P) == zero(T)
+
+    show(DevNull, P)
 end
