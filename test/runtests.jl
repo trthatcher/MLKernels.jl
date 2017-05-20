@@ -13,7 +13,7 @@ using MLKernels:
                 SquaredEuclidean
 
 FloatingPointTypes = (Float32, Float64)
-IntegerTypes = (Int32, UInt32, Int64, UInt64)
+IntegerTypes = (Int32, Int64)
 MOD = MLKernels
 
 include("hyperparameter.jl")

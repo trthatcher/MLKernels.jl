@@ -1,21 +1,86 @@
-info("Testing ", MOD.Bound)
+info("Testing ", MOD.OpenBound)
 for T in (FloatingPointTypes..., IntegerTypes...)
-    for isopen in (true, false)
-        B = Bound(one(T), isopen)
-        @test B.value == one(T)
-        @test B.isopen == isopen
-        @test B == Bound(one(T), isopen ? :open : :closed)
-
-        if T in FloatingPointTypes
-            @test eltype(convert(Bound{Float32}, B)) == Float32
-            @test eltype(convert(Bound{Float64}, B)) == Float64
-        else
-            @test eltype(convert(Bound{Int32}, B)) == Int32
-            @test eltype(convert(Bound{Int64}, B)) == Int64
+    if T <: Integer
+        @test_throws ErrorException MOD.OpenBound(one(T))
+    else
+        if T <: AbstractFloat
+            @test_throws ErrorException MOD.OpenBound(convert(T,  NaN))
+            @test_throws ErrorException MOD.OpenBound(convert(T,  Inf))
+            @test_throws ErrorException MOD.OpenBound(convert(T, -Inf))
         end
 
-        @test_throws ErrorException Bound(one(T), :test)
+        for x in (1,2)
+            B = MOD.OpenBound(convert(T,x))
+
+            @test B.value  == x
+            @test eltype(B) == T
+        end
+
+        for U in FloatingPointTypes
+            B = MOD.OpenBound(one(T))
+
+            B_u = convert(MOD.OpenBound{U}, B)
+            @test B_u.value == one(U)
+            @test eltype(B_u) == U
+        end
+
+        B = MOD.OpenBound(zero(T))
+
+        @test checkvalue(-one(T), B) == true
+        @test checkvalue(zero(T), B) == false
+        @test checkvalue(one(T),  B) == false
+
+        @test checkvalue(B, -one(T)) == false
+        @test checkvalue(B, zero(T)) == false
+        @test checkvalue(B, one(T))  == true
     end
+end
+
+info("Testing ", MOD.ClosedBound)
+for T in (FloatingPointTypes..., IntegerTypes...)
+    if T <: AbstractFloat
+        @test_throws ErrorException MOD.ClosedBound(convert(T,  NaN))
+        @test_throws ErrorException MOD.ClosedBound(convert(T,  Inf))
+        @test_throws ErrorException MOD.ClosedBound(convert(T, -Inf))
+    end
+
+    for x in (1,2)
+        B = MOD.ClosedBound(convert(T,x))
+
+        @test B.value  == x
+        @test eltype(B) == T
+    end
+
+    for U in (FloatingPointTypes..., IntegerTypes...)
+        B = MOD.ClosedBound(one(T))
+
+        B_u = convert(MOD.ClosedBound{U}, B)
+        @test B_u.value == one(U)
+        @test eltype(B_u) == U
+    end
+
+    B = MOD.ClosedBound(zero(T))
+
+    @test checkvalue(-one(T), B) == true
+    @test checkvalue(zero(T), B) == true
+    @test checkvalue(one(T),  B) == false
+
+    @test checkvalue(B, -one(T)) == false
+    @test checkvalue(B, zero(T)) == true
+    @test checkvalue(B, one(T))  == true
+end
+
+info("Testing ", MOD.NullBound)
+for T in (FloatingPointTypes..., IntegerTypes...)
+    @test eltype(NullBound(T)) == T
+
+    for U in (FloatingPointTypes..., IntegerTypes...)
+        B = MOD.NullBound(T)
+
+        B_u = convert(MOD.NullBound{U}, B)
+        @test eltype(B_u) == U
+    end
+
 end
 
 info("Testing ", MOD.Interval)
@@ -31,21 +96,21 @@ for T in (FloatingPointTypes..., IntegerTypes...)
         @test get(I.left) == Bl
         @test get(I.right) == Br
 
-        @test MOD.checkbounds(I, -one(T)) == false
-        @test MOD.checkbounds(I, convert(T,3)) == false
+        @test MOD.checkinterval(I, -one(T)) == false
+        @test MOD.checkinterval(I, convert(T,3)) == false
 
-        @test MOD.checkbounds(I, one(T))
+        @test MOD.checkinterval(I, one(T))
 
         if lisopen
-            @test MOD.checkbounds(I, zero(T)) == false
+            @test MOD.checkinterval(I, zero(T)) == false
         else
-            @test MOD.checkbounds(I, zero(T)) == true
+            @test MOD.checkinterval(I, zero(T)) == true
         end
 
         if uisopen
-            @test MOD.checkbounds(I, convert(T,2)) == false
+            @test MOD.checkinterval(I, convert(T,2)) == false
         else
-            @test MOD.checkbounds(I, convert(T,2)) == true
+            @test MOD.checkinterval(I, convert(T,2)) == true
         end
 
         for lnull in (true, false), unull in (true, false)
@@ -83,9 +148,9 @@ for T in (FloatingPointTypes..., IntegerTypes...)
         I = leftbounded(B)
         @test isnull(I.right)
         @test get(I.left) == B
-        @test MOD.checkbounds(I, one(T)) == false
-        @test MOD.checkbounds(I, convert(T,3)) == true
-        @test MOD.checkbounds(I, convert(T,2)) == (isopen ? false : true)
+        @test MOD.checkinterval(I, one(T)) == false
+        @test MOD.checkinterval(I, convert(T,3)) == true
+        @test MOD.checkinterval(I, convert(T,2)) == (isopen ? false : true)
 
         I = leftbounded(convert(T,2), isopen ? :open : :closed)
         @test isnull(I.right)
@@ -96,9 +161,9 @@ for T in (FloatingPointTypes..., IntegerTypes...)
         I = rightbounded(B)
         @test isnull(I.left)
         @test get(I.right) == B
-        @test MOD.checkbounds(I, one(T)) == true
-        @test MOD.checkbounds(I, convert(T,3)) == false
-        @test MOD.checkbounds(I, convert(T,2)) == (isopen ? false : true)
+        @test MOD.checkinterval(I, one(T)) == true
+        @test MOD.checkinterval(I, convert(T,3)) == false
+        @test MOD.checkinterval(I, convert(T,2)) == (isopen ? false : true)
 
         I = rightbounded(convert(T,2), isopen ? :open : :closed)
         @test isnull(I.left)
@@ -107,9 +172,9 @@ for T in (FloatingPointTypes..., IntegerTypes...)
         @test_throws ErrorException rightbounded(zero(T), :test)
 
         I = unbounded(T)
-        @test MOD.checkbounds(I, -one(T)) == true
-        @test MOD.checkbounds(I, zero(T)) == true
-        @test MOD.checkbounds(I,  one(T)) == true
+        @test MOD.checkinterval(I, -one(T)) == true
+        @test MOD.checkinterval(I, zero(T)) == true
+        @test MOD.checkinterval(I,  one(T)) == true
     end
 end
 

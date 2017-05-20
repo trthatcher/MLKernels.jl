@@ -1,21 +1,38 @@
 #== HyperParameter Type ==#
 
-type HyperParameter{T<:Real}
-    value::T
-    bounds::Interval{T}
-    function HyperParameter(value::T, bounds::Interval{T})
-        checkbounds(bounds, value) || error("Value $(value) must be in range " * string(bounds))
-        new(value, bounds)
+immutable HyperParameter{T<:Real}
+    value::Base.RefValue{T}
+    interval::Interval{T}
+    function HyperParameter(x::T, I::Interval{T})
+        checkbounds(I, x) || error("Value $(x) must be in range " * string(I))
+        new(Ref(x), I)
     end
 end
-function HyperParameter{T<:Real}(x::T, bounds::Interval{T} = NullBound(T))
-    HyperParameter{T}(x, bounds)
+HyperParameter{T<:Real}(x::T, I::Interval{T} = unbounded(T)) = HyperParameter{T}(x, I)
+
+@inline getvalue{T}(θ::HyperParameter{T}) = getindex(θ.value)
+
+function setvalue!{T}(θ::HyperParameter{T}, x::T)
+    checkvalue(θ.interval, x) || error("Value $(x) must be in range " * string(θ.interval))
+    θ.setindex!(θ.value, x)
+    return θ
 end
 
+checkvalue{T}(θ::HyperParameter{T}, x::T) = checkvalue(θ.interval, x)
+
+convert{T<:Real}(::Type{HyperParameter{T}}, θ::HyperParameter{T}) = θ
 function convert{T<:Real}(::Type{HyperParameter{T}}, θ::HyperParameter)
-    HyperParameter{T}(convert(T, θ.value), convert(Interval{T}, θ.bounds))
+    HyperParameter{T}(convert(T, getvalue(θ)), convert(Interval{T}, θ.bounds))
 end
 
 function show{T}(io::IO, θ::HyperParameter{T})
-    print(io, "HyperParameter{" * string(T) * "}(", θ.value, ") ∈ ", θ.bounds)
+    print(io, string("HyperParameter(", getvalue(θ), ",", string(θ.interval), ")"))
+end
+
+for op in (:isless, :(==), :+, :-, :*, :/, :^)
+    @eval begin
+        $op(θ1::HyperParameter, θ2::HyperParameter) = $op(getvalue(θ1), getvalue(θ2))
+        $op(a::Number, θ::HyperParameter) = $op(a, getvalue(θ))
+        $op(θ::HyperParameter, a::Number) = $op(getvalue(θ), a)
+    end
 end

@@ -1,18 +1,21 @@
 module HyperParameters
 
-import Base: convert, eltype, show, ==, *, /, +, -, ^, besselk, exp, gamma, tanh
+import Base: convert, eltype, promote_type, show, string, ==, *, /, +, -, ^, isless
 
 export 
     Bound,
+        LeftBound,
+        RightBound,
+        NullBound,
+
     Interval,
-    leftbounded,
-    rightbounded,
-    unbounded,
+    interval,
     checkbounds,
-    Variable,
-    fixed, 
-    Argument,
-    HyperParameter
+    
+    HyperParameter,
+    getvalue,
+    setvalue!,
+    checkvalue
 
 include("bound.jl")
 include("interval.jl")

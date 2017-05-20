@@ -1,105 +1,49 @@
-#== Interval Type ==#
-
-immutable Interval{T<:Real}
-    left::Nullable{Bound{T}}
-    right::Nullable{Bound{T}}
-    function Interval(left::Nullable{Bound{T}}, right::Nullable{Bound{T}})
-        if !isnull(left) && !isnull(right)
-            rbound = get(right)
-            lbound = get(left)
-            if lbound.isopen || rbound.isopen
-                lbound.value <  rbound.value || error("Invalid bounds")
+immutable Interval{T<:Real,A<:Bound,B<:Bound}
+    a::A
+    b::B
+    function Interval(a::Bound{T}, b::Bound{T})
+        if !(A <: NullBound || B <: NullBound)
+            va = a.value
+            vb = b.value
+            if A <: ClosedBound && B <: ClosedBound
+                va <= vb || error("Invalid bounds: a=$va must be less than or equal to b=$vb")
             else
-                lbound.value <= rbound.value || error("Invalid bounds")
+                va < vb || error("Invalid bounds: a=$va must be less than b=$vb")
             end
         end
-        new(left, right)
+        new(a,b)
     end
 end
-Interval{T<:Real}(left::Nullable{Bound{T}}, right::Nullable{Bound{T}}) = Interval{T}(left, right)
-Interval{T<:Real}(left::Bound{T}, right::Bound{T}) = Interval(Nullable(left), Nullable(right))
+Interval{T<:Real}(a::Bound{T}, b::Bound{T}) = Interval{T,typeof(a),typeof(b)}(a,b)
 
-eltype{T}(::Interval{T}) = T
+checkvalue(I::Interval, x::Real) = checkvalue(I.a, x) && checkvalue(x, I.b)
 
-function leftbounded{T<:Real}(value::T, boundtype::Symbol)
-    if boundtype == :open
-        Interval(Nullable(Bound(value, true)),  Nullable{Bound{T}}())
-    elseif boundtype == :closed
-        Interval(Nullable(Bound(value, false)), Nullable{Bound{T}}())
-    else
-        error("Bound type $boundtype not recognized")
-    end
+function link{T<:AbstractFloat}(I::Interval{T,OpenBound{T},OpenBound{T}}, x::T)
+    y = (z - I.a.value)/(I.b.value - I.a.value)
+    log(y/(1-y))
 end
-leftbounded{T<:Real}(left::Bound{T}) = Interval(Nullable(left), Nullable{Bound{T}}())
+link{T<:AbstractFloat}(I::Interval{T,OpenBound{T},Bound{T}}, x::T) = log(x - I.a.value)
+link{T<:AbstractFloat}(I::Interval{T,Bound{T},OpenBound{T}}, x::T) = log(I.b.value - x)
+link{T<:AbstractFloat}(I::Interval{T}, x::T) = x
 
-function rightbounded{T<:Real}(value::T, boundtype::Symbol)
-    if boundtype == :open
-        Interval(Nullable{Bound{T}}(), Nullable(Bound(value, true)))
-    elseif boundtype == :closed
-        Interval(Nullable{Bound{T}}(), Nullable(Bound(value, false)))
-    else
-        error("Bound type $boundtype not recognized")
-    end
-end
-rightbounded{T<:Real}(right::Bound{T}) = Interval(Nullable{Bound{T}}(), Nullable(right))
+interval(a::Void, b::Void) = Interval(NullBound{Float64}(), NullBound{Float64}())
+interval{T<:Real}(a::Bound{T}, b::Void) = Interval(a, NullBound{T}())
+interval{T<:Real}(a::Void, b::Bound{T}) = Interval(NullBound{T}(), b)
+interval{T<:Real}(::Type{T}) = Interval(NullBound{T}(), NullBound{T}())
 
 
-unbounded{T<:Real}(::Type{T}) = Interval(Nullable{Bound{T}}(), Nullable{Bound{T}}())
-
-function convert{T<:Real}(::Type{Interval{T}}, I::Interval)
-    if isnull(I.left)
-        isnull(I.right) ? unbounded(T) : rightbounded(convert(Bound{T}, get(I.right)))
-    else
-        if isnull(I.right)
-            leftbounded(convert(Bound{T}, get(I.left)))
+function string{T1,T2,T3}(I::Interval{T1,T2,T3})
+    if T2 <: NullBound
+        if T3 <: NullBound
+            string("interval(", T1, ")")
         else
-            Interval(convert(Bound{T}, get(I.left)), convert(Bound{T}, get(I.right)))
-        end
-    end
-end
-
-
-function description_string{T}(I::Interval{T})
-    interval =  string("Interval{", T, "}")
-    if isnull(I.left)
-        if isnull(I.right)
-            string(interval, "(-∞,∞)")
-        else
-            string(interval, "(-∞,", get(I.right).value, get(I.right).isopen ? ")" : "]")
+            string("interval(nothing,", string(I.b), ")")
         end
     else
-        left = string(get(I.left).isopen ? "(" : "[",  get(I.left).value, ",")
-        if isnull(I.right)
-            string(interval, left, "∞)")
-        else
-            string(interval, left, get(I.right).value, get(I.right).isopen ? ")" : "]")
-        end
+        string("interval(", string(I.a), ",", T3 <: NullBound ? "nothing" : string(I.b), ")")
     end
 end
-function show{T}(io::IO, I::Interval{T})
-    print(io, description_string(I))
-end
 
-
-function checkbounds{T<:Real}(I::Interval{T}, x::T)
-    if isnull(I.left)
-        if isnull(I.right)
-            true
-        else
-            ub = get(I.right)
-            ub.isopen ? (x < ub.value) : (x <= ub.value)
-        end
-    else
-        lb = get(I.left)
-        if isnull(I.right)
-            lb.isopen ? (lb.value < x) : (lb.value <= x)
-        else
-            ub = get(I.right)
-            if ub.isopen
-                lb.isopen ? (lb.value < x < ub.value) : (lb.value <= x < ub.value)
-            else
-                lb.isopen ? (lb.value < x <= ub.value) : (lb.value <= x <= ub.value)
-            end
-        end
-    end
+function show(io::IO, I::Interval)
+    print(io, string(I))
 end

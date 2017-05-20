@@ -11,15 +11,17 @@ export
 
     # Hyper Parameters
     Bound,
+        OpenBound,
+        ClosedBound,
+        NullBound,
+
     Interval,
-    leftbounded,
-    rightbounded,
-    unbounded,
-    checkbounds,
-    Variable,
-    fixed,
-    Argument,
+    interval,
+
     HyperParameter,
+    getvalue,
+    setvalue!,
+    checkvalue,
 
     # Memory
     MemoryLayout,
@@ -62,12 +64,15 @@ export
 include("HyperParameters/HyperParameters.jl")
 using MLKernels.HyperParameters: 
     Bound,
+        OpenBound,
+        ClosedBound,
+        NullBound,
     Interval,
-    leftbounded,
-    rightbounded,
-    unbounded,
-    checkbounds,
-    HyperParameter
+    interval,
+    HyperParameter,
+    getvalue,
+    setvalue!,
+    checkvalue
 
 
 # Row major and column major ordering are supported

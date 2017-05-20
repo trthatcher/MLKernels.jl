@@ -4,10 +4,6 @@
 
 abstract Kernel{T<:AbstractFloat}
 
-function show(io::IO, κ::Kernel)
-    print(io, description_string(κ))
-end
-
 function description_string(κ::Kernel)
     sym_map = Dict(
         :alpha => :α,
@@ -16,9 +12,13 @@ function description_string(κ::Kernel)
         :nu    => :ν,
         :rho   => :ρ
     )
-    args = ["$(get(sym_map, θ, θ))=$(getfield(κ,θ).value)" for θ in fieldnames(κ)]
+    args = [string(get(sym_map, θ, θ), "=", getvalue(getfield(κ,θ))) for θ in fieldnames(κ)]
     kernelname = typeof(κ).name.name
     string(kernelname, "(", join(args, ","), ")")
+end
+
+function show(io::IO, κ::Kernel)
+    print(io, description_string(κ))
 end
 
 function pairwisefunction(::Kernel)
@@ -30,14 +30,21 @@ end
 ismercer(::Kernel) = false
 isnegdef(::Kernel) = false
 
+function =={K<:Kernel}(κ1::K, κ2::K)
+    mapreduce(θ -> getfield(κ1,θ) == getfield(κ2,θ), &, true, fieldnames(K))
+end
+
 
 doc"SigmoidKernel(a,c) = tanh(a⋅xᵀy + c)   a ∈ (0,∞), c ∈ (0,∞)"
 immutable SigmoidKernel{T<:AbstractFloat} <: Kernel{T}
     a::HyperParameter{T}
     c::HyperParameter{T}
     SigmoidKernel(a::T, c::T) = new(
-        HyperParameter(a, leftbounded(zero(T), :open)),
-        HyperParameter(c, leftbounded(zero(T), :closed))   
+        HyperParameter(a, interval(OpenBound(zero(T)),   nothing)),
+        HyperParameter(c, interval(ClosedBound(zero(T)), nothing))   
+
+        #HyperParameter(a, leftbounded(zero(T), :open)),
+        #HyperParameter(c, leftbounded(zero(T), :closed))   
     )
 end
 function SigmoidKernel{T1<:Real,T2<:Real}(
@@ -68,9 +75,9 @@ ismercer(κ::MercerKernel) = true
 doc"ExponentialKernel(α) = exp(-α⋅‖x-y‖)   α ∈ (0,∞)"
 immutable ExponentialKernel{T<:AbstractFloat} <: MercerKernel{T}
     alpha::HyperParameter{T}
-    ExponentialKernel(α::T) = new(
-        HyperParameter(α, leftbounded(zero(T), :open))
-    )
+    function ExponentialKernel(α::T)
+        new(HyperParameter(α, leftbounded(zero(T), :open)))
+    end
 end
 function ExponentialKernel{T1<:Real}(α::T1 = 1.0)
     T = promote_type_float(T1)
@@ -105,7 +112,7 @@ RadialBasisKernel = SquaredExponentialKernel
 
 @inline pairwisefunction(::SquaredExponentialKernel) = SquaredEuclidean()
 @inline function kappa{T}(κ::SquaredExponentialKernel{T}, z::T)
-    squaredexponentialkernel(z, κ.alpha.value)
+    squaredexponentialkernel(z, getindex(κ.alpha.value))
 end
 
 
@@ -360,7 +367,7 @@ end
 
 
 # Conversion Code Generation
-
+#=
 for κ in (
         ExponentialKernel,
         SquaredExponentialKernel,
@@ -444,3 +451,4 @@ for κ in (
         end
     end
 end
+=#
