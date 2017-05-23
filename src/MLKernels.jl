@@ -67,13 +67,16 @@ using MLKernels.HyperParameters:
         OpenBound,
         ClosedBound,
         NullBound,
+
     Interval,
     interval,
+
     HyperParameter,
     getvalue,
     setvalue!,
     checkvalue
 
+import MLKernels.HyperParameters: gettheta
 
 # Row major and column major ordering are supported
 abstract MemoryLayout

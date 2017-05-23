@@ -30,6 +30,34 @@ end
 ismercer(::Kernel) = false
 isnegdef(::Kernel) = false
 
+thetafieldnames(κ::Kernel) = fieldnames(κ)
+
+gettheta{T}(κ::Kernel{T}) = T[gettheta(getfield(κ,θ)) for θ in thetafieldnames(κ)]
+
+function settheta!{T}(κ::Kernel{T},v::Vector{T})
+    fields = thetafieldnames(κ)
+    if length(fields) != length(vector)
+        throw(DimensionMismatch, "Update vector has invalid length")
+    end
+    for i in eachindex(fields)
+        settheta!(getfield(κ, fields[i]), v[i])
+    end
+    return κ
+end
+
+function checktheta{T}(κ::Kernel{T},v::Vector{T})
+    fields = thetafieldnames(κ)
+    if length(fields) != length(vector)
+        throw(DimensionMismatch, "Update vector has invalid length")
+    end
+    for i in eachindex(fields)
+        if !checktheta!(getfield(κ, fields[i]), v[i])
+            return false
+        end
+    end
+    return true
+end
+
 
 
 doc"SigmoidKernel(a,c) = tanh(a⋅xᵀy + c)   a ∈ (0,∞), c ∈ (0,∞)"
@@ -41,14 +69,9 @@ immutable SigmoidKernel{T<:AbstractFloat} <: Kernel{T}
         HyperParameter(convert(T,c), interval(ClosedBound(zero(T)), nothing))   
     )
 end
-function SigmoidKernel{T1<:Real,T2<:Real}(
-        a::T1 = 1.0,
-        c::T2 = one(T1)
-    )
-    T = promote_type_float(T1, T2)
-    SigmoidKernel{T}(convert(T,a), convert(T,c))
+function SigmoidKernel{T1<:Real,T2<:Real}(a::T1 = 1.0, c::T2 = one(T1))
+    SigmoidKernel{promote_type_float(T1,T2)}(a,c)
 end
-
 
 @inline sigmoidkernel{T<:AbstractFloat}(z::T, a::T, c::T) = tanh(a*z + c)
 
@@ -73,10 +96,7 @@ immutable ExponentialKernel{T<:AbstractFloat} <: MercerKernel{T}
         new(HyperParameter(convert(T,α), interval(OpenBound(zero(T)), nothing)))
     end
 end
-function ExponentialKernel{T1<:Real}(α::T1 = 1.0)
-    T = promote_type_float(T1)
-    ExponentialKernel{T}(convert(T,α))
-end
+ExponentialKernel{T1<:Real}(α::T1 = 1.0) = ExponentialKernel{promote_type_float(T1)}(α)
 LaplacianKernel = ExponentialKernel
 
 @inline exponentialkernel{T<:AbstractFloat}(z::T, α::T) = exp(-α*sqrt(z))
@@ -96,8 +116,7 @@ immutable SquaredExponentialKernel{T<:AbstractFloat} <: MercerKernel{T}
     )
 end
 function SquaredExponentialKernel{T1<:Real}(α::T1 = 1.0)
-    T = promote_type_float(T1)
-    SquaredExponentialKernel{T}(convert(T,α))
+    SquaredExponentialKernel{promote_type_float(T1)}(α)
 end
 GaussianKernel = SquaredExponentialKernel
 RadialBasisKernel = SquaredExponentialKernel
@@ -120,12 +139,8 @@ immutable GammaExponentialKernel{T<:AbstractFloat} <: MercerKernel{T}
         HyperParameter(convert(T,γ), interval(OpenBound(zero(T)), ClosedBound(one(T))))
     )
 end
-function GammaExponentialKernel{T1<:Real,T2<:Real}(
-        α::T1 = 1.0,
-        γ::T2 = one(T1)
-    )
-    T = promote_type_float(T1, T2)
-    GammaExponentialKernel{T}(convert(T,α), convert(T,γ))
+function GammaExponentialKernel{T1<:Real,T2<:Real}(α::T1 = 1.0, γ::T2 = one(T1))
+    GammaExponentialKernel{promote_type_float(T1, T2)}(α,γ)
 end
 
 @inline gammaexponentialkernel{T<:AbstractFloat}(z::T, α::T, γ::T) = exp(-α*z^γ)
@@ -146,12 +161,8 @@ immutable RationalQuadraticKernel{T<:AbstractFloat} <: MercerKernel{T}
         HyperParameter(convert(T,β), interval(OpenBound(zero(T)), nothing))
     )
 end
-function RationalQuadraticKernel{T1<:Real,T2<:Real}(
-        α::T1 = 1.0,
-        β::T2 = one(T1)
-    )
-    T = promote_type_float(T1, T2)
-    RationalQuadraticKernel{T}(convert(T,α), convert(T,β))
+function RationalQuadraticKernel{T1<:Real,T2<:Real}(α::T1 = 1.0, β::T2 = one(T1))
+    RationalQuadraticKernel{promote_type_float(T1,T2)}(α, β)
 end
 
 @inline rationalquadratickernel{T<:AbstractFloat}(z::T, α::T, β::T) = (1 + α*z)^(-β)
@@ -163,7 +174,7 @@ end
 
 
 
-doc"GammaRationalKernel(α,β) = (1 + α⋅‖x-y‖²ᵞ)⁻ᵝ   α ∈ (0,∞), β ∈ (0,∞), γ ∈ (0,∞)"
+doc"GammaRationalKernel(α,β) = (1 + α⋅‖x-y‖²ᵞ)⁻ᵝ   α ∈ (0,∞), β ∈ (0,∞), γ ∈ (0,1]"
 immutable GammaRationalKernel{T<:AbstractFloat} <: MercerKernel{T}
     alpha::HyperParameter{T}
     beta::HyperParameter{T}
@@ -265,6 +276,8 @@ function PolynomialKernel{T1<:Real,T2<:Real,U<:Integer}(
     T = promote_type_float(T1, T2)
     PolynomialKernel{T,U}(convert(T,a), convert(T,c), d)
 end
+
+thetafieldnames(κ::PolynomialKernel) = Symbol[:a, :c]
 
 @inline polynomialkernel{T<:AbstractFloat,U<:Integer}(z::T, a::T, c::T, d::U) = (a*z + c)^d
 

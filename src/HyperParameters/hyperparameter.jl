@@ -31,6 +31,12 @@ function show{T}(io::IO, θ::HyperParameter{T})
     print(io, string("HyperParameter(", getvalue(θ), ",", string(θ.interval), ")"))
 end
 
+gettheta(θ::HyperParameter) = theta(θ.interval, getvalue(θ))
+
+settheta!{T}(θ::HyperParameter, x::T) = setvalue!(θ, invtheta(θ.interval,x))
+
+checktheta{T}(θ::HyperParameter, x::T) = checkvalue(θ, theta(θ.interval,x))
+
 for op in (:isless, :(==), :+, :-, :*, :/, :^)
     @eval begin
         $op(θ1::HyperParameter, θ2::HyperParameter) = $op(getvalue(θ1), getvalue(θ2))

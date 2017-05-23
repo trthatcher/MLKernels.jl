@@ -15,7 +15,8 @@ export
     HyperParameter,
     getvalue,
     setvalue!,
-    checkvalue
+    checkvalue,
+    theta
 
 include("bound.jl")
 include("interval.jl")
