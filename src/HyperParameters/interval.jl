@@ -35,8 +35,8 @@ theta{T<:AbstractFloat,_<:Bound}(I::Interval{T,_,OpenBound{T}}, x::T) = log(I.b.
 theta{T<:AbstractFloat}(I::Interval{T}, x::T) = x
 
 function invtheta{T<:AbstractFloat}(I::Interval{T,OpenBound{T},OpenBound{T}}, x::T)
-    y = (I.b.value - I.a.value)*x + I.a.value
-    exp(y)/(one(T)+exp(y))
+    y = exp(x)/(one(T)+exp(x))
+    (I.b.value - I.a.value)*y + I.a.value
 end
 invtheta{T<:AbstractFloat,_<:Bound}(I::Interval{T,OpenBound{T},_}, x::T) = exp(x) + I.a.value
 invtheta{T<:AbstractFloat,_<:Bound}(I::Interval{T,_,OpenBound{T}}, x::T) = I.b.value - exp(x)

@@ -1,3 +1,5 @@
+MODHP = MLKernels.HyperParameters
+
 info("Testing ", MOD.OpenBound)
 for T in (FloatingPointTypes..., IntegerTypes...)
     if T <: Integer
@@ -33,6 +35,9 @@ for T in (FloatingPointTypes..., IntegerTypes...)
         @test checkvalue(B, -one(T)) == false
         @test checkvalue(B, zero(T)) == false
         @test checkvalue(B, one(T))  == true
+
+        @test string(B) == string("OpenBound(", zero(T), ")")
+        @test show(DevNull, B) == nothing
     end
 end
 
@@ -68,6 +73,9 @@ for T in (FloatingPointTypes..., IntegerTypes...)
     @test checkvalue(B, -one(T)) == false
     @test checkvalue(B, zero(T)) == true
     @test checkvalue(B, one(T))  == true
+
+    @test string(B) == string("ClosedBound(", zero(T), ")")
+    @test show(DevNull, B) == nothing
 end
 
 info("Testing ", MOD.NullBound)
@@ -81,6 +89,18 @@ for T in (FloatingPointTypes..., IntegerTypes...)
         @test eltype(B_u) == U
     end
 
+    B = MOD.NullBound(T)
+
+    @test checkvalue(-one(T), B) == true
+    @test checkvalue(zero(T), B) == true
+    @test checkvalue(one(T),  B) == true
+
+    @test checkvalue(B, -one(T)) == true
+    @test checkvalue(B, zero(T)) == true
+    @test checkvalue(B, one(T))  == true
+
+    @test string(B) == string("NullBound(", T, ")")
+    @test show(DevNull, B) == nothing
 end
 
 info("Testing ", MOD.Interval)
@@ -91,10 +111,15 @@ for T in FloatingPointTypes
 
     a = MOD.ClosedBound(one(T))
     b = MOD.ClosedBound(one(T))
-    B = MOD.Interval(a,b)
-    @test B.a == a
-    @test B.b == b
-    @test eltype(B) == T
+    I = MOD.Interval(a,b)
+    @test I.a == a
+    @test I.b == b
+    @test eltype(I) == T
+
+    I = MOD.interval(nothing, nothing)
+    @test I.a == NullBound(Float64)
+    @test I.b == NullBound(Float64)
+    @test eltype(I) == Float64
 
     for a in (NullBound(T), ClosedBound(-one(T)), OpenBound(-one(T)))
         for b in (NullBound(T), ClosedBound(one(T)), OpenBound(one(T)))
@@ -103,6 +128,24 @@ for T in FloatingPointTypes
             @test I.b == b
             @test eltype(I) == T
 
+            if typeof(a) <: NullBound
+                if typeof(b) <: NullBound
+                    @test I == MOD.interval(T)
+                    @test string(I) == string("interval(", T, ")")
+                else
+                    @test I == MOD.interval(nothing, b)
+                    @test string(I) == string("interval(nothing,", string(b), ")")
+                end
+            else
+                if typeof(b) <: NullBound
+                    @test I == MOD.interval(a,nothing)
+                    @test string(I) == string("interval(", string(a), ",nothing)")
+                else
+                    @test I == MOD.interval(a, b)
+                    @test string(I) == string("interval(", string(a), ",", string(b), ")")
+                end
+            end
+
             @test MOD.checkvalue(I, convert(T,-2)) == (typeof(a) <: NullBound ? true  : false)
             @test MOD.checkvalue(I, -one(T))       == (typeof(a) <: OpenBound ? false : true)
             @test MOD.checkvalue(I, zero(T))       == true
@@ -110,6 +153,30 @@ for T in FloatingPointTypes
             @test MOD.checkvalue(I, convert(T,2))  == (typeof(b) <: NullBound ? true  : false)
         end
     end
+
+    a = convert(T,7.6)
+    b = convert(T,23)
+    c = convert(T,13)
+
+    I = MODHP.Interval(ClosedBound(a), ClosedBound(b))
+    @test_approx_eq MODHP.theta(I,c) c
+    @test_approx_eq MODHP.invtheta(I,MODHP.theta(I,c)) c
+
+    I = MODHP.Interval(ClosedBound(a), OpenBound(b))
+    @test_approx_eq MODHP.theta(I,c) log(b-c)
+    @test_approx_eq MODHP.invtheta(I,MODHP.theta(I,c)) c
+
+    I = MODHP.Interval(OpenBound(a), ClosedBound(b))
+    @test_approx_eq MODHP.theta(I,c) log(c-a)
+    @test_approx_eq MODHP.invtheta(I,MODHP.theta(I,c)) c
+
+    I = MODHP.Interval(OpenBound(a), OpenBound(b))
+    v = (c-a)/(b-a)
+    @test_approx_eq MODHP.theta(I,c) log(v/(1-v))
+    @test_approx_eq MODHP.invtheta(I,MODHP.theta(I,c)) c
+
+    @test show(DevNull, MOD.interval(MOD.ClosedBound(one(T)), MOD.ClosedBound(one(T)))) == nothing
+
 end
 
 info("Testing ", MOD.interval)
@@ -152,5 +219,5 @@ for T in (FloatingPointTypes..., IntegerTypes...)
     @test getindex(P.value) == zero(T)
     @test getvalue(P) == zero(T)
 
-    show(DevNull, P)
+    @test show(DevNull, P) == nothing
 end
