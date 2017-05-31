@@ -31,28 +31,18 @@ The package may be added by running one of the following lines of code:
 Getting Started
 ---------------
 
-Documentation on the interface implemented by MLKernels.jl is available under
-the interface section:
+Documentation on the interface implemented by `MLKernels.jl`_ is available under
+the interface section listed in the table of contents below or on the sidebar:
 
 .. toctree::
-    :maxdepth: 2
+    :maxdepth: 1
 
     interface
+    kernels
+    kerneltheory
 
 A listing of the implemented kernel functions and their properties is available
-on the following page:
-
-.. toctree::
-    :maxdepth: 2
-
-    kernels
-
-Documentation on the theory surrounding kernel functions and the kernel trick is
-available in the kernel theory section:
-
-.. toctree::
-    :maxdepth: 2
-
-    kerneltheory
+on the kernels page and documentation on the theory surrounding kernel functions
+and the kernel trick is available in the kernel theory section.
 
 .. _MLKernels.jl: https://github.com/trthatcher/MLKernels.jl

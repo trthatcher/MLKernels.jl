@@ -219,5 +219,29 @@ for T in (FloatingPointTypes..., IntegerTypes...)
     @test getindex(P.value) == zero(T)
     @test getvalue(P) == zero(T)
 
+    if T in FloatingPointTypes
+        for a in (NullBound(T), ClosedBound(-one(T)), OpenBound(-one(T)))
+            for b in (NullBound(T), ClosedBound(one(T)), OpenBound(one(T)))
+                I = MODHP.Interval(a, b)
+                P = HyperParameter(zero(T),I)
+
+                @test_approx_eq MODHP.gettheta(P) MODHP.theta(I, zero(T))
+
+                MODHP.settheta!(P, MODHP.theta(I, convert(T,0.5)))
+                @test_approx_eq MODHP.gettheta(P) MODHP.theta(I, convert(T,0.5))
+                @test_approx_eq MODHP.getvalue(P) convert(T,0.5)
+
+            end
+        end
+    end
+
+    P1 = HyperParameter(zero(T), interval(T))
+    P2 = HyperParameter(one(T),  interval(T))
+    for op in (isless, ==, +, -, *, /)
+        @test op(P1, one(T)) == op(getvalue(P1), one(T))
+        @test op(one(T), P1) == op(one(T), getvalue(P1))
+        @test op(P1, P2)     == op(getvalue(P1), getvalue(P2))
+    end
+
     @test show(DevNull, P) == nothing
 end
