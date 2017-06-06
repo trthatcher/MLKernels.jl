@@ -1,9 +1,9 @@
-function promote_type_float(T_i::DataType...)
+function floattype(T_i::DataType...)
     T_max = promote_type(T_i...)
     T_max <: AbstractFloat ? T_max : Float64
 end
 
-function promote_type_int(U_i::DataType...)
+function inttype(U_i::DataType...)
     U_max = promote_type(U_i...)
     U_max <: Signed ? U_max : Int64
 end

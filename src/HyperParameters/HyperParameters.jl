@@ -16,7 +16,9 @@ export
     getvalue,
     setvalue!,
     checkvalue,
-    theta
+    gettheta,
+    settheta!,
+    checktheta
 
 include("bound.jl")
 include("interval.jl")

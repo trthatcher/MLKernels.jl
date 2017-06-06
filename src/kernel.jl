@@ -4,21 +4,14 @@
 
 abstract Kernel{T<:AbstractFloat}
 
-function description_string(κ::Kernel)
-    sym_map = Dict(
-        :alpha => :α,
-        :beta  => :β,
-        :gamma => :γ,
-        :nu    => :ν,
-        :rho   => :ρ
-    )
-    args = [string(get(sym_map, θ, θ), "=", getvalue(getfield(κ,θ))) for θ in fieldnames(κ)]
+function string(κ::Kernel)
+    args = [string(getvalue(getfield(κ,θ))) for θ in fieldnames(κ)]
     kernelname = typeof(κ).name.name
     string(kernelname, "(", join(args, ","), ")")
 end
 
 function show(io::IO, κ::Kernel)
-    print(io, description_string(κ))
+    print(io, string(κ))
 end
 
 function pairwisefunction(::Kernel)
@@ -60,6 +53,10 @@ end
 
 
 
+#================================================
+  Not True Kernels
+================================================#
+
 doc"SigmoidKernel(a,c) = tanh(a⋅xᵀy + c)   a ∈ (0,∞), c ∈ (0,∞)"
 immutable SigmoidKernel{T<:AbstractFloat} <: Kernel{T}
     a::HyperParameter{T}
@@ -70,7 +67,7 @@ immutable SigmoidKernel{T<:AbstractFloat} <: Kernel{T}
     )
 end
 function SigmoidKernel{T1<:Real,T2<:Real}(a::T1 = 1.0, c::T2 = one(T1))
-    SigmoidKernel{promote_type_float(T1,T2)}(a,c)
+    SigmoidKernel{floattype(T1,T2)}(a,c)
 end
 
 @inline sigmoidkernel{T<:AbstractFloat}(z::T, a::T, c::T) = tanh(a*z + c)
@@ -96,7 +93,7 @@ immutable ExponentialKernel{T<:AbstractFloat} <: MercerKernel{T}
         new(HyperParameter(convert(T,α), interval(OpenBound(zero(T)), nothing)))
     end
 end
-ExponentialKernel{T1<:Real}(α::T1 = 1.0) = ExponentialKernel{promote_type_float(T1)}(α)
+ExponentialKernel{T<:Real}(α::T=1.0) = ExponentialKernel{floattype(T)}(α)
 LaplacianKernel = ExponentialKernel
 
 @inline exponentialkernel{T<:AbstractFloat}(z::T, α::T) = exp(-α*sqrt(z))
@@ -115,9 +112,7 @@ immutable SquaredExponentialKernel{T<:AbstractFloat} <: MercerKernel{T}
         HyperParameter(convert(T,α), interval(OpenBound(zero(T)), nothing))
     )
 end
-function SquaredExponentialKernel{T1<:Real}(α::T1 = 1.0)
-    SquaredExponentialKernel{promote_type_float(T1)}(α)
-end
+SquaredExponentialKernel{T<:Real}(α::T=1.0) = SquaredExponentialKernel{floattype(T)}(α)
 GaussianKernel = SquaredExponentialKernel
 RadialBasisKernel = SquaredExponentialKernel
 
@@ -139,8 +134,8 @@ immutable GammaExponentialKernel{T<:AbstractFloat} <: MercerKernel{T}
         HyperParameter(convert(T,γ), interval(OpenBound(zero(T)), ClosedBound(one(T))))
     )
 end
-function GammaExponentialKernel{T1<:Real,T2<:Real}(α::T1 = 1.0, γ::T2 = one(T1))
-    GammaExponentialKernel{promote_type_float(T1, T2)}(α,γ)
+function GammaExponentialKernel{T1<:Real,T2<:Real}(α::T1=1.0, γ::T2=one(T1))
+    GammaExponentialKernel{floattype(T1,T2)}(α,γ)
 end
 
 @inline gammaexponentialkernel{T<:AbstractFloat}(z::T, α::T, γ::T) = exp(-α*z^γ)
@@ -162,7 +157,7 @@ immutable RationalQuadraticKernel{T<:AbstractFloat} <: MercerKernel{T}
     )
 end
 function RationalQuadraticKernel{T1<:Real,T2<:Real}(α::T1 = 1.0, β::T2 = one(T1))
-    RationalQuadraticKernel{promote_type_float(T1,T2)}(α, β)
+    RationalQuadraticKernel{floattype(T1,T2)}(α, β)
 end
 
 @inline rationalquadratickernel{T<:AbstractFloat}(z::T, α::T, β::T) = (1 + α*z)^(-β)
@@ -188,9 +183,9 @@ end
 function GammaRationalKernel{T1<:Real,T2<:Real,T3<:Real}(
         α::T1 = 1.0,
         β::T2 = one(T1),
-        γ::T3 = one(promote_type_float(T1,T2))
+        γ::T3 = one(floattype(T1,T2))
     )
-    GammaRationalKernel{promote_type_float(T1, T2, T3)}(α, β, γ)
+    GammaRationalKernel{floattype(T1,T2,T3)}(α,β,γ)
 end
 
 @inline gammarationalkernel{T<:AbstractFloat}(z::T, α::T, β::T, γ::T) = (1 + α*(z^γ))^(-β)
@@ -211,9 +206,7 @@ immutable MaternKernel{T<:AbstractFloat} <: MercerKernel{T}
         HyperParameter(convert(T,ρ), interval(OpenBound(zero(T)), nothing))
     )
 end
-function MaternKernel{T1<:Real,T2<:Real}(ν::T1 = 1.0, ρ::T2 = one(T1))
-    MaternKernel{promote_type_float(T1, T2)}(ν, ρ)
-end
+MaternKernel{T1<:Real,T2<:Real}(ν::T1=1.0, ρ::T2=one(T1)) = MaternKernel{floattype(T1,T2)}(ν,ρ)
 
 @inline function maternkernel{T}(z::T, ν::T, ρ::T)
     v1 = sqrt(2ν) * z / ρ
@@ -237,9 +230,7 @@ immutable LinearKernel{T<:AbstractFloat} <: MercerKernel{T}
         HyperParameter(convert(T,c), interval(ClosedBound(zero(T)), nothing))
     )
 end
-function LinearKernel{T1<:Real,T2<:Real}(a::T1 = 1.0, c::T2 = one(T1))
-    LinearKernel{promote_type_float(T1,T2)}(a, c)
-end
+LinearKernel{T1<:Real,T2<:Real}(a::T1=1.0, c::T2=one(T1)) = LinearKernel{floattype(T1,T2)}(a,c)
 
 @inline linearkernel{T<:AbstractFloat}(z::T, a::T, c::T) = a*z + c
 
@@ -260,7 +251,7 @@ immutable PolynomialKernel{T<:AbstractFloat,U<:Integer} <: MercerKernel{T}
     )
 end
 function PolynomialKernel{T1<:Real,T2<:Real,U<:Integer}(a::T1 = 1.0, c::T2 = one(T1), d::U = 3)
-    PolynomialKernel{promote_type_float(T1,T2),U}(a, c, d)
+    PolynomialKernel{floattype(T1,T2),U}(a, c, d)
 end
 
 thetafieldnames(κ::PolynomialKernel) = Symbol[:a, :c]
@@ -281,7 +272,7 @@ immutable ExponentiatedKernel{T<:AbstractFloat} <: MercerKernel{T}
         HyperParameter(convert(T,α), interval(OpenBound(zero(T)), nothing))
     )
 end
-ExponentiatedKernel{T1<:Real}(α::T1 = 1.0) = ExponentiatedKernel{promote_type_float(T1)}(α)
+ExponentiatedKernel{T1<:Real}(α::T1 = 1.0) = ExponentiatedKernel{floattype(T1)}(α)
 
 @inline exponentiatedkernel{T<:AbstractFloat}(z::T, α::T) = exp(α*z)
 
@@ -297,7 +288,7 @@ immutable PeriodicKernel{T<:AbstractFloat} <: MercerKernel{T}
         HyperParameter(convert(T,α), interval(OpenBound(zero(T)), nothing))
     )
 end
-PeriodicKernel{T1<:Real}(α::T1 = 1.0) = PeriodicKernel{promote_type_float(T1)}(α)
+PeriodicKernel{T1<:Real}(α::T1 = 1.0) = PeriodicKernel{floattype(T1)}(α)
 
 @inline pairwisefunction(::PeriodicKernel) = SineSquared()
 @inline kappa{T}(κ::PeriodicKernel{T}, z::T) = squaredexponentialkernel(z, getvalue(κ.alpha))
@@ -320,7 +311,7 @@ immutable PowerKernel{T<:AbstractFloat} <: NegativeDefiniteKernel{T}
         HyperParameter(convert(T,γ), interval(OpenBound(zero(T)), ClosedBound(one(T))))
     )
 end
-PowerKernel{T1<:Real}(γ::T1 = 1.0) = PowerKernel{promote_type_float(T1)}(γ)
+PowerKernel{T1<:Real}(γ::T1 = 1.0) = PowerKernel{floattype(T1)}(γ)
 
 @inline powerkernel{T<:AbstractFloat}(z::T, γ::T) = z^γ
 
@@ -338,7 +329,7 @@ immutable LogKernel{T<:AbstractFloat} <: NegativeDefiniteKernel{T}
         HyperParameter(convert(T,γ), interval(OpenBound(zero(T)), ClosedBound(one(T))))
     )
 end
-LogKernel{T1,T2}(α::T1 = 1.0, γ::T2 = one(T1)) = LogKernel{promote_type_float(T1,T2)}(α, γ)
+LogKernel{T1,T2}(α::T1 = 1.0, γ::T2 = one(T1)) = LogKernel{floattype(T1,T2)}(α, γ)
 
 @inline powerkernel{T<:AbstractFloat}(z::T, α::T, γ::T) = log(α*z^γ+1)
 

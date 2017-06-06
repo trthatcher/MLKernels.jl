@@ -25,6 +25,9 @@ for k in kernel_functions
             end
         end
     end
+
+    @test MOD.ismercer(K) == (typeof(K) <: MOD.MercerKernel ? true : false)
+    @test MOD.isnegdef(K) == (typeof(K) <: MOD.NegativeDefiniteKernel ? true : false)
 end
 
 info("Testing ", MOD.kappa)

@@ -26,28 +26,37 @@ interval{T<:Real}(a::Bound{T}, b::Bound{T}) = Interval(a,b)
 
 checkvalue(I::Interval, x::Real) = checkvalue(I.a, x) && checkvalue(x, I.b)
 
-function theta{T<:AbstractFloat}(I::Interval{T,OpenBound{T},OpenBound{T}}, x::T)
-    y = (x - I.a.value)/(I.b.value - I.a.value)
-    log(y/(one(T)-y))
+function eta{T<:AbstractFloat,A,B}(I::Interval{T,A,B}, x::T)
+    if A <: OpenBound
+        if B <: OpenBound
+            return (I.b.value*exp(x) + I.a.value)/(one(T) + exp(x))
+        else
+            return exp(x) + I.a.value
+        end
+    else
+        return B <: OpenBound ? I.b.value - exp(x) : x 
+    end
 end
-theta{T<:AbstractFloat,_<:Bound}(I::Interval{T,OpenBound{T},_}, x::T) = log(x - I.a.value)
-theta{T<:AbstractFloat,_<:Bound}(I::Interval{T,_,OpenBound{T}}, x::T) = log(I.b.value - x)
-theta{T<:AbstractFloat}(I::Interval{T}, x::T) = x
 
-function invtheta{T<:AbstractFloat}(I::Interval{T,OpenBound{T},OpenBound{T}}, x::T)
-    y = exp(x)/(one(T)+exp(x))
-    (I.b.value - I.a.value)*y + I.a.value
+function theta{T<:AbstractFloat,A,B}(I::Interval{T,A,B}, x::T)
+    if A <: OpenBound
+        return B <: OpenBound ? log(x-I.a.value) - log(I.b.value-x) : log(x-I.a.value)
+    else
+        return B <: OpenBound ? log(I.b.value-x) : x 
+    end
 end
-invtheta{T<:AbstractFloat,_<:Bound}(I::Interval{T,OpenBound{T},_}, x::T) = exp(x) + I.a.value
-invtheta{T<:AbstractFloat,_<:Bound}(I::Interval{T,_,OpenBound{T}}, x::T) = I.b.value - exp(x)
-invtheta{T<:AbstractFloat}(I::Interval{T}, x::T) = x
 
-#=
-upperbound{T}(I::Interval{T,OpenBound{T},OpenBound{T}}) = convert(T, Inf)
-upperbound{T<:AbstractFloat,_<:Bound}(I::Interval{T,OpenBound{T},_}) = log(x - I.a.value)
-upperbound{T<:AbstractFloat,_<:Bound}(I::Interval{T,_,OpenBound{T}}) = log(I.b.value - x)
-upperbound{T<:AbstractFloat}(I::Interval{T}, x::T) = x
-=#
+function upperboundtheta{T<:AbstractFloat,A,B}(I::Interval{T,A,B})
+    if B <: ClosedBound
+        return A <: OpenBound ? log(I.b.value - I.a.value) : I.b.value
+    else
+        return A <: ClosedBound ? log(I.b.value - I.a.value) : convert(T,Inf)
+    end
+end
+
+function lowerboundtheta{T<:AbstractFloat,A,B}(I::Interval{T,A,B})
+    A <: ClosedBound ? I.a.value : convert(T,-Inf)
+end
 
 function string{T1,T2,T3}(I::Interval{T1,T2,T3})
     if T2 <: NullBound

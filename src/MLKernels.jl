@@ -22,6 +22,9 @@ export
     getvalue,
     setvalue!,
     checkvalue,
+    gettheta,
+    settheta!,
+    checktheta,
 
     # Memory
     MemoryLayout,
@@ -51,6 +54,7 @@ export
 
     # Kernel Functions
     ismercer,
+    isnegdef,
 
     # Kernel Matrix
     kernel,

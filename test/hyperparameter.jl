@@ -157,10 +157,12 @@ for T in FloatingPointTypes
     a = convert(T,7.6)
     b = convert(T,23)
     c = convert(T,13)
-
+#=
     I = MODHP.Interval(ClosedBound(a), ClosedBound(b))
-    @test_approx_eq MODHP.theta(I,c) c
-    @test_approx_eq MODHP.invtheta(I,MODHP.theta(I,c)) c
+    for x in linspace(a,b,20)
+
+        @test_approx_eq MODHP.theta(I,c) c
+        @test_approx_eq MODHP.invtheta(I,MODHP.theta(I,c)) c
 
     I = MODHP.Interval(ClosedBound(a), OpenBound(b))
     @test_approx_eq MODHP.theta(I,c) log(b-c)
@@ -174,6 +176,7 @@ for T in FloatingPointTypes
     v = (c-a)/(b-a)
     @test_approx_eq MODHP.theta(I,c) log(v/(1-v))
     @test_approx_eq MODHP.invtheta(I,MODHP.theta(I,c)) c
+    =#
 
     @test show(DevNull, MOD.interval(MOD.ClosedBound(one(T)), MOD.ClosedBound(one(T)))) == nothing
 
