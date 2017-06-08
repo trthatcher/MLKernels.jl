@@ -18,7 +18,9 @@ export
     checkvalue,
     gettheta,
     settheta!,
-    checktheta
+    checktheta,
+    upperboundtheta,
+    lowerboundtheta
 
 include("bound.jl")
 include("interval.jl")

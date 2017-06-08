@@ -132,9 +132,20 @@ for T in FloatingPointTypes
                 if typeof(b) <: NullBound
                     @test I == MOD.interval(T)
                     @test string(I) == string("interval(", T, ")")
+
+                    @test MOD.lowerboundtheta(I) == convert(T,-Inf)
+                    @test MOD.upperboundtheta(I) == convert(T,Inf)
                 else
                     @test I == MOD.interval(nothing, b)
                     @test string(I) == string("interval(nothing,", string(b), ")")
+
+                    if typeof(b) <: ClosedBound
+                        @test MOD.lowerboundtheta(I) == convert(T,-Inf)
+                        @test MOD.upperboundtheta(I) == I.b.value
+                    else
+                        @test MOD.lowerboundtheta(I) == convert(T,-Inf)
+                        @test MOD.upperboundtheta(I) == convert(T,Inf)
+                    end
                 end
             else
                 if typeof(b) <: NullBound

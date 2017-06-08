@@ -78,7 +78,9 @@ using MLKernels.HyperParameters:
     HyperParameter,
     getvalue,
     setvalue!,
-    checkvalue
+    checkvalue,
+    lowerboundtheta,
+    upperboundtheta
 
 import MLKernels.HyperParameters: gettheta
 

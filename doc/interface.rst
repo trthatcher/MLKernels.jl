@@ -24,35 +24,6 @@ Essentials
     are vectors or scalars of some subtype of ``Real``.
 
 
-.. function:: centerkernelmatrix(K::Matrix)
-
-    Centers the (rectangular) kernel matrix ``K`` with respect to the implicit
-    Kernel Hilbert Space according to the following formula:
-
-    .. math:: [\mathbf{K}]_{ij} = 
-        \langle\phi(\mathbf{x}_i) -\mathbf{\mu}_{\phi\mathbf{x}}, 
-        \phi(\mathbf{y}_j) - \mathbf{\mu}_{\phi\mathbf{y}} \rangle 
-    
-    Where :math:`\mathbf{\mu}_{\phi\mathbf{x}}` and 
-    :math:`\mathbf{\mu}_{\phi\mathbf{x}}` are given by:
-
-    .. math::
-
-        \mathbf{\mu}_{\phi\mathbf{x}} =  \frac{1}{n} \sum_{i=1}^n \phi(\mathbf{x}_i)
-        \qquad \qquad
-        \mathbf{\mu}_{\phi\mathbf{y}} =  \frac{1}{m} \sum_{i=1}^m \phi(\mathbf{y}_i)
-
-
-
-.. function:: centerkernelmatrix!(K::Matrix)
-
-    The same as ``centerkernelmatrix`` except that ``K`` is overwritten.
-
-
----------------
-Kernel Matrices
----------------
-
 .. function:: kernelmatrix([σ::MemoryLayout,] κ::Kernel, X::Matrix [, symmetrize::Bool])
 
     Calculate the kernel matrix of ``X`` with respect to kernel ``κ``. 
@@ -82,6 +53,31 @@ Kernel Matrices
 
     Identical to ``kernelmatrix`` with the exception that a pre-allocated matrix
     ``K`` will be overwritten with the kernel matrix.
+
+
+.. function:: centerkernelmatrix(K::Matrix)
+
+    Centers the (rectangular) kernel matrix ``K`` with respect to the implicit
+    Kernel Hilbert Space according to the following formula:
+
+    .. math:: [\mathbf{K}]_{ij} = 
+        \langle\phi(\mathbf{x}_i) -\mathbf{\mu}_{\phi\mathbf{x}}, 
+        \phi(\mathbf{y}_j) - \mathbf{\mu}_{\phi\mathbf{y}} \rangle 
+    
+    Where :math:`\mathbf{\mu}_{\phi\mathbf{x}}` and 
+    :math:`\mathbf{\mu}_{\phi\mathbf{x}}` are given by:
+
+    .. math::
+
+        \mathbf{\mu}_{\phi\mathbf{x}} =  \frac{1}{n} \sum_{i=1}^n \phi(\mathbf{x}_i)
+        \qquad \qquad
+        \mathbf{\mu}_{\phi\mathbf{y}} =  \frac{1}{m} \sum_{i=1}^m \phi(\mathbf{y}_i)
+
+
+
+.. function:: centerkernelmatrix!(K::Matrix)
+
+    The same as ``centerkernelmatrix`` except that ``K`` is overwritten.
 
 
 .. class:: MemoryLayout()
@@ -171,33 +167,42 @@ Hyper Parameters
 
 Behind the scenes, each ``Kernel`` is a collection of ``HyperParameter`` values. 
 The hyper parameter type stores the current value of the hyper parameter as well
-as an ``Interval`` type that restricts the values that a hyper parameter may
-take. The interval type only supports box constraints, but this is sufficient
-for the hyper parameters for kernels.
+as an ``Interval`` type that applies box constraints to the hyper parameter
+domain.
 
 Often, hyper parameter values are restricted to an interval with an open bounded
-startpoint or endpoint (ex. :math:`\gamma > 0`). Exclusive endpoints such as
-these are often disallowed in optimization algorithms. Therefore, this module
-includes a method that is used to apply a transformation, :math:`\theta`, to the
-hyper parameter that converts open bounded endpoints into closed or unbounded
-endpoints.
+startpoint or endpoint (ex. :math:`\gamma > 0`). Exclusive finite endpoints such
+as these are often disallowed in optimization algorithms. This module includes
+two transformations to work around these constraints:
 
- * If :math:`a < \gamma < b` for finite :math:`a` and :math:`b`:
+ * ``theta``: The function :math:`\theta` is used to transform a parameter
+   restricted to a finite open-bounded interval to an interval without finite
+   open bounds.
 
-    .. math::
+ * ``eta``: The function :math:`\eta` is the inverse of :math:`\theta`. It 
+   converts from values in the transformed space back to the original parameter 
+   space.
 
-        \theta(\gamma) = \log(\gamma-a) - \log(\gamma-b)
-        \qquad \implies \qquad
-        \gamma(\theta) = \frac{b\exp(\theta)+a}{1+\exp(\theta)}
+The specific form of :math:`\theta` and :math:`\eta` depends on the interval
+that the parameter is restricted to. Given finite :math:`a`, finite
+:math:`b` and parameter :math:`\alpha`, functions :math:`\theta` and 
+:math:`\eta` are  defined as follows:
 
- * If :math:`a < \gamma` for finite :math:`a`:
+=================================== =============================================== ====================================== ========================================================
+Domain :math:`\alpha`               Function :math:`\theta_\alpha = \theta(\alpha)`    Domain :math:`\theta_\alpha`           Function :math:`\eta\left(\theta_{\alpha}\right)`
+=================================== =============================================== ====================================== ========================================================
+:math:`\left(a,b\right)`            :math:`\log(\alpha-a) - \log(b - \alpha)`       :math:`\left(-\infty,\infty\right)`    :math:`(b\exp(\theta_\alpha)+a)/(1+\exp(\theta_\alpha))`
+:math:`\left(a,b\right]`            :math:`\log(\alpha-a)`                          :math:`\left(-\infty,\log(b-a)\right]` :math:`\exp(\theta_\alpha) + a`
+:math:`\left[a,b\right)`            :math:`\log(b-\alpha)`                          :math:`\left(-\infty,\log(b-a)\right]` :math:`b - \exp(\theta_\alpha)`
+:math:`\left(a,\infty\right)`       :math:`\log(\alpha - a)`                        :math:`\left(-\infty,\infty\right)`    :math:`\exp(\theta_\alpha) + a`
+:math:`\left(-\infty,b\right)`      :math:`\log(b - \alpha)`                        :math:`\left(-\infty,\infty\right)`    :math:`b - \exp(\theta_\alpha)`
+:math:`\left(-\infty,\infty\right)` N/A                                             N/A                                    N/A
+:math:`\left[a,b\right]`            N/A                                             N/A                                    N/A
+:math:`\left(-\infty,b\right]`      N/A                                             N/A                                    N/A
+:math:`\left[a,\infty\right)`       N/A                                             N/A                                    N/A
+=================================== =============================================== ====================================== ========================================================
 
-    .. math::
-
-        \theta(\gamma) = \log(\gamma-a)
-        \qquad \implies \qquad
-        \gamma(\theta) = \exp(\theta)+a
-
+The following functions are supported by the hyper parameter submodule:
 
 .. function:: ClosedBound(a::Real) -> ClosedBound
 
