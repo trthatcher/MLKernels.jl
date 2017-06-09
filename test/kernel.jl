@@ -26,8 +26,13 @@ for k in kernel_functions
         end
     end
 
+    # Test Properties
     @test MOD.ismercer(K) == (typeof(K) <: MOD.MercerKernel ? true : false)
     @test MOD.isnegdef(K) == (typeof(K) <: MOD.NegativeDefiniteKernel ? true : false)
+
+    # Test Display
+    @test eval(parse(string(K))) == K
+    @test show(DevNull, K) == nothing
 end
 
 info("Testing ", MOD.kappa)
@@ -36,6 +41,7 @@ for k in kernel_functions
     for T in FloatingPointTypes
         K = convert(Kernel{T}, (k)())
         args = T[MOD.getvalue(getfield(K,theta)) for theta in fieldnames(K)]
+
         for z in (zero(T), one(T), convert(T,2))
             v = MOD.kappa(K, z)
             v_tmp = (k_tmp)(z, args...)
