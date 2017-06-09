@@ -49,13 +49,15 @@ end
 function upperboundtheta{T<:AbstractFloat,A,B}(I::Interval{T,A,B})
     if B <: ClosedBound
         return A <: OpenBound ? log(I.b.value - I.a.value) : I.b.value
-    else
+    elseif B <: OpenBound
         return A <: ClosedBound ? log(I.b.value - I.a.value) : convert(T,Inf)
+    else
+        return convert(T,Inf)
     end
 end
 
 function lowerboundtheta{T<:AbstractFloat,A,B}(I::Interval{T,A,B})
-    A <: ClosedBound ? I.a.value : convert(T,-Inf)
+    A <: ClosedBound && !(B <: OpenBound) ? I.a.value : convert(T,-Inf)
 end
 
 function string{T1,T2,T3}(I::Interval{T1,T2,T3})

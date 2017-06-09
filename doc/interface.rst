@@ -224,12 +224,42 @@ The following functions are supported by the hyper parameter submodule:
 
     Constructs an ``Interval`` type. The interval type is used to represent box
     constraints on parameters. This can be used to restrict the values a hyper
-    parameter may take on. The ends of the interval may be open (and
-    potentially unbounded) or closed.
+    parameter may take on.
 
-    The ``Interval`` type is also used to define a transformation, ``theta``
-    (not exported) that will transform a parameter restricted to an open bounded
-    interval to a parameter restricted a closed or unbounded interval.
+    The ``Interval`` type is also used to define the form of ``theta``.
 
-    The interval type is used to 
+.. function:: interval(a::Union{Bound,Void},b::Union{Bound,Void}) -> Interval
 
+    Constructs an ``Interval`` type. If ``nothing`` is provided for ``a`` or
+    ``b``, then a ``NullBound`` will be substituted. If both ``a`` and ``b`` are
+    ``nothing``, the interval defaults to an unbounded ``Interval{Float64}``
+    type.
+
+.. function:: HyperParameter(a::Real, I::Interval) -> HyperParameter
+
+    Constructs a hyper parameter with value ``a`` and domain restriction ``I``.
+    If ``a`` is an invalid value for ``I``, then the constructor will fail.
+
+.. function:: checkvalue(P::HyperParameter, x::Real)
+
+    Checks if ``x`` falls within the hyper parameter domain of ``P``.
+
+.. function:: getvalue(P::HyperParameter)
+
+    Gets the current value of hyper parameter ``P``.
+
+.. function:: setvalue!(P::HyperParameter, x::Real)
+
+    Sets the value of ``P`` to ``x``.
+
+.. function:: checktheta(P::HyperParameter, x::Real)
+
+    Checks if :math:`\eta(x)` falls within the hyper parameter domain of ``P``.
+
+.. function:: gettheta(P::HyperParameter)
+
+    Gets the current value of :math:`\theta(P)` of hyper parameter ``P``.
+
+.. function:: settheta!(P::HyperParameter, x::Real)
+
+    Sets the value of ``P`` to :math:`\eta(x)`.

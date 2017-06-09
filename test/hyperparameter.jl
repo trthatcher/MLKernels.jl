@@ -132,20 +132,9 @@ for T in FloatingPointTypes
                 if typeof(b) <: NullBound
                     @test I == MOD.interval(T)
                     @test string(I) == string("interval(", T, ")")
-
-                    @test MOD.lowerboundtheta(I) == convert(T,-Inf)
-                    @test MOD.upperboundtheta(I) == convert(T,Inf)
                 else
                     @test I == MOD.interval(nothing, b)
                     @test string(I) == string("interval(nothing,", string(b), ")")
-
-                    if typeof(b) <: ClosedBound
-                        @test MOD.lowerboundtheta(I) == convert(T,-Inf)
-                        @test MOD.upperboundtheta(I) == I.b.value
-                    else
-                        @test MOD.lowerboundtheta(I) == convert(T,-Inf)
-                        @test MOD.upperboundtheta(I) == convert(T,Inf)
-                    end
                 end
             else
                 if typeof(b) <: NullBound
@@ -209,6 +198,51 @@ for T in FloatingPointTypes
                 @test I.a == a
                 @test I.b == b
                 @test eltype(T) == T
+            end
+        end
+    end
+end
+
+info("Testing ", MOD.lowerboundtheta)
+info("Testing ", MOD.upperboundtheta)
+for T in FloatingPointTypes
+    for a in (NullBound(T), ClosedBound(-one(T)), OpenBound(-one(T)))
+        for b in (NullBound(T), ClosedBound(one(T)), OpenBound(one(T)))
+            I = MOD.Interval(a, b)
+
+            if typeof(a) <: NullBound
+                if typeof(b) <: NullBound
+                    @test MOD.lowerboundtheta(I) == convert(T,-Inf)
+                    @test MOD.upperboundtheta(I) == convert(T,Inf)
+                elseif typeof(b) <: ClosedBound
+                    @test MOD.lowerboundtheta(I) == convert(T,-Inf)
+                    @test MOD.upperboundtheta(I) == I.b.value
+                else
+                    @test MOD.lowerboundtheta(I) == convert(T,-Inf)
+                    @test MOD.upperboundtheta(I) == convert(T,Inf)
+                end
+            elseif typeof(a) <: ClosedBound
+                if typeof(b) <: NullBound
+                    @test MOD.lowerboundtheta(I) == I.a.value
+                    @test MOD.upperboundtheta(I) == convert(T,Inf)
+                elseif typeof(b) <: ClosedBound
+                    @test MOD.lowerboundtheta(I) == I.a.value
+                    @test MOD.upperboundtheta(I) == I.b.value
+                else
+                    @test MOD.lowerboundtheta(I) == convert(T,-Inf)
+                    @test MOD.upperboundtheta(I) == log(I.b.value - I.a.value)
+                end
+            else
+                if typeof(b) <: NullBound
+                    @test MOD.lowerboundtheta(I) == convert(T,-Inf)
+                    @test MOD.upperboundtheta(I) == convert(T,Inf)
+                elseif typeof(b) <: ClosedBound
+                    @test MOD.lowerboundtheta(I) == convert(T,-Inf)
+                    @test MOD.upperboundtheta(I) == log(I.b.value - I.a.value)
+                else
+                    @test MOD.lowerboundtheta(I) == convert(T,-Inf)
+                    @test MOD.upperboundtheta(I) == convert(T,Inf)
+                end
             end
         end
     end
