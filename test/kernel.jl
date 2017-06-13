@@ -49,3 +49,11 @@ for k in kernel_functions
         end
     end
 end
+
+info("Testing ", MOD.gettheta)
+for k in kernel_functions
+    K = (k)()
+    K_theta = MOD.gettheta(K)
+    @test K_theta == [MOD.gettheta(getfield(K,field)) for field in MOD.thetafieldnames(K)]
+    @test MOD.checktheta(K, K_theta) == true
+end

@@ -79,10 +79,13 @@ using MLKernels.HyperParameters:
     getvalue,
     setvalue!,
     checkvalue,
+    gettheta,
+    checktheta,
+    settheta!,
     lowerboundtheta,
     upperboundtheta
 
-import MLKernels.HyperParameters: gettheta
+import MLKernels.HyperParameters: gettheta, checktheta, settheta!
 
 # Row major and column major ordering are supported
 abstract MemoryLayout

@@ -40,11 +40,11 @@ end
 
 function checktheta{T}(κ::Kernel{T},v::Vector{T})
     fields = thetafieldnames(κ)
-    if length(fields) != length(vector)
+    if length(fields) != length(v)
         throw(DimensionMismatch, "Update vector has invalid length")
     end
     for i in eachindex(fields)
-        if !checktheta!(getfield(κ, fields[i]), v[i])
+        if !checktheta(getfield(κ, fields[i]), v[i])
             return false
         end
     end
