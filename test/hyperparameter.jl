@@ -162,6 +162,48 @@ for T in FloatingPointTypes
 
 end
 
+info("Testing ", MOD.checkvalue)
+for T in FloatingPointTypes
+    l = convert(T,-10)
+    a = -one(T)
+    b = one(T)
+    u = convert(T,10)
+    for A in (NullBound(T), ClosedBound(a), OpenBound(a))
+        T_a = typeof(A)
+        for B in (NullBound(T), ClosedBound(b), OpenBound(b))
+            T_b = typeof(B)
+            I = MODHP.interval(A,B)
+
+            for x in linspace(l,a,20)
+                if T_a <: NullBound || T_a <: ClosedBound && x == a
+                    @test MOD.checkvalue(I,x) == true
+                else 
+                    @test MOD.checkvalue(I,x) == false
+                end
+            end
+
+            for x in linspace(a,b,20)
+                if x == a
+                    @test MOD.checkvalue(I,x) == T_a <: OpenBound ? false : true
+                elseif x == b
+                    @test MOD.checkvalue(I,x) == T_b <: OpenBound ? false : true
+                else
+                    @test MOD.checkvalue(I,x) == true
+                end
+            end
+
+            for x in linspace(b,u,20)
+                if T_b <: NullBound || T_b <: ClosedBound && x == b
+                    @test MOD.checkvalue(I,x) == true
+                else 
+                    @test MOD.checkvalue(I,x) == false
+                end
+            end
+        end
+    end
+
+end
+
 
 info("Testing ", MOD.interval)
 @test typeof(MOD.interval(nothing, nothing)) == MOD.Interval{Float64,NullBound{Float64},NullBound{Float64}}
@@ -185,6 +227,43 @@ for T in FloatingPointTypes
 end
 
 info("Testing ", MODHP.theta)
+#=
+for T in FloatingPointTypes
+    for a in (NullBound(T), ClosedBound(-one(T)), OpenBound(-one(T)))
+        for b in (NullBound(T), ClosedBound(one(T)), OpenBound(one(T)))
+            I = MOD.Interval(a, b)
+
+            if typeof(a) <: NullBound
+                if typeof(b) <: NullBound
+
+                elseif typeof(b) <: ClosedBound
+
+                else
+
+                end
+            elseif typeof(a) <: ClosedBound
+                if typeof(b) <: NullBound
+
+                elseif typeof(b) <: ClosedBound
+
+                else
+
+                end
+            else
+                if typeof(b) <: NullBound
+
+                elseif typeof(b) <: ClosedBound
+
+                else
+
+                end
+            end
+        end
+    end
+end
+=#
+
+
 info("Testing ", MODHP.eta)
 for T in FloatingPointTypes
     for a in (NullBound(T), ClosedBound(-one(T)), OpenBound(-one(T)))
@@ -273,7 +352,6 @@ for T in (FloatingPointTypes..., IntegerTypes...)
                 MODHP.settheta!(P, MODHP.theta(I, convert(T,0.5)))
                 @test_approx_eq MODHP.gettheta(P) MODHP.theta(I, convert(T,0.5))
                 @test_approx_eq MODHP.getvalue(P) convert(T,0.5)
-
             end
         end
     end
