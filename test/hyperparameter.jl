@@ -159,51 +159,7 @@ for T in FloatingPointTypes
     c = convert(T,13)
 
     @test show(DevNull, MOD.interval(MOD.ClosedBound(one(T)), MOD.ClosedBound(one(T)))) == nothing
-
 end
-
-info("Testing ", MOD.checkvalue)
-for T in FloatingPointTypes
-    l = convert(T,-10)
-    a = -one(T)
-    b = one(T)
-    u = convert(T,10)
-    for A in (NullBound(T), ClosedBound(a), OpenBound(a))
-        T_a = typeof(A)
-        for B in (NullBound(T), ClosedBound(b), OpenBound(b))
-            T_b = typeof(B)
-            I = MODHP.interval(A,B)
-
-            for x in linspace(l,a,20)
-                if T_a <: NullBound || T_a <: ClosedBound && x == a
-                    @test MOD.checkvalue(I,x) == true
-                else 
-                    @test MOD.checkvalue(I,x) == false
-                end
-            end
-
-            for x in linspace(a,b,20)
-                if x == a
-                    @test MOD.checkvalue(I,x) == T_a <: OpenBound ? false : true
-                elseif x == b
-                    @test MOD.checkvalue(I,x) == T_b <: OpenBound ? false : true
-                else
-                    @test MOD.checkvalue(I,x) == true
-                end
-            end
-
-            for x in linspace(b,u,20)
-                if T_b <: NullBound || T_b <: ClosedBound && x == b
-                    @test MOD.checkvalue(I,x) == true
-                else 
-                    @test MOD.checkvalue(I,x) == false
-                end
-            end
-        end
-    end
-
-end
-
 
 info("Testing ", MOD.interval)
 @test typeof(MOD.interval(nothing, nothing)) == MOD.Interval{Float64,NullBound{Float64},NullBound{Float64}}
@@ -226,7 +182,202 @@ for T in FloatingPointTypes
     end
 end
 
+
+info("Testing ", MOD.checkvalue)
+for T in FloatingPointTypes
+    l = convert(T,-9)
+    a = convert(T,-3)
+    b = convert(T,3)
+    u = convert(T,9)
+    for A in (NullBound(T), ClosedBound(a), OpenBound(a))
+        T_a = typeof(A)
+        for B in (NullBound(T), ClosedBound(b), OpenBound(b))
+            T_b = typeof(B)
+            I = MODHP.interval(A,B)
+
+            for x in linspace(l,a,30)
+                if T_a <: NullBound || T_a <: ClosedBound && x == a
+                    @test MOD.checkvalue(I,x) == true
+                else 
+                    @test MOD.checkvalue(I,x) == false
+                end
+            end
+
+            for x in linspace(a,b,30)
+                if x == a
+                    @test MOD.checkvalue(I,x) == T_a <: OpenBound ? false : true
+                elseif x == b
+                    @test MOD.checkvalue(I,x) == T_b <: OpenBound ? false : true
+                else
+                    @test MOD.checkvalue(I,x) == true
+                end
+            end
+
+            for x in linspace(b,u,30)
+                if T_b <: NullBound || T_b <: ClosedBound && x == b
+                    @test MOD.checkvalue(I,x) == true
+                else 
+                    @test MOD.checkvalue(I,x) == false
+                end
+            end
+        end
+    end
+
+end
+
+
+info("Testing ", MOD.lowerboundtheta)
+for T in FloatingPointTypes
+    for A in (NullBound(T), ClosedBound(-one(T)), OpenBound(-one(T)))
+        T_a = typeof(A)
+        for B in (NullBound(T), ClosedBound(one(T)), OpenBound(one(T)))
+            T_b = typeof(B)
+            I = MOD.Interval(A, B)
+
+            if T_a <: NullBound
+                if T_b <: NullBound
+                    @test MOD.lowerboundtheta(I) == convert(T,-Inf)
+                elseif T_b <: ClosedBound
+                    @test MOD.lowerboundtheta(I) == convert(T,-Inf)
+                else
+                    @test MOD.lowerboundtheta(I) == convert(T,-Inf)
+                end
+            elseif T_a <: ClosedBound
+                if T_b <: NullBound
+                    @test MOD.lowerboundtheta(I) == I.a.value
+                elseif T_b <: ClosedBound
+                    @test MOD.lowerboundtheta(I) == I.a.value
+                else
+                    @test MOD.lowerboundtheta(I) == convert(T,-Inf)
+                end
+            else
+                if T_b <: NullBound
+                    @test MOD.lowerboundtheta(I) == convert(T,-Inf)
+                elseif T_b <: ClosedBound
+                    @test MOD.lowerboundtheta(I) == convert(T,-Inf)
+                else
+                    @test MOD.lowerboundtheta(I) == convert(T,-Inf)
+                end
+            end
+        end
+    end
+end
+
+info("Testing ", MOD.upperboundtheta)
+for T in FloatingPointTypes
+    for A in (NullBound(T), ClosedBound(-one(T)), OpenBound(-one(T)))
+        T_a = typeof(A)
+        for B in (NullBound(T), ClosedBound(one(T)), OpenBound(one(T)))
+            T_b = typeof(B)
+            I = MOD.Interval(A, B)
+
+            if T_a <: NullBound
+                if T_b <: NullBound
+                    @test MOD.upperboundtheta(I) == convert(T,Inf)
+                elseif T_b <: ClosedBound
+                    @test MOD.upperboundtheta(I) == I.b.value
+                else
+                    @test MOD.upperboundtheta(I) == convert(T,Inf)
+                end
+            elseif T_a <: ClosedBound
+                if T_b <: NullBound
+                    @test MOD.upperboundtheta(I) == convert(T,Inf)
+                elseif T_b <: ClosedBound
+                    @test MOD.upperboundtheta(I) == I.b.value
+                else
+                    @test MOD.upperboundtheta(I) == log(I.b.value - I.a.value)
+                end
+            else
+                if T_b <: NullBound
+                    @test MOD.upperboundtheta(I) == convert(T,Inf)
+                elseif T_b <: ClosedBound
+                    @test MOD.upperboundtheta(I) == log(I.b.value - I.a.value)
+                else
+                    @test MOD.upperboundtheta(I) == convert(T,Inf)
+                end
+            end
+        end
+    end
+end
+
+
 info("Testing ", MODHP.theta)
+for T in FloatingPointTypes
+    l = convert(T,-9)
+    a = convert(T,-3)
+    b = convert(T,3)
+    u = convert(T,9)
+    for A in (NullBound(T), ClosedBound(a), OpenBound(a))
+        T_a = typeof(A)
+        for B in (NullBound(T), ClosedBound(b), OpenBound(b))
+            T_b = typeof(B)
+            I = MOD.Interval(A, B)
+
+            for x in linspace(l,u,60)
+                println(I, ": ", x)
+                if T_a <: NullBound
+                    if T_b <: NullBound
+                        @test MODHP.theta(I,x) == x
+                    elseif T_b <: ClosedBound
+                        if x <= b
+                            @test MODHP.theta(I,x) == x
+                        else
+                            @test_throws DomainError MODHP.theta(I,x)
+                        end
+                    else
+                        if x < b
+                            @test MODHP.theta(I,x) == log(b-x)
+                        else
+                            @test_throws DomainError MODHP.theta(I,x)
+                        end
+                    end
+                elseif T_a <: ClosedBound
+                    if T_b <: NullBound
+                        if a <= x
+                            @test MODHP.theta(I,x) == x
+                        else
+                            @test_throws DomainError MODHP.theta(I,x)
+                        end
+                    elseif T_b <: ClosedBound
+                        if a <= x <= b
+                            @test MODHP.theta(I,x) == x
+                        else
+                            @test_throws DomainError MODHP.theta(I,x)
+                        end
+                    else
+                        if a <= x < b
+                            @test MODHP.theta(I,x) == log(b-x)
+                        else
+                            @test_throws DomainError MODHP.theta(I,x)
+                        end
+                    end
+                else
+                    if T_b <: NullBound
+                        if a < x
+                            @test MODHP.theta(I,x) == log(x-a)
+                        else
+                            @test_throws DomainError MODHP.theta(I,x)
+                        end
+                    elseif T_b <: ClosedBound
+                        if a < x <= b
+                            @test MODHP.theta(I,x) == log(x-a)
+                        else
+                            @test_throws DomainError MODHP.theta(I,x)
+                        end
+                    else
+                        if a < x < b
+                            @test MODHP.theta(I,x) == log(x-a) - log(b-x)
+                        else
+                            @test_throws DomainError MODHP.theta(I,x)
+                        end
+                    end
+                end
+            end
+        end
+    end
+end
+
+
 #=
 for T in FloatingPointTypes
     for a in (NullBound(T), ClosedBound(-one(T)), OpenBound(-one(T)))
@@ -277,50 +428,6 @@ for T in FloatingPointTypes
 end
 
 
-info("Testing ", MOD.lowerboundtheta)
-info("Testing ", MOD.upperboundtheta)
-for T in FloatingPointTypes
-    for a in (NullBound(T), ClosedBound(-one(T)), OpenBound(-one(T)))
-        for b in (NullBound(T), ClosedBound(one(T)), OpenBound(one(T)))
-            I = MOD.Interval(a, b)
-
-            if typeof(a) <: NullBound
-                if typeof(b) <: NullBound
-                    @test MOD.lowerboundtheta(I) == convert(T,-Inf)
-                    @test MOD.upperboundtheta(I) == convert(T,Inf)
-                elseif typeof(b) <: ClosedBound
-                    @test MOD.lowerboundtheta(I) == convert(T,-Inf)
-                    @test MOD.upperboundtheta(I) == I.b.value
-                else
-                    @test MOD.lowerboundtheta(I) == convert(T,-Inf)
-                    @test MOD.upperboundtheta(I) == convert(T,Inf)
-                end
-            elseif typeof(a) <: ClosedBound
-                if typeof(b) <: NullBound
-                    @test MOD.lowerboundtheta(I) == I.a.value
-                    @test MOD.upperboundtheta(I) == convert(T,Inf)
-                elseif typeof(b) <: ClosedBound
-                    @test MOD.lowerboundtheta(I) == I.a.value
-                    @test MOD.upperboundtheta(I) == I.b.value
-                else
-                    @test MOD.lowerboundtheta(I) == convert(T,-Inf)
-                    @test MOD.upperboundtheta(I) == log(I.b.value - I.a.value)
-                end
-            else
-                if typeof(b) <: NullBound
-                    @test MOD.lowerboundtheta(I) == convert(T,-Inf)
-                    @test MOD.upperboundtheta(I) == convert(T,Inf)
-                elseif typeof(b) <: ClosedBound
-                    @test MOD.lowerboundtheta(I) == convert(T,-Inf)
-                    @test MOD.upperboundtheta(I) == log(I.b.value - I.a.value)
-                else
-                    @test MOD.lowerboundtheta(I) == convert(T,-Inf)
-                    @test MOD.upperboundtheta(I) == convert(T,Inf)
-                end
-            end
-        end
-    end
-end
 
 info("Testing ", MOD.HyperParameter)
 for T in (FloatingPointTypes..., IntegerTypes...)

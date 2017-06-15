@@ -26,19 +26,8 @@ interval{T<:Real}(a::Bound{T}, b::Bound{T}) = Interval(a,b)
 
 checkvalue(I::Interval, x::Real) = checkvalue(I.a, x) && checkvalue(x, I.b)
 
-function eta{T<:AbstractFloat,A,B}(I::Interval{T,A,B}, x::T)
-    if A <: OpenBound
-        if B <: OpenBound
-            return (I.b.value*exp(x) + I.a.value)/(one(T) + exp(x))
-        else
-            return exp(x) + I.a.value
-        end
-    else
-        return B <: OpenBound ? I.b.value - exp(x) : x 
-    end
-end
-
 function theta{T<:AbstractFloat,A,B}(I::Interval{T,A,B}, x::T)
+    checkvalue(I,x) || throw(DomainError())
     if A <: OpenBound
         return B <: OpenBound ? log(x-I.a.value) - log(I.b.value-x) : log(x-I.a.value)
     else
@@ -58,6 +47,22 @@ end
 
 function lowerboundtheta{T<:AbstractFloat,A,B}(I::Interval{T,A,B})
     A <: ClosedBound && !(B <: OpenBound) ? I.a.value : convert(T,-Inf)
+end
+
+function checktheta{T<:AbstractFloat}(I::Interval{T}, x::T)
+    lowerboundtheta(I) <= x <= upperboundtheta(I)
+end
+
+function eta{T<:AbstractFloat,A,B}(I::Interval{T,A,B}, x::T)
+    if A <: OpenBound
+        if B <: OpenBound
+            return (I.b.value*exp(x) + I.a.value)/(one(T) + exp(x))
+        else
+            return exp(x) + I.a.value
+        end
+    else
+        return B <: OpenBound ? I.b.value - exp(x) : x 
+    end
 end
 
 function string{T1,T2,T3}(I::Interval{T1,T2,T3})
