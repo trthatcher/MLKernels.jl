@@ -54,6 +54,7 @@ function checktheta{T<:AbstractFloat}(I::Interval{T}, x::T)
 end
 
 function eta{T<:AbstractFloat,A,B}(I::Interval{T,A,B}, x::T)
+    checktheta(I,x) || throw(DomainError())
     if A <: OpenBound
         if B <: OpenBound
             return (I.b.value*exp(x) + I.a.value)/(one(T) + exp(x))

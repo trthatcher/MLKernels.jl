@@ -265,9 +265,11 @@ end
 
 info("Testing ", MOD.upperboundtheta)
 for T in FloatingPointTypes
-    for A in (NullBound(T), ClosedBound(-one(T)), OpenBound(-one(T)))
+    a = convert(T,-5)
+    b = convert(T,5)
+    for A in (NullBound(T), ClosedBound(a), OpenBound(a))
         T_a = typeof(A)
-        for B in (NullBound(T), ClosedBound(one(T)), OpenBound(one(T)))
+        for B in (NullBound(T), ClosedBound(b), OpenBound(b))
             T_b = typeof(B)
             I = MOD.Interval(A, B)
 
@@ -275,7 +277,7 @@ for T in FloatingPointTypes
                 if T_b <: NullBound
                     @test MOD.upperboundtheta(I) == convert(T,Inf)
                 elseif T_b <: ClosedBound
-                    @test MOD.upperboundtheta(I) == I.b.value
+                    @test MOD.upperboundtheta(I) == b
                 else
                     @test MOD.upperboundtheta(I) == convert(T,Inf)
                 end
@@ -283,15 +285,15 @@ for T in FloatingPointTypes
                 if T_b <: NullBound
                     @test MOD.upperboundtheta(I) == convert(T,Inf)
                 elseif T_b <: ClosedBound
-                    @test MOD.upperboundtheta(I) == I.b.value
+                    @test MOD.upperboundtheta(I) == b
                 else
-                    @test MOD.upperboundtheta(I) == log(I.b.value - I.a.value)
+                    @test MOD.upperboundtheta(I) == log(b - a)
                 end
             else
                 if T_b <: NullBound
                     @test MOD.upperboundtheta(I) == convert(T,Inf)
                 elseif T_b <: ClosedBound
-                    @test MOD.upperboundtheta(I) == log(I.b.value - I.a.value)
+                    @test MOD.upperboundtheta(I) == log(b - a)
                 else
                     @test MOD.upperboundtheta(I) == convert(T,Inf)
                 end
@@ -314,7 +316,6 @@ for T in FloatingPointTypes
             I = MOD.Interval(A, B)
 
             for x in linspace(l,u,60)
-                println(I, ": ", x)
                 if T_a <: NullBound
                     if T_b <: NullBound
                         @test MODHP.theta(I,x) == x
@@ -378,50 +379,23 @@ for T in FloatingPointTypes
 end
 
 
-#=
-for T in FloatingPointTypes
-    for a in (NullBound(T), ClosedBound(-one(T)), OpenBound(-one(T)))
-        for b in (NullBound(T), ClosedBound(one(T)), OpenBound(one(T)))
-            I = MOD.Interval(a, b)
-
-            if typeof(a) <: NullBound
-                if typeof(b) <: NullBound
-
-                elseif typeof(b) <: ClosedBound
-
-                else
-
-                end
-            elseif typeof(a) <: ClosedBound
-                if typeof(b) <: NullBound
-
-                elseif typeof(b) <: ClosedBound
-
-                else
-
-                end
-            else
-                if typeof(b) <: NullBound
-
-                elseif typeof(b) <: ClosedBound
-
-                else
-
-                end
-            end
-        end
-    end
-end
-=#
-
-
 info("Testing ", MODHP.eta)
 for T in FloatingPointTypes
-    for a in (NullBound(T), ClosedBound(-one(T)), OpenBound(-one(T)))
-        for b in (NullBound(T), ClosedBound(one(T)), OpenBound(one(T)))
-            I = MODHP.interval(a,b)
-            for x in linspace(-convert(T,-0.9),convert(T,0.9),10)
-                @test_approx_eq MODHP.eta(I,MODHP.theta(I,x)) x
+    a = -one(T)
+    b = one(T)
+    for A in (NullBound(T), ClosedBound(a), OpenBound(a))
+        for B in (NullBound(T), ClosedBound(b), OpenBound(b))
+            I = MODHP.interval(A,B)
+            l_theta = max(MODHP.lowerboundtheta(I),convert(T,-10))
+            u_theta = min(MODHP.upperboundtheta(I),convert(T,10))
+
+            for x in linspace(convert(T,-10),convert(T,10),201)
+                if l_theta <= x <= u_theta
+                    v = MODHP.eta(I,x)
+                    @test_approx_eq MODHP.theta(I,v) x
+                else
+                    @test_throws DomainError MODHP.eta(I,x)
+                end
             end
         end
     end
