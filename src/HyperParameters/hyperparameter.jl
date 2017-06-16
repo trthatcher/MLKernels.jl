@@ -35,7 +35,7 @@ gettheta(θ::HyperParameter) = theta(θ.interval, getvalue(θ))
 
 settheta!{T}(θ::HyperParameter, x::T) = setvalue!(θ, eta(θ.interval,x))
 
-checktheta{T}(θ::HyperParameter, x::T) = checkvalue(θ, eta(θ.interval,x))
+checktheta{T}(θ::HyperParameter, x::T) = checktheta(θ.interval, x)
 
 for op in (:isless, :(==), :+, :-, :*, :/)
     @eval begin

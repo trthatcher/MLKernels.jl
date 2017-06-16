@@ -15,6 +15,7 @@ using MLKernels:
 FloatingPointTypes = (Float32, Float64)
 IntegerTypes = (Int32, Int64)
 MOD = MLKernels
+MODHP = MLKernels.HyperParameters
 
 include("hyperparameter.jl")
 include("common.jl")

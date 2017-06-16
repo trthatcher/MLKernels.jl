@@ -29,8 +29,8 @@ gettheta{T}(κ::Kernel{T}) = T[gettheta(getfield(κ,θ)) for θ in thetafieldnam
 
 function settheta!{T}(κ::Kernel{T},v::Vector{T})
     fields = thetafieldnames(κ)
-    if length(fields) != length(vector)
-        throw(DimensionMismatch, "Update vector has invalid length")
+    if length(fields) != length(v)
+        throw(DimensionMismatch("Update vector has invalid length"))
     end
     for i in eachindex(fields)
         settheta!(getfield(κ, fields[i]), v[i])
@@ -41,7 +41,7 @@ end
 function checktheta{T}(κ::Kernel{T},v::Vector{T})
     fields = thetafieldnames(κ)
     if length(fields) != length(v)
-        throw(DimensionMismatch, "Update vector has invalid length")
+        throw(DimensionMismatch("Update vector has invalid length"))
     end
     for i in eachindex(fields)
         if !checktheta(getfield(κ, fields[i]), v[i])

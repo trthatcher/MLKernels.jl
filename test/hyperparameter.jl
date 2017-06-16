@@ -1,5 +1,3 @@
-MODHP = MLKernels.HyperParameters
-
 info("Testing ", MOD.OpenBound)
 for T in (FloatingPointTypes..., IntegerTypes...)
     if T <: Integer
@@ -400,7 +398,6 @@ for T in FloatingPointTypes
         end
     end
 end
-
 
 
 info("Testing ", MOD.HyperParameter)

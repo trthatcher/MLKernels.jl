@@ -57,3 +57,30 @@ for k in kernel_functions
     @test K_theta == [MOD.gettheta(getfield(K,field)) for field in MOD.thetafieldnames(K)]
     @test MOD.checktheta(K, K_theta) == true
 end
+
+info("Testing ", MOD.settheta!)
+for T in FloatingPointTypes
+    alpha1 = one(T)
+    alpha2 = convert(T,0.6)
+    gamma1 = one(T)
+    gamma2 = convert(T,0.4)
+    K = MOD.GammaExponentialKernel(alpha1,gamma1)
+    MOD.settheta!(K, [log(alpha2); log(gamma2)])
+    @test getvalue(K.alpha) == alpha2
+    @test getvalue(K.gamma) == gamma2
+
+    @test_throws DimensionMismatch MOD.settheta!(K, [one(T)])
+    @test_throws DimensionMismatch MOD.settheta!(K, [one(T); one(T); one(T)])
+end
+
+
+info("Testing ", MOD.checktheta)
+for T in FloatingPointTypes
+    K = MOD.GammaExponentialKernel(one(T),one(T))
+
+    @test MOD.checktheta(K, [log(one(T)); log(one(T))]) == true
+    @test MOD.checktheta(K, [log(one(T)); log(convert(T,2))]) == false
+
+    @test_throws DimensionMismatch MOD.checktheta(K, [one(T)])
+    @test_throws DimensionMismatch MOD.checktheta(K, [one(T); one(T); one(T)])
+end
