@@ -2,6 +2,65 @@
 Interface
 =========
 
+.. _storage notes:
+
+-------
+Storage
+-------
+
+`MLKernels.jl`_ allows for data matrices to be stored in one of two ways with 
+respect to the observations based on parameters provided by the user. In order 
+to specify the ordering used, a subtype of the ``MemoryLayout`` abstract type 
+can be provided as a parameter to any methods taking matrices as a parameter:
+
+.. function:: RowMajor <: MemoryLayout
+
+    Identifies when each observation vector corresponds to a row in the
+    data matrix. This is commonly used in the field of statistics in the context
+    of `design matrices`_. For example, for data matrix :math:`\mathbf{X}` 
+    consisting of observations 
+    :math:`\mathbf{x}_1, \mathbf{x}_2, \ldots, \mathbf{x}_n` :
+
+    .. math:: \mathbf{X}_{row} = 
+                  \begin{bmatrix} 
+                      \leftarrow \mathbf{x}_1 \rightarrow \\ 
+                      \leftarrow \mathbf{x}_2 \rightarrow \\ 
+                      \vdots \\ 
+                      \leftarrow \mathbf{x}_n \rightarrow 
+                   \end{bmatrix}
+    
+    When row-major ordering is used, then the kernel matrix of
+    :math:`\mathbf{X}` will match the dimensions of 
+    :math:`\mathbf{X}^{\intercal}\mathbf{X}`. Similarly, the kernel matrix will 
+    match the dimension of :math:`\mathbf{X}^{\intercal}\mathbf{Y}` for row-major 
+    ordering of data matrix :math:`\mathbf{X}` and :math:`\mathbf{Y}`. 
+
+
+.. function:: ColumnMajor <: MemoryLayout
+
+    Identifies when each observation vector corresponds to the column of the 
+    data matrix. This is much more common in Machine Learning communities:
+
+    .. math:: \mathbf{X}_{col} = \mathbf{X}_{row}^{\intercal} = 
+                  \begin{bmatrix}
+                      \uparrow & \uparrow & & \uparrow  \\
+                      \mathbf{x}_1 & \mathbf{x}_2 & \cdots & \mathbf{x_n} \\
+                      \downarrow & \downarrow & & \downarrow
+                  \end{bmatrix}
+
+    With column-major ordering, the kernel matrix will match the dimensions of 
+    :math:`\mathbf{XX}^{\intercal}`. Similarly, the kernel matrix of data 
+    matrices :math:`\mathbf{X}` and :math:`\mathbf{Y}` match the dimensions of 
+    :math:`\mathbf{XY}^{\intercal}`.
+
+.. note::
+
+    Row-major and column-major ordering in this context do not refer to the 
+    physical storage ordering of the underlying matrices (in the case of Julia, 
+    all arrays are in column-major ordering). These properties refer to the 
+    ordering of observations within a data matrix; either per-row or per-column. 
+
+
 ----------
 Essentials
 ----------
@@ -28,8 +87,8 @@ Essentials
 
     Calculate the kernel matrix of ``X`` with respect to kernel ``κ``. 
     
-    See the `format notes`_ to determine the value of ``σ``; by default ``σ`` is
-    set to ``RowMajor()``. Set ``symmetrize`` to ``false`` to fill only the 
+    See the `storage notes`_ to determine the value of ``σ``; by default ``σ`` 
+    is set to ``RowMajor()``. Set ``symmetrize`` to ``false`` to fill only the 
     upper triangle of ``K``, otherwise the upper triangle will be copied to the
     lower triangle.
 
@@ -45,7 +104,7 @@ Essentials
     Calculate the pairwise matrix of ``X`` and ``Y`` with respect to kernel 
     ``κ``. 
     
-    See the `format notes`_ to determine the value of ``σ``. By default 
+    See the `storage notes`_ to determine the value of ``σ``. By default 
     ``σ`` is set to ``RowMajor``.
 
 
@@ -78,60 +137,6 @@ Essentials
 .. function:: centerkernelmatrix!(K::Matrix)
 
     The same as ``centerkernelmatrix`` except that ``K`` is overwritten.
-
-
-.. class:: MemoryLayout()
-
-    The ``MemoryLayout`` abstract type is used to designate which storage layout
-    is utilized by a data matrix. There are two concrete subtypes that
-    correspond to the two ways of storing a dense matrix:
-
-        * ``RowMajor`` is used to specify that each row of a data matrix 
-          corresponds to an observation. 
-
-        * ``ColumnMajor`` is used to specify that each column of a data matrix 
-          corresponds to an observation.
-
-    Note that row-major and column-major ordering in this context do not refer
-    to the physical storage ordering of the underlying matrices (in the case of
-    Julia, all arrays are in column-major ordering). These properties refer to
-    the ordering of observations within a data matrix; either per-row or
-    per-column. See the `format notes`_ below.
-
-
-.. _format notes:
-
-.. note::
-
-    Data matrices :math:`X` and :math:`Y` may be stored in one of two formats: 
-    row-major ordering or column-major ordering with respect to obversations. 
-    Row major ordering is used when each observation vector corresponds to a row
-    in the matrix. Conversely,column-major ordering is used when each column 
-    corresponds to an observation. For example, for data matrix :math:`X` 
-    consisting of observations 
-    :math:`\mathbf{x}_1, \mathbf{x}_2, \ldots, \mathbf{x}_n`:
-    
-    .. math:: \mathbf{X}_{row} = 
-                  \begin{bmatrix} 
-                      \leftarrow \mathbf{x}_1 \rightarrow \\ 
-                      \leftarrow \mathbf{x}_2 \rightarrow \\ 
-                      \vdots \\ 
-                      \leftarrow \mathbf{x}_n \rightarrow 
-                   \end{bmatrix}
-              \qquad
-              \mathbf{X}_{col} = \mathbf{X}_{row}^{\intercal} = 
-                  \begin{bmatrix}
-                      \uparrow & \uparrow & & \uparrow  \\
-                      \mathbf{x}_1 & \mathbf{x}_2 & \cdots & \mathbf{x_n} \\
-                      \downarrow & \downarrow & & \downarrow
-                  \end{bmatrix}
-
-    When row-major ordering is used, then the kernel matrix of :math:`X` will 
-    match the dimensions of :math:`X^{\intercal}X`. Otherwise, the kernel matrix
-    will match the dimensions of :math:`XX^{\intercal}`. Similarly, the kernel
-    matrix will match the dimension of :math:`X^{\intercal}Y` for row-major 
-    ordering of :math:`X` and :math:`Y`. Otherwise, the pairwise matrix will 
-    match the dimensions of :math:`XY^{\intercal}`.
 
 
 ---------------------------
@@ -263,3 +268,8 @@ The following functions are supported by the hyper parameter submodule:
 .. function:: settheta!(P::HyperParameter, x::Real)
 
     Sets the value of ``P`` to :math:`\eta(x)`.
+
+
+.. _design matrices: https://en.wikipedia.org/wiki/Design_matrix
+
+.. _MLKernels.jl: https://github.com/trthatcher/MLKernels.jl
