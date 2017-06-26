@@ -7,6 +7,9 @@ abstract PairwiseFunction
 @inline pairwise_initiate{T}(::PairwiseFunction, ::Type{T}) = zero(T)
 @inline pairwise_return{T}(::PairwiseFunction, s::T) = s
 
+@inline isstationary(::PairwiseFunction) = false
+@inline isisotropic(::PairwiseFunction) = false
+
 
 
 abstract InnerProduct <: PairwiseFunction
@@ -28,7 +31,7 @@ end
 doc"SineSquared(p) = Σⱼsin²(xⱼ-yⱼ)"
 immutable SineSquared <: PreMetric end
 @inline pairwise_aggregate{T}(f::SineSquared, s::T, x::T, y::T) = s + sin(x-y)^2
-
+@inline isstationary(f::SineSquared) = true
 
 
 abstract Metric <: PreMetric
@@ -36,3 +39,5 @@ abstract Metric <: PreMetric
 doc"SquaredEuclidean() = (x-y)ᵀ(x-y)"
 immutable SquaredEuclidean <: PreMetric end
 @inline pairwise_aggregate{T}(f::SquaredEuclidean, s::T, x::T, y::T) = s + (x-y)^2
+@inline isstationary(f::SquaredEuclidean) = true
+@inline isisotropic(f::SquaredEuclidean)  = true

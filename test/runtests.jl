@@ -16,13 +16,16 @@ FloatingPointTypes = (Float32, Float64)
 IntegerTypes = (Int32, Int64)
 MOD = MLKernels
 MODHP = MLKernels.HyperParameters
-
-include("hyperparameter.jl")
-include("common.jl")
+MODPF = MLKernels.PairwiseFunctions
 
 include("reference.jl")
-include("pairwise.jl")
-include("pairwisematrix.jl")
+
+include("HyperParameters/hyperparameter.jl")
+
+include("PairwiseFunctions/common.jl")
+include("PairwiseFunctions/pairwise.jl")
+include("PairwiseFunctions/pairwisematrix.jl")
+
 include("kernel.jl")
 include("kernelmatrix.jl")
 include("kernelmatrixapproximation.jl")

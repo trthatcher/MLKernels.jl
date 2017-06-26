@@ -22,6 +22,8 @@ end
 
 ismercer(::Kernel) = false
 isnegdef(::Kernel) = false
+isstationary(κ::Kernel) = isstationary(pairwisefunction(κ))
+isisotropic(κ::Kernel) = isisotropic(pairwisefunction(κ))
 
 thetafieldnames(κ::Kernel) = fieldnames(κ)
 
@@ -51,6 +53,15 @@ function checktheta{T}(κ::Kernel{T},v::Vector{T})
     return true
 end
 
+function floattype(T_i::DataType...)
+    T_max = promote_type(T_i...)
+    T_max <: AbstractFloat ? T_max : Float64
+end
+
+function inttype(U_i::DataType...)
+    U_max = promote_type(U_i...)
+    U_max <: Signed ? U_max : Int64
+end
 
 
 #================================================

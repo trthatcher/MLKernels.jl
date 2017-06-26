@@ -88,105 +88,11 @@ kernel_functions_pairwise = Dict(
 )
 
 
-#=
 pairwise_functions_properties = Dict( 
-                        #|mercer|negdef|metric|inprod|neg   |zero |pos
-    SineSquaredKernel => (false, true,  false, false, false, true, true),
-    ScalarProduct     => (true,  false, false, true,  true,  true, true),
-    Euclidean         => (false, true,  true,  false, false, true, true),
-    SquaredEuclidean  => (false, true,  true,  false, false, true, true),
-    ChiSquared        => (false, true,  true,  false, false, true, true)
+                       #|stnry |isotrop
+    SineSquared      => (true,  false),
+    ScalarProduct    => (false, false),
+    SquaredEuclidean => (true,  true),
+    ChiSquared       => (false, false)
  )
 
-
-
-
-composition_classes = (
-    ExponentialKernel,
-    GammaExponentialKernel,
-    RationalKernel,
-    GammaRationalKernel,
-    MaternKernel,
-    ExponentiatedKernel,
-    PolynomialKernel,
-    PowerKernel,
-    LogKernel,
-    GammaLogKernel,
-    SigmoidKernel
-)
-
-composition_classes_defaults = Dict(
-    ExponentialKernel      => ([1,], Int[]),
-    GammaExponentialKernel => ([1,0.5],  Int[]),
-    RationalKernel         => ([1,1], Int[]),
-    GammaRationalKernel    => ([1,1,0.5], Int[]),
-    MaternKernel           => ([1,1], Int[]),
-    ExponentiatedKernel    => ([1,0], Int[]),
-    PolynomialKernel       => ([1,1], Int[3]),
-    PowerKernel            => ([1,0,1], Int[]),
-    LogKernel              => ([1,], Int[]),
-    GammaLogKernel         => ([1,0.5], Int[]),
-    SigmoidKernel          => ([1,0], Int[])
-)
-
-composition_classes_compose = Dict(
-    ExponentialKernel      => (α,z)     -> exp(-α*z^γ),
-    GammaExponentialKernel => (α,γ,z)   -> exp(-α*z^γ),
-    RationalKernel         => (α,β,z)   -> (1 + α*z)^(-β),
-    GammaRationalKernel    => (α,β,γ,z) -> (1 + α*z^γ)^(-β),
-    MaternKernel           => (ν,θ,z)   -> begin 
-                                              v1 = sqrt(2*ν) * z / θ
-                                              v1 = v1 < eps(typeof(z)) ? eps(typeof(z)) : v1
-                                              2*(v1/2)^ν * besselk(ν,v1)/gamma(ν)
-                                          end,
-    ExponentiatedKernel    => (a,c,z)   -> exp(a*z+c),
-    PolynomialKernel       => (a,c,d,z) -> (a*z+c)^d,
-    PowerKernel            => (a,c,γ,z) -> (a*z+c)^γ,
-    LogKernel              => (α,z)     -> log(α*z+1),
-    GammaLogKernel         => (α,γ,z)   -> log(α*z^γ+1),
-    SigmoidKernel          => (a,c,z)   -> tanh(a*z+c)
-)
-
-composition_rule = Dict(
-    ExponentialKernel      => f -> isnegdef(f) && isnonnegative(f),
-    GammaExponentialKernel => f -> isnegdef(f) && isnonnegative(f),
-    RationalKernel         => f -> isnegdef(f) && isnonnegative(f),
-    GammaRationalKernel    => f -> isnegdef(f) && isnonnegative(f),
-    MaternKernel           => f -> isnegdef(f) && isnonnegative(f),
-    ExponentiatedKernel    => f -> ismercer(f),
-    PolynomialKernel       => f -> ismercer(f),
-    PowerKernel            => f -> isnegdef(f) && isnonnegative(f),
-    LogKernel              => f -> isnegdef(f) && isnonnegative(f),
-    GammaLogKernel         => f -> isnegdef(f) && isnonnegative(f),
-    SigmoidKernel          => f -> ismercer(f)
-)
-
-composition_class_properties = Dict( 
-                            #|mercer|negdef|metric|inprod|neg   |zero  |pos
-    ExponentiatedKernel =>    (true,  false, false, false, false, false, true),
-    SigmoidKernel =>          (false, false, false, false, true,  true,  true),
-    ExponentialKernel =>      (true,  false, false, false, false, false, true),
-    GammaLogKernel =>         (false, true,  false, false, false, true,  true),
-    GammaRationalKernel =>    (true,  false, false, false, false, false, true),
-    LogKernel =>              (false, true,  false, false, false, true,  true),
-    MaternKernel =>           (true,  false, false, false, false, false, true),
-    PolynomialKernel =>       (true,  false, false, false, true,  true,  true),
-    PowerKernel =>            (false, true,  false, false, false, true,  true),
-    GammaExponentialKernel => (true,  false, false, false, false, false, true),
-    RationalKernel =>         (true,  false, false, false, false, false, true)
- )
-
-composite_functions = (
-    GaussianKernel,
-    SquaredExponentialKernel,
-    RadialBasisKernel,
-    LaplacianKernel,
-    PeriodicKernel,
-    RationalQuadraticKernel,
-    MaternKernel,
-    MatérnKernel,
-    PolynomialKernel,
-    LinearKernel,
-    SigmoidKernel
-)
-=#

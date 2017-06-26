@@ -26,10 +26,29 @@ export
     settheta!,
     checktheta,
 
+    # Pairwise Functions
+    PairwiseFunction,
+        InnerProduct,
+            ScalarProduct,
+        PreMetric,
+            ChiSquared,
+            SineSquared,
+            Metric,
+                SquaredEuclidean,
+
+    # Pairwise Function Properties
+    isstationary,
+    isisotropic,
+
     # Memory
     MemoryLayout,
     RowMajor,
     ColumnMajor,
+
+    # Pairwise function evaluation
+    pairwise,
+    pairwisematrix,
+    pairwisematrix!,
 
     # Kernel Function Type
     Kernel,
@@ -52,7 +71,7 @@ export
             LogKernel,
         SigmoidKernel,
 
-    # Kernel Functions
+    # Kernel Function Properties
     ismercer,
     isnegdef,
 
@@ -87,16 +106,31 @@ using MLKernels.HyperParameters:
 
 import MLKernels.HyperParameters: gettheta, checktheta, settheta!
 
-# Row major and column major ordering are supported
-abstract MemoryLayout
+include("PairwiseFunctions/PairwiseFunctions.jl")
+using MLKernels.PairwiseFunctions:
 
-immutable ColumnMajor <: MemoryLayout end
-immutable RowMajor    <: MemoryLayout end
+    # Pairwise Functions
+    PairwiseFunction,
+        InnerProduct,
+            ScalarProduct,
+        PreMetric,
+            ChiSquared,
+            SineSquared,
+            Metric,
+                SquaredEuclidean,
 
+    # Memory
+    MemoryLayout,
+    RowMajor,
+    ColumnMajor,
 
-include("common.jl")
-include("pairwise.jl")
-include("pairwisematrix.jl")
+    # Pairwise function evaluation
+    pairwise,
+    pairwisematrix,
+    pairwisematrix!
+
+import MLKernels.PairwiseFunctions: isstationary, isisotropic
+
 include("kernel.jl")
 include("kernelmatrix.jl")
 include("kernelmatrixapproximation.jl")

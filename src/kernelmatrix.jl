@@ -65,7 +65,7 @@ function kernelmatrix{T<:AbstractFloat}(
         X::AbstractMatrix{T},
         symmetrize::Bool = true
     )
-    kernelmatrix!(σ, allocate_pairwisematrix(σ, X), κ, X, symmetrize)
+    symmetric_kappamatrix!(κ, pairwisematrix(σ, pairwisefunction(κ), X, false), symmetrize)
 end
 
 function kernelmatrix{T<:AbstractFloat}(
@@ -74,7 +74,7 @@ function kernelmatrix{T<:AbstractFloat}(
         X::AbstractMatrix{T},
         Y::AbstractMatrix{T}
     )
-    kernelmatrix!(σ, allocate_pairwisematrix(σ, X, Y), κ, X, Y)
+    kappamatrix!(κ, pairwisematrix(σ, pairwisefunction(κ), X, Y))
 end
 
 

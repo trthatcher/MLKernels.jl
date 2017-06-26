@@ -29,6 +29,8 @@ for k in kernel_functions
     # Test Properties
     @test MOD.ismercer(K) == (typeof(K) <: MOD.MercerKernel ? true : false)
     @test MOD.isnegdef(K) == (typeof(K) <: MOD.NegativeDefiniteKernel ? true : false)
+    @test MODPF.isstationary(K) == MODPF.isstationary(MOD.pairwisefunction(K))
+    @test MODPF.isisotropic(K) == MODPF.isisotropic(MOD.pairwisefunction(K))
 
     # Test Display
     @test eval(parse(string(K))) == K
