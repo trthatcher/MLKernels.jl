@@ -161,7 +161,7 @@ function pairwisematrix(
         X::AbstractMatrix,
         symmetrize::Bool = true
     )
-    pairwisematrix(RowMajor, f, X, symmetrize)
+    pairwisematrix(RowMajor(), f, X, symmetrize)
 end
 
 function pairwisematrix{T<:AbstractFloat}(

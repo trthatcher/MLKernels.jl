@@ -13,7 +13,7 @@ respect to the observations based on parameters provided by the user. In order
 to specify the ordering used, a subtype of the ``MemoryLayout`` abstract type 
 can be provided as a parameter to any methods taking matrices as a parameter:
 
-.. function:: RowMajor <: MemoryLayout
+.. type:: RowMajor
 
     Identifies when each observation vector corresponds to a row in the
     data matrix. This is commonly used in the field of statistics in the context
@@ -36,7 +36,7 @@ can be provided as a parameter to any methods taking matrices as a parameter:
     ordering of data matrix :math:`\mathbf{X}` and :math:`\mathbf{Y}`. 
 
 
-.. function:: ColumnMajor <: MemoryLayout
+.. type:: ColumnMajor
 
     Identifies when each observation vector corresponds to the column of the 
     data matrix. This is much more common in Machine Learning communities:
@@ -65,6 +65,9 @@ can be provided as a parameter to any methods taking matrices as a parameter:
 Essentials
 ----------
 
+The primary feature of the ``MLKernels`` package is the ability to efficiently
+compute kernel functions and kernel matrices. The interface is outlined below:
+
 .. function:: ismercer(κ::Kernel) -> Bool
 
     Returns ``true`` if kernel ``κ`` is a Mercer kernel; ``false`` 
@@ -75,6 +78,18 @@ Essentials
 
     Returns ``true`` if the kernel ``κ`` is a negative definite kernel; 
     ``false`` otherwise.
+
+
+.. function:: isisotropic(κ::Kernel) -> Bool
+
+    Returns ``true`` if the kernel ``κ`` is an isotropic kernel; ``false``
+    otherwise.
+
+
+.. function:: isstationary(κ::Kernel) -> Bool
+
+    Returns ``true`` if the kernel ``κ`` is a stationary kernel; ``false``
+    otherwise.
 
 
 .. function:: kernel(κ::Kernel, x, y) 
@@ -95,8 +110,8 @@ Essentials
 
 .. function:: kernelmatrix!(P::Matrix, σ::MemoryLayout, κ::Kernel, X::Matrix, symmetrize::Bool)
 
-    Identical to ``kernelmatrix`` with the exception that a pre-allocated 
-    square matrix ``K`` will be overwritten with the kernel matrix.
+    In-place version of ``kernelmatrix`` where pre-allocated matrix ``K`` will 
+    be overwritten with the kernel matrix.
 
 
 .. function:: kernelmatrix([σ::MemoryLayout,] κ::Kernel, X::Matrix, Y::Matrix)
@@ -105,13 +120,13 @@ Essentials
     ``κ``. 
     
     See the `storage notes`_ to determine the value of ``σ``. By default 
-    ``σ`` is set to ``RowMajor``.
+    ``σ`` is set to ``RowMajor()``.
 
 
-.. function:: kernelmatrix!(K::Matrix, σ::MemoryLayout, κ, X::Matrix, Y::Matrix)
+.. function:: kernelmatrix!(K::Matrix, σ::MemoryLayout, κ::Kernel, X::Matrix, Y::Matrix)
 
-    Identical to ``kernelmatrix`` with the exception that a pre-allocated matrix
-    ``K`` will be overwritten with the kernel matrix.
+    In-place version of ``kernelmatrix`` where pre-allocated matrix ``K`` will 
+    be overwritten with the kernel matrix.
 
 
 .. function:: centerkernelmatrix(K::Matrix)
@@ -136,12 +151,42 @@ Essentials
 
 .. function:: centerkernelmatrix!(K::Matrix)
 
-    The same as ``centerkernelmatrix`` except that ``K`` is overwritten.
+    In-place version of ``centerkernelmatrix`` overwriting ``K``.
 
 
----------------------------
-Kernel Matrix Approximation
----------------------------
+-------------
+Approximation
+-------------
+
+In many cases, a fast, approximate results is more important than a perfect
+result. The Nystrom method can be used to generate a factorization that can be
+used to approximate a large, symmetric kernel matrix. Given data matrix
+:math:`\mathbf{X} \in \mathbb{R}^{n \times p}` (one observation per row) and 
+kernel matrix :math:`\mathbf{K} \in \mathbb{R}^{n \times n}`, the Nystrom method
+takes a sample :math:`S` of the observations of :math:`\mathbf{X}` of size 
+:math:`s < n` and generates a factorization such that:
+
+.. math:: \mathbf{K} \approx \mathbf{C}^{\intercal}\mathbf{WC}
+
+Where :math:`\mathbf{W}` is the :math:`s \times s` pseudo-inverse of the sample 
+kernel matrix based on :math:`S` and :math:`\mathbf{C}` is a :math:`s \times n`
+matrix.
+
+The Nystrom method uses an eigendecomposition of the sample kernel matrix of 
+:math:`\mathbf{X}` to estimate :math:`\mathbf{K}`. Generally, the order of 
+:math:`\mathbf{K}` must be quite large and the sampling ratio small (ex. 15% or 
+less) for the cost of the computing the full kernel matrix to exceed that of the
+eigendecomposition. This method will be more effective for kernels that are not 
+a direct function of the dot product as they are not able to make use of BLAS in
+computing the full matrix :math:`\mathbf{K}` and the cross-over point will occur
+for smaller :math:`\mathbf{K}`.
+
+`MLKernels.jl`_ implements the Nystrom approximation:
+
+.. type:: NystromFact
+
+    Type for storing a Nystrom factorization. The factorization contains two
+    fields: ``W`` and ``C`` as described above.
 
 .. function:: nystrom(σ::MemoryLayout, κ::Kernel, X::Matrix, S::Vector) -> NystromFact
 
@@ -149,36 +194,82 @@ Kernel Matrix Approximation
     matrix of data matrix ``X`` with respect to kernel ``κ``. Returns type
     ``NystromFact`` which stores a Nystrom factorization:
 
-    .. math:: \mathbf{K} \approx \mathbf{C}^{\intercal}\mathbf{WC} 
-
-
-    .. note::
-
-        The Nystrom method uses an eigendecomposition of the sample of ``X`` to
-        estimate ``K``. Generally, the order of ``K`` must be quite large and 
-        the sampling ratio small (ex. 15% or less) for the cost of the computing 
-        the full kernel matrix to exceed that of the eigendecomposition. This
-        method will be more effective for kernels that are not a direct function
-        of the dot product as they are not able to make use of BLAS in computing
-        the full ``K`` and the cross-over point will occur for smaller ``K``.
-
 .. function:: kernelmatrix(CtWC::NystromFact])
 
-    Computes the approximate kernel matrix using a Nystrom factorization.
+    Computes the approximate kernel matrix using the Nystrom factorization.
 
+
+------------------
+Pairwise Functions
+------------------
+
+The ``PairwiseFunctions`` submodule is provided to compute symmetric real-valued
+functions (pairwise functions) of the form:
+
+.. math:: f:\mathbb{R}^n \times \mathbb{R}^n \rightarrow \mathbb{R}
+    
+Each kernel function has an underlying pairwise function. Similar to kernel 
+functions, a pairwise function can be evaluated for each pair of observations 
+across two data matrices to produce a matrix of pairwise evaluations. Given 
+data matrix :math:`\mathbf{X}`, data matrix :math:`\mathbf{Y}` and pairwise 
+function :math:`f`, the pairwise matrix :math:`\mathbf{P}` is defined by:
+
+.. math:: \mathbf{P} = \left[f(\mathbf{x}_i, \mathbf{y}_j)\right]_{ij} \quad
+    \; \forall \mathbf{x}_i \in \mathbf{X}, \quad \mathbf{y}_j \in \mathbf{Y}
+
+The interface is outlined below:
+
+.. function:: pairwise(f::PairwiseFunction, x, y) 
+
+    Apply the function ``f`` to ``x`` and ``y`` where ``x`` and ``y``
+    are vectors or scalars of some subtype of ``Real``.
+
+
+.. function:: pairwisematrix([σ::MemoryLayout,] f::Kernel, X::Matrix [, symmetrize::Bool])
+
+    Calculate the pairwise matrix of ``X`` with respect to function ``f``. 
+    
+    See the `storage notes`_ to determine the value of ``σ``; by default ``σ`` 
+    is set to ``RowMajor()``. Set ``symmetrize`` to ``false`` to fill only the 
+    upper triangle of ``P``, otherwise the upper triangle will be copied to the
+    lower triangle.
+
+
+.. function:: pairwisematrix!(P::Matrix, σ::MemoryLayout, f::PairwiseFunction, X::Matrix, symmetrize::Bool)
+
+    In-place version of ``pairwisematrix`` where pre-allocated matrix ``P`` will 
+    be overwritten with the pairwise matrix.
+
+
+.. function:: pairwisematrix([σ::MemoryLayout,] f::PairwiseFunction, X::Matrix, Y::Matrix)
+
+    Calculate the pairwise matrix of ``X`` and ``Y`` with respect to function
+    ``f``.  
+    
+    See the `storage notes`_ to determine the value of ``σ``. By default 
+    ``σ`` is set to ``RowMajor()``.
+
+
+.. function:: pairwisematrix!(P::Matrix, σ::MemoryLayout, f::PairwiseFunction, X::Matrix, Y::Matrix)
+
+    In-place version of ``kernelmatrix`` where pre-allocated matrix ``K`` will 
+    be overwritten with the kernel matrix.
+    
+    
 ----------------
 Hyper Parameters
 ----------------
 
-Behind the scenes, each ``Kernel`` is a collection of ``HyperParameter`` values. 
-The hyper parameter type stores the current value of the hyper parameter as well
-as an ``Interval`` type that applies box constraints to the hyper parameter
-domain.
+The submodule ``HyperParameters`` defines a ``HyperParameter`` type as well as a
+``Bound`` and ``Interval`` type. The hyper parameter type stores the current
+value of a hyper parameter as well as an interval that defines the domain of
+the hyper parameter. Each ``Kernel`` type is a struct of ``HyperParameter``
+instances.
 
 Often, hyper parameter values are restricted to an interval with an open bounded
-startpoint or endpoint (ex. :math:`\gamma > 0`). Exclusive finite endpoints such
-as these are often disallowed in optimization algorithms. This module includes
-two transformations to work around these constraints:
+start point or end point (ex. :math:`\alpha > 0`). Exclusive finite endpoints 
+such as these are often disallowed in optimization algorithms. This module 
+includes two transformations to work around these constraints:
 
  * ``theta``: The function :math:`\theta` is used to transform a parameter
    restricted to a finite open-bounded interval to an interval without finite
