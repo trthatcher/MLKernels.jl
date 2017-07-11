@@ -76,8 +76,10 @@ for T in FloatingPointTypes
     G = MODPF.gramian!(RowMajor(), Array{T}(n,m), X, Y)
     xtx = MODPF.dotvectors(RowMajor(), X)
     yty = MODPF.dotvectors(RowMajor(), Y)
+    MODPF.squared_distance!(G, xtx, yty)
 
-    @test isapprox(MODPF.squared_distance!(G, xtx, yty), P)
+    @test isapprox(G, P)
+    @test all(G .>= 0)
     
     @test_throws DimensionMismatch MODPF.squared_distance!(Array{T}(3,4), Array{T}(3), true)
     @test_throws DimensionMismatch MODPF.squared_distance!(Array{T}(4,3), Array{T}(3), true)
