@@ -390,7 +390,7 @@ for T in FloatingPointTypes
             for x in linspace(convert(T,-10),convert(T,10),201)
                 if l_theta <= x <= u_theta
                     v = MODHP.eta(I,x)
-                    @test_approx_eq MODHP.theta(I,v) x
+                    @test isapprox(MODHP.theta(I,v), x)
                 else
                     @test_throws DomainError MODHP.eta(I,x)
                 end
@@ -425,11 +425,11 @@ for T in (FloatingPointTypes..., IntegerTypes...)
                 I = MODHP.Interval(a, b)
                 P = HyperParameter(zero(T),I)
 
-                @test_approx_eq MODHP.gettheta(P) MODHP.theta(I, zero(T))
+                @test isapprox(MODHP.gettheta(P), MODHP.theta(I, zero(T)))
 
                 MODHP.settheta!(P, MODHP.theta(I, convert(T,0.5)))
-                @test_approx_eq MODHP.gettheta(P) MODHP.theta(I, convert(T,0.5))
-                @test_approx_eq MODHP.getvalue(P) convert(T,0.5)
+                @test isapprox(MODHP.gettheta(P), MODHP.theta(I, convert(T,0.5)))
+                @test isapprox(MODHP.getvalue(P), convert(T,0.5))
             end
         end
     end

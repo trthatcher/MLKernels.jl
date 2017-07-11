@@ -4,8 +4,7 @@
 
 module MLKernels
 
-import Base: call, convert, eltype, print, show, string, ==, *, /, +, -, ^, besselk, exp, gamma, 
-             tanh
+import Base: convert, eltype, print, show, string, ==, *, /, +, -, ^, exp, gamma, tanh
 
 export
 
@@ -83,6 +82,9 @@ export
     # Kernel Approximation
     NystromFact,
     nystrom
+
+
+using SpecialFunctions: besselk
 
 include("HyperParameters/HyperParameters.jl")
 using MLKernels.HyperParameters: 

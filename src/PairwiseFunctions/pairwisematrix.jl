@@ -60,7 +60,7 @@ for layout in (RowMajor, ColumnMajor)
                  ::$layout,
                 X::AbstractMatrix{T}
             )
-            Array(T, size(X,$dim_obs), size(X,$dim_obs))
+            Array{T}(size(X,$dim_obs), size(X,$dim_obs))
         end
 
         @inline function allocate_pairwisematrix{T<:AbstractFloat}(
@@ -68,7 +68,7 @@ for layout in (RowMajor, ColumnMajor)
                 X::AbstractMatrix{T}, 
                 Y::AbstractMatrix{T}
             )
-            Array(T, size(X,$dim_obs), size(Y,$dim_obs))
+            Array{T}(size(X,$dim_obs), size(Y,$dim_obs))
         end
 
         function checkdimensions(

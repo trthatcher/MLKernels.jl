@@ -3,9 +3,9 @@
 immutable HyperParameter{T<:Real}
     value::Base.RefValue{T}
     interval::Interval{T}
-    function HyperParameter(x::T, I::Interval{T})
+    function HyperParameter{T}(x::T, I::Interval{T}) where {T<:Real}
         checkvalue(I, x) || error("Value $(x) must be in range " * string(I))
-        new(Ref(x), I)
+        new{T}(Ref(x), I)
     end
 end
 HyperParameter{T<:Real}(x::T, I::Interval{T} = interval(T)) = HyperParameter{T}(x, I)

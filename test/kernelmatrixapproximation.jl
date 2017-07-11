@@ -3,7 +3,7 @@ m = 20
 p = 5
 
 info("Testing ", MOD.samplematrix)
-X = Array(Int64, n, m)
+X = Array{Int64}(n, m)
 r = 0.15
 @test length(MOD.samplematrix(RowMajor(), X, r)) == max(Int64(trunc(n*r)),1)
 @test length(MOD.samplematrix(ColumnMajor(), X, r)) == max(Int64(trunc(m*r)),1)
@@ -23,8 +23,8 @@ for T in FloatingPointTypes
         
         K_tmp, Ks_tmp = MOD.nystrom_sample(layout, F, X_tst, [i for i = 1:n])
 
-        @test_approx_eq K_tmp K_tst
-        @test_approx_eq Ks_tmp Ks_tst
+        @test isapprox(K_tmp,  K_tst)
+        @test isapprox(Ks_tmp, Ks_tst)
     end
 end
 
@@ -33,7 +33,7 @@ for T in FloatingPointTypes
     X = rand(T, n, p)
     XtX = X'X
 
-    @test_approx_eq pinv(XtX) MOD.nystrom_pinv!(copy(X'X))
+    @test isapprox(pinv(XtX), MOD.nystrom_pinv!(copy(X'X)))
 end
 
 info("Testing ", MOD.nystrom)
@@ -50,7 +50,7 @@ for T in FloatingPointTypes
 
         KF = nystrom(layout, F, X_tst, S)
 
-        @test_approx_eq KF.C C_tst
-        @test_approx_eq KF.W W_tst
+        @test isapprox(KF.C, C_tst)
+        @test isapprox(KF.W, W_tst)
     end
 end

@@ -6,11 +6,11 @@ for layout in (RowMajor, ColumnMajor)
 
     @eval begin
 
-        function dotvectors!{T<:AbstractFloat}(
+        function dotvectors!(
                  ::$layout,
                 xᵀx::Vector{T},
                 X::Matrix{T}
-            )
+            ) where {T<:AbstractFloat}
             if !(size(X,$dim_obs) == length(xᵀx))
                 errorstring = string("Dimension mismatch on dimension ", $dim_obs)
                 throw(DimensionMismatch(errorstring))
@@ -22,32 +22,32 @@ for layout in (RowMajor, ColumnMajor)
             xᵀx
         end
 
-        @inline function dotvectors{T<:AbstractFloat}(σ::$layout, X::Matrix{T})
-            dotvectors!(σ, Array(T, size(X,$dim_obs)), X)
+        @inline function dotvectors(σ::$layout, X::Matrix{T}) where {T<:AbstractFloat}
+            dotvectors!(σ, Array{T}(size(X,$dim_obs)), X)
         end
 
-        function gramian!{T<:BLAS.BlasReal}(
+        function gramian!(
                  ::$layout,
                 G::Matrix{T},
                 X::Matrix{T},
                 symmetrize::Bool
-            )
+            ) where {T<:BLAS.BlasReal}
             BLAS.syrk!('U', $NT, one(T), X, zero(T), G)
             symmetrize ? LinAlg.copytri!(G, 'U') : G
         end
 
-        @inline function gramian!{T<:BLAS.BlasReal}(
+        @inline function gramian!(
                  ::$layout, 
                 G::Matrix{T}, 
                 X::Matrix{T}, 
                 Y::Matrix{T}
-            )
+            ) where {T<:BLAS.BlasReal}
             BLAS.gemm!($NT, $TN, one(T), X, Y, zero(T), G)
         end
     end
 end
 
-function squared_distance!{T<:AbstractFloat}(G::Matrix{T}, xᵀx::Vector{T}, symmetrize::Bool)
+function squared_distance!(G::Matrix{T}, xᵀx::Vector{T}, symmetrize::Bool) where {T<:AbstractFloat}
     if !((n = length(xᵀx)) == size(G,1) == size(G,2))
         throw(DimensionMismatch("Gramian matrix must be square."))
     end
@@ -57,7 +57,7 @@ function squared_distance!{T<:AbstractFloat}(G::Matrix{T}, xᵀx::Vector{T}, sym
     symmetrize ? LinAlg.copytri!(G, 'U') : G
 end
 
-function squared_distance!{T<:AbstractFloat}(G::Matrix{T}, xᵀx::Vector{T}, yᵀy::Vector{T})
+function squared_distance!(G::Matrix{T}, xᵀx::Vector{T}, yᵀy::Vector{T}) where {T<:AbstractFloat}
     if size(G,1) != length(xᵀx)
         throw(DimensionMismatch("Length of xᵀx must match rows of G"))
     elseif size(G,2) != length(yᵀy)
