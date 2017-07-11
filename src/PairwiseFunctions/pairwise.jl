@@ -16,7 +16,7 @@ abstract type InnerProduct <: PairwiseFunction end
 
 doc"ScalarProduct() = xᵀy"
 struct ScalarProduct <: InnerProduct end
-@inline pairwise_aggregate{T}(f::ScalarProduct, s::T, x::T, y::T) = s + x*y
+@inline pairwise_aggregate{T}(::ScalarProduct, s::T, x::T, y::T) = s + x*y
 
 
 
@@ -30,14 +30,14 @@ end
 
 doc"SineSquared(p) = Σⱼsin²(xⱼ-yⱼ)"
 struct SineSquared <: PreMetric end
-@inline pairwise_aggregate{T}(f::SineSquared, s::T, x::T, y::T) = s + sin(x-y)^2
-@inline isstationary(f::SineSquared) = true
+@inline pairwise_aggregate{T}(::SineSquared, s::T, x::T, y::T) = s + sin(x-y)^2
+@inline isstationary(::SineSquared) = true
 
 
 abstract type Metric <: PreMetric end
 
 doc"SquaredEuclidean() = (x-y)ᵀ(x-y)"
 struct SquaredEuclidean <: PreMetric end
-@inline pairwise_aggregate{T}(f::SquaredEuclidean, s::T, x::T, y::T) = s + (x-y)^2
-@inline isstationary(f::SquaredEuclidean) = true
-@inline isisotropic(f::SquaredEuclidean)  = true
+@inline pairwise_aggregate{T}(::SquaredEuclidean, s::T, x::T, y::T) = s + (x-y)^2
+@inline isstationary(::SquaredEuclidean) = true
+@inline isisotropic(::SquaredEuclidean)  = true
