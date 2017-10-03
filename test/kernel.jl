@@ -47,7 +47,7 @@ for k in kernel_functions
         for z in (zero(T), one(T), convert(T,2))
             v = MOD.kappa(K, z)
             v_tmp = (k_tmp)(z, args...)
-            @test_approx_eq v v_tmp
+            @test isapprox(v, v_tmp)
         end
     end
 end

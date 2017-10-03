@@ -1,16 +1,16 @@
-abstract Bound{T}
+abstract type Bound{T} end
 
 eltype{T}(::Bound{T}) = T
 
-immutable OpenBound{T<:Real} <: Bound{T}
+struct OpenBound{T<:Real} <: Bound{T}
     value::T
-    function OpenBound(x::Real)
+    function OpenBound{T}(x::Real) where {T<:Real}
         !(T <: Integer) || error("Bounds must be closed for integers")
         if T <: AbstractFloat
             !isnan(x) || error("Bound value must not be NaN")
             !isinf(x) || error("Bound value must not be Inf/-Inf")
         end
-        new(x)
+        new{T}(x)
     end
 end
 OpenBound{T<:Real}(x::T) = OpenBound{T}(x)
@@ -20,14 +20,14 @@ convert{T<:Real}(::Type{OpenBound{T}}, b::OpenBound) = OpenBound{T}(b.value)
 string(b::OpenBound) = string("OpenBound(", b.value, ")")
 
 
-immutable ClosedBound{T<:Real} <: Bound{T}
+struct ClosedBound{T<:Real} <: Bound{T}
     value::T
-    function ClosedBound(x::Real)
+    function ClosedBound{T}(x::Real) where {T<:Real}
         if T <: AbstractFloat
             !isnan(x) || error("Bound value must not be NaN")
             !isinf(x) || error("Bound value must not be Inf/-Inf")
         end
-        new(x)
+        new{T}(x)
     end
 end
 ClosedBound{T<:Real}(x::T) = ClosedBound{T}(x)
@@ -37,7 +37,7 @@ convert{T<:Real}(::Type{ClosedBound{T}}, b::ClosedBound) = ClosedBound{T}(b.valu
 string(b::ClosedBound) = string("ClosedBound(", b.value, ")")
 
 
-immutable NullBound{T<:Real} <: Bound{T} end
+struct NullBound{T<:Real} <: Bound{T} end
 NullBound{T<:Real}(::Type{T}) = NullBound{T}()
 
 convert{T<:Real}(::Type{NullBound{T}}, b::NullBound{T}) = b

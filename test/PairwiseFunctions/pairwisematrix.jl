@@ -18,7 +18,7 @@ for f in pairwise_functions
         end
         s = f_ret_tmp(s)
 
-        @test_approx_eq s MODPF.unsafe_pairwise(F, x, y)
+        @test isapprox(s, MODPF.unsafe_pairwise(F, x, y))
     end
 end
 
@@ -31,8 +31,8 @@ for f in pairwise_functions
         x = rand(T,p)
         y = rand(T,p)
 
-        @test_approx_eq MODPF.pairwise(F, x, y) MODPF.unsafe_pairwise(F, x, y)
-        @test_approx_eq MODPF.pairwise(F, x[1], y[1]) MODPF.unsafe_pairwise(F, x[1:1], y[1:1])
+        @test isapprox(MODPF.pairwise(F, x, y),       MODPF.unsafe_pairwise(F, x, y))
+        @test isapprox(MODPF.pairwise(F, x[1], y[1]), MODPF.unsafe_pairwise(F, x[1:1], y[1:1]))
 
         @test_throws DimensionMismatch MODPF.pairwise(F, x, v)
         @test_throws DimensionMismatch MODPF.pairwise(F, v, x)
@@ -58,18 +58,18 @@ for layout in (RowMajor(), ColumnMajor())
     isrowmajor = layout == RowMajor()
     dim = isrowmajor ? 1 : 2
 
-    X = isrowmajor ? Array(Float64,n,p) : Array(Float64,p,n)
-    Y = isrowmajor ? Array(Float64,m,p) : Array(Float64,p,m)
-    Y_bad = isrowmajor ? Array(Float64,m,p+1) : Array(Float64,p+1,m)
+    X =     isrowmajor ? Array{Float64}(n,p)   : Array{Float64}(p,n)
+    Y =     isrowmajor ? Array{Float64}(m,p)   : Array{Float64}(p,m)
+    Y_bad = isrowmajor ? Array{Float64}(m,p+1) : Array{Float64}(p+1,m)
 
-    @test MODPF.checkdimensions(layout, Array(Float64,n,n), X) == n
-    @test_throws DimensionMismatch MODPF.checkdimensions(layout, Array(Float64,n,n+1), X)
-    @test_throws DimensionMismatch MODPF.checkdimensions(layout, Array(Float64,n+1,n+1), X)
+    @test MODPF.checkdimensions(layout, Array{Float64}(n,n), X) == n
+    @test_throws DimensionMismatch MODPF.checkdimensions(layout, Array{Float64}(n,n+1), X)
+    @test_throws DimensionMismatch MODPF.checkdimensions(layout, Array{Float64}(n+1,n+1), X)
 
-    @test MODPF.checkdimensions(layout, Array(Float64,n,m), X, Y) == (n,m)
-    @test_throws DimensionMismatch MODPF.checkdimensions(layout, Array(Float64,n,m+1), X, Y)
-    @test_throws DimensionMismatch MODPF.checkdimensions(layout, Array(Float64,n+1,m), X, Y)
-    @test_throws DimensionMismatch MODPF.checkdimensions(layout, Array(Float64,n,m), X, Y_bad)
+    @test MODPF.checkdimensions(layout, Array{Float64}(n,m), X, Y) == (n,m)
+    @test_throws DimensionMismatch MODPF.checkdimensions(layout, Array{Float64}(n,m+1), X, Y)
+    @test_throws DimensionMismatch MODPF.checkdimensions(layout, Array{Float64}(n+1,m), X, Y)
+    @test_throws DimensionMismatch MODPF.checkdimensions(layout, Array{Float64}(n,m), X, Y_bad)
 end
 
 info("Testing ", MODPF.pairwisematrix!)
@@ -77,8 +77,8 @@ for T in (Float32, Float64)
     X_set = [rand(T,p) for i = 1:n]
     Y_set = [rand(T,p) for i = 1:m]
 
-    P_tst_nn = Array(T, n, n)
-    P_tst_nm = Array(T, n, m)
+    P_tst_nn = Array{T}( n, n)
+    P_tst_nm = Array{T}( n, m)
 
     for layout in (RowMajor(), ColumnMajor())
         X = layout == RowMajor() ? transpose(hcat(X_set...)) : hcat(X_set...)
@@ -88,10 +88,10 @@ for T in (Float32, Float64)
             F = (f)()
 
             P = [MODPF.pairwise(F,x,y) for x in X_set, y in X_set]
-            @test_approx_eq P MODPF.pairwisematrix!(layout, P_tst_nn, F, X, true)
+            @test isapprox(P, MODPF.pairwisematrix!(layout, P_tst_nn, F, X, true))
 
             P = [MODPF.pairwise(F,x,y) for x in X_set, y in Y_set]
-            @test_approx_eq P MODPF.pairwisematrix!(layout, P_tst_nm, F, X, Y)
+            @test isapprox(P, MODPF.pairwisematrix!(layout, P_tst_nm, F, X, Y))
         end
     end
 end

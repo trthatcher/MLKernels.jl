@@ -13,8 +13,8 @@ for T in (Float32, Float64)
         P = (get(kernel_functions_pairwise, f, SquaredEuclidean))()
         F = convert(f{T}, (f)())
         
-        @test_approx_eq MOD.kernel(F, x[1], y[1]) MOD.kappa(F, MOD.pairwise(P, x[1], y[1]))
-        @test_approx_eq MOD.kernel(F, x, y)       MOD.kappa(F, MOD.pairwise(P, x, y))
+        @test isapprox(MOD.kernel(F, x[1], y[1]), MOD.kappa(F, MOD.pairwise(P, x[1], y[1])))
+        @test isapprox(MOD.kernel(F, x, y),       MOD.kappa(F, MOD.pairwise(P, x, y)))
 
         z = MOD.kernel(F, x_alt[1], y[1])
         @test typeof(z) == T
@@ -34,7 +34,7 @@ for T in (Float32, Float64)
         K_tmp = [MOD.kappa(F,X[i]) for i in CartesianRange(size(X))]
         K_tst = MOD.kappamatrix!(F, copy(X))
         
-        @test_approx_eq K_tmp K_tst
+        @test isapprox(K_tmp, K_tst)
     end
 end
 
@@ -49,7 +49,7 @@ for T in (Float32, Float64)
         K_tmp = [MOD.kappa(F,X[i]) for i in CartesianRange(size(X))]
         K_tst = MOD.symmetric_kappamatrix!(F, copy(X), true)
         
-        @test_approx_eq K_tmp K_tst
+        @test isapprox(K_tmp, K_tst)
         @test_throws DimensionMismatch MOD.symmetric_kappamatrix!(F, rand(T, p, p+1), true)
     end
 end
@@ -60,8 +60,8 @@ for T in (Float32, Float64)
     X_set = [rand(T,p) for i = 1:n]
     Y_set = [rand(T,p) for i = 1:m]
 
-    K_tst_nn = Array(T, n, n)
-    K_tst_nm = Array(T, n, m)
+    K_tst_nn = Array{T}(n, n)
+    K_tst_nm = Array{T}(n, m)
 
     for layout in (RowMajor(), ColumnMajor())
         X = layout == RowMajor() ? transpose(hcat(X_set...)) : hcat(X_set...)
@@ -71,10 +71,10 @@ for T in (Float32, Float64)
             F = convert(f{T}, (f)())
 
             K = [MOD.kernel(F,x,y) for x in X_set, y in X_set]
-            @test_approx_eq K MOD.kernelmatrix!(layout, K_tst_nn, F, X, true)
+            @test isapprox(K, MOD.kernelmatrix!(layout, K_tst_nn, F, X, true))
 
             K = [MOD.kernel(F,x,y) for x in X_set, y in Y_set]
-            @test_approx_eq K MOD.kernelmatrix!(layout, K_tst_nm, F, X, Y)
+            @test isapprox(K, MOD.kernelmatrix!(layout, K_tst_nm, F, X, Y))
         end
     end
 end
@@ -84,8 +84,8 @@ for T in (Float32, Float64)
     X_set = [rand(Float32,p) for i = 1:n]
     Y_set = [rand(Float32,p) for i = 1:m]
 
-    K_tst_nn = Array(T, n, n)
-    K_tst_nm = Array(T, n, m)
+    K_tst_nn = Array{T}(n, n)
+    K_tst_nm = Array{T}(n, m)
 
     for layout in (RowMajor(), ColumnMajor())
         isrowmajor = layout == RowMajor()
@@ -101,32 +101,32 @@ for T in (Float32, Float64)
             K_tmp = MOD.kernelmatrix!(layout, K_tst_nn, F, X, true)
 
             K_tst = MOD.kernelmatrix(layout, F, X, true)
-            @test_approx_eq K_tmp K_tst
+            @test isapprox(K_tmp, K_tst)
             @test eltype(K_tst) == T
 
             K_tst = MOD.kernelmatrix(layout, F, X_alt)
-            @test_approx_eq K_tmp K_tst
+            @test isapprox(K_tmp, K_tst)
             @test eltype(K_tst) == T
 
             if isrowmajor
                 K_tst = MOD.kernelmatrix(F, X_alt)
-                @test_approx_eq K_tmp K_tst
+                @test isapprox(K_tmp, K_tst)
                 @test eltype(K_tst) == T
             end
 
             K_tmp = MOD.kernelmatrix!(layout, K_tst_nm, F, X, Y)
 
             K_tst = MOD.kernelmatrix(layout, F, X, Y)
-            @test_approx_eq K_tmp K_tst
+            @test isapprox(K_tmp, K_tst)
             @test eltype(K_tst) == T
 
             K_tst = MOD.kernelmatrix(layout, F, X_alt, Y_alt)
-            @test_approx_eq K_tmp K_tst
+            @test isapprox(K_tmp, K_tst)
             @test eltype(K_tst) == T
 
             if isrowmajor
                 K_tst = MOD.kernelmatrix(F, X_alt, Y_alt)
-                @test_approx_eq K_tmp K_tst
+                @test isapprox(K_tmp, K_tst)
                 @test eltype(K_tst) == T
             end
         end
@@ -144,7 +144,7 @@ for T in FloatingPointTypes
     Xc = X .- mean(X,1)
     Kc = Xc*transpose(Xc)
 
-    @test_approx_eq K Kc
+    @test isapprox(K, Kc)
 
     K = X*transpose(Y)
     MOD.centerkernelmatrix!(K)
@@ -152,5 +152,5 @@ for T in FloatingPointTypes
     Yc = Y .- mean(Y,1)
     Kc = Xc*transpose(Yc)
 
-    @test_approx_eq K Kc
+    @test isapprox(K, Kc)
 end

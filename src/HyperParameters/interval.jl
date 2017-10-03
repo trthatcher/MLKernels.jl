@@ -1,7 +1,7 @@
-immutable Interval{T<:Real,A<:Bound,B<:Bound}
+immutable Interval{T<:Real,A<:Bound{T},B<:Bound{T}}
     a::A
     b::B
-    function Interval(a::Bound{T}, b::Bound{T})
+    function Interval{T}(a::A, b::B) where {T<:Real,A<:Bound{T},B<:Bound{T}}
         if !(A <: NullBound || B <: NullBound)
             va = a.value
             vb = b.value
@@ -11,18 +11,19 @@ immutable Interval{T<:Real,A<:Bound,B<:Bound}
                 va < vb || error("Invalid bounds: a=$va must be less than b=$vb")
             end
         end
-        new(a,b)
+        new{T,A,B}(a,b)
     end
 end
-Interval{T<:Real}(a::Bound{T}, b::Bound{T}) = Interval{T,typeof(a),typeof(b)}(a,b)
+Interval(a::Bound{T}, b::Bound{T}) where {T<:Real} = Interval{T}(a,b)
 
 eltype{T}(::Interval{T}) = T
 
 interval(a::Void, b::Void) = Interval(NullBound{Float64}(), NullBound{Float64}())
-interval{T<:Real}(a::Bound{T}, b::Void) = Interval(a, NullBound{T}())
-interval{T<:Real}(a::Void, b::Bound{T}) = Interval(NullBound{T}(), b)
-interval{T<:Real}(::Type{T}) = Interval(NullBound{T}(), NullBound{T}())
-interval{T<:Real}(a::Bound{T}, b::Bound{T}) = Interval(a,b)
+interval(a::Bound{T}, b::Void) where {T<:Real} = Interval(a, NullBound{T}())
+interval(a::Void, b::Bound{T}) where {T<:Real} = Interval(NullBound{T}(), b)
+interval(a::Bound{T}, b::Bound{T}) where {T<:Real} = Interval(a,b)
+interval(::Type{T}) where {T<:Real} = Interval(NullBound{T}(), NullBound{T}())
+
 
 checkvalue(I::Interval, x::Real) = checkvalue(I.a, x) && checkvalue(x, I.b)
 
