@@ -184,7 +184,7 @@ end
 
 
 #===================================================================================================
-  ScalarProduct and SquaredDistance using BLAS/Built-In methods
+  ScalarProduct using BLAS/Built-In methods
 ===================================================================================================#
 
 @inline function pairwisematrix!{T<:BLAS.BlasReal}(
@@ -207,6 +207,75 @@ end
     gramian!(σ, P, X, Y)
 end
 
+
+
+#===================================================================================================
+  SquaredDistance using BLAS/Built-In methods
+===================================================================================================#
+
+function squared_distance!(G::Matrix{T}, xᵀx::Vector{T}, symmetrize::Bool) where {T<:AbstractFloat}
+    if !((n = size(G,1)) == size(G,2))
+        throw(DimensionMismatch("Gramian matrix must be square."))
+    end
+    if length(xᵀx) != n
+        throw(DimensionMismatch("Length of xᵀx must match order of G"))
+    end
+    @inbounds for j = 1:n
+        xᵀx_j = xᵀx[j]
+        for i = 1:(j-1)
+            G[i,j] = (xᵀx[i] + xᵀx_j) - 2G[i,j]
+        end
+        G[j,j] = zero(T)
+    end
+    symmetrize ? LinAlg.copytri!(G, 'U') : G
+end
+
+function squared_distance!(G::Matrix{T}, xᵀx::Vector{T}, yᵀy::Vector{T}) where {T<:AbstractFloat}
+    n, m = size(G)
+    if length(xᵀx) != n
+        throw(DimensionMismatch("Length of xᵀx must match rows of G"))
+    elseif length(yᵀy) != m
+        throw(DimensionMismatch("Length of yᵀy must match columns of G"))
+    end
+    @inbounds for j = 1:m
+        yᵀy_j = yᵀy[j]
+        for i = 1:n
+            G[i,j] = (xᵀx[i] + yᵀy_j) - 2G[i,j]
+        end
+    end
+    G
+end
+
+function fix_negatives!(σ::MemoryLayout, D::Matrix{T}, X::Matrix{T}, symmetrize::Bool, ϵ::T=zero(T)) where {T<:AbstractFloat}
+    if !((n = size(D,1)) == size(D,2))
+        throw(DimensionMismatch("Distance matrix must be square."))
+    end
+    for j = 1:n
+        xj = subvector(σ, X, j)
+        for i = 1:(j-1)
+            if D[i,j] < ϵ
+                xi = subvector(σ, X, i)
+                D[i,j] = unsafe_pairwise(SquaredEuclidean(), xi, xj)
+            end
+        end
+    end
+    symmetrize ? LinAlg.copytri!(D, 'U') : D
+end
+
+function fix_negatives!(σ::MemoryLayout, D::Matrix{T}, X::Matrix{T}, Y::Matrix{T}, ϵ::T=zero(T)) where {T<:AbstractFloat}
+    n, m = size(G)
+    for j = 1:m
+        yj = subvector(σ, Y, j)
+        for i = 1:n
+            if D[i,j] < ϵ
+                xi = subvector(σ, X, i)
+                D[i,j] = unsafe_pairwise(SquaredEuclidean(), xi, yj)
+            end
+        end
+    end
+    D
+end
+
 function pairwisematrix!{T<:BLAS.BlasReal}(
         σ::MemoryLayout,
         P::Matrix{T}, 
@@ -216,7 +285,9 @@ function pairwisematrix!{T<:BLAS.BlasReal}(
     )
     gramian!(σ, P, X, false)
     xᵀx = dotvectors(σ, X)
-    squared_distance!(P, xᵀx, symmetrize)
+    squared_distance!(P, xᵀx, false)
+    fix_negatives!(σ, P, X, true)
+    symmetrize ? LinAlg.copytri!(P, 'U') : P 
 end
 
 function pairwisematrix!{T<:BLAS.BlasReal}(

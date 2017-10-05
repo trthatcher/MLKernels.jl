@@ -1,5 +1,5 @@
-n = 30
-m = 20
+n = 3
+m = 2
 p = 5
 
 info("Testing ", MODPF.dotvectors!)
@@ -55,37 +55,4 @@ for T in FloatingPointTypes
     @test_throws DimensionMismatch MODPF.gramian!(RowMajor(),    Array{T}(m,n+1), Y,  X)
     @test_throws DimensionMismatch MODPF.gramian!(ColumnMajor(), Array{T}(m+1,n), Y', X')
     @test_throws DimensionMismatch MODPF.gramian!(ColumnMajor(), Array{T}(m,n+1), Y', X')
-
-end
-
-info("Testing ", MODPF.squared_distance!)
-for T in FloatingPointTypes
-    Set_X = [rand(T,p) for i = 1:n]
-    Set_Y = [rand(T,p) for i = 1:m]
-
-    X = transpose(hcat(Set_X...))
-    Y = transpose(hcat(Set_Y...))
-
-    P = [dot(x-y,x-y) for x in Set_X, y in Set_X]
-    G = MODPF.gramian!(RowMajor(), Array{T}(n,n), X, true)
-    xtx = MODPF.dotvectors(RowMajor(), X)
-
-    @test isapprox(MODPF.squared_distance!(G, xtx, true), P)
-
-    P = [dot(x-y,x-y) for x in Set_X, y in Set_Y]
-    G = MODPF.gramian!(RowMajor(), Array{T}(n,m), X, Y)
-    xtx = MODPF.dotvectors(RowMajor(), X)
-    yty = MODPF.dotvectors(RowMajor(), Y)
-    MODPF.squared_distance!(G, xtx, yty)
-
-    @test isapprox(G, P)
-    @test all(G .>= 0)
-    
-    @test_throws DimensionMismatch MODPF.squared_distance!(Array{T}(3,4), Array{T}(3), true)
-    @test_throws DimensionMismatch MODPF.squared_distance!(Array{T}(4,3), Array{T}(3), true)
-
-    @test_throws DimensionMismatch MODPF.squared_distance!(Array{T}(3,4), Array{T}(2), Array{T}(4))
-    @test_throws DimensionMismatch MODPF.squared_distance!(Array{T}(3,4), Array{T}(4), Array{T}(4))
-    @test_throws DimensionMismatch MODPF.squared_distance!(Array{T}(3,4), Array{T}(3), Array{T}(3))
-    @test_throws DimensionMismatch MODPF.squared_distance!(Array{T}(3,4), Array{T}(3), Array{T}(5))
 end
