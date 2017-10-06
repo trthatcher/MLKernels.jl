@@ -127,3 +127,22 @@ for T in (Float32, Float64)
         end
     end
 end
+
+for layout in (RowMajor(), ColumnMajor())
+    # Test case where squared_distance! may return a negative value
+    v1 = [0.2585096115890490597877260370296426117420196533203125
+          0.9692536801431554938091039730352349579334259033203125
+          0.4741774214537994858176261914195492863655090332031250]
+
+    v2 = [0.2585096115824996876320085448242025449872016906738281
+          0.9692536801897344567180425656260922551155090332031250
+          0.4741774214882835125628446348855504766106605529785156]
+
+    v3 = rand(Float64, 3)
+
+    F = SquaredEuclidean()
+    X = layout == RowMajor() ? transpose(hcat(v1, v2)) : hcat(v1, v2)
+    Y = layout == RowMajor() ? transpose(hcat(v1, v2, v3)) : hcat(v1, v2, v3)
+
+    @test all(MODPF.pairwisematrix!(layout, Array{Float64}(2,2), F, X, true) .>= 0.0)
+end
