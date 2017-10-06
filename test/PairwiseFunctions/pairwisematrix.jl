@@ -145,4 +145,5 @@ for layout in (RowMajor(), ColumnMajor())
     Y = layout == RowMajor() ? transpose(hcat(v1, v2, v3)) : hcat(v1, v2, v3)
 
     @test all(MODPF.pairwisematrix!(layout, Array{Float64}(2,2), F, X, true) .>= 0.0)
+    @test all(MODPF.pairwisematrix!(layout, Array{Float64}(2,3), F, X, Y) .>= 0.0)
 end

@@ -263,7 +263,7 @@ function fix_negatives!(σ::MemoryLayout, D::Matrix{T}, X::Matrix{T}, symmetrize
 end
 
 function fix_negatives!(σ::MemoryLayout, D::Matrix{T}, X::Matrix{T}, Y::Matrix{T}, ϵ::T=zero(T)) where {T<:AbstractFloat}
-    n, m = size(G)
+    n, m = size(D)
     for j = 1:m
         yj = subvector(σ, Y, j)
         for i = 1:n
@@ -301,4 +301,5 @@ function pairwisematrix!{T<:BLAS.BlasReal}(
     xᵀx = dotvectors(σ, X)
     yᵀy = dotvectors(σ, Y)
     squared_distance!(P, xᵀx, yᵀy)
+    fix_negatives!(σ, P, X, Y)
 end
