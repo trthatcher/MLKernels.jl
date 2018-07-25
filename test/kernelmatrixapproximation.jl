@@ -20,7 +20,7 @@ for T in FloatingPointTypes
         
         K_tst = kernelmatrix(layout, F, Xs_tst, X_tst)
         Ks_tst = kernelmatrix(layout, F, Xs_tst, Xs_tst)
-        
+
         K_tmp, Ks_tmp = MOD.nystrom_sample(layout, F, X_tst, [i for i = 1:n])
 
         @test isapprox(K_tmp,  K_tst)

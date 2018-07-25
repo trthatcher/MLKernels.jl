@@ -2,9 +2,9 @@
 
 for k in kernel_functions
     info("Testing ", k)
-    
+
     def_args, alt_args = get(kernel_functions_arguments, k, ((), ()))
-   
+
     # Test Constructors
     for T in FloatingPointTypes
         for i = 1:length(alt_args)

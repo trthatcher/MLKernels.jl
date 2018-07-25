@@ -12,7 +12,7 @@ for T in (Float32, Float64)
     for f in kernel_functions
         P = (get(kernel_functions_pairwise, f, SquaredEuclidean))()
         F = convert(f{T}, (f)())
-        
+
         @test isapprox(MOD.kernel(F, x[1], y[1]), MOD.kappa(F, MOD.pairwise(P, x[1], y[1])))
         @test isapprox(MOD.kernel(F, x, y),       MOD.kappa(F, MOD.pairwise(P, x, y)))
 
@@ -33,7 +33,7 @@ for T in (Float32, Float64)
 
         K_tmp = [MOD.kappa(F,X[i]) for i in CartesianRange(size(X))]
         K_tst = MOD.kappamatrix!(F, copy(X))
-        
+
         @test isapprox(K_tmp, K_tst)
     end
 end
@@ -48,7 +48,7 @@ for T in (Float32, Float64)
 
         K_tmp = [MOD.kappa(F,X[i]) for i in CartesianRange(size(X))]
         K_tst = MOD.symmetric_kappamatrix!(F, copy(X), true)
-        
+
         @test isapprox(K_tmp, K_tst)
         @test_throws DimensionMismatch MOD.symmetric_kappamatrix!(F, rand(T, p, p+1), true)
     end

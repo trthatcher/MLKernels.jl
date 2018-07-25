@@ -37,9 +37,9 @@ for layout in (RowMajor, ColumnMajor)
         end
 
         @inline function gramian!(
-                 ::$layout, 
-                G::Matrix{T}, 
-                X::Matrix{T}, 
+                 ::$layout,
+                G::Matrix{T},
+                X::Matrix{T},
                 Y::Matrix{T}
             ) where {T<:BLAS.BlasReal}
             BLAS.gemm!($NT, $TN, one(T), X, Y, zero(T), G)
