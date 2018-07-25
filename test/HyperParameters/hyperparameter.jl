@@ -35,7 +35,7 @@ for T in (FloatingPointTypes..., IntegerTypes...)
         @test checkvalue(B, one(T))  == true
 
         @test string(B) == string("OpenBound(", zero(T), ")")
-        @test show(DevNull, B) == nothing
+        @test show(devnull, B) == nothing
     end
 end
 
@@ -73,7 +73,7 @@ for T in (FloatingPointTypes..., IntegerTypes...)
     @test checkvalue(B, one(T))  == true
 
     @test string(B) == string("ClosedBound(", zero(T), ")")
-    @test show(DevNull, B) == nothing
+    @test show(devnull, B) == nothing
 end
 
 @info("Testing ", MOD.NullBound)
@@ -98,7 +98,7 @@ for T in (FloatingPointTypes..., IntegerTypes...)
     @test checkvalue(B, one(T))  == true
 
     @test string(B) == string("NullBound(", T, ")")
-    @test show(DevNull, B) == nothing
+    @test show(devnull, B) == nothing
 end
 
 @info("Testing ", MOD.Interval)
@@ -156,7 +156,7 @@ for T in FloatingPointTypes
     b = convert(T,23)
     c = convert(T,13)
 
-    @test show(DevNull, MOD.interval(MOD.ClosedBound(one(T)), MOD.ClosedBound(one(T)))) == nothing
+    @test show(devnull, MOD.interval(MOD.ClosedBound(one(T)), MOD.ClosedBound(one(T)))) == nothing
 end
 
 @info("Testing ", MOD.interval)
@@ -442,5 +442,5 @@ for T in (FloatingPointTypes..., IntegerTypes...)
         @test op(P1, P2)     == op(getvalue(P1), getvalue(P2))
     end
 
-    @test show(DevNull, P) == nothing
+    @test show(devnull, P) == nothing
 end

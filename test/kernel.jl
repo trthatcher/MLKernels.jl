@@ -34,7 +34,7 @@ for k in kernel_functions
 
     # Test Display
     @test eval(parse(string(K))) == K
-    @test show(DevNull, K) == nothing
+    @test show(devnull, K) == nothing
 end
 
 @info("Testing ", MOD.kappa)
