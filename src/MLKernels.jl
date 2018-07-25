@@ -4,7 +4,7 @@
 
 module MLKernels
 
-import Base: convert, eltype, print, show, string, ==, *, /, +, -, ^, exp, gamma, tanh
+import Base: convert, eltype, print, show, string, ==, *, /, +, -, ^, exp, tanh
 
 export
 
@@ -84,7 +84,7 @@ export
     nystrom
 
 
-using SpecialFunctions: besselk
+using SpecialFunctions: besselk, gamma
 
 include("HyperParameters/HyperParameters.jl")
 using MLKernels.HyperParameters:

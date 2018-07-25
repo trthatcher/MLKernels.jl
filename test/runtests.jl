@@ -12,6 +12,9 @@ using MLKernels:
             Metric,
                 SquaredEuclidean
 
+using SpecialFunctions:
+    besselk, gamma
+
 FloatingPointTypes = (Float32, Float64)
 IntegerTypes = (Int32, Int64)
 MOD = MLKernels
