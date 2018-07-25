@@ -30,6 +30,7 @@ export
     pairwisematrix,
     pairwisematrix!
 
+import LinearAlgebra
 
 abstract type MemoryLayout end
 
@@ -39,5 +40,5 @@ struct RowMajor    <: MemoryLayout end
 include("common.jl")
 include("pairwise.jl")
 include("pairwisematrix.jl")
-    
+
 end # MLKernels

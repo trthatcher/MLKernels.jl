@@ -15,6 +15,8 @@ using MLKernels:
 using SpecialFunctions:
     besselk, gamma
 
+import LinearAlgebra
+
 FloatingPointTypes = (Float32, Float64)
 IntegerTypes = (Int32, Int64)
 MOD = MLKernels

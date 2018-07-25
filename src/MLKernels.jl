@@ -85,6 +85,7 @@ export
 
 
 using SpecialFunctions: besselk, gamma
+import LinearAlgebra
 
 include("HyperParameters/HyperParameters.jl")
 using MLKernels.HyperParameters:

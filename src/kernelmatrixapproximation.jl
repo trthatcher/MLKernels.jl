@@ -33,7 +33,7 @@ for layout in (RowMajor, ColumnMajor)
     end
 end
 
-function nystrom_pinv!{T<:Base.LinAlg.BlasReal}(Cs::Matrix{T}, tol::T = eps(T)*size(Cs,1))
+function nystrom_pinv!{T<:LinearAlgebra.BlasReal}(Cs::Matrix{T}, tol::T = eps(T)*size(Cs,1))
     # Compute eigendecomposition of sampled component of C
     QΛQᵀ = eigfact!(Symmetric(Cs))
 
@@ -50,17 +50,17 @@ function nystrom_pinv!{T<:Base.LinAlg.BlasReal}(Cs::Matrix{T}, tol::T = eps(T)*s
     QD = scale!(Q, D)  # Scales column i of Q by D[i]
 
     # W := (QD)(QD)ᵀ = (QΛQᵀ)^(-1)  (pseudo inverse)
-    W = LinAlg.syrk_wrapper!(similar(QD), 'N', QD)
+    W = LinearAlgebra.syrk_wrapper!(similar(QD), 'N', QD)
 
-    return LinAlg.copytri!(W, 'U')
+    return LinearAlgebra.copytri!(W, 'U')
 end
 
-immutable NystromFact{T<:Base.LinAlg.BlasReal}
+immutable NystromFact{T<:LinearAlgebra.BlasReal}
     W::Matrix{T}
     C::Matrix{T}
 end
 
-function nystrom{T<:Base.LinAlg.BlasReal,U<:Integer}(
+function nystrom{T<:LinearAlgebra.BlasReal,U<:Integer}(
         σ::MemoryLayout,
         κ::Kernel{T},
         X::Matrix{T},
@@ -71,7 +71,7 @@ function nystrom{T<:Base.LinAlg.BlasReal,U<:Integer}(
     NystromFact{T}(W, C)
 end
 
-function nystrom{T<:Base.LinAlg.BlasReal,U<:Integer}(
+function nystrom{T<:LinearAlgebra.BlasReal,U<:Integer}(
         κ::Kernel{T},
         X::Matrix{T},
         S::Vector{U} = samplematrix(RowMajor(), X, convert(T,0.15))
@@ -79,7 +79,7 @@ function nystrom{T<:Base.LinAlg.BlasReal,U<:Integer}(
     nystrom(RowMajor(), κ, X, S)
 end
 
-function kernelmatrix{T<:Base.LinAlg.BlasReal}(CᵀWC::NystromFact{T})
+function kernelmatrix{T<:LinearAlgebra.BlasReal}(CᵀWC::NystromFact{T})
     W = CᵀWC.W
     C = CᵀWC.C
     At_mul_B(C,W)*C

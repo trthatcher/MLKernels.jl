@@ -34,7 +34,7 @@ function symmetric_kappamatrix!{T<:AbstractFloat}(
     for j = 1:n, i = (1:j)
         @inbounds P[i,j] = kappa(κ, P[i,j])
     end
-    symmetrize ? LinAlg.copytri!(P, 'U') : P
+    symmetrize ? LinearAlgebra.copytri!(P, 'U') : P
 end
 
 function kernelmatrix!{T<:AbstractFloat}(

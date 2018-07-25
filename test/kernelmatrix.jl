@@ -41,7 +41,7 @@ end
 
 @info("Testing ", MOD.symmetric_kappamatrix!)
 for T in (Float32, Float64)
-    X = LinAlg.copytri!(rand(T,n,n), 'U')
+    X = LinearAlgebra.copytri!(rand(T,n,n), 'U')
 
     for f in kernel_functions
         F = convert(f{T}, (f)())

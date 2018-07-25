@@ -125,7 +125,7 @@ function pairwisematrix!{T<:AbstractFloat}(
             @inbounds P[i,j] = unsafe_pairwise(f, xi, xj)
         end
     end
-    symmetrize ? LinAlg.copytri!(P, 'U', false) : P
+    symmetrize ? LinearAlgebra.copytri!(P, 'U', false) : P
 end
 
 function pairwisematrix!{T<:AbstractFloat}(
@@ -227,7 +227,7 @@ function squared_distance!(G::Matrix{T}, xᵀx::Vector{T}, symmetrize::Bool) whe
         end
         G[j,j] = zero(T)
     end
-    symmetrize ? LinAlg.copytri!(G, 'U') : G
+    symmetrize ? LinearAlgebra.copytri!(G, 'U') : G
 end
 
 function squared_distance!(G::Matrix{T}, xᵀx::Vector{T}, yᵀy::Vector{T}) where {T<:AbstractFloat}
@@ -259,7 +259,7 @@ function fix_negatives!(σ::MemoryLayout, D::Matrix{T}, X::Matrix{T}, symmetrize
             end
         end
     end
-    symmetrize ? LinAlg.copytri!(D, 'U') : D
+    symmetrize ? LinearAlgebra.copytri!(D, 'U') : D
 end
 
 function fix_negatives!(σ::MemoryLayout, D::Matrix{T}, X::Matrix{T}, Y::Matrix{T}, ϵ::T=zero(T)) where {T<:AbstractFloat}
@@ -287,7 +287,7 @@ function pairwisematrix!{T<:BLAS.BlasReal}(
     xᵀx = dotvectors(σ, X)
     squared_distance!(P, xᵀx, false)
     fix_negatives!(σ, P, X, true)
-    symmetrize ? LinAlg.copytri!(P, 'U') : P 
+    symmetrize ? LinearAlgebra.copytri!(P, 'U') : P 
 end
 
 function pairwisematrix!{T<:BLAS.BlasReal}(

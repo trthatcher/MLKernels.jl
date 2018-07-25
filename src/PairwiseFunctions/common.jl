@@ -33,7 +33,7 @@ for layout in (RowMajor, ColumnMajor)
                 symmetrize::Bool
             ) where {T<:BLAS.BlasReal}
             BLAS.syrk!('U', $NT, one(T), X, zero(T), G)
-            symmetrize ? LinAlg.copytri!(G, 'U') : G
+            symmetrize ? LinearAlgebra.copytri!(G, 'U') : G
         end
 
         @inline function gramian!(
