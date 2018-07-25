@@ -77,8 +77,8 @@ for T in FloatingPointTypes
     Set_X = [rand(T,p) for i = 1:n]
     Set_Y = [rand(T,p) for i = 1:m]
 
-    X = transpose(hcat(Set_X...))
-    Y = transpose(hcat(Set_Y...))
+    X = permutedims(hcat(Set_X...))
+    Y = permutedims(hcat(Set_Y...))
 
     P = [dot(x-y,x-y) for x in Set_X, y in Set_X]
     G = MODPF.gramian!(RowMajor(), Array{T}(n,n), X, true)
@@ -113,8 +113,8 @@ for T in (Float32, Float64)
     P_tst_nm = Array{T}( n, m)
 
     for layout in (RowMajor(), ColumnMajor())
-        X = layout == RowMajor() ? transpose(hcat(X_set...)) : hcat(X_set...)
-        Y = layout == RowMajor() ? transpose(hcat(Y_set...)) : hcat(Y_set...)
+        X = layout == RowMajor() ? permutedims(hcat(X_set...)) : hcat(X_set...)
+        Y = layout == RowMajor() ? permutedims(hcat(Y_set...)) : hcat(Y_set...)
 
         for f in pairwise_functions
             F = (f)()
@@ -141,8 +141,8 @@ for layout in (RowMajor(), ColumnMajor())
     v3 = rand(Float64, 3)
 
     F = SquaredEuclidean()
-    X = layout == RowMajor() ? transpose(hcat(v1, v2)) : hcat(v1, v2)
-    Y = layout == RowMajor() ? transpose(hcat(v1, v2, v3)) : hcat(v1, v2, v3)
+    X = layout == RowMajor() ? permutedims(hcat(v1, v2)) : hcat(v1, v2)
+    Y = layout == RowMajor() ? permutedims(hcat(v1, v2, v3)) : hcat(v1, v2, v3)
 
     @test all(MODPF.pairwisematrix!(layout, Array{Float64}(2,2), F, X, true) .>= 0.0)
     @test all(MODPF.pairwisematrix!(layout, Array{Float64}(2,3), F, X, Y) .>= 0.0)

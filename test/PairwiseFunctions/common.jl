@@ -7,9 +7,9 @@ for T in FloatingPointTypes
     Set_X = [rand(T, p) for i = 1:n]
     Set_Y = [rand(T,p)  for i = 1:m]
 
-    X = transpose(hcat(Set_X...))
-    Y = transpose(hcat(Set_Y...))
-    
+    X = permutedims(hcat(Set_X...))
+    Y = permutedims(hcat(Set_Y...))
+
     @test isapprox(MODPF.dotvectors(RowMajor(),    X), vec(sum((X.*X),2)))
     @test isapprox(MODPF.dotvectors(ColumnMajor(), X), vec(sum((X.*X),1)))
 
@@ -26,33 +26,33 @@ for T in FloatingPointTypes
     Set_X = [rand(T, p) for i = 1:n]
     Set_Y = [rand(T,p)  for i = 1:m]
 
-    X = transpose(hcat(Set_X...))
-    Y = transpose(hcat(Set_Y...))
+    X = permutedims(hcat(Set_X...))
+    Y = permutedims(hcat(Set_Y...))
 
     P = [dot(x,y) for x in Set_X, y in Set_X]
 
     @test isapprox(MODPF.gramian!(RowMajor(),    Array{T}(n,n), X,  true), P)
-    @test isapprox(MODPF.gramian!(ColumnMajor(), Array{T}(n,n), X', true), P)
+    @test isapprox(MODPF.gramian!(ColumnMajor(), Array{T}(n,n), permutedims(X), true), P)
 
     P = [dot(x,y) for x in Set_X, y in Set_Y]
     @test isapprox(MODPF.gramian!(RowMajor(),    Array{T}(n,m), X,  Y),  P)
-    @test isapprox(MODPF.gramian!(ColumnMajor(), Array{T}(n,m), X', Y'), P)
+    @test isapprox(MODPF.gramian!(ColumnMajor(), Array{T}(n,m), permutedims(X), permutedims(Y)), P)
 
     @test_throws DimensionMismatch MODPF.gramian!(RowMajor(), Array{T}(n+1,n),   X, true)
     @test_throws DimensionMismatch MODPF.gramian!(RowMajor(), Array{T}(n,n+1),   X, true)
     @test_throws DimensionMismatch MODPF.gramian!(RowMajor(), Array{T}(n+1,n+1), X, true)
 
-    @test_throws DimensionMismatch MODPF.gramian!(ColumnMajor(), Array{T}(n+1,n),   X', true)
-    @test_throws DimensionMismatch MODPF.gramian!(ColumnMajor(), Array{T}(n,n+1),   X', true)
-    @test_throws DimensionMismatch MODPF.gramian!(ColumnMajor(), Array{T}(n+1,n+1), X', true)
+    @test_throws DimensionMismatch MODPF.gramian!(ColumnMajor(), Array{T}(n+1,n),   permutedims(X), true)
+    @test_throws DimensionMismatch MODPF.gramian!(ColumnMajor(), Array{T}(n,n+1),   permutedims(X), true)
+    @test_throws DimensionMismatch MODPF.gramian!(ColumnMajor(), Array{T}(n+1,n+1), permutedims(X), true)
 
     @test_throws DimensionMismatch MODPF.gramian!(RowMajor(),    Array{T}(n+1,m), X,  Y)
     @test_throws DimensionMismatch MODPF.gramian!(RowMajor(),    Array{T}(n,m+1), X,  Y)
-    @test_throws DimensionMismatch MODPF.gramian!(ColumnMajor(), Array{T}(n+1,m), X', Y')
-    @test_throws DimensionMismatch MODPF.gramian!(ColumnMajor(), Array{T}(n,m+1), X', Y')
+    @test_throws DimensionMismatch MODPF.gramian!(ColumnMajor(), Array{T}(n+1,m), permutedims(X), permutedims(Y))
+    @test_throws DimensionMismatch MODPF.gramian!(ColumnMajor(), Array{T}(n,m+1), permutedims(X), permutedims(Y))
 
     @test_throws DimensionMismatch MODPF.gramian!(RowMajor(),    Array{T}(m+1,n), Y,  X)
     @test_throws DimensionMismatch MODPF.gramian!(RowMajor(),    Array{T}(m,n+1), Y,  X)
-    @test_throws DimensionMismatch MODPF.gramian!(ColumnMajor(), Array{T}(m+1,n), Y', X')
-    @test_throws DimensionMismatch MODPF.gramian!(ColumnMajor(), Array{T}(m,n+1), Y', X')
+    @test_throws DimensionMismatch MODPF.gramian!(ColumnMajor(), Array{T}(m+1,n), permutedims(Y), permutedims(X))
+    @test_throws DimensionMismatch MODPF.gramian!(ColumnMajor(), Array{T}(m,n+1), permutedims(Y), permutedims(X))
 end

@@ -16,8 +16,8 @@ for T in FloatingPointTypes
     Xs = X[1:n, :]
 
     for layout in (RowMajor(), ColumnMajor())
-        X_tst, Xs_tst = layout == RowMajor() ? (X, Xs) : (X', Xs')
-        
+        X_tst, Xs_tst = layout == RowMajor() ? (X, Xs) : (permutedims(X), permutedims(Xs))
+
         K_tst = kernelmatrix(layout, F, Xs_tst, X_tst)
         Ks_tst = kernelmatrix(layout, F, Xs_tst, Xs_tst)
 
@@ -31,9 +31,9 @@ end
 info("Testing ", MOD.nystrom_pinv!)
 for T in FloatingPointTypes
     X = rand(T, n, p)
-    XtX = X'X
+    XtX = permutedims(X) * X
 
-    @test isapprox(pinv(XtX), MOD.nystrom_pinv!(copy(X'X)))
+    @test isapprox(pinv(XtX), MOD.nystrom_pinv!(copy(permutedims(X) * X)))
 end
 
 info("Testing ", MOD.nystrom)
@@ -43,9 +43,9 @@ for T in FloatingPointTypes
     S = [i for i = 1:n]
 
     for layout in (RowMajor(), ColumnMajor())
-        X_tst, Xs_tst = layout == RowMajor() ? (X, X[S,:]) : (X', transpose(X[S,:]))
+        X_tst, Xs_tst = layout == RowMajor() ? (X, X[S,:]) : (permutedims(X), permutedims(X[S,:]))
 
-        C_tst = transpose(kernelmatrix(layout, F, X_tst, Xs_tst))
+        C_tst = permutedims(kernelmatrix(layout, F, X_tst, Xs_tst))
         W_tst = pinv(kernelmatrix(layout, F, Xs_tst))
 
         KF = nystrom(layout, F, X_tst, S)

@@ -64,8 +64,8 @@ for T in (Float32, Float64)
     K_tst_nm = Array{T}(n, m)
 
     for layout in (RowMajor(), ColumnMajor())
-        X = layout == RowMajor() ? transpose(hcat(X_set...)) : hcat(X_set...)
-        Y = layout == RowMajor() ? transpose(hcat(Y_set...)) : hcat(Y_set...)
+        X = layout == RowMajor() ? permutedims(hcat(X_set...)) : hcat(X_set...)
+        Y = layout == RowMajor() ? permutedims(hcat(Y_set...)) : hcat(Y_set...)
 
         for f in kernel_functions
             F = convert(f{T}, (f)())
@@ -89,8 +89,8 @@ for T in (Float32, Float64)
 
     for layout in (RowMajor(), ColumnMajor())
         isrowmajor = layout == RowMajor()
-        X = convert(Array{T}, isrowmajor ? transpose(hcat(X_set...)) : hcat(X_set...))
-        Y = convert(Array{T}, isrowmajor ? transpose(hcat(Y_set...)) : hcat(Y_set...))
+        X = convert(Array{T}, isrowmajor ? permutedims(hcat(X_set...)) : hcat(X_set...))
+        Y = convert(Array{T}, isrowmajor ? permutedims(hcat(Y_set...)) : hcat(Y_set...))
 
         X_alt = convert(Array{T == Float32 ? Float64 : Float32}, X)
         Y_alt = convert(Array{T == Float32 ? Float64 : Float32}, Y)
@@ -138,19 +138,19 @@ for T in FloatingPointTypes
     X = rand(T, n, p)
     Y = rand(T, m, p)
 
-    K = X*transpose(X)
+    K = X*permutedims(X)
     MOD.centerkernelmatrix!(K)
 
     Xc = X .- mean(X,1)
-    Kc = Xc*transpose(Xc)
+    Kc = Xc*permutedims(Xc)
 
     @test isapprox(K, Kc)
 
-    K = X*transpose(Y)
+    K = X*permutedims(Y)
     MOD.centerkernelmatrix!(K)
 
     Yc = Y .- mean(Y,1)
-    Kc = Xc*transpose(Yc)
+    Kc = Xc*permutedims(Yc)
 
     @test isapprox(K, Kc)
 end
