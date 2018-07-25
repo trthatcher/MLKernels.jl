@@ -143,7 +143,7 @@ function centerkernelmatrix!{T<:AbstractFloat}(K::Matrix{T})
     μy = vec(mean(K,1))
     μ  = mean(K)
 
-    for I in CartesianRange(size(K))
+    for I in Base.Cartesian.CartesianIndices(size(K))
         K[I] += μ - μx[I[1]] - μy[I[2]]
     end
     return K

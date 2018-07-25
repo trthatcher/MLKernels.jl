@@ -16,7 +16,7 @@ for layout in (RowMajor, ColumnMajor)
                 throw(DimensionMismatch(errorstring))
             end
             fill!(xᵀx, zero(T))
-            for I in CartesianRange(size(X))
+            for I in Base.Cartesian.CartesianIndices(size(X))
                 xᵀx[I.I[$dim_obs]] += X[I]^2
             end
             xᵀx

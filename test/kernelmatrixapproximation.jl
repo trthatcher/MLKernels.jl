@@ -33,7 +33,7 @@ for T in FloatingPointTypes
     X = rand(T, n, p)
     XtX = permutedims(X) * X
 
-    @test isapprox(pinv(XtX), MOD.nystrom_pinv!(copy(permutedims(X) * X)))
+    @test isapprox(LinearAlgebra.pinv(XtX), MOD.nystrom_pinv!(copy(permutedims(X) * X)))
 end
 
 @info("Testing ", MOD.nystrom)
@@ -46,7 +46,7 @@ for T in FloatingPointTypes
         X_tst, Xs_tst = layout == RowMajor() ? (X, X[S,:]) : (permutedims(X), permutedims(X[S,:]))
 
         C_tst = permutedims(kernelmatrix(layout, F, X_tst, Xs_tst))
-        W_tst = pinv(kernelmatrix(layout, F, Xs_tst))
+        W_tst = LinearAlgebra.pinv(kernelmatrix(layout, F, Xs_tst))
 
         KF = nystrom(layout, F, X_tst, S)
 

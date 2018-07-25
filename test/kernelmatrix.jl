@@ -31,7 +31,7 @@ for T in (Float32, Float64)
     for f in kernel_functions
         F = convert(f{T}, (f)())
 
-        K_tmp = [MOD.kappa(F,X[i]) for i in CartesianRange(size(X))]
+        K_tmp = [MOD.kappa(F,X[i]) for i in Base.Cartesian.CartesianIndices(size(X))]
         K_tst = MOD.kappamatrix!(F, copy(X))
 
         @test isapprox(K_tmp, K_tst)
@@ -46,7 +46,7 @@ for T in (Float32, Float64)
     for f in kernel_functions
         F = convert(f{T}, (f)())
 
-        K_tmp = [MOD.kappa(F,X[i]) for i in CartesianRange(size(X))]
+        K_tmp = [MOD.kappa(F,X[i]) for i in Base.Cartesian.CartesianIndices(size(X))]
         K_tst = MOD.symmetric_kappamatrix!(F, copy(X), true)
 
         @test isapprox(K_tmp, K_tst)
