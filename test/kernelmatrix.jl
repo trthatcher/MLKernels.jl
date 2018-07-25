@@ -2,7 +2,7 @@ n = 30
 m = 20
 p = 5
 
-info("Testing ", MOD.kernel)
+@info("Testing ", MOD.kernel)
 for T in (Float32, Float64)
     x = rand(T,p)
     y = rand(T,p)
@@ -24,7 +24,7 @@ for T in (Float32, Float64)
     end
 end
 
-info("Testing ", MOD.kappamatrix!)
+@info("Testing ", MOD.kappamatrix!)
 for T in (Float32, Float64)
     X = rand(T,n,m)
 
@@ -39,7 +39,7 @@ for T in (Float32, Float64)
 end
 
 
-info("Testing ", MOD.symmetric_kappamatrix!)
+@info("Testing ", MOD.symmetric_kappamatrix!)
 for T in (Float32, Float64)
     X = LinAlg.copytri!(rand(T,n,n), 'U')
 
@@ -55,7 +55,7 @@ for T in (Float32, Float64)
 end
 
 
-info("Testing ", MOD.kernelmatrix!)
+@info("Testing ", MOD.kernelmatrix!)
 for T in (Float32, Float64)
     X_set = [rand(T,p) for i = 1:n]
     Y_set = [rand(T,p) for i = 1:m]
@@ -79,7 +79,7 @@ for T in (Float32, Float64)
     end
 end
 
-info("Testing ", MOD.kernelmatrix)
+@info("Testing ", MOD.kernelmatrix)
 for T in (Float32, Float64)
     X_set = [rand(Float32,p) for i = 1:n]
     Y_set = [rand(Float32,p) for i = 1:m]
@@ -133,7 +133,7 @@ for T in (Float32, Float64)
     end
 end
 
-info("Testing ", MOD.centerkernelmatrix!)
+@info("Testing ", MOD.centerkernelmatrix!)
 for T in FloatingPointTypes
     X = rand(T, n, p)
     Y = rand(T, m, p)

@@ -1,5 +1,5 @@
 for f in pairwise_functions
-    info("Testing ", f)
+    @info("Testing ", f)
     F = (f)()
     for T in FloatingPointTypes
         s = MODPF.pairwise_initiate(F, T)

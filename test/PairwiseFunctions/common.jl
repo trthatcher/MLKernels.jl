@@ -2,7 +2,7 @@ n = 3
 m = 2
 p = 5
 
-info("Testing ", MODPF.dotvectors!)
+@info("Testing ", MODPF.dotvectors!)
 for T in FloatingPointTypes
     Set_X = [rand(T, p) for i = 1:n]
     Set_Y = [rand(T,p)  for i = 1:m]
@@ -21,7 +21,7 @@ for T in FloatingPointTypes
     @test_throws DimensionMismatch MODPF.dotvectors!(ColumnMajor(), Vector{T}(2), Array{T}(2,3))
 end
 
-info("Testing ", MODPF.gramian!)
+@info("Testing ", MODPF.gramian!)
 for T in FloatingPointTypes
     Set_X = [rand(T, p) for i = 1:n]
     Set_Y = [rand(T,p)  for i = 1:m]

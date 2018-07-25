@@ -1,4 +1,4 @@
-info("Testing ", MOD.OpenBound)
+@info("Testing ", MOD.OpenBound)
 for T in (FloatingPointTypes..., IntegerTypes...)
     if T <: Integer
         @test_throws ErrorException MOD.OpenBound(one(T))
@@ -39,7 +39,7 @@ for T in (FloatingPointTypes..., IntegerTypes...)
     end
 end
 
-info("Testing ", MOD.ClosedBound)
+@info("Testing ", MOD.ClosedBound)
 for T in (FloatingPointTypes..., IntegerTypes...)
     if T <: AbstractFloat
         @test_throws ErrorException MOD.ClosedBound(convert(T,  NaN))
@@ -76,7 +76,7 @@ for T in (FloatingPointTypes..., IntegerTypes...)
     @test show(DevNull, B) == nothing
 end
 
-info("Testing ", MOD.NullBound)
+@info("Testing ", MOD.NullBound)
 for T in (FloatingPointTypes..., IntegerTypes...)
     @test eltype(NullBound(T)) == T
 
@@ -101,7 +101,7 @@ for T in (FloatingPointTypes..., IntegerTypes...)
     @test show(DevNull, B) == nothing
 end
 
-info("Testing ", MOD.Interval)
+@info("Testing ", MOD.Interval)
 for T in FloatingPointTypes
     @test_throws ErrorException MOD.Interval(MOD.ClosedBound(one(T)), MOD.OpenBound(one(T)))
     @test_throws ErrorException MOD.Interval(MOD.OpenBound(one(T)),   MOD.ClosedBound(one(T)))
@@ -159,7 +159,7 @@ for T in FloatingPointTypes
     @test show(DevNull, MOD.interval(MOD.ClosedBound(one(T)), MOD.ClosedBound(one(T)))) == nothing
 end
 
-info("Testing ", MOD.interval)
+@info("Testing ", MOD.interval)
 @test typeof(MOD.interval(nothing, nothing)) == MOD.Interval{Float64,NullBound{Float64},NullBound{Float64}}
 for T in FloatingPointTypes
     for a in (NullBound(T), ClosedBound(-one(T)), OpenBound(-one(T)))
@@ -181,7 +181,7 @@ for T in FloatingPointTypes
 end
 
 
-info("Testing ", MOD.checkvalue)
+@info("Testing ", MOD.checkvalue)
 for T in FloatingPointTypes
     l = convert(T,-9)
     a = convert(T,-3)
@@ -224,7 +224,7 @@ for T in FloatingPointTypes
 end
 
 
-info("Testing ", MOD.lowerboundtheta)
+@info("Testing ", MOD.lowerboundtheta)
 for T in FloatingPointTypes
     for A in (NullBound(T), ClosedBound(-one(T)), OpenBound(-one(T)))
         T_a = typeof(A)
@@ -261,7 +261,7 @@ for T in FloatingPointTypes
     end
 end
 
-info("Testing ", MOD.upperboundtheta)
+@info("Testing ", MOD.upperboundtheta)
 for T in FloatingPointTypes
     a = convert(T,-5)
     b = convert(T,5)
@@ -301,7 +301,7 @@ for T in FloatingPointTypes
 end
 
 
-info("Testing ", MODHP.theta)
+@info("Testing ", MODHP.theta)
 for T in FloatingPointTypes
     l = convert(T,-9)
     a = convert(T,-3)
@@ -377,7 +377,7 @@ for T in FloatingPointTypes
 end
 
 
-info("Testing ", MODHP.eta)
+@info("Testing ", MODHP.eta)
 for T in FloatingPointTypes
     a = -one(T)
     b = one(T)
@@ -400,7 +400,7 @@ for T in FloatingPointTypes
 end
 
 
-info("Testing ", MOD.HyperParameter)
+@info("Testing ", MOD.HyperParameter)
 for T in (FloatingPointTypes..., IntegerTypes...)
     I = interval(nothing, ClosedBound(zero(T)))
 

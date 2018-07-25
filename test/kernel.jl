@@ -1,7 +1,7 @@
 #= Test Constructors =#
 
 for k in kernel_functions
-    info("Testing ", k)
+    @info("Testing ", k)
 
     def_args, alt_args = get(kernel_functions_arguments, k, ((), ()))
 
@@ -37,7 +37,7 @@ for k in kernel_functions
     @test show(DevNull, K) == nothing
 end
 
-info("Testing ", MOD.kappa)
+@info("Testing ", MOD.kappa)
 for k in kernel_functions
     k_tmp = get(kernel_functions_kappa, k, x->error(""))
     for T in FloatingPointTypes
@@ -52,7 +52,7 @@ for k in kernel_functions
     end
 end
 
-info("Testing ", MOD.gettheta)
+@info("Testing ", MOD.gettheta)
 for k in kernel_functions
     K = (k)()
     K_theta = MOD.gettheta(K)
@@ -60,7 +60,7 @@ for k in kernel_functions
     @test MOD.checktheta(K, K_theta) == true
 end
 
-info("Testing ", MOD.settheta!)
+@info("Testing ", MOD.settheta!)
 for T in FloatingPointTypes
     alpha1 = one(T)
     alpha2 = convert(T,0.6)
@@ -76,7 +76,7 @@ for T in FloatingPointTypes
 end
 
 
-info("Testing ", MOD.checktheta)
+@info("Testing ", MOD.checktheta)
 for T in FloatingPointTypes
     K = MOD.GammaExponentialKernel(one(T),one(T))
 

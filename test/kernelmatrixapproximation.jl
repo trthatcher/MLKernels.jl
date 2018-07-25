@@ -2,14 +2,14 @@ n = 30
 m = 20
 p = 5
 
-info("Testing ", MOD.samplematrix)
+@info("Testing ", MOD.samplematrix)
 X = Array{Int64}(n, m)
 r = 0.15
 @test length(MOD.samplematrix(RowMajor(), X, r)) == max(Int64(trunc(n*r)),1)
 @test length(MOD.samplematrix(ColumnMajor(), X, r)) == max(Int64(trunc(m*r)),1)
 
 
-info("Testing ", MOD.nystrom_sample)
+@info("Testing ", MOD.nystrom_sample)
 for T in FloatingPointTypes
     F = convert(Kernel{T}, GaussianKernel())
     X  = rand(T, n+5, p)
@@ -28,7 +28,7 @@ for T in FloatingPointTypes
     end
 end
 
-info("Testing ", MOD.nystrom_pinv!)
+@info("Testing ", MOD.nystrom_pinv!)
 for T in FloatingPointTypes
     X = rand(T, n, p)
     XtX = permutedims(X) * X
@@ -36,7 +36,7 @@ for T in FloatingPointTypes
     @test isapprox(pinv(XtX), MOD.nystrom_pinv!(copy(permutedims(X) * X)))
 end
 
-info("Testing ", MOD.nystrom)
+@info("Testing ", MOD.nystrom)
 for T in FloatingPointTypes
     F = convert(Kernel{T}, GaussianKernel())
     X = rand(T, n+3, p)

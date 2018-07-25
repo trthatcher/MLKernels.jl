@@ -2,7 +2,7 @@ n = 30
 m = 20
 p = 5
 
-info("Testing ", MODPF.unsafe_pairwise)
+@info("Testing ", MODPF.unsafe_pairwise)
 for f in pairwise_functions
     F = (f)()
     f_agg_tmp = get(pairwise_functions_aggregate, f, (s,x,y) -> NaN)
@@ -22,7 +22,7 @@ for f in pairwise_functions
     end
 end
 
-info("Testing ", MODPF.pairwise)
+@info("Testing ", MODPF.pairwise)
 for f in pairwise_functions
     F = (f)()
 
@@ -40,7 +40,7 @@ for f in pairwise_functions
     end
 end
 
-info("Testing ", MODPF.allocate_pairwisematrix)
+@info("Testing ", MODPF.allocate_pairwisematrix)
 for T in FloatingPointTypes
     X = rand(T,n,m)
 
@@ -53,7 +53,7 @@ for T in FloatingPointTypes
     end
 end
 
-info("Testing ", MODPF.checkdimensions)
+@info("Testing ", MODPF.checkdimensions)
 for layout in (RowMajor(), ColumnMajor())
     isrowmajor = layout == RowMajor()
     dim = isrowmajor ? 1 : 2
@@ -72,7 +72,7 @@ for layout in (RowMajor(), ColumnMajor())
     @test_throws DimensionMismatch MODPF.checkdimensions(layout, Array{Float64}(n,m), X, Y_bad)
 end
 
-info("Testing ", MODPF.squared_distance!)
+@info("Testing ", MODPF.squared_distance!)
 for T in FloatingPointTypes
     Set_X = [rand(T,p) for i = 1:n]
     Set_Y = [rand(T,p) for i = 1:m]
@@ -104,7 +104,7 @@ for T in FloatingPointTypes
     @test_throws DimensionMismatch MODPF.squared_distance!(Array{T}(3,4), Array{T}(3), Array{T}(5))
 end
 
-info("Testing ", MODPF.pairwisematrix!)
+@info("Testing ", MODPF.pairwisematrix!)
 for T in (Float32, Float64)
     X_set = [rand(T,p) for i = 1:n]
     Y_set = [rand(T,p) for i = 1:m]
