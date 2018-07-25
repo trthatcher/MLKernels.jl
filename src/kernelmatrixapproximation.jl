@@ -15,7 +15,7 @@ for layout in (RowMajor, ColumnMajor)
             n = size(X, $dim)
             s = max(Int64(trunc(n*r)),1)
             S = [rand(1:n) for i = 1:s]
-            
+
         end
 
         function nystrom_sample{T<:AbstractFloat,U<:Integer}(
@@ -35,7 +35,7 @@ end
 
 function nystrom_pinv!{T<:LinearAlgebra.BlasReal}(Cs::Matrix{T}, tol::T = eps(T)*size(Cs,1))
     # Compute eigendecomposition of sampled component of C
-    QΛQᵀ = eigfact!(Symmetric(Cs))
+    QΛQᵀ = LinearAlgebra.eigfact!(LinearAlgebra.Symmetric(Cs))
 
     # Solve for D = Λ^(-1/2) (pseudo inverse - use tolerance from before factorization)
     D = QΛQᵀ.values
@@ -47,7 +47,7 @@ function nystrom_pinv!{T<:LinearAlgebra.BlasReal}(Cs::Matrix{T}, tol::T = eps(T)
 
     # Scale eigenvectors by D
     Q = QΛQᵀ.vectors
-    QD = scale!(Q, D)  # Scales column i of Q by D[i]
+    QD = LinearAlgebra.scale!(Q, D)  # Scales column i of Q by D[i]
 
     # W := (QD)(QD)ᵀ = (QΛQᵀ)^(-1)  (pseudo inverse)
     W = LinearAlgebra.syrk_wrapper!(similar(QD), 'N', QD)
