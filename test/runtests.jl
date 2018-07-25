@@ -16,6 +16,7 @@ using SpecialFunctions:
     besselk, gamma
 
 import LinearAlgebra
+import Statistics
 
 FloatingPointTypes = (Float32, Float64)
 IntegerTypes = (Int32, Int64)

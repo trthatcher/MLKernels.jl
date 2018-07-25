@@ -58,18 +58,18 @@ for layout in (RowMajor(), ColumnMajor())
     isrowmajor = layout == RowMajor()
     dim = isrowmajor ? 1 : 2
 
-    X =     isrowmajor ? Array{Float64}(n,p)   : Array{Float64}(p,n)
-    Y =     isrowmajor ? Array{Float64}(m,p)   : Array{Float64}(p,m)
-    Y_bad = isrowmajor ? Array{Float64}(m,p+1) : Array{Float64}(p+1,m)
+    X =     isrowmajor ? Array{Float64}(undef, n,p)   : Array{Float64}(undef, p,n)
+    Y =     isrowmajor ? Array{Float64}(undef, m,p)   : Array{Float64}(undef, p,m)
+    Y_bad = isrowmajor ? Array{Float64}(undef, m,p+1) : Array{Float64}(undef, p+1,m)
 
-    @test MODPF.checkdimensions(layout, Array{Float64}(n,n), X) == n
-    @test_throws DimensionMismatch MODPF.checkdimensions(layout, Array{Float64}(n,n+1), X)
-    @test_throws DimensionMismatch MODPF.checkdimensions(layout, Array{Float64}(n+1,n+1), X)
+    @test MODPF.checkdimensions(layout, Array{Float64}(undef, n,n), X) == n
+    @test_throws DimensionMismatch MODPF.checkdimensions(layout, Array{Float64}(undef, n,n+1), X)
+    @test_throws DimensionMismatch MODPF.checkdimensions(layout, Array{Float64}(undef, n+1,n+1), X)
 
-    @test MODPF.checkdimensions(layout, Array{Float64}(n,m), X, Y) == (n,m)
-    @test_throws DimensionMismatch MODPF.checkdimensions(layout, Array{Float64}(n,m+1), X, Y)
-    @test_throws DimensionMismatch MODPF.checkdimensions(layout, Array{Float64}(n+1,m), X, Y)
-    @test_throws DimensionMismatch MODPF.checkdimensions(layout, Array{Float64}(n,m), X, Y_bad)
+    @test MODPF.checkdimensions(layout, Array{Float64}(undef, n,m), X, Y) == (n,m)
+    @test_throws DimensionMismatch MODPF.checkdimensions(layout, Array{Float64}(undef, n,m+1), X, Y)
+    @test_throws DimensionMismatch MODPF.checkdimensions(layout, Array{Float64}(undef, n+1,m), X, Y)
+    @test_throws DimensionMismatch MODPF.checkdimensions(layout, Array{Float64}(undef, n,m), X, Y_bad)
 end
 
 @info("Testing ", MODPF.squared_distance!)
@@ -80,14 +80,14 @@ for T in FloatingPointTypes
     X = permutedims(hcat(Set_X...))
     Y = permutedims(hcat(Set_Y...))
 
-    P = [dot(x-y,x-y) for x in Set_X, y in Set_X]
-    G = MODPF.gramian!(RowMajor(), Array{T}(n,n), X, true)
+    P = [LinearAlgebra.dot(x-y,x-y) for x in Set_X, y in Set_X]
+    G = MODPF.gramian!(RowMajor(), Array{T}(undef, n,n), X, true)
     xtx = MODPF.dotvectors(RowMajor(), X)
 
     @test isapprox(MODPF.squared_distance!(G, xtx, true), P)
 
-    P = [dot(x-y,x-y) for x in Set_X, y in Set_Y]
-    G = MODPF.gramian!(RowMajor(), Array{T}(n,m), X, Y)
+    P = [LinearAlgebra.dot(x-y,x-y) for x in Set_X, y in Set_Y]
+    G = MODPF.gramian!(RowMajor(), Array{T}(undef, n,m), X, Y)
     xtx = MODPF.dotvectors(RowMajor(), X)
     yty = MODPF.dotvectors(RowMajor(), Y)
     MODPF.squared_distance!(G, xtx, yty)
@@ -95,13 +95,13 @@ for T in FloatingPointTypes
     @test isapprox(G, P)
     @test all(G .>= 0)
     
-    @test_throws DimensionMismatch MODPF.squared_distance!(Array{T}(3,4), Array{T}(3), true)
-    @test_throws DimensionMismatch MODPF.squared_distance!(Array{T}(4,3), Array{T}(3), true)
+    @test_throws DimensionMismatch MODPF.squared_distance!(Array{T}(undef, 3,4), Array{T}(undef, 3), true)
+    @test_throws DimensionMismatch MODPF.squared_distance!(Array{T}(undef, 4,3), Array{T}(undef, 3), true)
 
-    @test_throws DimensionMismatch MODPF.squared_distance!(Array{T}(3,4), Array{T}(2), Array{T}(4))
-    @test_throws DimensionMismatch MODPF.squared_distance!(Array{T}(3,4), Array{T}(4), Array{T}(4))
-    @test_throws DimensionMismatch MODPF.squared_distance!(Array{T}(3,4), Array{T}(3), Array{T}(3))
-    @test_throws DimensionMismatch MODPF.squared_distance!(Array{T}(3,4), Array{T}(3), Array{T}(5))
+    @test_throws DimensionMismatch MODPF.squared_distance!(Array{T}(undef, 3,4), Array{T}(undef, 2), Array{T}(undef, 4))
+    @test_throws DimensionMismatch MODPF.squared_distance!(Array{T}(undef, 3,4), Array{T}(undef, 4), Array{T}(undef, 4))
+    @test_throws DimensionMismatch MODPF.squared_distance!(Array{T}(undef, 3,4), Array{T}(undef, 3), Array{T}(undef, 3))
+    @test_throws DimensionMismatch MODPF.squared_distance!(Array{T}(undef, 3,4), Array{T}(undef, 3), Array{T}(undef, 5))
 end
 
 @info("Testing ", MODPF.pairwisematrix!)
@@ -109,8 +109,8 @@ for T in (Float32, Float64)
     X_set = [rand(T,p) for i = 1:n]
     Y_set = [rand(T,p) for i = 1:m]
 
-    P_tst_nn = Array{T}( n, n)
-    P_tst_nm = Array{T}( n, m)
+    P_tst_nn = Array{T}(undef, n, n)
+    P_tst_nm = Array{T}(undef, n, m)
 
     for layout in (RowMajor(), ColumnMajor())
         X = layout == RowMajor() ? permutedims(hcat(X_set...)) : hcat(X_set...)
@@ -144,6 +144,6 @@ for layout in (RowMajor(), ColumnMajor())
     X = layout == RowMajor() ? permutedims(hcat(v1, v2)) : hcat(v1, v2)
     Y = layout == RowMajor() ? permutedims(hcat(v1, v2, v3)) : hcat(v1, v2, v3)
 
-    @test all(MODPF.pairwisematrix!(layout, Array{Float64}(2,2), F, X, true) .>= 0.0)
-    @test all(MODPF.pairwisematrix!(layout, Array{Float64}(2,3), F, X, Y) .>= 0.0)
+    @test all(MODPF.pairwisematrix!(layout, Array{Float64}(undef, 2,2), F, X, true) .>= 0.0)
+    @test all(MODPF.pairwisematrix!(layout, Array{Float64}(undef, 2,3), F, X, Y) .>= 0.0)
 end

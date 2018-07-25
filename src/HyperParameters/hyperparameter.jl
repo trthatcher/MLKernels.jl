@@ -1,6 +1,6 @@
 #== HyperParameter Type ==#
 
-immutable HyperParameter{T<:Real}
+struct HyperParameter{T<:Real}
     value::Base.RefValue{T}
     interval::Interval{T}
     function HyperParameter{T}(x::T, I::Interval{T}) where {T<:Real}
@@ -8,34 +8,34 @@ immutable HyperParameter{T<:Real}
         new{T}(Ref(x), I)
     end
 end
-HyperParameter{T<:Real}(x::T, I::Interval{T} = interval(T)) = HyperParameter{T}(x, I)
+HyperParameter(x::T, I::Interval{T} = interval(T)) where {T<:Real} = HyperParameter{T}(x, I)
 
-eltype{T}(::HyperParameter{T}) = T
+eltype(::HyperParameter{T}) where {T} = T
 
-@inline getvalue{T}(θ::HyperParameter{T}) = getindex(θ.value)
+@inline getvalue(θ::HyperParameter{T}) where {T} = getindex(θ.value)
 
-function setvalue!{T}(θ::HyperParameter{T}, x::T)
+function setvalue!(θ::HyperParameter{T}, x::T) where {T}
     checkvalue(θ.interval, x) || error("Value $(x) must be in range " * string(θ.interval))
     setindex!(θ.value, x)
     return θ
 end
 
-checkvalue{T}(θ::HyperParameter{T}, x::T) = checkvalue(θ.interval, x)
+checkvalue(θ::HyperParameter{T}, x::T) where {T} = checkvalue(θ.interval, x)
 
-convert{T<:Real}(::Type{HyperParameter{T}}, θ::HyperParameter{T}) = θ
-function convert{T<:Real}(::Type{HyperParameter{T}}, θ::HyperParameter)
+convert(::Type{HyperParameter{T}}, θ::HyperParameter{T}) where {T<:Real} = θ
+function convert(::Type{HyperParameter{T}}, θ::HyperParameter) where {T<:Real}
     HyperParameter{T}(convert(T, getvalue(θ)), convert(Interval{T}, θ.bounds))
 end
 
-function show{T}(io::IO, θ::HyperParameter{T})
+function show(io::IO, θ::HyperParameter{T}) where {T}
     print(io, string("HyperParameter(", getvalue(θ), ",", string(θ.interval), ")"))
 end
 
 gettheta(θ::HyperParameter) = theta(θ.interval, getvalue(θ))
 
-settheta!{T}(θ::HyperParameter, x::T) = setvalue!(θ, eta(θ.interval,x))
+settheta!(θ::HyperParameter, x::T) where {T} = setvalue!(θ, eta(θ.interval,x))
 
-checktheta{T}(θ::HyperParameter, x::T) = checktheta(θ.interval, x)
+checktheta(θ::HyperParameter, x::T) where {T} = checktheta(θ.interval, x)
 
 for op in (:isless, :(==), :+, :-, :*, :/)
     @eval begin

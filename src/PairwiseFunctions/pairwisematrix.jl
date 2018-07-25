@@ -6,16 +6,16 @@
   Generic Pairwise Vector Operation
 ================================================#
 
-function pairwise{T<:AbstractFloat}(f::PairwiseFunction, x::T, y::T)
+function pairwise(f::PairwiseFunction, x::T, y::T) where {T<:AbstractFloat}
     pairwise_return(f, pairwise_aggregate(f, pairwise_initiate(f,T), x, y))
 end
 
 # No checks, assumes length(x) == length(y) >= 1
-function unsafe_pairwise{T<:AbstractFloat}(
+function unsafe_pairwise(
         f::PairwiseFunction,
         x::AbstractArray{T},
         y::AbstractArray{T}
-    )
+    ) where {T<:AbstractFloat}
     s = pairwise_initiate(f, T)
     @simd for I in eachindex(x,y)
         @inbounds xi = x[I]
@@ -25,11 +25,11 @@ function unsafe_pairwise{T<:AbstractFloat}(
     pairwise_return(f, s)
 end
 
-function pairwise{T<:AbstractFloat}(
+function pairwise(
         f::PairwiseFunction,
         x::AbstractArray{T},
         y::AbstractArray{T}
-    )
+    ) where {T<:AbstractFloat}
     if (n = length(x)) != length(y)
         throw(DimensionMismatch("Arrays x and y must have the same length."))
     elseif n == 0
@@ -56,18 +56,18 @@ for layout in (RowMajor, ColumnMajor)
             $(isrowmajor ? :(view(X, i, :)) : :(view(X, :, i)))
         end
 
-        @inline function allocate_pairwisematrix{T<:AbstractFloat}(
+        @inline function allocate_pairwisematrix(
                  ::$layout,
                 X::AbstractMatrix{T}
-            )
+            ) where {T<:AbstractFloat}
             Array{T}(undef, size(X,$dim_obs), size(X,$dim_obs))
         end
 
-        @inline function allocate_pairwisematrix{T<:AbstractFloat}(
+        @inline function allocate_pairwisematrix(
                  ::$layout,
                 X::AbstractMatrix{T},
                 Y::AbstractMatrix{T}
-            )
+            ) where {T<:AbstractFloat}
             Array{T}(undef, size(X,$dim_obs), size(Y,$dim_obs))
         end
 
@@ -110,13 +110,13 @@ for layout in (RowMajor, ColumnMajor)
     end
 end
 
-function pairwisematrix!{T<:AbstractFloat}(
+function pairwisematrix!(
         σ::MemoryLayout,
         P::Matrix{T},
         f::PairwiseFunction,
         X::AbstractMatrix{T},
         symmetrize::Bool
-    )
+    ) where {T<:AbstractFloat}
     n = checkdimensions(σ, P, X)
     for j = 1:n
         xj = subvector(σ, X, j)
@@ -128,13 +128,13 @@ function pairwisematrix!{T<:AbstractFloat}(
     symmetrize ? LinearAlgebra.copytri!(P, 'U', false) : P
 end
 
-function pairwisematrix!{T<:AbstractFloat}(
+function pairwisematrix!(
         σ::MemoryLayout,
         P::Matrix{T},
         f::PairwiseFunction,
         X::AbstractMatrix{T},
         Y::AbstractMatrix{T},
-    )
+    ) where {T<:AbstractFloat}
     n, m = checkdimensions(σ, P, X, Y)
     for j = 1:m
         yj = subvector(σ, Y, j)
@@ -147,12 +147,12 @@ function pairwisematrix!{T<:AbstractFloat}(
 end
 
 
-function pairwisematrix{T<:AbstractFloat}(
+function pairwisematrix(
         σ::MemoryLayout,
         f::PairwiseFunction,
         X::AbstractMatrix{T},
         symmetrize::Bool = true
-    )
+    ) where {T<:AbstractFloat}
     pairwisematrix!(σ, allocate_pairwisematrix(σ, X), f, X, symmetrize)
 end
 
@@ -164,12 +164,12 @@ function pairwisematrix(
     pairwisematrix(RowMajor(), f, X, symmetrize)
 end
 
-function pairwisematrix{T<:AbstractFloat}(
+function pairwisematrix(
         σ::MemoryLayout,
         f::PairwiseFunction,
         X::AbstractMatrix{T},
         Y::AbstractMatrix{T}
-    )
+    ) where {T<:AbstractFloat}
     pairwisematrix!(σ, allocate_pairwisematrix(σ, X, Y), f, X, Y)
 end
 
@@ -187,23 +187,23 @@ end
   ScalarProduct using BLAS/Built-In methods
 ===================================================================================================#
 
-@inline function pairwisematrix!{T<:BLAS.BlasReal}(
+@inline function pairwisematrix!(
         σ::MemoryLayout,
         P::Matrix{T},
         f::ScalarProduct,
         X::Matrix{T},
         symmetrize::Bool
-    )
+    ) where {T<:LinearAlgebra.BLAS.BlasReal}
     gramian!(σ, P, X, symmetrize)
 end
 
-@inline function pairwisematrix!{T<:BLAS.BlasReal}(
+@inline function pairwisematrix!(
         σ::MemoryLayout,
         P::Matrix{T},
         f::ScalarProduct,
         X::Matrix{T},
         Y::Matrix{T},
-    )
+    ) where {T<:LinearAlgebra.BLAS.BlasReal}
     gramian!(σ, P, X, Y)
 end
 
@@ -276,13 +276,13 @@ function fix_negatives!(σ::MemoryLayout, D::Matrix{T}, X::Matrix{T}, Y::Matrix{
     D
 end
 
-function pairwisematrix!{T<:BLAS.BlasReal}(
+function pairwisematrix!(
         σ::MemoryLayout,
         P::Matrix{T},
         f::SquaredEuclidean,
         X::Matrix{T},
         symmetrize::Bool
-    )
+    ) where {T<:LinearAlgebra.BLAS.BlasReal}
     gramian!(σ, P, X, false)
     xᵀx = dotvectors(σ, X)
     squared_distance!(P, xᵀx, false)
@@ -290,13 +290,13 @@ function pairwisematrix!{T<:BLAS.BlasReal}(
     symmetrize ? LinearAlgebra.copytri!(P, 'U') : P
 end
 
-function pairwisematrix!{T<:BLAS.BlasReal}(
+function pairwisematrix!(
         σ::MemoryLayout,
         P::Matrix{T},
         f::SquaredEuclidean,
         X::Matrix{T},
         Y::Matrix{T},
-    )
+    ) where {T<:LinearAlgebra.BLAS.BlasReal}
     gramian!(σ, P, X, Y)
     xᵀx = dotvectors(σ, X)
     yᵀy = dotvectors(σ, Y)

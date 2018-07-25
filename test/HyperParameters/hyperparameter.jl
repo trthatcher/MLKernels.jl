@@ -193,15 +193,15 @@ for T in FloatingPointTypes
             T_b = typeof(B)
             I = MODHP.interval(A,B)
 
-            for x in linspace(l,a,30)
+            for x in range(l, stop = a, length = 30)
                 if T_a <: NullBound || T_a <: ClosedBound && x == a
                     @test MOD.checkvalue(I,x) == true
-                else 
+                else
                     @test MOD.checkvalue(I,x) == false
                 end
             end
 
-            for x in linspace(a,b,30)
+            for x in range(a, stop = b, length = 30)
                 if x == a
                     @test MOD.checkvalue(I,x) == T_a <: OpenBound ? false : true
                 elseif x == b
@@ -211,10 +211,10 @@ for T in FloatingPointTypes
                 end
             end
 
-            for x in linspace(b,u,30)
+            for x in range(b, stop = u, length = 30)
                 if T_b <: NullBound || T_b <: ClosedBound && x == b
                     @test MOD.checkvalue(I,x) == true
-                else 
+                else
                     @test MOD.checkvalue(I,x) == false
                 end
             end
@@ -313,7 +313,7 @@ for T in FloatingPointTypes
             T_b = typeof(B)
             I = MOD.Interval(A, B)
 
-            for x in linspace(l,u,60)
+            for x in range(l, stop = u, length = 60)
                 if T_a <: NullBound
                     if T_b <: NullBound
                         @test MODHP.theta(I,x) == x
@@ -387,7 +387,7 @@ for T in FloatingPointTypes
             l_theta = max(MODHP.lowerboundtheta(I),convert(T,-10))
             u_theta = min(MODHP.upperboundtheta(I),convert(T,10))
 
-            for x in linspace(convert(T,-10),convert(T,10),201)
+            for x in range(convert(T, -10), stop = convert(T, 10), length = 201)
                 if l_theta <= x <= u_theta
                     v = MODHP.eta(I,x)
                     @test isapprox(MODHP.theta(I,v), x)

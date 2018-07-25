@@ -60,8 +60,8 @@ for T in (Float32, Float64)
     X_set = [rand(T,p) for i = 1:n]
     Y_set = [rand(T,p) for i = 1:m]
 
-    K_tst_nn = Array{T}(n, n)
-    K_tst_nm = Array{T}(n, m)
+    K_tst_nn = Array{T}(undef, n, n)
+    K_tst_nm = Array{T}(undef, n, m)
 
     for layout in (RowMajor(), ColumnMajor())
         X = layout == RowMajor() ? permutedims(hcat(X_set...)) : hcat(X_set...)
@@ -84,8 +84,8 @@ for T in (Float32, Float64)
     X_set = [rand(Float32,p) for i = 1:n]
     Y_set = [rand(Float32,p) for i = 1:m]
 
-    K_tst_nn = Array{T}(n, n)
-    K_tst_nm = Array{T}(n, m)
+    K_tst_nn = Array{T}(undef, n, n)
+    K_tst_nm = Array{T}(undef, n, m)
 
     for layout in (RowMajor(), ColumnMajor())
         isrowmajor = layout == RowMajor()
@@ -141,7 +141,7 @@ for T in FloatingPointTypes
     K = X*permutedims(X)
     MOD.centerkernelmatrix!(K)
 
-    Xc = X .- mean(X,1)
+    Xc = X .- Statistics.mean(X, dims = 1)
     Kc = Xc*permutedims(Xc)
 
     @test isapprox(K, Kc)
@@ -149,7 +149,7 @@ for T in FloatingPointTypes
     K = X*permutedims(Y)
     MOD.centerkernelmatrix!(K)
 
-    Yc = Y .- mean(Y,1)
+    Yc = Y .- Statistics.mean(Y, dims = 1)
     Kc = Xc*permutedims(Yc)
 
     @test isapprox(K, Kc)
