@@ -33,7 +33,7 @@ for k in kernel_functions
     @test MODPF.isisotropic(K) == MODPF.isisotropic(MOD.pairwisefunction(K))
 
     # Test Display
-    @test eval(parse(string(K))) == K
+    @test eval(Meta.parse(string(K))) == K
     @test show(devnull, K) == nothing
 end
 
@@ -42,7 +42,7 @@ for k in kernel_functions
     k_tmp = get(kernel_functions_kappa, k, x->error(""))
     for T in FloatingPointTypes
         K = convert(Kernel{T}, (k)())
-        args = T[MOD.getvalue(getfield(K,theta)) for theta in fieldnames(K)]
+        args = T[MOD.getvalue(getfield(K,theta)) for theta in fieldnames(typeof(K))]
 
         for z in (zero(T), one(T), convert(T,2))
             v = MOD.kappa(K, z)

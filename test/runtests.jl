@@ -1,5 +1,5 @@
 # Unit Tests
-using Base.Test
+using Test
 using MLKernels
 
 using MLKernels:

@@ -35,7 +35,7 @@ end
 
 function nystrom_pinv!(Cs::Matrix{T}, tol::T = eps(T)*size(Cs,1)) where {T<:LinearAlgebra.BlasReal}
     # Compute eigendecomposition of sampled component of C
-    QΛQᵀ = LinearAlgebra.eigfact!(LinearAlgebra.Symmetric(Cs))
+    QΛQᵀ = LinearAlgebra.eigen!(LinearAlgebra.Symmetric(Cs))
 
     # Solve for D = Λ^(-1/2) (pseudo inverse - use tolerance from before factorization)
     D = QΛQᵀ.values
@@ -47,7 +47,7 @@ function nystrom_pinv!(Cs::Matrix{T}, tol::T = eps(T)*size(Cs,1)) where {T<:Line
 
     # Scale eigenvectors by D
     Q = QΛQᵀ.vectors
-    QD = LinearAlgebra.scale!(Q, D)  # Scales column i of Q by D[i]
+    QD = LinearAlgebra.rmul!(Q, LinearAlgebra.Diagonal(D))  # Scales column i of Q by D[i]
 
     # W := (QD)(QD)ᵀ = (QΛQᵀ)^(-1)  (pseudo inverse)
     W = LinearAlgebra.syrk_wrapper!(similar(QD), 'N', QD)

@@ -5,7 +5,7 @@
 abstract type Kernel{T<:AbstractFloat} end
 
 function string(κ::Kernel)
-    args = [string(getvalue(getfield(κ,θ))) for θ in fieldnames(κ)]
+    args = [string(getvalue(getfield(κ,θ))) for θ in fieldnames(typeof(κ))]
     kernelname = typeof(κ).name.name
     string(kernelname, "(", join(args, ","), ")")
 end
@@ -26,7 +26,7 @@ isnegdef(::Kernel) = false
 isstationary(κ::Kernel) = isstationary(pairwisefunction(κ))
 isisotropic(κ::Kernel)  = isisotropic(pairwisefunction(κ))
 
-thetafieldnames(κ::Kernel) = fieldnames(κ)
+thetafieldnames(κ::Kernel) = fieldnames(typeof(κ))
 
 gettheta(κ::Kernel{T}) where {T} = T[gettheta(getfield(κ,θ)) for θ in thetafieldnames(κ)]
 
@@ -367,7 +367,7 @@ for κ in (
 
     @eval begin
         function ==(κ1::$(κ_sym), κ2::$(κ_sym))
-            mapreduce(θ -> getfield(κ1,θ) == getfield(κ2,θ), &, fieldnames(κ1), init = true)
+            mapreduce(θ -> getfield(κ1,θ) == getfield(κ2,θ), &, fieldnames(typeof(κ1)), init = true)
         end
     end
 

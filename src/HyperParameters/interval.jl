@@ -28,11 +28,11 @@ interval(::Type{T}) where {T<:Real} = Interval(NullBound{T}(), NullBound{T}())
 checkvalue(I::Interval, x::Real) = checkvalue(I.a, x) && checkvalue(x, I.b)
 
 function theta(I::Interval{T,A,B}, x::T) where {T<:AbstractFloat,A,B}
-    checkvalue(I,x) || throw(DomainError())
+    checkvalue(I,x) || throw(DomainError(x, "Not in $I"))
     if A <: OpenBound
         return B <: OpenBound ? log(x-I.a.value) - log(I.b.value-x) : log(x-I.a.value)
     else
-        return B <: OpenBound ? log(I.b.value-x) : x 
+        return B <: OpenBound ? log(I.b.value-x) : x
     end
 end
 
@@ -55,7 +55,7 @@ function checktheta(I::Interval{T}, x::T) where {T<:AbstractFloat}
 end
 
 function eta(I::Interval{T,A,B}, x::T) where {T<:AbstractFloat,A,B}
-    checktheta(I,x) || throw(DomainError())
+    checktheta(I,x) || throw(DomainError(x, "Not in $I"))
     if A <: OpenBound
         if B <: OpenBound
             return (I.b.value*exp(x) + I.a.value)/(one(T) + exp(x))
@@ -63,7 +63,7 @@ function eta(I::Interval{T,A,B}, x::T) where {T<:AbstractFloat,A,B}
             return exp(x) + I.a.value
         end
     else
-        return B <: OpenBound ? I.b.value - exp(x) : x 
+        return B <: OpenBound ? I.b.value - exp(x) : x
     end
 end
 
