@@ -2,7 +2,7 @@ module HyperParameters
 
 import Base: convert, eltype, promote_type, show, string, ==, *, /, +, -, ^, isless
 
-export 
+export
     Bound,
         LeftBound,
         RightBound,
@@ -11,7 +11,7 @@ export
     Interval,
     interval,
     checkbounds,
-    
+
     HyperParameter,
     getvalue,
     setvalue!,

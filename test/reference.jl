@@ -64,7 +64,7 @@ kernel_functions_kappa = Dict(
     GammaExponentialKernel   => (z,α,γ)   -> exp(-α*z^γ),
     RationalQuadraticKernel  => (z,α,β)   -> (1 + α*z)^(-β),
     GammaRationalKernel      => (z,α,β,γ) -> (1 + α*z^γ)^(-β),
-    MaternKernel             => (z,ν,θ)   -> begin 
+    MaternKernel             => (z,ν,θ)   -> begin
                                                 v1 = sqrt(2*ν) * z / θ
                                                 v1 = v1 < eps(typeof(z)) ? eps(typeof(z)) : v1
                                                 2*(v1/2)^ν * besselk(ν,v1)/gamma(ν)
@@ -88,11 +88,10 @@ kernel_functions_pairwise = Dict(
 )
 
 
-pairwise_functions_properties = Dict( 
+pairwise_functions_properties = Dict(
                        #|stnry |isotrop
     SineSquared      => (true,  false),
     ScalarProduct    => (false, false),
     SquaredEuclidean => (true,  true),
     ChiSquared       => (false, false)
  )
-

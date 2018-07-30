@@ -1,5 +1,5 @@
 # Unit Tests
-using Base.Test
+using Test
 using MLKernels
 
 using MLKernels:
@@ -11,6 +11,12 @@ using MLKernels:
             SineSquared,
             Metric,
                 SquaredEuclidean
+
+using SpecialFunctions:
+    besselk, gamma
+
+import LinearAlgebra
+import Statistics
 
 FloatingPointTypes = (Float32, Float64)
 IntegerTypes = (Int32, Int64)
