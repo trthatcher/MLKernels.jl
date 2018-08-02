@@ -78,6 +78,8 @@ export
     kernel,
     kernelmatrix,
     kernelmatrix!,
+    centerkernelmatrix!,
+    centerkernelmatrix,
 
     # Kernel Approximation
     NystromFact,
