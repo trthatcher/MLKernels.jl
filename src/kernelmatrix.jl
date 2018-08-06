@@ -139,13 +139,12 @@ end
 ===================================================================================================#
 
 function centerkernelmatrix!(K::Matrix{T}) where {T<:AbstractFloat}
-    μx = vec(Statistics.mean(K, dims = 2))
-    μy = vec(Statistics.mean(K, dims = 1))
+    μx = Statistics.mean(K, dims = 2)
+    μy = Statistics.mean(K, dims = 1)
     μ  = Statistics.mean(K)
 
-    for I in Base.Cartesian.CartesianIndices(size(K))
-        K[I] += μ - μx[I[1]] - μy[I[2]]
-    end
+    K .+= μ .- μx .- μy
+
     return K
 end
 centerkernelmatrix(K::Matrix) = centerkernelmatrix!(copy(K))
