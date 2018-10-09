@@ -90,7 +90,7 @@ using SpecialFunctions: besselk, gamma
 import LinearAlgebra
 import Statistics
 
-include("HyperParameters/HyperParameters.jl")
+include("deprecated.jl")
 using MLKernels.HyperParameters:
     Bound,
         OpenBound,
