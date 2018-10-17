@@ -52,7 +52,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'Machine Learning Kernels'
-copyright = u'2015, Tim Thatcher'
+copyright = u'2018, Tim Thatcher'
 author = u'Tim Thatcher'
 
 # The version info for the project you're documenting, acts as replacement for
