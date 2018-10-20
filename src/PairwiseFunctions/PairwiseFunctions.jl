@@ -34,7 +34,18 @@ import LinearAlgebra
 
 abstract type MemoryLayout end
 
+"""
+    ColumnMajor()
+
+Identifies when each observation vector corresponds to a column of the data matrix.
+"""
 struct ColumnMajor <: MemoryLayout end
+
+"""
+    RowMajor()
+
+Identifies when each observation vector corresponds to a row of the data matrix.
+"""
 struct RowMajor    <: MemoryLayout end
 
 include("common.jl")
