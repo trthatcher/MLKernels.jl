@@ -2,6 +2,7 @@
   Generic Kernel Vector Operation
 ================================================#
 
+
 function kernel(κ::Kernel{T}, x::T, y::T) where {T<:AbstractFloat}
     kappa(κ, pairwise(pairwisefunction(κ), x, y))
 end
@@ -37,6 +38,12 @@ function symmetric_kappamatrix!(
     symmetrize ? LinearAlgebra.copytri!(P, 'U') : P
 end
 
+"""
+    kernelmatrix!(P::Matrix, σ::MemoryLayout, κ::Kernel, X::Matrix, symmetrize::Bool)
+
+In-place version of `kernelmatrix` where pre-allocated matrix `K` will be overwritten 
+with the kernel matrix.
+"""
 function kernelmatrix!(
         σ::MemoryLayout,
         P::Matrix{T},
@@ -48,6 +55,12 @@ function kernelmatrix!(
     symmetric_kappamatrix!(κ, P, symmetrize)
 end
 
+"""
+    kernelmatrix!(K::Matrix, σ::MemoryLayout, κ::Kernel, X::Matrix, Y::Matrix)
+
+In-place version of `kernelmatrix` where pre-allocated matrix `K` will be overwritten with 
+the kernel matrix.
+"""
 function kernelmatrix!(
         σ::MemoryLayout,
         P::Matrix{T},
@@ -83,6 +96,12 @@ end
   Generic Catch-All Methods
 ================================================#
 
+"""
+    kernel(κ::Kernel, x, y)
+
+Apply the kernel `κ` to ``x`` and ``y`` where ``x`` and ``y`` are vectors or scalars of 
+some subtype of ``Real``.
+"""
 function kernel(κ::Kernel{T}, x::Real, y::Real) where {T}
     kernel(κ, T(x), T(y))
 end
@@ -95,6 +114,11 @@ function kernel(
     kernel(κ, convert(AbstractArray{T}, x), convert(AbstractArray{T}, y))
 end
 
+"""
+    kernelmatrix([σ::MemoryLayout,] κ::Kernel, X::Matrix [, symmetrize::Bool])
+
+Calculate the kernel matrix of `X` with respect to kernel `κ`.
+"""
 function kernelmatrix(
         σ::MemoryLayout,
         κ::Kernel{T},
@@ -113,6 +137,11 @@ function kernelmatrix(
     kernelmatrix(RowMajor(), κ, X, symmetrize)
 end
 
+"""
+    kernelmatrix([σ::MemoryLayout,] κ::Kernel, X::Matrix, Y::Matrix)
+
+Calculate the pairwise matrix of `X` and `Y` with respect to kernel `κ`. 
+"""
 function kernelmatrix(
         σ::MemoryLayout,
         κ::Kernel{T},
@@ -138,6 +167,16 @@ end
   Kernel Centering
 ===================================================================================================#
 
+@doc raw"""
+    centerkernelmatrix(K::Matrix)
+
+Centers the (rectangular) kernel matrix `K` with respect to the implicit Kernel Hilbert 
+Space according to the following formula:
+
+```math
+[\mathbf{K}]_{ij} = \langle\phi(\mathbf{x}_i) -\mathbf{\mu}_{\phi\mathbf{x}}, \phi(\mathbf{y}_j) - \mathbf{\mu}_{\phi\mathbf{y}} \rangle 
+```
+"""
 function centerkernelmatrix!(K::Matrix{T}) where {T<:AbstractFloat}
     μx = Statistics.mean(K, dims = 2)
     μy = Statistics.mean(K, dims = 1)

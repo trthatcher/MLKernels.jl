@@ -21,8 +21,20 @@ end
 @inline eltype(::Type{<:Kernel{E}}) where {E} = E
 @inline eltype(κ::Kernel) = eltype(typeof(κ))
 
+"""
+    ismercer(κ::Kernel)
+
+    Returns `true` if kernel `κ` is a Mercer kernel; `false` otherwise.
+"""
 ismercer(::Kernel) = false
+
+"""
+    isnegdef(κ::Kernel)
+
+    Returns `true` if the kernel `κ` is a negative definite kernel; `false` otherwise.
+"""
 isnegdef(::Kernel) = false
+
 isstationary(κ::Kernel) = isstationary(pairwisefunction(κ))
 isisotropic(κ::Kernel)  = isisotropic(pairwisefunction(κ))
 
