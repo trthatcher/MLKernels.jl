@@ -83,62 +83,14 @@ abstract type MercerKernel{T<:AbstractFloat} <: Kernel{T} end
 const mercer_kernels = [
     "exponential",
     "squaredexponential",
-    "gammaexponential"
+    "gammaexponential",
+    "rationalquadratic",
+    "gammarational"
 ]
 
 for kname in mercer_kernels
     include(joinpath("kernel", "mercer", "$(kname).jl"))
 end
-
-
-"RationalQuadraticKernel(α,β) = (1 + α⋅‖x-y‖²)⁻ᵝ   α ∈ (0,∞), β ∈ (0,∞)"
-struct RationalQuadraticKernel{T<:AbstractFloat} <: MercerKernel{T}
-    alpha::HyperParameter{T}
-    beta::HyperParameter{T}
-    RationalQuadraticKernel{T}(α::Real, β::Real) where {T<:AbstractFloat} = new{T}(
-        HyperParameter(convert(T,α), interval(OpenBound(zero(T)), nothing)),
-        HyperParameter(convert(T,β), interval(OpenBound(zero(T)), nothing))
-    )
-end
-function RationalQuadraticKernel(α::T1 = 1.0, β::T2 = one(T1)) where {T1<:Real,T2<:Real}
-    RationalQuadraticKernel{floattype(T1,T2)}(α, β)
-end
-
-@inline rationalquadratickernel(z::T, α::T, β::T) where {T<:AbstractFloat} = (1 + α*z)^(-β)
-
-@inline pairwisefunction(::RationalQuadraticKernel) = SquaredEuclidean()
-@inline function kappa(κ::RationalQuadraticKernel{T}, z::T) where {T}
-    rationalquadratickernel(z, getvalue(κ.alpha), getvalue(κ.beta))
-end
-
-
-
-"GammaRationalKernel(α,β) = (1 + α⋅‖x-y‖²ᵞ)⁻ᵝ   α ∈ (0,∞), β ∈ (0,∞), γ ∈ (0,1]"
-struct GammaRationalKernel{T<:AbstractFloat} <: MercerKernel{T}
-    alpha::HyperParameter{T}
-    beta::HyperParameter{T}
-    gamma::HyperParameter{T}
-    GammaRationalKernel{T}(α::Real, β::Real, γ::Real) where {T<:AbstractFloat} = new{T}(
-        HyperParameter(convert(T,α), interval(OpenBound(zero(T)), nothing)),
-        HyperParameter(convert(T,β), interval(OpenBound(zero(T)), nothing)),
-        HyperParameter(convert(T,γ), interval(OpenBound(zero(T)), ClosedBound(one(T))))
-    )
-end
-function GammaRationalKernel(
-        α::T1 = 1.0,
-        β::T2 = one(T1),
-        γ::T3 = one(floattype(T1,T2))
-    ) where {T1<:Real,T2<:Real,T3<:Real}
-    GammaRationalKernel{floattype(T1,T2,T3)}(α,β,γ)
-end
-
-@inline gammarationalkernel(z::T, α::T, β::T, γ::T) where {T<:AbstractFloat} = (1 + α*(z^γ))^(-β)
-
-@inline pairwisefunction(::GammaRationalKernel) = SquaredEuclidean()
-@inline function kappa(κ::GammaRationalKernel{T}, z::T) where {T}
-    gammarationalkernel(z, getvalue(κ.alpha), getvalue(κ.beta), getvalue(κ.gamma))
-end
-
 
 
 "MaternKernel(ν,ρ) = 2ᵛ⁻¹(√(2ν)‖x-y‖²/θ)ᵛKᵥ(√(2ν)‖x-y‖²/θ)/Γ(ν)   ν ∈ (0,∞), ρ ∈ (0,∞)"

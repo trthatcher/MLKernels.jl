@@ -5,6 +5,8 @@
 ExponentialKernel
 SquaredExponentialKernel
 GammaExponentialKernel
+RationalQuadraticKernel
+GammaRationalKernel
 ```
 
 ## Other Kernels
