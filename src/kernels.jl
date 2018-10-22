@@ -71,97 +71,24 @@ function floattype(T_i::DataType...)
     T_max <: AbstractFloat ? T_max : Float64
 end
 
-
-#================================================
-  Not True Kernels
-================================================#
-
-"SigmoidKernel(a,c) = tanh(a⋅xᵀy + c)   a ∈ (0,∞), c ∈ (0,∞)"
-struct SigmoidKernel{T<:AbstractFloat} <: Kernel{T}
-    a::HyperParameter{T}
-    c::HyperParameter{T}
-    SigmoidKernel{T}(a::Real, c::Real) where {T<:AbstractFloat} = new{T}(
-        HyperParameter(convert(T,a), interval(OpenBound(zero(T)),   nothing)),
-        HyperParameter(convert(T,c), interval(ClosedBound(zero(T)), nothing))
-    )
-end
-function SigmoidKernel(a::T1 = 1.0, c::T2 = one(T1)) where {T1<:Real,T2<:Real}
-    SigmoidKernel{floattype(T1,T2)}(a,c)
-end
-
-@inline sigmoidkernel(z::T, a::T, c::T) where {T<:AbstractFloat} = tanh(a*z + c)
-
-@inline pairwisefunction(::SigmoidKernel) = ScalarProduct()
-@inline kappa(κ::SigmoidKernel{T}, z::T) where {T} = sigmoidkernel(z, getvalue(κ.a), getvalue(κ.c))
+# Not a true kernel
+include(joinpath("kernel", "sigmoid.jl"))
 
 
-
-#================================================
-  Mercer Kernels
-================================================#
+# Mercer Kernels ===========================================================================
 
 abstract type MercerKernel{T<:AbstractFloat} <: Kernel{T} end
 @inline ismercer(::MercerKernel) = true
 
-"ExponentialKernel(α) = exp(-α⋅‖x-y‖)   α ∈ (0,∞)"
-struct ExponentialKernel{T<:AbstractFloat} <: MercerKernel{T}
-    alpha::HyperParameter{T}
-    ExponentialKernel{T}(α::Real) where {T<:AbstractFloat} = new{T}(
-        HyperParameter(convert(T,α), interval(OpenBound(zero(T)), nothing))
-    )
+const mercer_kernels = [
+    "exponential",
+    "squaredexponential",
+    "gammaexponential"
+]
+
+for kname in mercer_kernels
+    include(joinpath("kernel", "mercer", "$(kname).jl"))
 end
-ExponentialKernel(α::T=1.0) where {T<:Real} = ExponentialKernel{floattype(T)}(α)
-LaplacianKernel = ExponentialKernel
-
-@inline exponentialkernel(z::T, α::T) where {T<:AbstractFloat} = exp(-α*sqrt(z))
-
-@inline pairwisefunction(::ExponentialKernel) = SquaredEuclidean()
-@inline function kappa(κ::ExponentialKernel{T}, z::T) where {T<:AbstractFloat}
-    exponentialkernel(z, getvalue(κ.alpha))
-end
-
-
-
-"SquaredExponentialKernel(α) = exp(-α⋅‖x-y‖²)   α ∈ (0,∞)"
-struct SquaredExponentialKernel{T<:AbstractFloat} <: MercerKernel{T}
-    alpha::HyperParameter{T}
-    SquaredExponentialKernel{T}(α::Real) where {T<:AbstractFloat} = new{T}(
-        HyperParameter(convert(T,α), interval(OpenBound(zero(T)), nothing))
-    )
-end
-SquaredExponentialKernel(α::T=1.0) where {T<:Real} = SquaredExponentialKernel{floattype(T)}(α)
-GaussianKernel = SquaredExponentialKernel
-RadialBasisKernel = SquaredExponentialKernel
-
-@inline squaredexponentialkernel(z::T, α::T) where {T<:AbstractFloat} = exp(-α*z)
-
-@inline pairwisefunction(::SquaredExponentialKernel) = SquaredEuclidean()
-@inline function kappa(κ::SquaredExponentialKernel{T}, z::T) where {T}
-    squaredexponentialkernel(z, getvalue(κ.alpha))
-end
-
-
-
-"GammaExponentialKernel(α,γ) = exp(-α⋅‖x-y‖ᵞ)   α ∈ (0,∞), γ ∈ (0,1]"
-struct GammaExponentialKernel{T<:AbstractFloat} <: MercerKernel{T}
-    alpha::HyperParameter{T}
-    gamma::HyperParameter{T}
-    GammaExponentialKernel{T}(α::Real, γ::Real) where {T<:AbstractFloat} = new{T}(
-        HyperParameter(convert(T,α), interval(OpenBound(zero(T)), nothing)),
-        HyperParameter(convert(T,γ), interval(OpenBound(zero(T)), ClosedBound(one(T))))
-    )
-end
-function GammaExponentialKernel(α::T1=1.0, γ::T2=one(T1)) where {T1<:Real,T2<:Real}
-    GammaExponentialKernel{floattype(T1,T2)}(α,γ)
-end
-
-@inline gammaexponentialkernel(z::T, α::T, γ::T) where {T<:AbstractFloat} = exp(-α*z^γ)
-
-@inline pairwisefunction(::GammaExponentialKernel) = SquaredEuclidean()
-@inline function kappa(κ::GammaExponentialKernel{T}, z::T) where {T}
-    gammaexponentialkernel(z, getvalue(κ.alpha), getvalue(κ.gamma))
-end
-
 
 
 "RationalQuadraticKernel(α,β) = (1 + α⋅‖x-y‖²)⁻ᵝ   α ∈ (0,∞), β ∈ (0,∞)"

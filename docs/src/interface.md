@@ -29,7 +29,7 @@ centerkernelmatrix!(K::Matrix{T}) where {T<:AbstractFloat}
 
 ## Approximation
 
-In many cases, a fast, approximate results is more important than a perfect
+In many cases, fast, approximate results is more important than a perfect
 result. The Nystrom method can be used to generate a factorization that can be
 used to approximate a large, symmetric kernel matrix. Given data matrix
 ``\mathbf{X} \in \mathbb{R}^{n \times p}`` (one observation per row) and 
