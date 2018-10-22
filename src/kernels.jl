@@ -85,113 +85,17 @@ const mercer_kernels = [
     "squaredexponential",
     "gammaexponential",
     "rationalquadratic",
-    "gammarational"
+    "gammarational",
+    "matern",
+    "linear",
+    "polynomial",
+    "exponentiated",
+    "periodic"
 ]
 
 for kname in mercer_kernels
     include(joinpath("kernel", "mercer", "$(kname).jl"))
 end
-
-
-"MaternKernel(ν,ρ) = 2ᵛ⁻¹(√(2ν)‖x-y‖²/θ)ᵛKᵥ(√(2ν)‖x-y‖²/θ)/Γ(ν)   ν ∈ (0,∞), ρ ∈ (0,∞)"
-struct MaternKernel{T<:AbstractFloat} <: MercerKernel{T}
-    nu::HyperParameter{T}
-    rho::HyperParameter{T}
-    MaternKernel{T}(ν::Real, ρ::Real) where {T<:AbstractFloat}  = new{T}(
-        HyperParameter(convert(T,ν), interval(OpenBound(zero(T)), nothing)),
-        HyperParameter(convert(T,ρ), interval(OpenBound(zero(T)), nothing))
-    )
-end
-function MaternKernel(ν::T1=1.0, ρ::T2=one(T1)) where {T1<:Real,T2<:Real}
-    MaternKernel{floattype(T1,T2)}(ν,ρ)
-end
-
-@inline function maternkernel(z::T, ν::T, ρ::T) where {T}
-    v1 = sqrt(2ν) * z / ρ
-    v1 = v1 < eps(T) ? eps(T) : v1  # Overflow risk as z -> Inf
-    2 * (v1/2)^(ν) * besselk(ν, v1) / gamma(ν)
-end
-
-@inline pairwisefunction(::MaternKernel) = SquaredEuclidean()
-@inline function kappa(κ::MaternKernel{T}, z::T) where {T}
-    maternkernel(z, getvalue(κ.nu), getvalue(κ.rho))
-end
-
-
-
-"LinearKernel(a,c) = a⋅xᵀy + c   a ∈ (0,∞), c ∈ [0,∞)"
-struct LinearKernel{T<:AbstractFloat} <: MercerKernel{T}
-    a::HyperParameter{T}
-    c::HyperParameter{T}
-    LinearKernel{T}(a::Real, c::Real) where {T<:AbstractFloat} = new{T}(
-        HyperParameter(convert(T,a), interval(OpenBound(zero(T)), nothing)),
-        HyperParameter(convert(T,c), interval(ClosedBound(zero(T)), nothing))
-    )
-end
-LinearKernel(a::T1=1.0, c::T2=one(T1)) where {T1<:Real,T2<:Real} = LinearKernel{floattype(T1,T2)}(a,c)
-
-@inline linearkernel(z::T, a::T, c::T) where {T<:AbstractFloat} = a*z + c
-
-@inline pairwisefunction(::LinearKernel) = ScalarProduct()
-@inline kappa(κ::LinearKernel{T}, z::T) where {T} = linearkernel(z, getvalue(κ.a), getvalue(κ.c))
-
-
-
-"PolynomialKernel(a,c,d) = (a⋅xᵀy + c)ᵈ   a ∈ (0,∞), c ∈ [0,∞), d ∈ ℤ+"
-struct PolynomialKernel{T<:AbstractFloat,U<:Integer} <: MercerKernel{T}
-    a::HyperParameter{T}
-    c::HyperParameter{T}
-    d::HyperParameter{U}
-    function PolynomialKernel{T}(a::Real, c::Real, d::U) where {T<:AbstractFloat,U<:Integer}
-        new{T,U}(HyperParameter(convert(T,a), interval(OpenBound(zero(T)), nothing)),
-                 HyperParameter(convert(T,c), interval(ClosedBound(zero(T)), nothing)),
-                 HyperParameter(d, interval(ClosedBound(one(U)), nothing)))
-    end
-end
-function PolynomialKernel(a::T1=1.0, c::T2=one(T1), d::Integer=3) where {T1<:Real,T2<:Real}
-    PolynomialKernel{floattype(T1,T2)}(a, c, d)
-end
-
-@inline eltypes(::Type{<:PolynomialKernel{T,U}}) where {T,U} = (T,U)
-@inline thetafieldnames(κ::PolynomialKernel) = Symbol[:a, :c]
-
-@inline polynomialkernel(z::T, a::T, c::T, d::U) where {T<:AbstractFloat,U<:Integer} = (a*z + c)^d
-
-@inline pairwisefunction(::PolynomialKernel) = ScalarProduct()
-@inline function kappa(κ::PolynomialKernel{T}, z::T) where {T}
-    polynomialkernel(z, getvalue(κ.a), getvalue(κ.c), getvalue(κ.d))
-end
-
-
-
-"ExponentiatedKernel(α) = exp(α⋅xᵀy)   α ∈ (0,∞)"
-struct ExponentiatedKernel{T<:AbstractFloat} <: MercerKernel{T}
-    alpha::HyperParameter{T}
-    ExponentiatedKernel{T}(α::Real) where {T<:AbstractFloat} = new{T}(
-        HyperParameter(convert(T,α), interval(OpenBound(zero(T)), nothing))
-    )
-end
-ExponentiatedKernel(α::T1 = 1.0) where {T1<:Real} = ExponentiatedKernel{floattype(T1)}(α)
-
-@inline exponentiatedkernel(z::T, α::T) where {T<:AbstractFloat} = exp(α*z)
-
-@inline pairwisefunction(::ExponentiatedKernel) = ScalarProduct()
-@inline kappa(κ::ExponentiatedKernel{T}, z::T) where {T} = exponentiatedkernel(z, getvalue(κ.alpha))
-
-
-
-"PeriodicKernel(α,p) = exp(-α⋅Σⱼsin²(xⱼ-yⱼ))"
-struct PeriodicKernel{T<:AbstractFloat} <: MercerKernel{T}
-    alpha::HyperParameter{T}
-    PeriodicKernel{T}(α::Real) where {T<:AbstractFloat} = new{T}(
-        HyperParameter(convert(T,α), interval(OpenBound(zero(T)), nothing))
-    )
-end
-PeriodicKernel(α::T1 = 1.0) where {T1<:Real} = PeriodicKernel{floattype(T1)}(α)
-
-@inline pairwisefunction(::PeriodicKernel) = SineSquared()
-@inline kappa(κ::PeriodicKernel{T}, z::T) where {T} = squaredexponentialkernel(z, getvalue(κ.alpha))
-
 
 
 #================================================
