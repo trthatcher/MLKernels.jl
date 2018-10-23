@@ -98,27 +98,18 @@ for kname in mercer_kernels
 end
 
 
-#================================================
-  Negative Definite Kernels
-================================================#
+# Negative Definite Kernels ================================================================
 
 abstract type NegativeDefiniteKernel{T<:AbstractFloat} <: Kernel{T} end
 @inline isnegdef(::NegativeDefiniteKernel) = true
 
-"PowerKernel(a,c,γ) = ‖x-y‖²ᵞ   γ ∈ (0,1]"
-struct PowerKernel{T<:AbstractFloat} <: NegativeDefiniteKernel{T}
-    gamma::HyperParameter{T}
-    PowerKernel{T}(γ::Real) where {T<:AbstractFloat} = new{T}(
-        HyperParameter(convert(T,γ), interval(OpenBound(zero(T)), ClosedBound(one(T))))
-    )
+const negdef_kernels = [
+    "power"
+]
+
+for kname in negdef_kernels
+    include(joinpath("kernel", "negativedefinite", "$(kname).jl"))
 end
-PowerKernel(γ::T1 = 1.0) where {T1<:Real} = PowerKernel{floattype(T1)}(γ)
-
-@inline powerkernel(z::T, γ::T) where {T<:AbstractFloat} = z^γ
-
-@inline pairwisefunction(::PowerKernel) = SquaredEuclidean()
-@inline kappa(κ::PowerKernel{T}, z::T) where {T} = powerkernel(z, getvalue(κ.gamma))
-
 
 
 "LogKernel(α,γ) = log(1 + α⋅‖x-y‖²ᵞ)   α ∈ (0,∞), γ ∈ (0,1]"
@@ -142,7 +133,7 @@ end
 end
 
 
-for κ in (
+for κ in [
         ExponentialKernel,
         SquaredExponentialKernel,
         GammaExponentialKernel,
@@ -156,7 +147,7 @@ for κ in (
         PowerKernel,
         LogKernel,
         SigmoidKernel
-    )
+    ]
     κ_sym = nameof(κ)
     κ_args = [:(getvalue(κ.$(θ))) for θ in fieldnames(κ)]
 

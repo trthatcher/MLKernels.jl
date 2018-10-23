@@ -4,8 +4,9 @@
 The Sigmoid Kernel is given by
 
 ```math
-\kappa(\mathbf{x},\mathbf{y}) = \tanh(a \mathbf{x}^\intercal \mathbf{y} + c) \qquad \alpha 
-> 0, \; c \geq 0
+\kappa(\mathbf{x},\mathbf{y}) = 
+\tanh(a \mathbf{x}^\intercal \mathbf{y} + c) 
+\qquad \alpha > 0, \; c \geq 0
 ```
 The sigmoid kernel is a not a true kernel, although it has been used in application. 
 """

@@ -14,6 +14,11 @@ ExponentiatedKernel
 PeriodicKernel
 ```
 
+## Negative Definite Kernels
+```@docs
+PowerKernel
+```
+
 ## Other Kernels
 
 ```@docs
