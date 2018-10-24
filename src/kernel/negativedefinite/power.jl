@@ -5,7 +5,7 @@ The Power Kernel is a negative definite kernel given by:
 
 ```math
 \kappa(\mathbf{x},\mathbf{y}) = 
-\|\mathbf{x} = \mathbf{y} \|^{2\gamma}
+\|\mathbf{x} - \mathbf{y} \|^{2\gamma}
 \qquad \gamma \in (0,1]
 ```
 """

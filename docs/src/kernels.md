@@ -17,6 +17,7 @@ PeriodicKernel
 ## Negative Definite Kernels
 ```@docs
 PowerKernel
+LogKernel
 ```
 
 ## Other Kernels

@@ -71,9 +71,6 @@ function floattype(T_i::DataType...)
     T_max <: AbstractFloat ? T_max : Float64
 end
 
-# Not a true kernel
-include(joinpath("kernel", "sigmoid.jl"))
-
 
 # Mercer Kernels ===========================================================================
 
@@ -91,48 +88,38 @@ const mercer_kernels = [
     "polynomial",
     "exponentiated",
     "periodic"
-]
-
+    ]
+    
 for kname in mercer_kernels
     include(joinpath("kernel", "mercer", "$(kname).jl"))
 end
-
-
+    
+    
 # Negative Definite Kernels ================================================================
-
+    
 abstract type NegativeDefiniteKernel{T<:AbstractFloat} <: Kernel{T} end
 @inline isnegdef(::NegativeDefiniteKernel) = true
-
+    
 const negdef_kernels = [
-    "power"
+    "power",
+    "log"
 ]
 
 for kname in negdef_kernels
     include(joinpath("kernel", "negativedefinite", "$(kname).jl"))
 end
+    
 
+# Other Kernels ============================================================================
 
-"LogKernel(α,γ) = log(1 + α⋅‖x-y‖²ᵞ)   α ∈ (0,∞), γ ∈ (0,1]"
-struct LogKernel{T<:AbstractFloat} <: NegativeDefiniteKernel{T}
-    alpha::HyperParameter{T}
-    gamma::HyperParameter{T}
-    LogKernel{T}(α::Real, γ::Real) where {T<:AbstractFloat} = new{T}(
-        HyperParameter(convert(T,α), interval(OpenBound(zero(T)), nothing)),
-        HyperParameter(convert(T,γ), interval(OpenBound(zero(T)), ClosedBound(one(T))))
-    )
+const other_kernels = [
+    "sigmoid"
+]
+
+for kname in other_kernels
+    include(joinpath("kernel", "$(kname).jl"))
 end
-function LogKernel(α::T1 = 1.0, γ::T2 = one(T1)) where {T1<:Real,T2<:Real}
-    LogKernel{floattype(T1,T2)}(α, γ)
-end
-
-@inline logkernel(z::T, α::T, γ::T) where {T<:AbstractFloat} = log(α*z^γ+1)
-
-@inline pairwisefunction(::LogKernel) = SquaredEuclidean()
-@inline function kappa(κ::LogKernel{T}, z::T) where {T}
-    logkernel(z, getvalue(κ.alpha), getvalue(κ.gamma))
-end
-
-
+        
 for κ in [
         ExponentialKernel,
         SquaredExponentialKernel,
@@ -150,13 +137,13 @@ for κ in [
     ]
     κ_sym = nameof(κ)
     κ_args = [:(getvalue(κ.$(θ))) for θ in fieldnames(κ)]
-
+    
     @eval begin
         function ==(κ1::$(κ_sym), κ2::$(κ_sym))
             mapreduce(θ -> getfield(κ1,θ) == getfield(κ2,θ), &, fieldnames(typeof(κ1)), init = true)
         end
     end
-
+            
     @eval begin
         function convert(::Type{$(κ_sym){T}}, κ::$(κ_sym)) where {T}
             $(Expr(:call, :($(κ_sym){T}), κ_args...))
