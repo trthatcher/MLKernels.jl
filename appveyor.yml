@@ -10,7 +10,6 @@ platform:
 
 matrix:
   allow_failures:
-  - julia_version: 1.0
   - julia_version: latest
 
 notifications:
