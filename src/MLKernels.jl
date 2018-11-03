@@ -137,8 +137,8 @@ using MLKernels.PairwiseFunctions:
 
 import MLKernels.PairwiseFunctions: isstationary, isisotropic
 
-include("kernel.jl")
+include("kernels.jl")
 include("kernelmatrix.jl")
-include("kernelmatrixapproximation.jl")
+include("kernelmatrixapprox.jl")
 
 end # MLKernels

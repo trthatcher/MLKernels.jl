@@ -55,11 +55,28 @@ function nystrom_pinv!(Cs::Matrix{T}, tol::T = eps(T)*size(Cs,1)) where {T<:Line
     return LinearAlgebra.copytri!(W, 'U')
 end
 
+"""
+    NystromFact
+
+Type for storing a Nystrom factorization. The factorization contains two fields: `W` and 
+`C` as described in the `nystrom` documentation.
+"""
 struct NystromFact{T<:LinearAlgebra.BlasReal}
     W::Matrix{T}
     C::Matrix{T}
 end
 
+@doc raw"""
+    nystrom([σ::MemoryLayout,] κ::Kernel, X::Matrix, [S::Vector])
+
+Computes a factorization of Nystrom approximation of the square kernel matrix of data 
+matrix `X` with respect to kernel `κ`. Returns a `NystromFact` struct which stores a 
+Nystrom factorization satisfying:
+
+```math
+\mathbf{K} \approx \mathbf{C}^{\intercal}\mathbf{WC}
+```
+"""
 function nystrom(
         σ::MemoryLayout,
         κ::Kernel{T},

@@ -7,7 +7,18 @@ abstract type PairwiseFunction end
 @inline pairwise_initiate(::PairwiseFunction, ::Type{T}) where {T} = zero(T)
 @inline pairwise_return(::PairwiseFunction, s::T) where {T} = s
 
+"""
+    isstationary(κ::Kernel)
+
+Returns `true` if the kernel `κ` is a stationary kernel; `false` otherwise.
+"""
 @inline isstationary(::PairwiseFunction) = false
+
+"""
+    isisotropic(κ::Kernel)
+
+Returns `true` if the kernel `κ` is an isotropic kernel; `false` otherwise.
+"""
 @inline isisotropic(::PairwiseFunction) = false
 
 
