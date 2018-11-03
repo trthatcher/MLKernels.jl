@@ -19,6 +19,6 @@ The package may be added by running one of the following code:
 Documentation on the interface implemented by [**MLKernels.jl**](https://github.com/trthatcher/MLKernels.jl) is available under the 
 interface section listed in the table of contents below or on the sidebar:
 
-  - [**Interface**](interface) - the MLKernels API
-  - [**Kernels**](kernels) - a listing of the implemented kernel functions and their properties
-  - [**Kernel Theory**](kernel-theory) - documentation on the theory surrounding kernel functions and the kernel trick
+  - [**Interface**](interface.md) - the MLKernels API
+  - [**Kernels**](kernels.md) - a listing of the implemented kernel functions and their properties
+  - [**Kernel Theory**](kernel-theory.md) - documentation on the theory surrounding kernel functions and the kernel trick

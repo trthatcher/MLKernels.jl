@@ -1,6 +1,6 @@
-#===================================================================================================
+#===========================================================================================
   Generic pairwisematrix functions for kernels consuming two vectors
-===================================================================================================#
+===========================================================================================#
 
 #================================================
   Generic Pairwise Vector Operation
@@ -17,7 +17,7 @@ function unsafe_pairwise(
         y::AbstractArray{T}
     ) where {T<:AbstractFloat}
     s = pairwise_initiate(f, T)
-    @simd for I in eachindex(x,y)
+    @simd for I in eachindex(x, y)
         @inbounds xi = x[I]
         @inbounds yi = y[I]
         s = pairwise_aggregate(f, s, xi, yi)
@@ -44,27 +44,27 @@ end
   Generic Pairwise Matrix Calculation
 ================================================#
 
-for layout in (RowMajor, ColumnMajor)
+for orientation in (:row, :col)
 
-    isrowmajor = layout == RowMajor
-    dim_obs    = isrowmajor ? 1 : 2
-    dim_param  = isrowmajor ? 2 : 1
+    row_oriented = orientation == :row
+    dim_obs      = row_oriented ? 1 : 2
+    dim_param    = row_oriented ? 2 : 1
 
     @eval begin
 
-        @inline function subvector(::$layout, X::AbstractMatrix,  i::Integer)
-            $(isrowmajor ? :(view(X, i, :)) : :(view(X, :, i)))
+        @inline function subvector(::Val{$(Meta.quot(orientation))}, X::AbstractMatrix,  i::Integer)
+            $(row_oriented ? :(view(X, i, :)) : :(view(X, :, i)))
         end
 
         @inline function allocate_pairwisematrix(
-                 ::$layout,
+                ::Val{$(Meta.quot(orientation))},
                 X::AbstractMatrix{T}
             ) where {T<:AbstractFloat}
             Array{T}(undef, size(X,$dim_obs), size(X,$dim_obs))
         end
 
         @inline function allocate_pairwisematrix(
-                 ::$layout,
+                ::Val{$(Meta.quot(orientation))},
                 X::AbstractMatrix{T},
                 Y::AbstractMatrix{T}
             ) where {T<:AbstractFloat}
@@ -72,7 +72,7 @@ for layout in (RowMajor, ColumnMajor)
         end
 
         function checkdimensions(
-                 ::$layout,
+                ::Val{$(Meta.quot(orientation))},
                 P::Matrix,
                 X::AbstractMatrix
             )
@@ -87,7 +87,7 @@ for layout in (RowMajor, ColumnMajor)
         end
 
         function checkdimensions(
-                 ::$layout,
+                ::Val{$(Meta.quot(orientation))},
                 P::Matrix,
                 X::AbstractMatrix,
                 Y::AbstractMatrix
@@ -111,7 +111,7 @@ for layout in (RowMajor, ColumnMajor)
 end
 
 function pairwisematrix!(
-        σ::MemoryLayout,
+        σ::Orientation,
         P::Matrix{T},
         f::PairwiseFunction,
         X::AbstractMatrix{T},
@@ -129,7 +129,7 @@ function pairwisematrix!(
 end
 
 function pairwisematrix!(
-        σ::MemoryLayout,
+        σ::Orientation,
         P::Matrix{T},
         f::PairwiseFunction,
         X::AbstractMatrix{T},
@@ -148,7 +148,7 @@ end
 
 
 function pairwisematrix(
-        σ::MemoryLayout,
+        σ::Orientation,
         f::PairwiseFunction,
         X::AbstractMatrix{T},
         symmetrize::Bool = true
@@ -161,11 +161,11 @@ function pairwisematrix(
         X::AbstractMatrix,
         symmetrize::Bool = true
     )
-    pairwisematrix(RowMajor(), f, X, symmetrize)
+    pairwisematrix(Val(:row), f, X, symmetrize)
 end
 
 function pairwisematrix(
-        σ::MemoryLayout,
+        σ::Orientation,
         f::PairwiseFunction,
         X::AbstractMatrix{T},
         Y::AbstractMatrix{T}
@@ -178,7 +178,7 @@ function pairwisematrix(
         X::AbstractMatrix,
         Y::AbstractMatrix
     )
-    pairwisematrix(RowMajor(), f, X, Y)
+    pairwisematrix(Val(:row), f, X, Y)
 end
 
 
@@ -188,7 +188,7 @@ end
 ===================================================================================================#
 
 @inline function pairwisematrix!(
-        σ::MemoryLayout,
+        σ::Orientation,
         P::Matrix{T},
         f::ScalarProduct,
         X::Matrix{T},
@@ -198,7 +198,7 @@ end
 end
 
 @inline function pairwisematrix!(
-        σ::MemoryLayout,
+        σ::Orientation,
         P::Matrix{T},
         f::ScalarProduct,
         X::Matrix{T},
@@ -246,7 +246,7 @@ function squared_distance!(G::Matrix{T}, xᵀx::Vector{T}, yᵀy::Vector{T}) whe
     G
 end
 
-function fix_negatives!(σ::MemoryLayout, D::Matrix{T}, X::Matrix{T}, symmetrize::Bool, ϵ::T=zero(T)) where {T<:AbstractFloat}
+function fix_negatives!(σ::Orientation, D::Matrix{T}, X::Matrix{T}, symmetrize::Bool, ϵ::T=zero(T)) where {T<:AbstractFloat}
     if !((n = size(D,1)) == size(D,2))
         throw(DimensionMismatch("Distance matrix must be square."))
     end
@@ -262,7 +262,7 @@ function fix_negatives!(σ::MemoryLayout, D::Matrix{T}, X::Matrix{T}, symmetrize
     symmetrize ? LinearAlgebra.copytri!(D, 'U') : D
 end
 
-function fix_negatives!(σ::MemoryLayout, D::Matrix{T}, X::Matrix{T}, Y::Matrix{T}, ϵ::T=zero(T)) where {T<:AbstractFloat}
+function fix_negatives!(σ::Orientation, D::Matrix{T}, X::Matrix{T}, Y::Matrix{T}, ϵ::T=zero(T)) where {T<:AbstractFloat}
     n, m = size(D)
     for j = 1:m
         yj = subvector(σ, Y, j)
@@ -277,7 +277,7 @@ function fix_negatives!(σ::MemoryLayout, D::Matrix{T}, X::Matrix{T}, Y::Matrix{
 end
 
 function pairwisematrix!(
-        σ::MemoryLayout,
+        σ::Orientation,
         P::Matrix{T},
         f::SquaredEuclidean,
         X::Matrix{T},
@@ -291,7 +291,7 @@ function pairwisematrix!(
 end
 
 function pairwisematrix!(
-        σ::MemoryLayout,
+        σ::Orientation,
         P::Matrix{T},
         f::SquaredEuclidean,
         X::Matrix{T},

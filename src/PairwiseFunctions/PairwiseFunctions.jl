@@ -20,7 +20,9 @@ export
     isstationary,
     isisotropic,
 
-    # Memory
+    # Orientation
+    Orientation,
+
     MemoryLayout,
     RowMajor,
     ColumnMajor,
@@ -31,6 +33,17 @@ export
     pairwisematrix!
 
 import LinearAlgebra
+
+@doc raw"""
+    Orientation
+
+Union of the two `Val` types representing the data matrix orientations:
+
+  1. `Val{:row}` identifies when observation vector corresponds to a row of the data matrix
+  2. `Val{:col}` identifies when each observation vector corresponds to a column of the data
+     matrix
+"""
+const Orientation = Union{Val{:row}, Val{:col}}
 
 abstract type MemoryLayout end
 
@@ -85,4 +98,4 @@ include("common.jl")
 include("pairwise.jl")
 include("pairwisematrix.jl")
 
-end # MLKernels
+end # PairwiseFunctions

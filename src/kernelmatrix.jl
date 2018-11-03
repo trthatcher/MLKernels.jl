@@ -39,13 +39,13 @@ function symmetric_kappamatrix!(
 end
 
 """
-    kernelmatrix!(P::Matrix, σ::MemoryLayout, κ::Kernel, X::Matrix, symmetrize::Bool)
+    kernelmatrix!(P::Matrix, σ::Orientation, κ::Kernel, X::Matrix, symmetrize::Bool)
 
 In-place version of `kernelmatrix` where pre-allocated matrix `K` will be overwritten 
 with the kernel matrix.
 """
 function kernelmatrix!(
-        σ::MemoryLayout,
+        σ::Orientation,
         P::Matrix{T},
         κ::Kernel{T},
         X::AbstractMatrix{T},
@@ -56,13 +56,13 @@ function kernelmatrix!(
 end
 
 """
-    kernelmatrix!(K::Matrix, σ::MemoryLayout, κ::Kernel, X::Matrix, Y::Matrix)
+    kernelmatrix!(K::Matrix, σ::Orientation, κ::Kernel, X::Matrix, Y::Matrix)
 
 In-place version of `kernelmatrix` where pre-allocated matrix `K` will be overwritten with 
 the kernel matrix.
 """
 function kernelmatrix!(
-        σ::MemoryLayout,
+        σ::Orientation,
         P::Matrix{T},
         κ::Kernel{T},
         X::AbstractMatrix{T},
@@ -73,7 +73,7 @@ function kernelmatrix!(
 end
 
 function kernelmatrix(
-        σ::MemoryLayout,
+        σ::Orientation,
         κ::Kernel{T},
         X::AbstractMatrix{T},
         symmetrize::Bool = true
@@ -82,7 +82,7 @@ function kernelmatrix(
 end
 
 function kernelmatrix(
-        σ::MemoryLayout,
+        σ::Orientation,
         κ::Kernel{T},
         X::AbstractMatrix{T},
         Y::AbstractMatrix{T}
@@ -115,12 +115,12 @@ function kernel(
 end
 
 """
-    kernelmatrix([σ::MemoryLayout,] κ::Kernel, X::Matrix [, symmetrize::Bool])
+    kernelmatrix([σ::Orientation,] κ::Kernel, X::Matrix [, symmetrize::Bool])
 
 Calculate the kernel matrix of `X` with respect to kernel `κ`.
 """
 function kernelmatrix(
-        σ::MemoryLayout,
+        σ::Orientation,
         κ::Kernel{T},
         X::AbstractMatrix{T1},
         symmetrize::Bool = true
@@ -134,16 +134,16 @@ function kernelmatrix(
         X::AbstractMatrix,
         symmetrize::Bool = true
     )
-    kernelmatrix(RowMajor(), κ, X, symmetrize)
+    kernelmatrix(Val(:row), κ, X, symmetrize)
 end
 
 """
-    kernelmatrix([σ::MemoryLayout,] κ::Kernel, X::Matrix, Y::Matrix)
+    kernelmatrix([σ::Orientation,] κ::Kernel, X::Matrix, Y::Matrix)
 
 Calculate the pairwise matrix of `X` and `Y` with respect to kernel `κ`. 
 """
 function kernelmatrix(
-        σ::MemoryLayout,
+        σ::Orientation,
         κ::Kernel{T},
         X::AbstractMatrix{T1},
         Y::AbstractMatrix{T2}
@@ -158,7 +158,7 @@ function kernelmatrix(
         X::AbstractMatrix,
         Y::AbstractMatrix
     )
-    kernelmatrix(RowMajor(), κ, X, Y)
+    kernelmatrix(Val(:row), κ, X, Y)
 end
 
 
