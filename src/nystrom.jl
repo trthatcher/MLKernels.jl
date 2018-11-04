@@ -1,6 +1,4 @@
-#===================================================================================================
-  Nystrom Approximation
-===================================================================================================#
+# Nystrom Approximation ====================================================================
 
 for orientation in (:row, :col)
     (dim, S, fulldim) = orientation == :row ? (1, :S, :(:)) : (2, :(:), :S)
@@ -33,7 +31,10 @@ for orientation in (:row, :col)
     end
 end
 
-function nystrom_pinv!(Cs::Matrix{T}, tol::T = eps(T)*size(Cs,1)) where {T<:LinearAlgebra.BlasReal}
+function nystrom_pinv!(
+        Cs::Matrix{T},
+        tol::T = eps(T)*size(Cs,1)
+    ) where {T<:LinearAlgebra.BlasReal}
     # Compute eigendecomposition of sampled component of C
     QΛQᵀ = LinearAlgebra.eigen!(LinearAlgebra.Symmetric(Cs))
 
@@ -58,7 +59,7 @@ end
 """
     NystromFact
 
-Type for storing a Nystrom factorization. The factorization contains two fields: `W` and 
+Type for storing a Nystrom factorization. The factorization contains two fields: `W` and
 `C` as described in the `nystrom` documentation.
 """
 struct NystromFact{T<:LinearAlgebra.BlasReal}
@@ -69,8 +70,8 @@ end
 @doc raw"""
     nystrom([σ::Orientation,] κ::Kernel, X::Matrix, [S::Vector])
 
-Computes a factorization of Nystrom approximation of the square kernel matrix of data 
-matrix `X` with respect to kernel `κ`. Returns a `NystromFact` struct which stores a 
+Computes a factorization of Nystrom approximation of the square kernel matrix of data
+matrix `X` with respect to kernel `κ`. Returns a `NystromFact` struct which stores a
 Nystrom factorization satisfying:
 
 ```math
