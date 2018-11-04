@@ -2,7 +2,7 @@ n = 30
 m = 20
 p = 5
 
-@testset "Testing MODPF.unsafe_pairwise" begin
+@testset "Testing $(MODPF.unsafe_pairwise)" begin
     for f in pairwise_functions
         F = (f)()
         f_agg_tmp = get(pairwise_functions_aggregate, f, (s,x,y) -> NaN)
@@ -23,7 +23,7 @@ p = 5
     end
 end
 
-@testset "Testing MODPF.pairwise" begin
+@testset "Testing $(MODPF.pairwise)" begin
     for f in pairwise_functions
         F = (f)()
 
@@ -42,12 +42,12 @@ end
     end
 end
 
-@testset "Testing MODPF.allocate_pairwisematrix" begin
+@testset "Testing $(MODPF.allocate_pairwisematrix)" begin
     for T in FloatingPointTypes
         X = rand(T,n,m)
 
-        for layout in (RowMajor(), ColumnMajor())
-            n_tmp = layout == RowMajor() ? n : m
+        for layout in (Val(:row), Val(:col))
+            n_tmp = layout == Val(:row) ? n : m
 
             K = MODPF.allocate_pairwisematrix(layout, X)
             @test size(K) == (n_tmp,n_tmp)
@@ -56,9 +56,9 @@ end
     end
 end
 
-@testset "Testing MODPF.checkdimensions" begin
-    for layout in (RowMajor(), ColumnMajor())
-        isrowmajor = layout == RowMajor()
+@testset "Testing $(MODPF.checkdimensions)" begin
+    for layout in (Val(:row), Val(:col))
+        isrowmajor = layout == Val(:row)
         dim = isrowmajor ? 1 : 2
 
         X =     isrowmajor ? Array{Float64}(undef, n,p)   : Array{Float64}(undef, p,n)
@@ -76,7 +76,7 @@ end
     end
 end
 
-@testset "Testing MODPF.squared_distance!" begin
+@testset "Testing $(MODPF.squared_distance!)" begin
     for T in FloatingPointTypes
         Set_X = [rand(T,p) for i = 1:n]
         Set_Y = [rand(T,p) for i = 1:m]
@@ -85,15 +85,15 @@ end
         Y = permutedims(hcat(Set_Y...))
 
         P = [LinearAlgebra.dot(x-y,x-y) for x in Set_X, y in Set_X]
-        G = MODPF.gramian!(RowMajor(), Array{T}(undef, n,n), X, true)
-        xtx = MODPF.dotvectors(RowMajor(), X)
+        G = MODPF.gramian!(Val(:row), Array{T}(undef, n,n), X, true)
+        xtx = MODPF.dotvectors(Val(:row), X)
 
         @test isapprox(MODPF.squared_distance!(G, xtx, true), P)
 
         P = [LinearAlgebra.dot(x-y,x-y) for x in Set_X, y in Set_Y]
-        G = MODPF.gramian!(RowMajor(), Array{T}(undef, n,m), X, Y)
-        xtx = MODPF.dotvectors(RowMajor(), X)
-        yty = MODPF.dotvectors(RowMajor(), Y)
+        G = MODPF.gramian!(Val(:row), Array{T}(undef, n,m), X, Y)
+        xtx = MODPF.dotvectors(Val(:row), X)
+        yty = MODPF.dotvectors(Val(:row), Y)
         MODPF.squared_distance!(G, xtx, yty)
 
         @test isapprox(G, P)
@@ -109,7 +109,7 @@ end
     end
 end
 
-@testset "Testing MODPF.pairwisematrix!" begin
+@testset "Testing $(MODPF.pairwisematrix!)" begin
     for T in (Float32, Float64)
         X_set = [rand(T,p) for i = 1:n]
         Y_set = [rand(T,p) for i = 1:m]
@@ -117,9 +117,9 @@ end
         P_tst_nn = Array{T}(undef, n, n)
         P_tst_nm = Array{T}(undef, n, m)
 
-        for layout in (RowMajor(), ColumnMajor())
-            X = layout == RowMajor() ? permutedims(hcat(X_set...)) : hcat(X_set...)
-            Y = layout == RowMajor() ? permutedims(hcat(Y_set...)) : hcat(Y_set...)
+        for layout in (Val(:row), Val(:col))
+            X = layout == Val(:row) ? permutedims(hcat(X_set...)) : hcat(X_set...)
+            Y = layout == Val(:row) ? permutedims(hcat(Y_set...)) : hcat(Y_set...)
 
             for f in pairwise_functions
                 F = (f)()
@@ -133,7 +133,7 @@ end
         end
     end
 
-    for layout in (RowMajor(), ColumnMajor())
+    for layout in (Val(:row), Val(:col))
         # Test case where squared_distance! may return a negative value
         v1 = [0.2585096115890490597877260370296426117420196533203125
               0.9692536801431554938091039730352349579334259033203125
@@ -146,8 +146,8 @@ end
         v3 = rand(Float64, 3)
 
         F = SquaredEuclidean()
-        X = layout == RowMajor() ? permutedims(hcat(v1, v2)) : hcat(v1, v2)
-        Y = layout == RowMajor() ? permutedims(hcat(v1, v2, v3)) : hcat(v1, v2, v3)
+        X = layout == Val(:row) ? permutedims(hcat(v1, v2)) : hcat(v1, v2)
+        Y = layout == Val(:row) ? permutedims(hcat(v1, v2, v3)) : hcat(v1, v2, v3)
 
         @test all(MODPF.pairwisematrix!(layout, Array{Float64}(undef, 2,2), F, X, true) .>= 0.0)
         @test all(MODPF.pairwisematrix!(layout, Array{Float64}(undef, 2,3), F, X, Y) .>= 0.0)

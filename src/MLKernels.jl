@@ -42,9 +42,9 @@ export
     # Memory
     Orientation,
 
-    MemoryLayout,
-    RowMajor,
-    ColumnMajor,
+    #MemoryLayout,
+    #RowMajor,
+    #ColumnMajor,
 
     # Pairwise function evaluation
     pairwise,
@@ -127,12 +127,8 @@ using MLKernels.PairwiseFunctions:
             Metric,
                 SquaredEuclidean,
 
-    # Layout
+    # Data Orientation
     Orientation,
-
-    MemoryLayout,
-    RowMajor,
-    ColumnMajor,
 
     # Pairwise function evaluation
     pairwise,
@@ -143,6 +139,7 @@ import MLKernels.PairwiseFunctions: isstationary, isisotropic
 
 include("kernels.jl")
 include("kernelmatrix.jl")
-include("kernelmatrixapprox.jl")
+include("nystrom.jl")
+include("deprecated.jl")
 
 end # MLKernels

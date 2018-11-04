@@ -1,5 +1,3 @@
-#import Base: depwarn
-
 module HyperParameters
 
 import Base: convert, eltype, promote_type, show, string, ==, *, /, +, -, ^, isless, depwarn
@@ -118,7 +116,7 @@ interval(::Type{T}) where {T<:Real} = Interval(NullBound{T}(), NullBound{T}())
 checkvalue(I::Interval, x::Real) = checkvalue(I.a, x) && checkvalue(x, I.b)
 
 function theta(I::Interval{T,A,B}, x::T) where {T<:AbstractFloat,A,B}
-    depwarn("theta is deprecated", :theta)
+    depwarn("theta will be removed entirely in a future release", :theta)
     checkvalue(I,x) || throw(DomainError(x, "Not in $I"))
     if A <: OpenBound
         return B <: OpenBound ? log(x-I.a.value) - log(I.b.value-x) : log(x-I.a.value)
@@ -146,7 +144,7 @@ function checktheta(I::Interval{T}, x::T) where {T<:AbstractFloat}
 end
 
 function eta(I::Interval{T,A,B}, x::T) where {T<:AbstractFloat,A,B}
-    depwarn("Eta is deprecated", :eta)
+    depwarn("eta will be removed entirely in a future release", :eta)
     checktheta(I,x) || throw(DomainError(x, "Not in $I"))
     if A <: OpenBound
         if B <: OpenBound

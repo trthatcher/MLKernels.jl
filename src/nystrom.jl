@@ -2,12 +2,12 @@
   Nystrom Approximation
 ===================================================================================================#
 
-for layout in (RowMajor, ColumnMajor)
-    (dim, S, fulldim) = layout == RowMajor ? (1, :S, :(:)) : (2, :(:), :S)
+for orientation in (:row, :col)
+    (dim, S, fulldim) = orientation == :row ? (1, :S, :(:)) : (2, :(:), :S)
 
     @eval begin
         function samplematrix(
-                σ::$layout,
+                σ::Val{$(Meta.quot(orientation))},
                 X::Matrix,
                 r::T
             ) where {T<:AbstractFloat}
@@ -19,7 +19,7 @@ for layout in (RowMajor, ColumnMajor)
         end
 
         function nystrom_sample(
-                σ::$layout,
+                σ::Val{$(Meta.quot(orientation))},
                 κ::Kernel{T},
                 X::Matrix{T},
                 S::Vector{U}
@@ -67,7 +67,7 @@ struct NystromFact{T<:LinearAlgebra.BlasReal}
 end
 
 @doc raw"""
-    nystrom([σ::MemoryLayout,] κ::Kernel, X::Matrix, [S::Vector])
+    nystrom([σ::Orientation,] κ::Kernel, X::Matrix, [S::Vector])
 
 Computes a factorization of Nystrom approximation of the square kernel matrix of data 
 matrix `X` with respect to kernel `κ`. Returns a `NystromFact` struct which stores a 
@@ -78,7 +78,7 @@ Nystrom factorization satisfying:
 ```
 """
 function nystrom(
-        σ::MemoryLayout,
+        σ::Orientation,
         κ::Kernel{T},
         X::Matrix{T},
         S::Vector{U} = samplematrix(σ, X, convert(T,0.15))
@@ -91,9 +91,9 @@ end
 function nystrom(
         κ::Kernel{T},
         X::Matrix{T},
-        S::Vector{U} = samplematrix(RowMajor(), X, convert(T,0.15))
+        S::Vector{U} = samplematrix(:row(), X, convert(T,0.15))
     ) where {T<:LinearAlgebra.BlasReal,U<:Integer}
-    nystrom(RowMajor(), κ, X, S)
+    nystrom(:row(), κ, X, S)
 end
 
 function kernelmatrix(CᵀWC::NystromFact{T}) where {T<:LinearAlgebra.BlasReal}
