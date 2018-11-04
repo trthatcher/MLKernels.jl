@@ -34,4 +34,4 @@ include("PairwiseFunctions/pairwisematrix.jl")
 
 include("kernel.jl")
 include("kernelmatrix.jl")
-include("kernelmatrixapprox.jl")
+include("nystrom.jl")
