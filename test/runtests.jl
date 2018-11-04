@@ -20,18 +20,17 @@ import Statistics
 
 FloatingPointTypes = (Float32, Float64)
 IntegerTypes = (Int32, Int64)
-MOD = MLKernels
-MODHP = MLKernels.HyperParameters
-MODPF = MLKernels.PairwiseFunctions
+MLK = MLKernels
+HP = MLKernels.HyperParameters
 
 include("reference.jl")
 
 include("HyperParameters/hyperparameter.jl")
 
-include("PairwiseFunctions/common.jl")
-include("PairwiseFunctions/pairwise.jl")
-include("PairwiseFunctions/pairwisematrix.jl")
+include("utils.jl")
+include("pairwisefunctions.jl")
+include("pairwisematrix.jl")
 
-include("kernel.jl")
+include("kernelfunctions.jl")
 include("kernelmatrix.jl")
 include("nystrom.jl")

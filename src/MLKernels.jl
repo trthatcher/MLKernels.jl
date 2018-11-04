@@ -42,10 +42,6 @@ export
     # Memory
     Orientation,
 
-    #MemoryLayout,
-    #RowMajor,
-    #ColumnMajor,
-
     # Pairwise function evaluation
     pairwise,
     pairwisematrix,
@@ -114,32 +110,26 @@ using MLKernels.HyperParameters:
 
 import MLKernels.HyperParameters: gettheta, checktheta, settheta!
 
-include("PairwiseFunctions/PairwiseFunctions.jl")
-using MLKernels.PairwiseFunctions:
+@doc raw"""
+    Orientation
 
-    # Pairwise Functions
-    PairwiseFunction,
-        InnerProduct,
-            ScalarProduct,
-        PreMetric,
-            ChiSquared,
-            SineSquared,
-            Metric,
-                SquaredEuclidean,
+Union of the two `Val` types representing the data matrix orientations:
 
-    # Data Orientation
-    Orientation,
+  1. `Val{:row}` identifies when observation vector corresponds to a row of the data matrix
+  2. `Val{:col}` identifies when each observation vector corresponds to a column of the data
+     matrix
+"""
+const Orientation = Union{Val{:row}, Val{:col}}
 
-    # Pairwise function evaluation
-    pairwise,
-    pairwisematrix,
-    pairwisematrix!
+include("utils.jl")
 
-import MLKernels.PairwiseFunctions: isstationary, isisotropic
+include("pairwisefunctions.jl")
+include("pairwisematrix.jl")
 
-include("kernels.jl")
+include("kernelfunctions.jl")
 include("kernelmatrix.jl")
 include("nystrom.jl")
+
 include("deprecated.jl")
 
 end # MLKernels

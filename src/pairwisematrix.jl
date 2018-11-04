@@ -1,16 +1,13 @@
-#===========================================================================================
-  Generic pairwisematrix functions for kernels consuming two vectors
-===========================================================================================#
+# Pairwise Scalar & Vector Operation  ======================================================
 
-#================================================
-  Generic Pairwise Vector Operation
-================================================#
+@inline pairwise_initiate(::PairwiseFunction, ::Type{T}) where {T} = zero(T)
+@inline pairwise_return(::PairwiseFunction, s::T) where {T} = s
 
 function pairwise(f::PairwiseFunction, x::T, y::T) where {T<:AbstractFloat}
     pairwise_return(f, pairwise_aggregate(f, pairwise_initiate(f,T), x, y))
 end
 
-# No checks, assumes length(x) == length(y) >= 1
+# Note: no checks, assumes length(x) == length(y) >= 1
 function unsafe_pairwise(
         f::PairwiseFunction,
         x::AbstractArray{T},
@@ -39,10 +36,7 @@ function pairwise(
 end
 
 
-
-#================================================
-  Generic Pairwise Matrix Calculation
-================================================#
+# Pairwise Matrix Calculation  =============================================================
 
 for orientation in (:row, :col)
 
@@ -52,7 +46,11 @@ for orientation in (:row, :col)
 
     @eval begin
 
-        @inline function subvector(::Val{$(Meta.quot(orientation))}, X::AbstractMatrix,  i::Integer)
+        @inline function subvector(
+                ::Val{$(Meta.quot(orientation))},
+                X::AbstractMatrix,
+                i::Integer
+            )
             $(row_oriented ? :(view(X, i, :)) : :(view(X, :, i)))
         end
 
@@ -182,10 +180,7 @@ function pairwisematrix(
 end
 
 
-
-#===================================================================================================
-  ScalarProduct using BLAS/Built-In methods
-===================================================================================================#
+# ScalarProduct using BLAS/Built-In methods ================================================
 
 @inline function pairwisematrix!(
         σ::Orientation,
@@ -208,12 +203,13 @@ end
 end
 
 
+# SquaredDistance using BLAS/Built-In methods ==============================================
 
-#===================================================================================================
-  SquaredDistance using BLAS/Built-In methods
-===================================================================================================#
-
-function squared_distance!(G::Matrix{T}, xᵀx::Vector{T}, symmetrize::Bool) where {T<:AbstractFloat}
+function squared_distance!(
+        G::Matrix{T},
+        xᵀx::Vector{T},
+        symmetrize::Bool
+    ) where {T<:AbstractFloat}
     if !((n = size(G,1)) == size(G,2))
         throw(DimensionMismatch("Gramian matrix must be square."))
     end
@@ -230,7 +226,11 @@ function squared_distance!(G::Matrix{T}, xᵀx::Vector{T}, symmetrize::Bool) whe
     symmetrize ? LinearAlgebra.copytri!(G, 'U') : G
 end
 
-function squared_distance!(G::Matrix{T}, xᵀx::Vector{T}, yᵀy::Vector{T}) where {T<:AbstractFloat}
+function squared_distance!(
+        G::Matrix{T},
+        xᵀx::Vector{T},
+        yᵀy::Vector{T}
+    ) where {T<:AbstractFloat}
     n, m = size(G)
     if length(xᵀx) != n
         throw(DimensionMismatch("Length of xᵀx must match rows of G"))
@@ -246,7 +246,13 @@ function squared_distance!(G::Matrix{T}, xᵀx::Vector{T}, yᵀy::Vector{T}) whe
     G
 end
 
-function fix_negatives!(σ::Orientation, D::Matrix{T}, X::Matrix{T}, symmetrize::Bool, ϵ::T=zero(T)) where {T<:AbstractFloat}
+function fix_negatives!(
+        σ::Orientation, 
+        D::Matrix{T},
+        X::Matrix{T},
+        symmetrize::Bool,
+        ϵ::T=zero(T)
+    ) where {T<:AbstractFloat}
     if !((n = size(D,1)) == size(D,2))
         throw(DimensionMismatch("Distance matrix must be square."))
     end
@@ -262,7 +268,13 @@ function fix_negatives!(σ::Orientation, D::Matrix{T}, X::Matrix{T}, symmetrize:
     symmetrize ? LinearAlgebra.copytri!(D, 'U') : D
 end
 
-function fix_negatives!(σ::Orientation, D::Matrix{T}, X::Matrix{T}, Y::Matrix{T}, ϵ::T=zero(T)) where {T<:AbstractFloat}
+function fix_negatives!(
+        σ::Orientation,
+        D::Matrix{T},
+        X::Matrix{T},
+        Y::Matrix{T},
+        ϵ::T=zero(T)
+    ) where {T<:AbstractFloat}
     n, m = size(D)
     for j = 1:m
         yj = subvector(σ, Y, j)

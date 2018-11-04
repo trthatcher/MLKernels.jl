@@ -1,21 +1,19 @@
-#================================================
-  Generic Kernel Vector Operation
-================================================#
-
+# Kernel Scalar & Vector Operation  ========================================================
 
 function kernel(κ::Kernel{T}, x::T, y::T) where {T<:AbstractFloat}
     kappa(κ, pairwise(pairwisefunction(κ), x, y))
 end
 
-function kernel(κ::Kernel{T}, x::AbstractArray{T}, y::AbstractArray{T}) where {T<:AbstractFloat}
+function kernel(
+        κ::Kernel{T},
+        x::AbstractArray{T},
+        y::AbstractArray{T}
+    ) where {T<:AbstractFloat}
     kappa(κ, pairwise(pairwisefunction(κ), x, y))
 end
 
 
-
-#================================================
-  Generic Kernel Matrix Calculation
-================================================#
+# Kernel Matrix Calculation ================================================================
 
 function kappamatrix!(κ::Kernel{T}, P::AbstractMatrix{T}) where {T<:AbstractFloat}
     for i in eachindex(P)
@@ -41,7 +39,7 @@ end
 """
     kernelmatrix!(P::Matrix, σ::Orientation, κ::Kernel, X::Matrix, symmetrize::Bool)
 
-In-place version of `kernelmatrix` where pre-allocated matrix `K` will be overwritten 
+In-place version of `kernelmatrix` where pre-allocated matrix `K` will be overwritten
 with the kernel matrix.
 """
 function kernelmatrix!(
@@ -58,7 +56,7 @@ end
 """
     kernelmatrix!(K::Matrix, σ::Orientation, κ::Kernel, X::Matrix, Y::Matrix)
 
-In-place version of `kernelmatrix` where pre-allocated matrix `K` will be overwritten with 
+In-place version of `kernelmatrix` where pre-allocated matrix `K` will be overwritten with
 the kernel matrix.
 """
 function kernelmatrix!(
@@ -91,15 +89,12 @@ function kernelmatrix(
 end
 
 
-
-#================================================
-  Generic Catch-All Methods
-================================================#
+# Convenience Methods ======================================================================
 
 """
     kernel(κ::Kernel, x, y)
 
-Apply the kernel `κ` to ``x`` and ``y`` where ``x`` and ``y`` are vectors or scalars of 
+Apply the kernel `κ` to ``x`` and ``y`` where ``x`` and ``y`` are vectors or scalars of
 some subtype of ``Real``.
 """
 function kernel(κ::Kernel{T}, x::Real, y::Real) where {T}
@@ -140,7 +135,7 @@ end
 """
     kernelmatrix([σ::Orientation,] κ::Kernel, X::Matrix, Y::Matrix)
 
-Calculate the pairwise matrix of `X` and `Y` with respect to kernel `κ`. 
+Calculate the pairwise matrix of `X` and `Y` with respect to kernel `κ`.
 """
 function kernelmatrix(
         σ::Orientation,
@@ -162,19 +157,27 @@ function kernelmatrix(
 end
 
 
-
-#===================================================================================================
-  Kernel Centering
-===================================================================================================#
+# Kernel Centering =========================================================================
 
 @doc raw"""
     centerkernelmatrix(K::Matrix)
 
-Centers the (rectangular) kernel matrix `K` with respect to the implicit Kernel Hilbert 
+Centers the (rectangular) kernel matrix `K` with respect to the implicit Kernel Hilbert
 Space according to the following formula:
 
 ```math
-[\mathbf{K}]_{ij} = \langle\phi(\mathbf{x}_i) -\mathbf{\mu}_{\phi\mathbf{x}}, \phi(\mathbf{y}_j) - \mathbf{\mu}_{\phi\mathbf{y}} \rangle 
+[\mathbf{K}]_{ij}
+= \langle\phi(\mathbf{x}_i) -\mathbf{\mu}_{\phi\mathbf{x}}, \phi(\mathbf{y}_j)
+- \mathbf{\mu}_{\phi\mathbf{y}} \rangle
+```
+Where ``\mathbf{\mu}_{\phi\mathbf{x}}`` and ``\mathbf{\mu}_{\phi\mathbf{x}}`` are given by:
+
+```math
+\mathbf{\mu}_{\phi\mathbf{x}}
+= \frac{1}{n} \sum_{i=1}^n \phi(\mathbf{x}_i)
+\qquad \qquad
+\mathbf{\mu}_{\phi\mathbf{y}}
+= \frac{1}{m} \sum_{i=1}^m \phi(\mathbf{y}_i)
 ```
 """
 function centerkernelmatrix!(K::Matrix{T}) where {T<:AbstractFloat}
