@@ -2,7 +2,7 @@ n = 30
 m = 20
 p = 5
 
-@testset "Testing MOD.kernel" begin
+@testset "Testing $(MOD.kernel)" begin
     for T in (Float32, Float64)
         x = rand(T,p)
         y = rand(T,p)
@@ -25,7 +25,7 @@ p = 5
     end
 end
 
-@testset "Testing MOD.kappamatrix!" begin
+@testset "Testing $(MOD.kappamatrix!)" begin
     for T in (Float32, Float64)
         X = rand(T,n,m)
 
@@ -41,7 +41,7 @@ end
 end
 
 
-@testset "Testing MOD.symmetric_kappamatrix!" begin
+@testset "Testing $(MOD.symmetric_kappamatrix!)" begin
     for T in (Float32, Float64)
         X = LinearAlgebra.copytri!(rand(T,n,n), 'U')
 
@@ -58,7 +58,7 @@ end
 end
 
 
-@testset "Testing MOD.kernelmatrix!" begin
+@testset "Testing $(MOD.kernelmatrix!)" begin
     for T in (Float32, Float64)
         X_set = [rand(T,p) for i = 1:n]
         Y_set = [rand(T,p) for i = 1:m]
@@ -66,9 +66,9 @@ end
         K_tst_nn = Array{T}(undef, n, n)
         K_tst_nm = Array{T}(undef, n, m)
 
-        for layout in (RowMajor(), ColumnMajor())
-            X = layout == RowMajor() ? permutedims(hcat(X_set...)) : hcat(X_set...)
-            Y = layout == RowMajor() ? permutedims(hcat(Y_set...)) : hcat(Y_set...)
+        for layout in (Val(:row), Val(:col))
+            X = layout == Val(:row) ? permutedims(hcat(X_set...)) : hcat(X_set...)
+            Y = layout == Val(:row) ? permutedims(hcat(Y_set...)) : hcat(Y_set...)
 
             for f in kernel_functions
                 F = convert(f{T}, (f)())
@@ -83,7 +83,7 @@ end
     end
 end
 
-@testset "Testing MOD.kernelmatrix" begin
+@testset "Testing $(MOD.kernelmatrix)" begin
     for T in (Float32, Float64)
         X_set = [rand(Float32,p) for i = 1:n]
         Y_set = [rand(Float32,p) for i = 1:m]
@@ -91,8 +91,8 @@ end
         K_tst_nn = Array{T}(undef, n, n)
         K_tst_nm = Array{T}(undef, n, m)
 
-        for layout in (RowMajor(), ColumnMajor())
-            isrowmajor = layout == RowMajor()
+        for layout in (Val(:row), Val(:col))
+            isrowmajor = layout == Val(:row)
             X = convert(Array{T}, isrowmajor ? permutedims(hcat(X_set...)) : hcat(X_set...))
             Y = convert(Array{T}, isrowmajor ? permutedims(hcat(Y_set...)) : hcat(Y_set...))
 
@@ -138,7 +138,7 @@ end
     end
 end
 
-@testset "Testing MOD.centerkernelmatrix!" begin
+@testset "Testing $(MOD.centerkernelmatrix!)" begin
     for T in FloatingPointTypes
         X = rand(T, n, p)
         Y = rand(T, m, p)

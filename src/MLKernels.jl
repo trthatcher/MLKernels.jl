@@ -40,9 +40,11 @@ export
     isisotropic,
 
     # Memory
-    MemoryLayout,
-    RowMajor,
-    ColumnMajor,
+    Orientation,
+
+    #MemoryLayout,
+    #RowMajor,
+    #ColumnMajor,
 
     # Pairwise function evaluation
     pairwise,
@@ -90,7 +92,7 @@ using SpecialFunctions: besselk, gamma
 import LinearAlgebra
 import Statistics
 
-include("deprecated.jl")
+include("HyperParameters.jl")
 using MLKernels.HyperParameters:
     Bound,
         OpenBound,
@@ -125,10 +127,8 @@ using MLKernels.PairwiseFunctions:
             Metric,
                 SquaredEuclidean,
 
-    # Memory
-    MemoryLayout,
-    RowMajor,
-    ColumnMajor,
+    # Data Orientation
+    Orientation,
 
     # Pairwise function evaluation
     pairwise,
@@ -139,6 +139,7 @@ import MLKernels.PairwiseFunctions: isstationary, isisotropic
 
 include("kernels.jl")
 include("kernelmatrix.jl")
-include("kernelmatrixapprox.jl")
+include("nystrom.jl")
+include("deprecated.jl")
 
 end # MLKernels

@@ -1,16 +1,53 @@
-# MLKernels Interface
+# Interface
 
-## Storage
+## Data Orientation
+Data matrices may be oriented in one of two ways with respect to the observations. 
+Functions producing a kernel matrix require an `orient` argument to specify the orientation
+of the observations within the provided data matrix.
 
-[**MLKernels.jl**](https://github.com/trthatcher/MLKernels.jl) allows for data matrices to 
-be stored in one of two ways with respect to the observations based on parameters provided 
-by the user. In order to specify the ordering used, a subtype of the `MemoryLayout` abstract
-type can be provided as a parameter to any methods taking matrices as a parameter:
+### Row Orientation (Default)
 
-```@docs
-RowMajor
-ColumnMajor
+An orientation of `Val(:row)` identifies when observation vector corresponds to a row of 
+the data matrix. This is commonly used in the field of statistics in the context of 
+[design matrices](https://en.wikipedia.org/wiki/Design_matrix). 
+
+For example, for data matrix $\mathbf{X}$ consisting of observations $\mathbf{x}_1$, 
+$\mathbf{x}_2$, $\ldots$, $\mathbf{x}_n$:
+
+```math
+\mathbf{X}_{row} = 
+\begin{bmatrix} 
+    \leftarrow \mathbf{x}_1 \rightarrow \\ 
+    \leftarrow \mathbf{x}_2 \rightarrow \\ 
+    \vdots \\ 
+    \leftarrow \mathbf{x}_n \rightarrow 
+\end{bmatrix}
 ```
+
+When row-major ordering is used, then the kernel matrix of $\mathbf{X}$ will match the 
+dimensions of $\mathbf{X}^{\intercal}\mathbf{X}$. Similarly, the kernel matrix will match 
+the dimension of $\mathbf{X}^{\intercal}\mathbf{Y}$ for row-major ordering of data 
+matrix $\mathbf{X}$ and $\mathbf{Y}$.
+
+### Column Orientation
+
+An orientation of `Val(:col)` identifies when each observation vector corresponds to a 
+column of the data matrix:
+
+```math
+\mathbf{X}_{col} = 
+\mathbf{X}_{row}^{\intercal} = 
+\begin{bmatrix}
+    \uparrow & \uparrow & & \uparrow  \\
+    \mathbf{x}_1 & \mathbf{x}_2 & \cdots & \mathbf{x_n} \\
+    \downarrow & \downarrow & & \downarrow
+\end{bmatrix}
+```
+
+With column-major ordering, the kernel matrix will match the dimensions of 
+$\mathbf{XX}^{\intercal}$. Similarly, the kernel matrix of data matrices $\mathbf{X}$ and
+$\mathbf{Y}$ match the dimensions of $\mathbf{XY}^{\intercal}$.
+
 
 ## Essentials
 
@@ -20,10 +57,11 @@ isnegdef(::Kernel)
 isstationary(::PairwiseFunction)
 isisotropic(::PairwiseFunction)
 kernel(κ::Kernel{T}, x::Real, y::Real) where T
-kernelmatrix(σ::MemoryLayout, κ::Kernel{T}, X::AbstractMatrix{T1}, symmetrize::Bool = true) where {T,T1}
-kernelmatrix!(σ::MemoryLayout, P::Matrix{T}, κ::Kernel{T}, X::AbstractMatrix{T}, symmetrize::Bool) where {T<:AbstractFloat}
-kernelmatrix!(σ::MemoryLayout, P::Matrix{T}, κ::Kernel{T}, X::AbstractMatrix{T}, Y::AbstractMatrix{T}) where {T<:AbstractFloat}
-kernelmatrix(σ::MemoryLayout, κ::Kernel{T}, X::AbstractMatrix{T1}, Y::AbstractMatrix{T2}) where {T,T1,T2}
+Orientation
+kernelmatrix(σ::Orientation, κ::Kernel{T}, X::AbstractMatrix{T1}, symmetrize::Bool = true) where {T,T1}
+kernelmatrix!(σ::Orientation, P::Matrix{T}, κ::Kernel{T}, X::AbstractMatrix{T}, symmetrize::Bool) where {T<:AbstractFloat}
+kernelmatrix!(σ::Orientation, P::Matrix{T}, κ::Kernel{T}, X::AbstractMatrix{T}, Y::AbstractMatrix{T}) where {T<:AbstractFloat}
+kernelmatrix(σ::Orientation, κ::Kernel{T}, X::AbstractMatrix{T1}, Y::AbstractMatrix{T2}) where {T,T1,T2}
 centerkernelmatrix!(K::Matrix{T}) where {T<:AbstractFloat}
 ```
 
