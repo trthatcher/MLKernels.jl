@@ -22,14 +22,14 @@ end
 """
     ismercer(κ::Kernel)
 
-    Returns `true` if kernel `κ` is a Mercer kernel; `false` otherwise.
+Returns `true` if kernel `κ` is a Mercer kernel; `false` otherwise.
 """
 ismercer(::Kernel) = false
 
 """
     isnegdef(κ::Kernel)
 
-    Returns `true` if the kernel `κ` is a negative definite kernel; `false` otherwise.
+Returns `true` if the kernel `κ` is a negative definite kernel; `false` otherwise.
 """
 isnegdef(::Kernel) = false
 
