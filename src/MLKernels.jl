@@ -25,52 +25,35 @@ export
     settheta!,
     checktheta,
 
-    # Pairwise Functions
-    PairwiseFunction,
-        InnerProduct,
-            ScalarProduct,
-        PreMetric,
-            ChiSquared,
-            SineSquared,
-            Metric,
-                SquaredEuclidean,
-
-    # Pairwise Function Properties
-    isstationary,
-    isisotropic,
-
     # Memory
     Orientation,
 
-    # Pairwise function evaluation
-    pairwise,
-    pairwisematrix,
-    pairwisematrix!,
-
-    # Kernel Function Type
+    # Kernel Functions
     Kernel,
-        MercerKernel,
-            ExponentialKernel,
-                LaplacianKernel,
-            SquaredExponentialKernel,
-                GaussianKernel,
-                RadialBasisKernel,
-            GammaExponentialKernel,
-            RationalQuadraticKernel,
-            GammaRationalKernel,
-            MaternKernel,
-            LinearKernel,
-            PolynomialKernel,
-            ExponentiatedKernel,
-            PeriodicKernel,
-        NegativeDefiniteKernel,
-            PowerKernel,
-            LogKernel,
-        SigmoidKernel,
+    MercerKernel,
+    ExponentialKernel,
+    LaplacianKernel,
+    SquaredExponentialKernel,
+    GaussianKernel,
+    RadialBasisKernel,
+    GammaExponentialKernel,
+    RationalQuadraticKernel,
+    GammaRationalKernel,
+    MaternKernel,
+    LinearKernel,
+    PolynomialKernel,
+    ExponentiatedKernel,
+    PeriodicKernel,
+    NegativeDefiniteKernel,
+    PowerKernel,
+    LogKernel,
+    SigmoidKernel,
 
     # Kernel Function Properties
     ismercer,
     isnegdef,
+    isstationary,
+    isisotropic,
 
     # Kernel Matrix
     kernel,
@@ -123,8 +106,8 @@ const Orientation = Union{Val{:row}, Val{:col}}
 
 include("utils.jl")
 
-include("pairwisefunctions.jl")
-include("pairwisematrix.jl")
+include("basefunctions.jl")
+include("basematrix.jl")
 
 include("kernelfunctions.jl")
 include("kernelmatrix.jl")

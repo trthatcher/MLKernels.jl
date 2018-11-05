@@ -26,7 +26,7 @@ RadialBasisKernel = SquaredExponentialKernel
 
 @inline squaredexponentialkernel(z::T, α::T) where {T<:AbstractFloat} = exp(-α*z)
 
-@inline pairwisefunction(::SquaredExponentialKernel) = SquaredEuclidean()
+@inline basefunction(::SquaredExponentialKernel) = SquaredEuclidean()
 @inline function kappa(κ::SquaredExponentialKernel{T}, z::T) where {T}
     squaredexponentialkernel(z, getvalue(κ.alpha))
 end

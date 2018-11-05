@@ -2,11 +2,11 @@ n = 30
 m = 20
 p = 5
 
-@testset "Testing $(MLK.unsafe_pairwise)" begin
-    for f in pairwise_functions
+@testset "Testing $(MLK.unsafe_base_evaluate)" begin
+    for f in base_functions
         F = (f)()
-        f_agg_tmp = get(pairwise_functions_aggregate, f, (s,x,y) -> NaN)
-        f_ret_tmp = get(pairwise_functions_return, f, s -> s)
+        f_agg_tmp = get(base_functions_aggregate, f, (s,x,y) -> NaN)
+        f_ret_tmp = get(base_functions_return, f, s -> s)
 
         for T in FloatingPointTypes
             x = rand(T,p)
@@ -18,13 +18,13 @@ p = 5
             end
             s = f_ret_tmp(s)
 
-            @test isapprox(s, MLK.unsafe_pairwise(F, x, y))
+            @test isapprox(s, MLK.unsafe_base_evaluate(F, x, y))
         end
     end
 end
 
-@testset "Testing $(MLK.pairwise)" begin
-    for f in pairwise_functions
+@testset "Testing $(MLK.base_evaluate)" begin
+    for f in base_functions
         F = (f)()
 
         for T in FloatingPointTypes
@@ -32,24 +32,24 @@ end
             x = rand(T,p)
             y = rand(T,p)
 
-            @test isapprox(MLK.pairwise(F, x, y),       MLK.unsafe_pairwise(F, x, y))
-            @test isapprox(MLK.pairwise(F, x[1], y[1]), MLK.unsafe_pairwise(F, x[1:1], y[1:1]))
+            @test isapprox(MLK.base_evaluate(F, x, y),       MLK.unsafe_base_evaluate(F, x, y))
+            @test isapprox(MLK.base_evaluate(F, x[1], y[1]), MLK.unsafe_base_evaluate(F, x[1:1], y[1:1]))
 
-            @test_throws DimensionMismatch MLK.pairwise(F, x, v)
-            @test_throws DimensionMismatch MLK.pairwise(F, v, x)
-            @test_throws DimensionMismatch MLK.pairwise(F, T[], T[])
+            @test_throws DimensionMismatch MLK.base_evaluate(F, x, v)
+            @test_throws DimensionMismatch MLK.base_evaluate(F, v, x)
+            @test_throws DimensionMismatch MLK.base_evaluate(F, T[], T[])
         end
     end
 end
 
-@testset "Testing $(MLK.allocate_pairwisematrix)" begin
+@testset "Testing $(MLK.allocate_basematrix)" begin
     for T in FloatingPointTypes
         X = rand(T,n,m)
 
         for layout in (Val(:row), Val(:col))
             n_tmp = layout == Val(:row) ? n : m
 
-            K = MLK.allocate_pairwisematrix(layout, X)
+            K = MLK.allocate_basematrix(layout, X)
             @test size(K) == (n_tmp,n_tmp)
             @test eltype(K) == T
         end
@@ -109,7 +109,7 @@ end
     end
 end
 
-@testset "Testing $(MLK.pairwisematrix!)" begin
+@testset "Testing $(MLK.basematrix!)" begin
     for T in (Float32, Float64)
         X_set = [rand(T,p) for i = 1:n]
         Y_set = [rand(T,p) for i = 1:m]
@@ -121,14 +121,14 @@ end
             X = layout == Val(:row) ? permutedims(hcat(X_set...)) : hcat(X_set...)
             Y = layout == Val(:row) ? permutedims(hcat(Y_set...)) : hcat(Y_set...)
 
-            for f in pairwise_functions
+            for f in base_functions
                 F = (f)()
 
-                P = [MLK.pairwise(F,x,y) for x in X_set, y in X_set]
-                @test isapprox(P, MLK.pairwisematrix!(layout, P_tst_nn, F, X, true))
+                P = [MLK.base_evaluate(F,x,y) for x in X_set, y in X_set]
+                @test isapprox(P, MLK.basematrix!(layout, P_tst_nn, F, X, true))
 
-                P = [MLK.pairwise(F,x,y) for x in X_set, y in Y_set]
-                @test isapprox(P, MLK.pairwisematrix!(layout, P_tst_nm, F, X, Y))
+                P = [MLK.base_evaluate(F,x,y) for x in X_set, y in Y_set]
+                @test isapprox(P, MLK.basematrix!(layout, P_tst_nm, F, X, Y))
             end
         end
     end
@@ -149,7 +149,7 @@ end
         X = layout == Val(:row) ? permutedims(hcat(v1, v2)) : hcat(v1, v2)
         Y = layout == Val(:row) ? permutedims(hcat(v1, v2, v3)) : hcat(v1, v2, v3)
 
-        @test all(MLK.pairwisematrix!(layout, Array{Float64}(undef, 2,2), F, X, true) .>= 0.0)
-        @test all(MLK.pairwisematrix!(layout, Array{Float64}(undef, 2,3), F, X, Y) .>= 0.0)
+        @test all(MLK.basematrix!(layout, Array{Float64}(undef, 2,2), F, X, true) .>= 0.0)
+        @test all(MLK.basematrix!(layout, Array{Float64}(undef, 2,3), F, X, Y) .>= 0.0)
     end
 end

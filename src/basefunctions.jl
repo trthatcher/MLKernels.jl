@@ -1,38 +1,27 @@
 # Pairwise Functions =======================================================================
 
-abstract type PairwiseFunction end
+abstract type BaseFunction end
 
-"""
-    isstationary(κ::Kernel)
-
-Returns `true` if the kernel `κ` is a stationary kernel; `false` otherwise.
-"""
-@inline isstationary(::PairwiseFunction) = false
-
-"""
-    isisotropic(κ::Kernel)
-
-Returns `true` if the kernel `κ` is an isotropic kernel; `false` otherwise.
-"""
-@inline isisotropic(::PairwiseFunction) = false
+@inline isstationary(::BaseFunction) = false
+@inline isisotropic(::BaseFunction) = false
 
 
 # Inner Products ===========================================================================
 
-abstract type InnerProduct <: PairwiseFunction end
+abstract type InnerProduct <: BaseFunction end
 
 const inner_products = [
     "scalarproduct"
 ]
 
 for fname in inner_products
-    include(joinpath("pairwise", "$(fname).jl"))
+    include(joinpath("basefunctions", "$(fname).jl"))
 end
 
 
 # Pre-Metrics ==============================================================================
 
-abstract type PreMetric <: PairwiseFunction end
+abstract type PreMetric <: BaseFunction end
 
 const pre_metrics = [
     "chisquared",
@@ -40,7 +29,7 @@ const pre_metrics = [
 ]
 
 for fname in pre_metrics
-    include(joinpath("pairwise", "$(fname).jl"))
+    include(joinpath("basefunctions", "$(fname).jl"))
 end
 
 
@@ -53,5 +42,5 @@ const metrics = [
 ]
 
 for fname in metrics
-    include(joinpath("pairwise", "$(fname).jl"))
+    include(joinpath("basefunctions", "$(fname).jl"))
 end

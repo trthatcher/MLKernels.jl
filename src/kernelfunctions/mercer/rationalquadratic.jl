@@ -28,7 +28,7 @@ end
 
 @inline rationalquadratickernel(z::T, α::T, β::T) where {T<:AbstractFloat} = (1 + α*z)^(-β)
 
-@inline pairwisefunction(::RationalQuadraticKernel) = SquaredEuclidean()
+@inline basefunction(::RationalQuadraticKernel) = SquaredEuclidean()
 @inline function kappa(κ::RationalQuadraticKernel{T}, z::T) where {T}
     rationalquadratickernel(z, getvalue(κ.alpha), getvalue(κ.beta))
 end

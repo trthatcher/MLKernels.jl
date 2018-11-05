@@ -24,7 +24,7 @@ end
 
 @inline gammaexponentialkernel(z::T, α::T, γ::T) where {T<:AbstractFloat} = exp(-α*z^γ)
 
-@inline pairwisefunction(::GammaExponentialKernel) = SquaredEuclidean()
+@inline basefunction(::GammaExponentialKernel) = SquaredEuclidean()
 @inline function kappa(κ::GammaExponentialKernel{T}, z::T) where {T}
     gammaexponentialkernel(z, getvalue(κ.alpha), getvalue(κ.gamma))
 end

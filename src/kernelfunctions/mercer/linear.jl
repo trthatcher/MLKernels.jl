@@ -20,5 +20,5 @@ LinearKernel(a::T1=1.0, c::T2=one(T1)) where {T1<:Real,T2<:Real} = LinearKernel{
 
 @inline linearkernel(z::T, a::T, c::T) where {T<:AbstractFloat} = a*z + c
 
-@inline pairwisefunction(::LinearKernel) = ScalarProduct()
+@inline basefunction(::LinearKernel) = ScalarProduct()
 @inline kappa(κ::LinearKernel{T}, z::T) where {T} = linearkernel(z, getvalue(κ.a), getvalue(κ.c))

@@ -21,5 +21,5 @@ struct PeriodicKernel{T<:AbstractFloat} <: MercerKernel{T}
 end
 PeriodicKernel(α::T1 = 1.0) where {T1<:Real} = PeriodicKernel{floattype(T1)}(α)
 
-@inline pairwisefunction(::PeriodicKernel) = SineSquared()
+@inline basefunction(::PeriodicKernel) = SineSquared()
 @inline kappa(κ::PeriodicKernel{T}, z::T) where {T} = squaredexponentialkernel(z, getvalue(κ.alpha))

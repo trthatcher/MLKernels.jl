@@ -19,5 +19,5 @@ PowerKernel(γ::T1 = 1.0) where {T1<:Real} = PowerKernel{floattype(T1)}(γ)
 
 @inline powerkernel(z::T, γ::T) where {T<:AbstractFloat} = z^γ
 
-@inline pairwisefunction(::PowerKernel) = SquaredEuclidean()
+@inline basefunction(::PowerKernel) = SquaredEuclidean()
 @inline kappa(κ::PowerKernel{T}, z::T) where {T} = powerkernel(z, getvalue(κ.gamma))

@@ -23,7 +23,7 @@ end
 
 @inline logkernel(z::T, α::T, γ::T) where {T<:AbstractFloat} = log(α*z^γ+1)
 
-@inline pairwisefunction(::LogKernel) = SquaredEuclidean()
+@inline basefunction(::LogKernel) = SquaredEuclidean()
 @inline function kappa(κ::LogKernel{T}, z::T) where {T}
     logkernel(z, getvalue(κ.alpha), getvalue(κ.gamma))
 end

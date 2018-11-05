@@ -3,7 +3,7 @@ using Test
 using MLKernels
 
 using MLKernels:
-    PairwiseFunction,
+    BaseFunction,
         InnerProduct,
             ScalarProduct,
         PreMetric,
@@ -28,8 +28,8 @@ include("reference.jl")
 include("HyperParameters/hyperparameter.jl")
 
 include("utils.jl")
-include("pairwisefunctions.jl")
-include("pairwisematrix.jl")
+include("basefunctions.jl")
+include("basematrix.jl")
 
 include("kernelfunctions.jl")
 include("kernelmatrix.jl")

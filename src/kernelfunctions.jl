@@ -12,8 +12,8 @@ function show(io::IO, κ::Kernel)
     print(io, string(κ))
 end
 
-function pairwisefunction(::Kernel)
-    error("No pairwise function specified for kernel")
+function basefunction(::Kernel)
+    error("No base function specified for kernel")
 end
 
 @inline eltype(::Type{<:Kernel{E}}) where {E} = E
@@ -33,8 +33,19 @@ ismercer(::Kernel) = false
 """
 isnegdef(::Kernel) = false
 
-isstationary(κ::Kernel) = isstationary(pairwisefunction(κ))
-isisotropic(κ::Kernel)  = isisotropic(pairwisefunction(κ))
+"""
+    isstationary(κ::Kernel)
+
+Returns `true` if the kernel `κ` is a stationary kernel; `false` otherwise.
+"""
+isstationary(κ::Kernel) = isstationary(basefunction(κ))
+
+"""
+    isisotropic(κ::Kernel)
+
+Returns `true` if the kernel `κ` is an isotropic kernel; `false` otherwise.
+"""
+isisotropic(κ::Kernel)  = isisotropic(basefunction(κ))
 
 thetafieldnames(κ::Kernel) = fieldnames(typeof(κ))
 
@@ -87,26 +98,26 @@ const mercer_kernels = [
     "exponentiated",
     "periodic"
     ]
-    
+
 for kname in mercer_kernels
-    include(joinpath("kernel", "mercer", "$(kname).jl"))
+    include(joinpath("kernelfunctions", "mercer", "$(kname).jl"))
 end
-    
-    
+
+
 # Negative Definite Kernels ================================================================
-    
+
 abstract type NegativeDefiniteKernel{T<:AbstractFloat} <: Kernel{T} end
 @inline isnegdef(::NegativeDefiniteKernel) = true
-    
+
 const negdef_kernels = [
     "power",
     "log"
 ]
 
 for kname in negdef_kernels
-    include(joinpath("kernel", "negativedefinite", "$(kname).jl"))
+    include(joinpath("kernelfunctions", "negativedefinite", "$(kname).jl"))
 end
-    
+
 
 # Other Kernels ============================================================================
 
@@ -115,9 +126,9 @@ const other_kernels = [
 ]
 
 for kname in other_kernels
-    include(joinpath("kernel", "$(kname).jl"))
+    include(joinpath("kernelfunctions", "$(kname).jl"))
 end
-        
+
 for κ in [
         ExponentialKernel,
         SquaredExponentialKernel,
@@ -135,13 +146,13 @@ for κ in [
     ]
     κ_sym = nameof(κ)
     κ_args = [:(getvalue(κ.$(θ))) for θ in fieldnames(κ)]
-    
+
     @eval begin
         function ==(κ1::$(κ_sym), κ2::$(κ_sym))
             mapreduce(θ -> getfield(κ1,θ) == getfield(κ2,θ), &, fieldnames(typeof(κ1)), init = true)
         end
     end
-            
+
     @eval begin
         function convert(::Type{$(κ_sym){T}}, κ::$(κ_sym)) where {T}
             $(Expr(:call, :($(κ_sym){T}), κ_args...))

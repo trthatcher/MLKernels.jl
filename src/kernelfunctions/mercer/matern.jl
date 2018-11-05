@@ -31,7 +31,7 @@ end
     2 * (v1/2)^(ν) * besselk(ν, v1) / gamma(ν)
 end
 
-@inline pairwisefunction(::MaternKernel) = SquaredEuclidean()
+@inline basefunction(::MaternKernel) = SquaredEuclidean()
 @inline function kappa(κ::MaternKernel{T}, z::T) where {T}
     maternkernel(z, getvalue(κ.nu), getvalue(κ.rho))
 end

@@ -28,8 +28,8 @@ for k in kernel_functions
         # Test Properties
         @test MLK.ismercer(K) == (typeof(K) <: MLK.MercerKernel ? true : false)
         @test MLK.isnegdef(K) == (typeof(K) <: MLK.NegativeDefiniteKernel ? true : false)
-        @test MLK.isstationary(K) == MLK.isstationary(MLK.pairwisefunction(K))
-        @test MLK.isisotropic(K) == MLK.isisotropic(MLK.pairwisefunction(K))
+        @test MLK.isstationary(K) == MLK.isstationary(MLK.basefunction(K))
+        @test MLK.isisotropic(K) == MLK.isisotropic(MLK.basefunction(K))
 
         # Test Display
         @test eval(Meta.parse(string(K))) == K

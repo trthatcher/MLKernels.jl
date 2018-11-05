@@ -10,11 +10,11 @@ p = 5
         x_alt = rand(T == Float32 ? Float64 : Float32, p)
 
         for f in kernel_functions
-            P = (get(kernel_functions_pairwise, f, SquaredEuclidean))()
+            P = (get(kernel_functions_base, f, SquaredEuclidean))()
             F = convert(f{T}, (f)())
 
-            @test isapprox(MLK.kernel(F, x[1], y[1]), MLK.kappa(F, MLK.pairwise(P, x[1], y[1])))
-            @test isapprox(MLK.kernel(F, x, y),       MLK.kappa(F, MLK.pairwise(P, x, y)))
+            @test isapprox(MLK.kernel(F, x[1], y[1]), MLK.kappa(F, MLK.base_evaluate(P, x[1], y[1])))
+            @test isapprox(MLK.kernel(F, x, y),       MLK.kappa(F, MLK.base_evaluate(P, x, y)))
 
             z = MLK.kernel(F, x_alt[1], y[1])
             @test typeof(z) == T

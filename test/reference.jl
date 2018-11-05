@@ -1,27 +1,27 @@
 # Pairwise Function References
 
-pairwise_functions = (
+base_functions = (
     SquaredEuclidean,
     SineSquared,
     ChiSquared,
     ScalarProduct
 )
 
-pairwise_functions_initiate = Dict(
+base_functions_initiate = Dict(
     SquaredEuclidean => 0,
     SineSquared      => 0,
     ChiSquared       => 0,
     ScalarProduct    => 0
 )
 
-pairwise_functions_aggregate = Dict(
+base_functions_aggregate = Dict(
     SquaredEuclidean => (s,x,y) -> s + (x-y)^2,
     SineSquared      => (s,x,y) -> s + sin((x-y))^2,
     ChiSquared       => (s,x,y) -> x == y == 0 ? s : s + ((x-y)^2/(x+y)),
     ScalarProduct    => (s,x,y) -> s + x*y
 )
 
-pairwise_functions_return = Dict{DataType,Any}()
+base_functions_return = Dict{DataType,Any}()
 
 
 # Kernel Function References
@@ -79,7 +79,7 @@ kernel_functions_kappa = Dict(
 )
 
 
-kernel_functions_pairwise = Dict(
+kernel_functions_base = Dict(
     LinearKernel             => ScalarProduct,
     PolynomialKernel         => ScalarProduct,
     ExponentiatedKernel      => ScalarProduct,
@@ -88,7 +88,7 @@ kernel_functions_pairwise = Dict(
 )
 
 
-pairwise_functions_properties = Dict(
+base_functions_properties = Dict(
                        #|stnry |isotrop
     SineSquared      => (true,  false),
     ScalarProduct    => (false, false),

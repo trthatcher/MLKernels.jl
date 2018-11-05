@@ -2,14 +2,14 @@ import Base: @deprecate, depwarn
 
 abstract type MemoryLayout end
 
-struct ColumnMajor <: MemoryLayout 
+struct ColumnMajor <: MemoryLayout
     function ColumnMajor()
         depwarn("Use `Val(:col)` instead of `ColumnMajor()`", :ColumnMajor)
         new()
     end
 end
 
-struct RowMajor <: MemoryLayout 
+struct RowMajor <: MemoryLayout
     function RowMajor()
         depwarn("Use `Val(:row)` instead of `RowMajor()`", :RowMajor)
         new()

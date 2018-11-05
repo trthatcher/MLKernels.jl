@@ -18,5 +18,5 @@ ExponentiatedKernel(α::T1 = 1.0) where {T1<:Real} = ExponentiatedKernel{floatty
 
 @inline exponentiatedkernel(z::T, α::T) where {T<:AbstractFloat} = exp(α*z)
 
-@inline pairwisefunction(::ExponentiatedKernel) = ScalarProduct()
+@inline basefunction(::ExponentiatedKernel) = ScalarProduct()
 @inline kappa(κ::ExponentiatedKernel{T}, z::T) where {T} = exponentiatedkernel(z, getvalue(κ.alpha))

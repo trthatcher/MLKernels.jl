@@ -1,29 +1,29 @@
 # Pairwise Scalar & Vector Operation  ======================================================
 
-@inline pairwise_initiate(::PairwiseFunction, ::Type{T}) where {T} = zero(T)
-@inline pairwise_return(::PairwiseFunction, s::T) where {T} = s
+@inline base_initiate(::BaseFunction, ::Type{T}) where {T} = zero(T)
+@inline base_return(::BaseFunction, s::T) where {T} = s
 
-function pairwise(f::PairwiseFunction, x::T, y::T) where {T<:AbstractFloat}
-    pairwise_return(f, pairwise_aggregate(f, pairwise_initiate(f,T), x, y))
+function base_evaluate(f::BaseFunction, x::T, y::T) where {T<:AbstractFloat}
+    base_return(f, base_aggregate(f, base_initiate(f,T), x, y))
 end
 
 # Note: no checks, assumes length(x) == length(y) >= 1
-function unsafe_pairwise(
-        f::PairwiseFunction,
+function unsafe_base_evaluate(
+        f::BaseFunction,
         x::AbstractArray{T},
         y::AbstractArray{T}
     ) where {T<:AbstractFloat}
-    s = pairwise_initiate(f, T)
+    s = base_initiate(f, T)
     @simd for I in eachindex(x, y)
         @inbounds xi = x[I]
         @inbounds yi = y[I]
-        s = pairwise_aggregate(f, s, xi, yi)
+        s = base_aggregate(f, s, xi, yi)
     end
-    pairwise_return(f, s)
+    base_return(f, s)
 end
 
-function pairwise(
-        f::PairwiseFunction,
+function base_evaluate(
+        f::BaseFunction,
         x::AbstractArray{T},
         y::AbstractArray{T}
     ) where {T<:AbstractFloat}
@@ -32,7 +32,7 @@ function pairwise(
     elseif n == 0
         throw(DimensionMismatch("Arrays x and y must be at least of length 1."))
     end
-    unsafe_pairwise(f, x, y)
+    unsafe_base_evaluate(f, x, y)
 end
 
 
@@ -54,14 +54,14 @@ for orientation in (:row, :col)
             $(row_oriented ? :(view(X, i, :)) : :(view(X, :, i)))
         end
 
-        @inline function allocate_pairwisematrix(
+        @inline function allocate_basematrix(
                 ::Val{$(Meta.quot(orientation))},
                 X::AbstractMatrix{T}
             ) where {T<:AbstractFloat}
             Array{T}(undef, size(X,$dim_obs), size(X,$dim_obs))
         end
 
-        @inline function allocate_pairwisematrix(
+        @inline function allocate_basematrix(
                 ::Val{$(Meta.quot(orientation))},
                 X::AbstractMatrix{T},
                 Y::AbstractMatrix{T}
@@ -108,10 +108,10 @@ for orientation in (:row, :col)
     end
 end
 
-function pairwisematrix!(
+function basematrix!(
         σ::Orientation,
         P::Matrix{T},
-        f::PairwiseFunction,
+        f::BaseFunction,
         X::AbstractMatrix{T},
         symmetrize::Bool
     ) where {T<:AbstractFloat}
@@ -120,16 +120,16 @@ function pairwisematrix!(
         xj = subvector(σ, X, j)
         for i = 1:j
             xi = subvector(σ, X, i)
-            @inbounds P[i,j] = unsafe_pairwise(f, xi, xj)
+            @inbounds P[i,j] = unsafe_base_evaluate(f, xi, xj)
         end
     end
     symmetrize ? LinearAlgebra.copytri!(P, 'U', false) : P
 end
 
-function pairwisematrix!(
+function basematrix!(
         σ::Orientation,
         P::Matrix{T},
-        f::PairwiseFunction,
+        f::BaseFunction,
         X::AbstractMatrix{T},
         Y::AbstractMatrix{T},
     ) where {T<:AbstractFloat}
@@ -138,51 +138,51 @@ function pairwisematrix!(
         yj = subvector(σ, Y, j)
         for i = 1:n
             xi = subvector(σ, X, i)
-            @inbounds P[i,j] = unsafe_pairwise(f, xi, yj)
+            @inbounds P[i,j] = unsafe_base_evaluate(f, xi, yj)
         end
     end
     P
 end
 
 
-function pairwisematrix(
+function basematrix(
         σ::Orientation,
-        f::PairwiseFunction,
+        f::BaseFunction,
         X::AbstractMatrix{T},
         symmetrize::Bool = true
     ) where {T<:AbstractFloat}
-    pairwisematrix!(σ, allocate_pairwisematrix(σ, X), f, X, symmetrize)
+    basematrix!(σ, allocate_basematrix(σ, X), f, X, symmetrize)
 end
 
-function pairwisematrix(
-        f::PairwiseFunction,
+function basematrix(
+        f::BaseFunction,
         X::AbstractMatrix,
         symmetrize::Bool = true
     )
-    pairwisematrix(Val(:row), f, X, symmetrize)
+    basematrix(Val(:row), f, X, symmetrize)
 end
 
-function pairwisematrix(
+function basematrix(
         σ::Orientation,
-        f::PairwiseFunction,
+        f::BaseFunction,
         X::AbstractMatrix{T},
         Y::AbstractMatrix{T}
     ) where {T<:AbstractFloat}
-    pairwisematrix!(σ, allocate_pairwisematrix(σ, X, Y), f, X, Y)
+    basematrix!(σ, allocate_basematrix(σ, X, Y), f, X, Y)
 end
 
-function pairwisematrix(
-        f::PairwiseFunction,
+function basematrix(
+        f::BaseFunction,
         X::AbstractMatrix,
         Y::AbstractMatrix
     )
-    pairwisematrix(Val(:row), f, X, Y)
+    basematrix(Val(:row), f, X, Y)
 end
 
 
 # ScalarProduct using BLAS/Built-In methods ================================================
 
-@inline function pairwisematrix!(
+@inline function basematrix!(
         σ::Orientation,
         P::Matrix{T},
         f::ScalarProduct,
@@ -192,7 +192,7 @@ end
     gramian!(σ, P, X, symmetrize)
 end
 
-@inline function pairwisematrix!(
+@inline function basematrix!(
         σ::Orientation,
         P::Matrix{T},
         f::ScalarProduct,
@@ -247,7 +247,7 @@ function squared_distance!(
 end
 
 function fix_negatives!(
-        σ::Orientation, 
+        σ::Orientation,
         D::Matrix{T},
         X::Matrix{T},
         symmetrize::Bool,
@@ -261,7 +261,7 @@ function fix_negatives!(
         for i = 1:(j-1)
             if D[i,j] < ϵ
                 xi = subvector(σ, X, i)
-                D[i,j] = unsafe_pairwise(SquaredEuclidean(), xi, xj)
+                D[i,j] = unsafe_base_evaluate(SquaredEuclidean(), xi, xj)
             end
         end
     end
@@ -281,14 +281,14 @@ function fix_negatives!(
         for i = 1:n
             if D[i,j] < ϵ
                 xi = subvector(σ, X, i)
-                D[i,j] = unsafe_pairwise(SquaredEuclidean(), xi, yj)
+                D[i,j] = unsafe_base_evaluate(SquaredEuclidean(), xi, yj)
             end
         end
     end
     D
 end
 
-function pairwisematrix!(
+function basematrix!(
         σ::Orientation,
         P::Matrix{T},
         f::SquaredEuclidean,
@@ -302,7 +302,7 @@ function pairwisematrix!(
     symmetrize ? LinearAlgebra.copytri!(P, 'U') : P
 end
 
-function pairwisematrix!(
+function basematrix!(
         σ::Orientation,
         P::Matrix{T},
         f::SquaredEuclidean,

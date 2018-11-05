@@ -32,7 +32,7 @@ end
 
 @inline gammarationalkernel(z::T, α::T, β::T, γ::T) where {T<:AbstractFloat} = (1 + α*(z^γ))^(-β)
 
-@inline pairwisefunction(::GammaRationalKernel) = SquaredEuclidean()
+@inline basefunction(::GammaRationalKernel) = SquaredEuclidean()
 @inline function kappa(κ::GammaRationalKernel{T}, z::T) where {T}
     gammarationalkernel(z, getvalue(κ.alpha), getvalue(κ.beta), getvalue(κ.gamma))
 end

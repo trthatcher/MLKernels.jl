@@ -8,4 +8,4 @@ f(\mathbf{x}, \mathbf{y}) = \mathbf{x}^{\intercal}\mathbf{y}
 ```
 """
 struct ScalarProduct <: InnerProduct end
-@inline pairwise_aggregate(::ScalarProduct, s::T, x::T, y::T) where {T} = s + x*y
+@inline base_aggregate(::ScalarProduct, s::T, x::T, y::T) where {T} = s + x*y

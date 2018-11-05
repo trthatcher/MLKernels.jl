@@ -28,7 +28,7 @@ end
 
 @inline polynomialkernel(z::T, a::T, c::T, d::U) where {T<:AbstractFloat,U<:Integer} = (a*z + c)^d
 
-@inline pairwisefunction(::PolynomialKernel) = ScalarProduct()
+@inline basefunction(::PolynomialKernel) = ScalarProduct()
 @inline function kappa(κ::PolynomialKernel{T}, z::T) where {T}
     polynomialkernel(z, getvalue(κ.a), getvalue(κ.c), getvalue(κ.d))
 end

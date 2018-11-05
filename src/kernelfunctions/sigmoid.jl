@@ -24,7 +24,7 @@ end
 
 @inline sigmoidkernel(z::T, a::T, c::T) where {T<:AbstractFloat} = tanh(a*z + c)
 
-@inline pairwisefunction(::SigmoidKernel) = ScalarProduct()
+@inline basefunction(::SigmoidKernel) = ScalarProduct()
 @inline function kappa(κ::SigmoidKernel{T}, z::T) where {T}
     sigmoidkernel(z, getvalue(κ.a), getvalue(κ.c))
 end

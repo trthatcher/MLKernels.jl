@@ -1,7 +1,7 @@
 # Kernel Scalar & Vector Operation  ========================================================
 
 function kernel(κ::Kernel{T}, x::T, y::T) where {T<:AbstractFloat}
-    kappa(κ, pairwise(pairwisefunction(κ), x, y))
+    kappa(κ, base_evaluate(basefunction(κ), x, y))
 end
 
 function kernel(
@@ -9,7 +9,7 @@ function kernel(
         x::AbstractArray{T},
         y::AbstractArray{T}
     ) where {T<:AbstractFloat}
-    kappa(κ, pairwise(pairwisefunction(κ), x, y))
+    kappa(κ, base_evaluate(basefunction(κ), x, y))
 end
 
 
@@ -49,7 +49,7 @@ function kernelmatrix!(
         X::AbstractMatrix{T},
         symmetrize::Bool
     ) where {T<:AbstractFloat}
-    pairwisematrix!(σ, P, pairwisefunction(κ), X, false)
+    basematrix!(σ, P, basefunction(κ), X, false)
     symmetric_kappamatrix!(κ, P, symmetrize)
 end
 
@@ -66,7 +66,7 @@ function kernelmatrix!(
         X::AbstractMatrix{T},
         Y::AbstractMatrix{T}
     ) where {T<:AbstractFloat}
-    pairwisematrix!(σ, P, pairwisefunction(κ), X, Y)
+    basematrix!(σ, P, basefunction(κ), X, Y)
     kappamatrix!(κ, P)
 end
 
@@ -76,7 +76,7 @@ function kernelmatrix(
         X::AbstractMatrix{T},
         symmetrize::Bool = true
     ) where {T<:AbstractFloat}
-    symmetric_kappamatrix!(κ, pairwisematrix(σ, pairwisefunction(κ), X, false), symmetrize)
+    symmetric_kappamatrix!(κ, basematrix(σ, basefunction(κ), X, false), symmetrize)
 end
 
 function kernelmatrix(
@@ -85,7 +85,7 @@ function kernelmatrix(
         X::AbstractMatrix{T},
         Y::AbstractMatrix{T}
     ) where {T<:AbstractFloat}
-    kappamatrix!(κ, pairwisematrix(σ, pairwisefunction(κ), X, Y))
+    kappamatrix!(κ, basematrix(σ, basefunction(κ), X, Y))
 end
 
 
@@ -135,7 +135,7 @@ end
 """
     kernelmatrix([σ::Orientation,] κ::Kernel, X::Matrix, Y::Matrix)
 
-Calculate the pairwise matrix of `X` and `Y` with respect to kernel `κ`.
+Calculate the base matrix of `X` and `Y` with respect to kernel `κ`.
 """
 function kernelmatrix(
         σ::Orientation,
