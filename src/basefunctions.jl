@@ -1,0 +1,46 @@
+# Pairwise Functions =======================================================================
+
+abstract type BaseFunction end
+
+@inline isstationary(::BaseFunction) = false
+@inline isisotropic(::BaseFunction) = false
+
+
+# Inner Products ===========================================================================
+
+abstract type InnerProduct <: BaseFunction end
+
+const inner_products = [
+    "scalarproduct"
+]
+
+for fname in inner_products
+    include(joinpath("basefunctions", "$(fname).jl"))
+end
+
+
+# Pre-Metrics ==============================================================================
+
+abstract type PreMetric <: BaseFunction end
+
+const pre_metrics = [
+    "chisquared",
+    "sinesquared"
+]
+
+for fname in pre_metrics
+    include(joinpath("basefunctions", "$(fname).jl"))
+end
+
+
+# Metrics ==================================================================================
+
+abstract type Metric <: PreMetric end
+
+const metrics = [
+    "squaredeuclidean"
+]
+
+for fname in metrics
+    include(joinpath("basefunctions", "$(fname).jl"))
+end

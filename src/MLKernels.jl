@@ -25,56 +25,35 @@ export
     settheta!,
     checktheta,
 
-    # Pairwise Functions
-    PairwiseFunction,
-        InnerProduct,
-            ScalarProduct,
-        PreMetric,
-            ChiSquared,
-            SineSquared,
-            Metric,
-                SquaredEuclidean,
-
-    # Pairwise Function Properties
-    isstationary,
-    isisotropic,
-
     # Memory
     Orientation,
 
-    #MemoryLayout,
-    #RowMajor,
-    #ColumnMajor,
-
-    # Pairwise function evaluation
-    pairwise,
-    pairwisematrix,
-    pairwisematrix!,
-
-    # Kernel Function Type
+    # Kernel Functions
     Kernel,
-        MercerKernel,
-            ExponentialKernel,
-                LaplacianKernel,
-            SquaredExponentialKernel,
-                GaussianKernel,
-                RadialBasisKernel,
-            GammaExponentialKernel,
-            RationalQuadraticKernel,
-            GammaRationalKernel,
-            MaternKernel,
-            LinearKernel,
-            PolynomialKernel,
-            ExponentiatedKernel,
-            PeriodicKernel,
-        NegativeDefiniteKernel,
-            PowerKernel,
-            LogKernel,
-        SigmoidKernel,
+    MercerKernel,
+    ExponentialKernel,
+    LaplacianKernel,
+    SquaredExponentialKernel,
+    GaussianKernel,
+    RadialBasisKernel,
+    GammaExponentialKernel,
+    RationalQuadraticKernel,
+    GammaRationalKernel,
+    MaternKernel,
+    LinearKernel,
+    PolynomialKernel,
+    ExponentiatedKernel,
+    PeriodicKernel,
+    NegativeDefiniteKernel,
+    PowerKernel,
+    LogKernel,
+    SigmoidKernel,
 
     # Kernel Function Properties
     ismercer,
     isnegdef,
+    isstationary,
+    isisotropic,
 
     # Kernel Matrix
     kernel,
@@ -114,32 +93,26 @@ using MLKernels.HyperParameters:
 
 import MLKernels.HyperParameters: gettheta, checktheta, settheta!
 
-include("PairwiseFunctions/PairwiseFunctions.jl")
-using MLKernels.PairwiseFunctions:
+@doc raw"""
+    Orientation
 
-    # Pairwise Functions
-    PairwiseFunction,
-        InnerProduct,
-            ScalarProduct,
-        PreMetric,
-            ChiSquared,
-            SineSquared,
-            Metric,
-                SquaredEuclidean,
+Union of the two `Val` types representing the data matrix orientations:
 
-    # Data Orientation
-    Orientation,
+  1. `Val{:row}` identifies when observation vector corresponds to a row of the data matrix
+  2. `Val{:col}` identifies when each observation vector corresponds to a column of the data
+     matrix
+"""
+const Orientation = Union{Val{:row}, Val{:col}}
 
-    # Pairwise function evaluation
-    pairwise,
-    pairwisematrix,
-    pairwisematrix!
+include("utils.jl")
 
-import MLKernels.PairwiseFunctions: isstationary, isisotropic
+include("basefunctions.jl")
+include("basematrix.jl")
 
-include("kernels.jl")
+include("kernelfunctions.jl")
 include("kernelmatrix.jl")
 include("nystrom.jl")
+
 include("deprecated.jl")
 
 end # MLKernels
