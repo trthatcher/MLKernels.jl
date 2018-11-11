@@ -11,3 +11,7 @@ makedocs(
         "Kernel Theory" => "kernel-theory.md"
     ]
 )
+
+deploydocs(
+    repo = "github.com/trthatcher/MLKernels.jl.git"
+)
