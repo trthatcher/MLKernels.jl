@@ -64,10 +64,13 @@ kernel_functions_kappa = Dict(
     GammaExponentialKernel   => (z,α,γ)   -> exp(-α*z^γ),
     RationalQuadraticKernel  => (z,α,β)   -> (1 + α*z)^(-β),
     GammaRationalKernel      => (z,α,β,γ) -> (1 + α*z^γ)^(-β),
-    MaternKernel             => (z,ν,θ)   -> begin
-                                                v1 = sqrt(2*ν) * z / θ
-                                                v1 = v1 < eps(typeof(z)) ? eps(typeof(z)) : v1
-                                                2*(v1/2)^ν * besselk(ν,v1)/gamma(ν)
+    MaternKernel             => (z,ν,ρ)   -> begin
+                                                d = √(z)
+                                                T = typeof(z)
+                                                d = d < eps(T) ? eps(T) : d
+                                                tmp1 = √(2*ν)*d/ρ
+                                                tmp2 = 2^(1 - ν)
+                                                tmp2*(tmp1^ν)*besselk(ν, tmp1)/gamma(ν)
                                              end,
     LinearKernel             => (z,a,c)   -> (a*z+c),
     PolynomialKernel         => (z,a,c,d) -> (a*z+c)^d,
