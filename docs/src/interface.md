@@ -56,13 +56,13 @@ ismercer(::Kernel)
 isnegdef(::Kernel)
 isstationary(::Kernel)
 isisotropic(::Kernel)
-kernel(κ::Kernel{T}, x::Real, y::Real) where T
+kernel(::Kernel{T}, ::Real, ::Real) where T
 Orientation
-kernelmatrix(σ::Orientation, κ::Kernel{T}, X::AbstractMatrix{T1}, symmetrize::Bool = true) where {T,T1}
-kernelmatrix!(σ::Orientation, P::Matrix{T}, κ::Kernel{T}, X::AbstractMatrix{T}, symmetrize::Bool) where {T<:AbstractFloat}
-kernelmatrix!(σ::Orientation, P::Matrix{T}, κ::Kernel{T}, X::AbstractMatrix{T}, Y::AbstractMatrix{T}) where {T<:AbstractFloat}
-kernelmatrix(σ::Orientation, κ::Kernel{T}, X::AbstractMatrix{T1}, Y::AbstractMatrix{T2}) where {T,T1,T2}
-centerkernelmatrix!(K::Matrix{T}) where {T<:AbstractFloat}
+kernelmatrix(::Orientation, ::Kernel{T}, ::AbstractMatrix{T1}, symmetrize::Bool) where {T,T1}
+kernelmatrix!(::Orientation, ::Matrix{T}, ::Kernel{T}, ::AbstractMatrix{T}, symmetrize::Bool) where {T<:AbstractFloat}
+kernelmatrix(::Orientation, ::Kernel{T}, ::AbstractMatrix{T1}, ::AbstractMatrix{T2}) where {T,T1,T2}
+kernelmatrix!(::Orientation, ::Matrix{T}, ::Kernel{T}, ::AbstractMatrix{T}, Y::AbstractMatrix{T}) where {T<:AbstractFloat}
+centerkernelmatrix!(::Matrix{T}) where {T<:AbstractFloat}
 ```
 
 ## Approximation
@@ -96,4 +96,6 @@ for smaller ``\mathbf{K}``.
 
 ```@docs
 NystromFact
+nystrom
+kernelmatrix(::NystromFact{T}) where {T<:LinearAlgebra.BlasReal}
 ```

@@ -1,24 +1,18 @@
 # Machine Learning Kernels
 
-[![Documentation Status](https://readthedocs.org/projects/mlkernels/badge/?version=latest)](http://mlkernels.readthedocs.org/en/latest/?badge=latest)
-[![Build Status](https://travis-ci.org/trthatcher/MLKernels.jl.svg?branch=master)](https://travis-ci.org/trthatcher/MLKernels.jl)
-[![Coverage Status](https://coveralls.io/repos/trthatcher/MLKernels.jl/badge.svg)](https://coveralls.io/r/trthatcher/MLKernels.jl)
+_**MLKernels.jl** is a Julia package that provides a collection of common machine learning
+kernels and a set of methods to efficiently compute kernel matrices._
 
-#### Summary
+| **Package Status** | **Build Status**  |
+|:------------------:|:-----------------:|
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE.md) [![Dev Documentation](https://img.shields.io/badge/docs-dev-blue.svg)](https://trthatcher.github.io/MLKernels.jl/dev)|[![Build Status](https://travis-ci.org/trthatcher/MLKernels.jl.svg?branch=master)](https://travis-ci.org/trthatcher/MLKernels.jl) [![Coverage Status](https://coveralls.io/repos/trthatcher/MLKernels.jl/badge.svg)](https://coveralls.io/r/trthatcher/MLKernels.jl)
 
-**MLKernels.jl** is a Julia package for Mercer kernel functions (or the
-covariance functions used in Gaussian processes) that are used in the kernel
-methods of machine learning. This package provides a flexible datatype for
-representing and constructing machine learning kernels as well as an efficient
-set of methods to compute or approximate kernel matrices. The package has no
-dependencies beyond base Julia.
 
-#### Documentation
+### Documentation
 
-Full [documentation](http://mlkernels.readthedocs.org/en/latest/) is available
-on **Read the Docs**.
+Read the full [documentation](https://trthatcher.github.io/MLKernels.jl/dev).
 
-#### Visualization
+### Visualization
 
 Through the use of kernel functions, kernel-based methods may operate in a high
 (potentially infinite) dimensional implicit feature space without explicitly

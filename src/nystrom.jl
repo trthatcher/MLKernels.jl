@@ -92,11 +92,16 @@ end
 function nystrom(
         κ::Kernel{T},
         X::Matrix{T},
-        S::Vector{U} = samplematrix(:row(), X, convert(T,0.15))
+        S::Vector{U} = samplematrix(:(row), X, convert(T,0.15))
     ) where {T<:LinearAlgebra.BlasReal,U<:Integer}
-    nystrom(:row(), κ, X, S)
+    nystrom(:(row), κ, X, S)
 end
 
+"""
+    nystrom(CᵀWC::NystromFact)
+
+Compute the approximate kernel matrix based on the Nystrom factorization.
+"""
 function kernelmatrix(CᵀWC::NystromFact{T}) where {T<:LinearAlgebra.BlasReal}
     W = CᵀWC.W
     C = CᵀWC.C

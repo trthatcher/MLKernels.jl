@@ -1,4 +1,4 @@
-using Documenter, MLKernels
+using Documenter, MLKernels, LinearAlgebra
 
 makedocs(
     format = :html,
