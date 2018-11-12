@@ -121,7 +121,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "interface/#MLKernels.kernelmatrix-Union{Tuple{T1}, Tuple{T}, Tuple{Union{Val{:row}, Val{:col}},Kernel{T},AbstractArray{T1,2}}, Tuple{Union{Val{:row}, Val{:col}},Kernel{T},AbstractArray{T1,2},Bool}} where T1 where T",
+    "location": "interface/#MLKernels.kernelmatrix-Union{Tuple{T1}, Tuple{T}, Tuple{Union{Val{:row}, Val{:col}},Kernel{T},AbstractArray{T1,2},Bool}} where T1 where T",
     "page": "Interface",
     "title": "MLKernels.kernelmatrix",
     "category": "method",
@@ -137,19 +137,19 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "interface/#MLKernels.kernelmatrix!-Union{Tuple{T}, Tuple{Union{Val{:row}, Val{:col}},Array{T,2},Kernel{T},AbstractArray{T,2},AbstractArray{T,2}}} where T<:AbstractFloat",
-    "page": "Interface",
-    "title": "MLKernels.kernelmatrix!",
-    "category": "method",
-    "text": "kernelmatrix!(K::Matrix, σ::Orientation, κ::Kernel, X::Matrix, Y::Matrix)\n\nIn-place version of kernelmatrix where pre-allocated matrix K will be overwritten with the kernel matrix.\n\n\n\n\n\n"
-},
-
-{
     "location": "interface/#MLKernels.kernelmatrix-Union{Tuple{T2}, Tuple{T1}, Tuple{T}, Tuple{Union{Val{:row}, Val{:col}},Kernel{T},AbstractArray{T1,2},AbstractArray{T2,2}}} where T2 where T1 where T",
     "page": "Interface",
     "title": "MLKernels.kernelmatrix",
     "category": "method",
     "text": "kernelmatrix([σ::Orientation,] κ::Kernel, X::Matrix, Y::Matrix)\n\nCalculate the base matrix of X and Y with respect to kernel κ.\n\n\n\n\n\n"
+},
+
+{
+    "location": "interface/#MLKernels.kernelmatrix!-Union{Tuple{T}, Tuple{Union{Val{:row}, Val{:col}},Array{T,2},Kernel{T},AbstractArray{T,2},AbstractArray{T,2}}} where T<:AbstractFloat",
+    "page": "Interface",
+    "title": "MLKernels.kernelmatrix!",
+    "category": "method",
+    "text": "kernelmatrix!(K::Matrix, σ::Orientation, κ::Kernel, X::Matrix, Y::Matrix)\n\nIn-place version of kernelmatrix where pre-allocated matrix K will be overwritten with the kernel matrix.\n\n\n\n\n\n"
 },
 
 {
@@ -165,7 +165,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Interface",
     "title": "Essentials",
     "category": "section",
-    "text": "ismercer(::Kernel)\nisnegdef(::Kernel)\nisstationary(::Kernel)\nisisotropic(::Kernel)\nkernel(κ::Kernel{T}, x::Real, y::Real) where T\nOrientation\nkernelmatrix(σ::Orientation, κ::Kernel{T}, X::AbstractMatrix{T1}, symmetrize::Bool = true) where {T,T1}\nkernelmatrix!(σ::Orientation, P::Matrix{T}, κ::Kernel{T}, X::AbstractMatrix{T}, symmetrize::Bool) where {T<:AbstractFloat}\nkernelmatrix!(σ::Orientation, P::Matrix{T}, κ::Kernel{T}, X::AbstractMatrix{T}, Y::AbstractMatrix{T}) where {T<:AbstractFloat}\nkernelmatrix(σ::Orientation, κ::Kernel{T}, X::AbstractMatrix{T1}, Y::AbstractMatrix{T2}) where {T,T1,T2}\ncenterkernelmatrix!(K::Matrix{T}) where {T<:AbstractFloat}"
+    "text": "ismercer(::Kernel)\nisnegdef(::Kernel)\nisstationary(::Kernel)\nisisotropic(::Kernel)\nkernel(::Kernel{T}, ::Real, ::Real) where T\nOrientation\nkernelmatrix(::Orientation, ::Kernel{T}, ::AbstractMatrix{T1}, symmetrize::Bool) where {T,T1}\nkernelmatrix!(::Orientation, ::Matrix{T}, ::Kernel{T}, ::AbstractMatrix{T}, symmetrize::Bool) where {T<:AbstractFloat}\nkernelmatrix(::Orientation, ::Kernel{T}, ::AbstractMatrix{T1}, ::AbstractMatrix{T2}) where {T,T1,T2}\nkernelmatrix!(::Orientation, ::Matrix{T}, ::Kernel{T}, ::AbstractMatrix{T}, Y::AbstractMatrix{T}) where {T<:AbstractFloat}\ncenterkernelmatrix!(::Matrix{T}) where {T<:AbstractFloat}"
 },
 
 {
@@ -177,11 +177,27 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
+    "location": "interface/#MLKernels.nystrom",
+    "page": "Interface",
+    "title": "MLKernels.nystrom",
+    "category": "function",
+    "text": "nystrom([σ::Orientation,] κ::Kernel, X::Matrix, [S::Vector])\n\nComputes a factorization of Nystrom approximation of the square kernel matrix of data matrix X with respect to kernel κ. Returns a NystromFact struct which stores a Nystrom factorization satisfying:\n\nmathbfK approx mathbfC^intercalmathbfWC\n\n\n\n\n\n"
+},
+
+{
+    "location": "interface/#MLKernels.kernelmatrix-Union{Tuple{NystromFact{T}}, Tuple{T}} where T<:Union{Float32, Float64}",
+    "page": "Interface",
+    "title": "MLKernels.kernelmatrix",
+    "category": "method",
+    "text": "nystrom(CᵀWC::NystromFact)\n\nCompute the approximate kernel matrix based on the Nystrom factorization.\n\n\n\n\n\n"
+},
+
+{
     "location": "interface/#Approximation-1",
     "page": "Interface",
     "title": "Approximation",
     "category": "section",
-    "text": "In many cases, fast, approximate results is more important than a perfect result. The Nystrom method can be used to generate a factorization that can be used to approximate a large, symmetric kernel matrix. Given data matrix mathbfX in mathbbR^n times p (one observation per row) and kernel matrix mathbfK in mathbbR^n times n, the Nystrom method takes a sample S of the observations of mathbfX of size s  n and generates a factorization such that:mathbfK approx mathbfC^intercalmathbfWCWhere mathbfW is the s times s pseudo-inverse of the sample kernel matrix based on S and mathbfC is a s times n matrix.The Nystrom method uses an eigendecomposition of the sample kernel matrix of mathbfX to estimate mathbfK. Generally, the order of mathbfK must be quite large and the sampling ratio small (ex. 15% or less) for the cost of the computing the full kernel matrix to exceed that of the eigendecomposition. This method will be more effective for kernels that are not a direct function of the dot product as they are not able to make use of BLAS in computing the full matrix mathbfK and the cross-over point will occur for smaller mathbfK.MLKernels.jl implements the Nystrom approximation:NystromFact"
+    "text": "In many cases, fast, approximate results is more important than a perfect result. The Nystrom method can be used to generate a factorization that can be used to approximate a large, symmetric kernel matrix. Given data matrix mathbfX in mathbbR^n times p (one observation per row) and kernel matrix mathbfK in mathbbR^n times n, the Nystrom method takes a sample S of the observations of mathbfX of size s  n and generates a factorization such that:mathbfK approx mathbfC^intercalmathbfWCWhere mathbfW is the s times s pseudo-inverse of the sample kernel matrix based on S and mathbfC is a s times n matrix.The Nystrom method uses an eigendecomposition of the sample kernel matrix of mathbfX to estimate mathbfK. Generally, the order of mathbfK must be quite large and the sampling ratio small (ex. 15% or less) for the cost of the computing the full kernel matrix to exceed that of the eigendecomposition. This method will be more effective for kernels that are not a direct function of the dot product as they are not able to make use of BLAS in computing the full matrix mathbfK and the cross-over point will occur for smaller mathbfK.MLKernels.jl implements the Nystrom approximation:NystromFact\nnystrom\nkernelmatrix(::NystromFact{T}) where {T<:LinearAlgebra.BlasReal}"
 },
 
 {
