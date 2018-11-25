@@ -2,10 +2,10 @@
 
 abstract type Kernel{T<:AbstractFloat} end
 
-function string(κ::Kernel)
-    args = [string(getvalue(getfield(κ,θ))) for θ in fieldnames(typeof(κ))]
+function string(κ::Kernel{T}) where {T}
+    args = [string(getfield(κ,θ)) for θ in fieldnames(typeof(κ))]
     kernelname = typeof(κ).name.name
-    string(kernelname, "(", join(args, ","), ")")
+    string(kernelname, "{", string(T), "}(", join(args, ","), ")")
 end
 
 function show(io::IO, κ::Kernel)
@@ -47,34 +47,6 @@ Returns `true` if the kernel `κ` is an isotropic kernel; `false` otherwise.
 """
 isisotropic(κ::Kernel)  = isisotropic(basefunction(κ))
 
-thetafieldnames(κ::Kernel) = fieldnames(typeof(κ))
-
-gettheta(κ::Kernel{T}) where {T} = T[gettheta(getfield(κ,θ)) for θ in thetafieldnames(κ)]
-
-function settheta!(κ::Kernel{T},v::Vector{T}) where {T}
-    fields = thetafieldnames(κ)
-    if length(fields) != length(v)
-        throw(DimensionMismatch("Update vector has invalid length"))
-    end
-    for i in eachindex(fields)
-        settheta!(getfield(κ, fields[i]), v[i])
-    end
-    return κ
-end
-
-function checktheta(κ::Kernel{T},v::Vector{T}) where {T}
-    fields = thetafieldnames(κ)
-    if length(fields) != length(v)
-        throw(DimensionMismatch("Update vector has invalid length"))
-    end
-    for i in eachindex(fields)
-        if !checktheta(getfield(κ, fields[i]), v[i])
-            return false
-        end
-    end
-    return true
-end
-
 function floattype(T_i::DataType...)
     T_max = promote_type(T_i...)
     T_max <: AbstractFloat ? T_max : Float64
@@ -88,16 +60,16 @@ abstract type MercerKernel{T<:AbstractFloat} <: Kernel{T} end
 
 const mercer_kernels = [
     "exponential",
-    "squaredexponential",
-    "gammaexponential",
-    "rationalquadratic",
-    "gammarational",
-    "matern",
-    "linear",
-    "polynomial",
     "exponentiated",
-    "periodic"
-    ]
+    "gammaexponential"#,
+    #"squaredexponential",
+    #"rationalquadratic",
+    #"gammarational",
+    #"matern",
+    #"linear",
+    #"polynomial",
+    #"periodic"
+]
 
 for kname in mercer_kernels
     include(joinpath("kernelfunctions", "mercer", "$(kname).jl"))
@@ -106,29 +78,30 @@ end
 
 # Negative Definite Kernels ================================================================
 
-abstract type NegativeDefiniteKernel{T<:AbstractFloat} <: Kernel{T} end
-@inline isnegdef(::NegativeDefiniteKernel) = true
-
-const negdef_kernels = [
-    "power",
-    "log"
-]
-
-for kname in negdef_kernels
-    include(joinpath("kernelfunctions", "negativedefinite", "$(kname).jl"))
-end
+#abstract type NegativeDefiniteKernel{T<:AbstractFloat} <: Kernel{T} end
+#@inline isnegdef(::NegativeDefiniteKernel) = true
+#
+#const negdef_kernels = [
+#    "power",
+#    "log"
+#]
+#
+#for kname in negdef_kernels
+#    include(joinpath("kernelfunctions", "negativedefinite", "$(kname).jl"))
+#end
 
 
 # Other Kernels ============================================================================
 
-const other_kernels = [
-    "sigmoid"
-]
+#const other_kernels = [
+#    "sigmoid"
+#]
+#
+#for kname in other_kernels
+#    include(joinpath("kernelfunctions", "$(kname).jl"))
+#end
 
-for kname in other_kernels
-    include(joinpath("kernelfunctions", "$(kname).jl"))
-end
-
+#=
 for κ in [
         ExponentialKernel,
         SquaredExponentialKernel,
@@ -169,3 +142,4 @@ for κ in [
         κs = supertype(κs)
     end
 end
+=#

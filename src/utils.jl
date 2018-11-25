@@ -1,3 +1,18 @@
+# Check Arguments Macro ====================================================================
+
+macro check_args(K, param, cond, desc=string(cond))
+    quote
+        if !($(esc(cond)))
+            throw(ArgumentError(string(
+                $(string(K)), ": ", $(string(param)), " = ", $(esc(param)), " does not ",
+                "satisfy the constraint ", $(string(desc)), ".")))
+        end
+    end
+end
+
+
+# Common Functions =========================================================================
+
 for orientation in (:row, :col)
 
     row_oriented = orientation == :row

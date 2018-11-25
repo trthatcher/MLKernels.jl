@@ -1,22 +1,34 @@
 @doc raw"""
-    ExponentiatedKernel([a=1])
+    ExponentiatedKernel([α=1])
 
 The exponentiated kernel is a Mercer kernel given by:
 
 ```math
-\kappa(\mathbf{x},\mathbf{y}) = \exp\left(a \mathbf{x}^\intercal \mathbf{y} \right) 
+\kappa(\mathbf{x},\mathbf{y}) = \exp\left(a \mathbf{x}^\intercal \mathbf{y} \right)
 \qquad a > 0
+```
+
+# Examples
+
+```jldoctest; setup = :(using MLKernels)
+julia> ExponentiatedKernel()
+ExponentiatedKernel{Float64}(1.0)
+
+julia> ExponentiatedKernel(2)
+ExponentiatedKernel{Float64}(2.0)
+
+julia> ExponentiatedKernel(2.0f0)
+ExponentiatedKernel{Float32}(2.0)
 ```
 """
 struct ExponentiatedKernel{T<:AbstractFloat} <: MercerKernel{T}
-    alpha::HyperParameter{T}
-    ExponentiatedKernel{T}(α::Real) where {T<:AbstractFloat} = new{T}(
-        HyperParameter(convert(T,α), interval(OpenBound(zero(T)), nothing))
-    )
+    α::T
+    function ExponentiatedKernel{T}(α::Real) where {T<:AbstractFloat}
+        @check_args(ExponentiatedKernel, α, α > zero(T), "α > 0")
+        return new{T}(α)
+    end
 end
-ExponentiatedKernel(α::T1 = 1.0) where {T1<:Real} = ExponentiatedKernel{floattype(T1)}(α)
-
-@inline exponentiatedkernel(z::T, α::T) where {T<:AbstractFloat} = exp(α*z)
+ExponentiatedKernel(α::T = 1.0) where {T<:Real} = ExponentiatedKernel{floattype(T)}(α)
 
 @inline basefunction(::ExponentiatedKernel) = ScalarProduct()
-@inline kappa(κ::ExponentiatedKernel{T}, z::T) where {T} = exponentiatedkernel(z, getvalue(κ.alpha))
+@inline kappa(κ::ExponentiatedKernel{T}, xᵀy::T) where {T} = exp(κ.α*xᵀy)

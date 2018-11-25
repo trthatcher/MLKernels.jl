@@ -8,23 +8,6 @@ import Base: convert, eltype, print, show, string, ==, *, /, +, -, ^, exp, tanh
 
 export
 
-    # Hyper Parameters
-    Bound,
-        OpenBound,
-        ClosedBound,
-        NullBound,
-
-    Interval,
-    interval,
-
-    HyperParameter,
-    getvalue,
-    setvalue!,
-    checkvalue,
-    gettheta,
-    settheta!,
-    checktheta,
-
     # Memory
     Orientation,
 
@@ -71,28 +54,6 @@ using SpecialFunctions: besselk, gamma
 import LinearAlgebra
 import Statistics
 
-include("HyperParameters.jl")
-using MLKernels.HyperParameters:
-    Bound,
-        OpenBound,
-        ClosedBound,
-        NullBound,
-
-    Interval,
-    interval,
-
-    HyperParameter,
-    getvalue,
-    setvalue!,
-    checkvalue,
-    gettheta,
-    checktheta,
-    settheta!,
-    lowerboundtheta,
-    upperboundtheta
-
-import MLKernels.HyperParameters: gettheta, checktheta, settheta!
-
 @doc raw"""
     Orientation
 
@@ -112,7 +73,5 @@ include("basematrix.jl")
 include("kernelfunctions.jl")
 include("kernelmatrix.jl")
 include("nystrom.jl")
-
-include("deprecated.jl")
 
 end # MLKernels
