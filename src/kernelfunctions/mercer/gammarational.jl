@@ -41,4 +41,5 @@ end
 
 @inline basefunction(::GammaRationalKernel) = SquaredEuclidean()
 @inline kappa(κ::GammaRationalKernel{T,1}, d²::T) where {T} = one(T)/(one(T) + κ.α*d²)
+@inline kappa(κ::GammaRationalKernel{T,2}, d²::T) where {T} = (one(T) + κ.α*d²)^(-κ.β)
 @inline kappa(κ::GammaRationalKernel{T}  , d²::T) where {T} = (one(T) + κ.α*(d²^κ.γ))^(-κ.β)
