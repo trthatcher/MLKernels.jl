@@ -60,8 +60,8 @@ abstract type MercerKernel{T<:AbstractFloat} <: Kernel{T} end
 
 const mercer_kernels = [
     "exponential",
-    "exponentiated"
-    #"rationalquadratic",
+    "exponentiated",
+    "rationalquadratic"#,
     #"gammarational",
     #"matern",
     #"linear",

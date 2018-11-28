@@ -3,6 +3,7 @@
 | Kernel | Mercer | Negative Definite | Stationary | Isotropic |
 | --- | :-: | :-: | :-: | :-: |
 | [Exponential Kernel](#Exponential-Kernel-1) | ✓ | | ✓ | ✓ |
+| [Rational Quadratic Kernel](#Rational-Quadratic-Kernel-1) | ✓ | | ✓ | ✓ |
 | [Exponentiated Kernel](#Exponentiated-Kernel-1) | ✓ | | | |
 
 ## Exponential Kernel
@@ -15,15 +16,17 @@ RadialBasisKernel
 GammaExponentialKernel
 ```
 
+## Rational Quadratic Kernel
+```@docs
+RationalQuadraticKernel
+GammaRationalQuadraticKernel
+```
+
 ## Exponentiated Kernel
 ```@docs
 ExponentiatedKernel
 ```
 
-
-SquaredExponentialKernel
-RationalQuadraticKernel
-GammaRationalKernel
 MaternKernel
 LinearKernel
 PolynomialKernel

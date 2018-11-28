@@ -46,7 +46,7 @@ ExponentialKernel(α::T=1.0) where {T<:Real} = ExponentialKernel{floattype(T)}(�
 """
     LaplacianKernel([α=1])
 
-Alias for [`ExponentialKernel`](@ref)
+Alias for [`ExponentialKernel`](@ref).
 """
 const LaplacianKernel = ExponentialKernel
 
@@ -119,19 +119,20 @@ The ``\gamma``-exponential kernel is an isotropic Mercer kernel given by the for
 \qquad \alpha > 0, \; 0 < \gamma \leq 1
 ```
 where ``\alpha`` is a scaling parameter and ``\gamma`` is a shape parameter of the Euclidean
-distance. There are two special cases:
+distance. There are two special cases that should be used if ``\gamma`` is a fixed
+parameter:
 
-  1) ``\gamma = 1`` use [`ExponentialKernel`](@ref)
-  2) ``\gamma = 0.5``  use [`SquaredExponentialKernel`](@ref)
+  * When ``\gamma = 1``, use [`ExponentialKernel`](@ref)
+  * When ``\gamma = 0.5``,  use [`SquaredExponentialKernel`](@ref)
 
 # Examples
 
 ```jldoctest; setup = :(using MLKernels)
 julia> GammaExponentialKernel()
-GammaExponentialKernel{Float64}(1.0,0.5)
+GammaExponentialKernel{Float64}(1.0,1.0)
 
 julia> GammaExponentialKernel(2.0f0)
-GammaExponentialKernel{Float32}(2.0,0.5)
+GammaExponentialKernel{Float32}(2.0,1.0)
 
 julia> GammaExponentialKernel(2.0, 0.5)
 GammaExponentialKernel{Float64}(2.0,0.5)
@@ -146,9 +147,8 @@ struct GammaExponentialKernel{T<:AbstractFloat} <: AbstractExponentialKernel{T}
         return new{T}(α, γ)
     end
 end
-function GammaExponentialKernel(α::T₁ = 1.0, γ::T₂ = one(T₁)) where {T₁<:Real,T₂<:Real}
-    T = floattype(T₁, T₂)
-    return GammaExponentialKernel{T}(α, γ)
+function GammaExponentialKernel(α::T₁=1.0, γ::T₂=one(T₁)) where {T₁<:Real, T₂<:Real}
+    return GammaExponentialKernel{floattype(T₁, T₂)}(α, γ)
 end
 
 @inline kappa(κ::GammaExponentialKernel{T}, d²::T) where {T} = exp(-κ.α*d²^κ.γ)
