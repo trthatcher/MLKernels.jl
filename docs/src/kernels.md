@@ -2,8 +2,8 @@
 
 | Kernel | Mercer | Negative Definite | Stationary | Isotropic |
 | --- | :-: | :-: | :-: | :-: |
-| [Exponential Kernel](#Exponential-Kernel) | &check; | | &check; | &check; |
-| [Exponentiated Kernel](#Exponential-Kernel) | &check; | | | |
+| [Exponential Kernel](#Exponential-Kernel-1) | ✓ | | ✓ | ✓ |
+| [Exponentiated Kernel](#Exponentiated-Kernel-1) | ✓ | | | |
 
 ## Exponential Kernel
 ```@docs
