@@ -8,57 +8,149 @@
 
 ## Exponential Kernel
 
-The exponential kernel is an isotropic Mercer kernel of the form:
+**Exponential Kernel**
+
+The exponential kernel (see [`ExponentialKernel`](@ref)) is an isotropic Mercer kernel of
+the form:
 
 ```math
 \kappa(\mathbf{x},\mathbf{y})
-= \exp\left(-\alpha ||\mathbf{x} - \mathbf{y}||^{\gamma}\right)
+= \exp\left(-\alpha ||\mathbf{x} - \mathbf{y}||\right)
+\qquad \alpha > 0
+```
+where ``\alpha`` is a positive scaling parameter of the Euclidean distance. This kernel may
+also be referred to as the Laplacian kernel (see [`LaplacianKernel`](@ref)).
+
+**Squared-Exponential Kernel**
+
+A similar form of the exponential kernel squares the Euclidean distance:
+
+```math
+\kappa(\mathbf{x},\mathbf{y})
+= \exp\left(-\alpha ||\mathbf{x} - \mathbf{y}||^2\right)
+\qquad \alpha > 0
+```
+In this case, the kernel is often referred to as the squared exponential kernel (see
+[`SquaredExponentialKernel`](@ref)) or the Gaussian kernel (see [`GaussianKernel`](@ref)).
+
+**``\gamma``-Exponential Kernel**
+
+Both the exponential and the squared exponential kernels are specific cases of the more
+general ``\gamma``-exponential kernel:
+
+```math
+\kappa(\mathbf{x},\mathbf{y})
+= \exp\left(-\alpha ||\mathbf{x} - \mathbf{y}||^{2\gamma}\right)
 \qquad \alpha > 0, \;\; 0 < \gamma \leq 1
 ```
-where ``\alpha`` is a positive scaling parameter and ``\gamma`` is a positive shape
-parameter of the Euclidean distance with a maximum of 1. When ``\gamma`` is not a fixed
-parameter, the kernel is referred to as the ``\gamma``-exponential kernel in this package.
+where ``\gamma`` is an additional shape parameter of the Euclidean distance.
 
-It is common to use ``\gamma = 1``. In this case, the kernel is typically referred to as
-the squared exponential covariance function in the context of Gaussian Processes or the
-Gaussian kernel (see [`GaussianKernel`](@ref)) in other applications. In machine learning
-circles, it may also be known as the radial basis kernel (see [`RadialBasisKernel`](@ref)).
-
-When ``\gamma = 1``, this kernel may also be referred to as the exponential covariance
-function or the Laplacian kernel (see [`LaplacianKernel`](@ref)).
+### Interface
 
 ```@docs
 ExponentialKernel
-LaplacianKernel
 SquaredExponentialKernel
+GammaExponentialKernel
+LaplacianKernel
 GaussianKernel
 RadialBasisKernel
-GammaExponentialKernel
 ```
 
-## Rational Quadratic Kernel
+## Rational-Quadratic Kernel
+
+**Rational-Quadratic Kernel**
+
+The rational-quadratic kernel (see [`RationalQuadraticKernel`](@ref)) is an isotropic
+Mercer kernel given by the formula:
+
+```math
+\kappa(\mathbf{x},\mathbf{y})
+= \left(1 +\alpha ||\mathbf{x} - \mathbf{y}||^{2}\right)^{-\beta}
+\qquad \alpha > 0, \;\; \beta > 0
+```
+where ``\alpha`` is a positive scaling parameter and ``\beta`` is a shape parameter of the
+Euclidean distance.
+
+**``\gamma``-Rational-Quadratic Kernel**
+
+The rational-quadratic kernel is a special case with ``\gamma = 1`` of the more general
+``\gamma``-rational-quadratic kernel (see [`GammaRationalQuadraticKernel`](@ref)):
+
+```math
+\kappa(\mathbf{x},\mathbf{y})
+= \left(1 +\alpha ||\mathbf{x} - \mathbf{y}||^{2\gamma}\right)^{-\beta}
+\qquad \alpha > 0, \; \beta > 0, \; 0 < \gamma \leq 1
+```
+where ``\alpha`` is a scaling parameter, ``\beta`` is a shape parameter and ``\gamma`` is a
+shape parameter of the Euclidean distance.
+
+### Interface
 ```@docs
 RationalQuadraticKernel
 GammaRationalQuadraticKernel
 ```
 
 ## Exponentiated Kernel
+
+The exponentiated kernel (see [`ExponentiatedKernel`](@ref)) is a Mercer kernel given by:
+
+```math
+\kappa(\mathbf{x},\mathbf{y}) = \exp\left(a \mathbf{x}^\intercal \mathbf{y} \right)
+\qquad a > 0
+```
+
+where ``\alpha`` is a positive shape parameter.
+
+### Interface
 ```@docs
 ExponentiatedKernel
 ```
 
+## Matern Kernel
+
+The Matern kernel is a Mercer kernel given by:
+
+```math
+\kappa(\mathbf{x},\mathbf{y}) =
+\frac{1}{2^{\nu-1}\Gamma(\nu)}
+\left(\frac{\sqrt{2\nu}||\mathbf{x}-\mathbf{y}||}{\theta}\right)^{\nu}
+K_{\nu}\left(\frac{\sqrt{2\nu}||\mathbf{x}-\mathbf{y}||}{\theta}\right)
+```
+where ``\nu`` and ``\rho`` are positive shape parameters.
+
+### Interface
+```@docs
 MaternKernel
-LinearKernel
+```
+
+## Polynomial Kernel
+The polynomial kernel is a Mercer kernel given by:
+
+```math
+\kappa(\mathbf{x},\mathbf{y}) =
+(a \mathbf{x}^\intercal \mathbf{y} + c)^d
+\qquad \alpha > 0, \; c \geq 0, \; d \in \mathbb{Z}_{+}
+```
+where ``a`` is a positive scale paramer, ``c`` is a non-negative shape parameter and ``d``
+is a shape parameter that determines the degree of the resulting polynomial.
+
+### Interface
+```@docs
 PolynomialKernel
+```
+
+## Periodic Kernel
 PeriodicKernel
 
-## Negative Definite Kernels
+## Power Kernel
 ```@docs
 ```
 PowerKernel
+
+## Log Kernel
 LogKernel
 
-## Other Kernels
+## Sigmoid Kernel
 
 ```@docs
 ```

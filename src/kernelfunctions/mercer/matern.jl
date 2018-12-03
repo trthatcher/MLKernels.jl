@@ -1,17 +1,21 @@
 @doc raw"""
     MaternKernel([ν=1 [, θ=1]])
 
-The Matern kernel is a Mercer kernel given by:
+The Matern kernel is a Mercer kernel with parameters `ν > 0` and `ρ > 0`. See the published
+documentation for the full definition of the function.
 
-```math
-\kappa(\mathbf{x},\mathbf{y}) =
-\frac{1}{2^{\nu-1}\Gamma(\nu)}
-\left(\frac{\sqrt{2\nu}||\mathbf{x}-\mathbf{y}||}{\theta}\right)^{\nu}
-K_{\nu}\left(\frac{\sqrt{2\nu}||\mathbf{x}-\mathbf{y}||}{\theta}\right)
+# Examples
+
+```jldoctest; setup = :(using MLKernels)
+julia> MaternKernel()
+MaternKernel{Float64}(1.0,1.0)
+
+julia> MaternKernel(2.0f0)
+MaternKernel{Float32}(2.0,1.0)
+
+julia> MaternKernel(2.0f0, 2.0)
+MaternKernel{Float64}(2.0,2.0)
 ```
-
-where ``\Gamma`` is the gamma function, ``K_{\nu}`` is the modified Bessel function of the
-second kind, ``\nu > 0`` and ``\theta > 0``.
 """
 struct MaternKernel{T<:AbstractFloat} <: MercerKernel{T}
     ν::T
@@ -22,7 +26,7 @@ struct MaternKernel{T<:AbstractFloat} <: MercerKernel{T}
         return new{T}(ν, ρ)
     end
 end
-function MaternKernel(ν::T₁=1.0, ρ::T₂=one(T1)) where {T₁<:Real,T₂<:Real}
+function MaternKernel(ν::T₁=1.0, ρ::T₂=one(T₁)) where {T₁<:Real,T₂<:Real}
     MaternKernel{floattype(T₁, T₂)}(ν,ρ)
 end
 

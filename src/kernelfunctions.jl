@@ -47,11 +47,6 @@ Returns `true` if the kernel `κ` is an isotropic kernel; `false` otherwise.
 """
 isisotropic(κ::Kernel)  = isisotropic(basefunction(κ))
 
-function floattype(T_i::DataType...)
-    T_max = promote_type(T_i...)
-    T_max <: AbstractFloat ? T_max : Float64
-end
-
 
 # Mercer Kernels ===========================================================================
 
@@ -62,9 +57,9 @@ const mercer_kernels = [
     "exponential",
     "exponentiated",
     "rationalquadratic",
-    "matern"#,
+    "matern",
+    "polynomial"#,
     #"linear",
-    #"polynomial",
     #"periodic"
 ]
 

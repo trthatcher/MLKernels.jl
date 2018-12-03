@@ -11,16 +11,12 @@ abstract type AbstractExponentialKernel{T<:AbstractFloat} <: MercerKernel{T} end
 
 The exponential kernel is an isotropic Mercer kernel given by the formula:
 
-```math
-\kappa(\mathbf{x},\mathbf{y})
-= \exp\left(-\alpha ||\mathbf{x} - \mathbf{y}||\right)
-\qquad \alpha > 0
 ```
-where ``\alpha`` is a scaling parameter.
+    κ(x,y) = exp(α‖x-y‖)   α > 0
+```
 
-This kernel may also be referred to as the exponential covariance function or the Laplacian
-kernel (see [`LaplacianKernel`](@ref)). It is a special case of the more general
-``\gamma``-exponential kernel with ``\gamma = 0.5`` (see [`GammaExponentialKernel`](@ref)).
+where `α` is a positive scaling parameter. See also [`SquaredExponentialKernel`](@ref) for
+a related form of the kernel or [`GammaExponentialKernel`](@ref) for a generalization.
 
 # Examples
 
@@ -57,17 +53,12 @@ const LaplacianKernel = ExponentialKernel
 
 The squared exponential kernel is an isotropic Mercer kernel given by the formula:
 
-```math
-\kappa(\mathbf{x},\mathbf{y})
-= \exp\left(-\alpha ||\mathbf{x} - \mathbf{y}||^{2}\right)
-\qquad \alpha > 0
 ```
-where ``\alpha`` is a scaling parameter.
+    κ(x,y) = exp(α‖x-y‖²)   α > 0
+```
 
-This kernel may also be referred to as the squared exponential covariance function or the
-Gaussian kernel (see [`GaussianKernel`](@ref)). In machine learning circles, it may be known
-as the radial basis kernel (see RadialBasisKernel). It is a special case of the more general
-``\gamma``-exponential kernel with ``\gamma = 1`` (see [`GammaExponentialKernel`](@ref)).
+where `α` is a positive scaling parameter. See also [`ExponentialKernel`](@ref) for a
+related form of the kernel or [`GammaExponentialKernel`](@ref) for a generalization.
 
 # Examples
 
@@ -95,14 +86,14 @@ end
 """
     GaussianKernel([α=1])
 
-Alias for [`SquaredExponentialKernel`](@ref).
+Alias of [`SquaredExponentialKernel`](@ref).
 """
 const GaussianKernel = SquaredExponentialKernel
 
 """
     RadialBasisKernel([α=1])
 
-Alias for [`SquaredExponentialKernel`](@ref).
+Alias of [`SquaredExponentialKernel`](@ref).
 """
 const RadialBasisKernel = SquaredExponentialKernel
 
@@ -113,17 +104,12 @@ const RadialBasisKernel = SquaredExponentialKernel
 
 The ``\gamma``-exponential kernel is an isotropic Mercer kernel given by the formula:
 
-```math
-\kappa(\mathbf{x},\mathbf{y})
-= \exp\left(-\alpha ||\mathbf{x} - \mathbf{y}||^{\gamma}\right)
-\qquad \alpha > 0, \; 0 < \gamma \leq 1
 ```
-where ``\alpha`` is a scaling parameter and ``\gamma`` is a shape parameter of the Euclidean
-distance. There are two special cases that should be used if ``\gamma`` is a fixed
-parameter:
-
-  * When ``\gamma = 1``, use [`ExponentialKernel`](@ref)
-  * When ``\gamma = 0.5``,  use [`SquaredExponentialKernel`](@ref)
+    κ(x,y) = exp(α‖x-y‖²ᵞ)   α > 0, 0 < γ ≦ 1
+```
+where `α` is a scaling parameter and `γ` is a shape parameter of the Euclidean distance.
+When `γ = 1` use [`SquaredExponentialKernel`](@ref) and [`SquaredExponentialKernel`](@ref)
+when `γ = 0.5` since these are more efficient implementations.
 
 # Examples
 

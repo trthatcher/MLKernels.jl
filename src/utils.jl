@@ -10,6 +10,17 @@ macro check_args(K, param, cond, desc=string(cond))
     end
 end
 
+# Type Rules ===============================================================================
+
+function floattype(Tₖ::DataType...)
+    T = promote_type(Tₖ...)
+    return T <: AbstractFloat ? T : Float64
+end
+
+function inttype(Tₖ::DataType...)
+    T = promote_type(Tₖ...)
+    return T <: Integer ? T : Int64
+end
 
 # Common Functions =========================================================================
 

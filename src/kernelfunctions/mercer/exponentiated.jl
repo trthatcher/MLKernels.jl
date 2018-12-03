@@ -3,10 +3,10 @@
 
 The exponentiated kernel is a Mercer kernel given by:
 
-```math
-\kappa(\mathbf{x},\mathbf{y}) = \exp\left(a \mathbf{x}^\intercal \mathbf{y} \right)
-\qquad a > 0
 ```
+    κ(x,y) = exp(α⋅xᵀy)   α > 0
+```
+where `α` is a positive scaling parameter.
 
 # Examples
 

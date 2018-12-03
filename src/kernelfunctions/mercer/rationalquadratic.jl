@@ -10,15 +10,12 @@ abstract type AbstractRationalQuadraticKernel{T<:AbstractFloat} <: MercerKernel{
 
 The rational quadratic kernel is an isotropic Mercer kernel given by the formula:
 
-```math
-\kappa(\mathbf{x},\mathbf{y})
-= \left(1 +\alpha ||\mathbf{x} - \mathbf{y}||^{\gamma}\right)^{-\beta}
-\qquad \alpha > 0, \; \beta > 0, \; 0 < \gamma \leq 1
 ```
-where ``\alpha`` is a scaling parameter and ``\beta`` is a shape parameter.
-
-The rational quadratic kernel is a special of the more general ``\gamma``-rational
-quadratic kernel (see [`GammaRationalQuadraticKernel`](@ref)) with ``\gamma=1``.
+    κ(x,y) = (1 + α‖x-y‖²)⁻ᵝ   α > 0, β > 0
+```
+where `α` is a scaling parameter and `β` is a shape parameter. The rational quadratic
+kernel is a special of the more general gamma-rational-quadratic kernel (see
+[`GammaRationalQuadraticKernel`](@ref)) with `γ = 1`.
 
 # Examples
 
@@ -61,15 +58,14 @@ end
 @doc raw"""
     GammaRationalKernel([α [,β [,γ]]])
 
-The gamma-rational kernel is a generalization of the rational-quadratic kernel with an
-additional shape parameter:
+The gamma-rational-quadratic kernel is a generalization of the rational-quadratic kernel
+with an additional shape parameter `γ`:
 
-```math
-\kappa(\mathbf{x},\mathbf{y})
-= \left(1 +\alpha ||\mathbf{x} - \mathbf{y}||^{\gamma}\right)^{-\beta}
-\qquad \alpha > 0, \; \beta > 0, \; 0 < \gamma \leq 1
 ```
-where ``\alpha`` is a scaling parameter and ``\beta`` and ``\gamma`` are shape parameters.
+    κ(x,y) = (1 + α‖x-y‖²ᵞ)⁻ᵝ   α > 0, β > 0, 0 < γ ≦ 1
+```
+where ``\alpha`` is a scaling parameter, ``\beta`` is a shape parameter and ``\gamma`` is a
+shape parameter of the Euclidean distance.
 
 # Examples
 
