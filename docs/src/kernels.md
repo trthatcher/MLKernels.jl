@@ -81,8 +81,8 @@ The rational-quadratic kernel is a special case with ``\gamma = 1`` of the more 
 = \left(1 +\alpha ||\mathbf{x} - \mathbf{y}||^{2\gamma}\right)^{-\beta}
 \qquad \alpha > 0, \; \beta > 0, \; 0 < \gamma \leq 1
 ```
-where ``\alpha`` is a scaling parameter, ``\beta`` is a shape parameter and ``\gamma`` is a
-shape parameter of the Euclidean distance.
+where ``\alpha`` is a positive scaling parameter, ``\beta`` is a positive shape parameter
+and ``\gamma`` is a shape parameter of the Euclidean distance.
 
 ### Interface
 ```@docs
@@ -131,7 +131,7 @@ The polynomial kernel is a Mercer kernel given by:
 (a \mathbf{x}^\intercal \mathbf{y} + c)^d
 \qquad \alpha > 0, \; c \geq 0, \; d \in \mathbb{Z}_{+}
 ```
-where ``a`` is a positive scale paramer, ``c`` is a non-negative shape parameter and ``d``
+where ``a`` is a positive scale parameter, ``c`` is a non-negative shape parameter and ``d``
 is a shape parameter that determines the degree of the resulting polynomial.
 
 ### Interface
@@ -140,11 +140,22 @@ PolynomialKernel
 ```
 
 ## Periodic Kernel
+The periodic kernel is given by:
+
+```math
+\kappa(\mathbf{x},\mathbf{y}) =
+\exp\left(-\alpha \sum_{i=1}^n \sin(x_i - y_i)^2\right)
+\qquad \alpha > 0
+```
+where ``a`` is a positive scale parameter.
+
+### Interface
+```@docs
 PeriodicKernel
+```
 
 ## Power Kernel
-```@docs
-```
+
 PowerKernel
 
 ## Log Kernel

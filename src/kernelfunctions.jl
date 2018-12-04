@@ -58,9 +58,8 @@ const mercer_kernels = [
     "exponentiated",
     "rationalquadratic",
     "matern",
-    "polynomial"#,
-    #"linear",
-    #"periodic"
+    "polynomial",
+    "periodic"
 ]
 
 for kname in mercer_kernels

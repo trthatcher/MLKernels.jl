@@ -1,25 +1,30 @@
 @doc raw"""
-    PeriodicKernel([α=1 [,p=π]])
+    PeriodicKernel([α=1])
 
-The periodic kernel is given by:
+The periodic kernel is a mercer kernel with parameter `α > 0`. See the published
+documentation for the full definition of the function.
 
-```math
-\kappa(\mathbf{x},\mathbf{y}) =
-\exp\left(-\alpha \sum_{i=1}^n \sin(p(x_i - y_i))^2\right)
-\qquad p >0, \; \alpha > 0
+# Examples
+
+```jldoctest; setup = :(using MLKernels)
+julia> PeriodicKernel()
+PeriodicKernel{Float64}(1.0)
+
+julia> PeriodicKernel(2.0f0)
+PeriodicKernel{Float32}(2.0)
 ```
-
-where ``\mathbf{x}`` and ``\mathbf{y}`` are ``n`` dimensional vectors. The parameters ``p`` 
-and ``\alpha`` are scaling parameters for the periodicity and the magnitude, respectively. 
-This kernel is useful when data has periodicity to it.
 """
 struct PeriodicKernel{T<:AbstractFloat} <: MercerKernel{T}
-    alpha::HyperParameter{T}
-    PeriodicKernel{T}(α::Real) where {T<:AbstractFloat} = new{T}(
-        HyperParameter(convert(T,α), interval(OpenBound(zero(T)), nothing))
-    )
+    α::T
+    function PeriodicKernel{T}(α::Real) where {T<:AbstractFloat}
+        @check_args(PeriodicKernel, α, α > zero(α), "α > 0")
+        new{T}(α)
+    end
 end
-PeriodicKernel(α::T1 = 1.0) where {T1<:Real} = PeriodicKernel{floattype(T1)}(α)
+PeriodicKernel(α::T₁ = 1.0) where {T₁<:Real} = PeriodicKernel{floattype(T₁)}(α)
 
 @inline basefunction(::PeriodicKernel) = SineSquared()
-@inline kappa(κ::PeriodicKernel{T}, z::T) where {T} = squaredexponentialkernel(z, getvalue(κ.alpha))
+
+@inline function kappa(κ::PeriodicKernel{T}, z::T) where {T}
+    return exp(-κ.α*z)
+end
