@@ -69,17 +69,18 @@ end
 
 # Negative Definite Kernels ================================================================
 
-#abstract type NegativeDefiniteKernel{T<:AbstractFloat} <: Kernel{T} end
-#@inline isnegdef(::NegativeDefiniteKernel) = true
-#
-#const negdef_kernels = [
+abstract type NegativeDefiniteKernel{T<:AbstractFloat} <: Kernel{T} end
+
+@inline isnegdef(::NegativeDefiniteKernel) = true
+
+const negdef_kernels = [
+    "log"
 #    "power",
-#    "log"
-#]
-#
-#for kname in negdef_kernels
-#    include(joinpath("kernelfunctions", "negativedefinite", "$(kname).jl"))
-#end
+]
+
+for kname in negdef_kernels
+    include(joinpath("kernelfunctions", "negativedefinite", "$(kname).jl"))
+end
 
 
 # Other Kernels ============================================================================

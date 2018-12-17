@@ -155,11 +155,24 @@ PeriodicKernel
 ```
 
 ## Power Kernel
+The power kernel is given by:
 
 PowerKernel
 
 ## Log Kernel
+The log kernel is a negative definite kernel given by:
+
+```math
+\kappa(\mathbf{x},\mathbf{y}) =
+\log \left(1 + \alpha\|\mathbf{x} - \mathbf{y} \|^{2\gamma}\right)
+\qquad \alpha > 0, \; \gamma \in (0,1]
+```
+where ``\alpha`` is a positive scaling parameter and ``\gamma`` is a shape parameter.
+
+### Interface
+```@docs
 LogKernel
+```
 
 ## Sigmoid Kernel
 
