@@ -74,8 +74,8 @@ abstract type NegativeDefiniteKernel{T<:AbstractFloat} <: Kernel{T} end
 @inline isnegdef(::NegativeDefiniteKernel) = true
 
 const negdef_kernels = [
-    "log"
-#    "power",
+    "log",
+    "power"
 ]
 
 for kname in negdef_kernels

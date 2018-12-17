@@ -157,7 +157,17 @@ PeriodicKernel
 ## Power Kernel
 The power kernel is given by:
 
+```math
+\kappa(\mathbf{x},\mathbf{y}) =
+\|\mathbf{x} - \mathbf{y} \|^{2\gamma}
+\qquad \gamma \in (0,1]
+```
+where ``\gamma`` is a shape parameter of the Euclidean distance.
+
+### Interface
+```@docs
 PowerKernel
+```
 
 ## Log Kernel
 The log kernel is a negative definite kernel given by:
