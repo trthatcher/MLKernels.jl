@@ -85,13 +85,13 @@ end
 
 # Other Kernels ============================================================================
 
-#const other_kernels = [
-#    "sigmoid"
-#]
-#
-#for kname in other_kernels
-#    include(joinpath("kernelfunctions", "$(kname).jl"))
-#end
+const other_kernels = [
+    "sigmoid"
+]
+
+for kname in other_kernels
+    include(joinpath("kernelfunctions", "$(kname).jl"))
+end
 
 #=
 for κ in [

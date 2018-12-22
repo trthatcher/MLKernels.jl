@@ -1,30 +1,37 @@
 @doc raw"""
     SigmoidKernel([a=1 [,c=1]])
-    
-The Sigmoid Kernel is given by
 
-```math
-\kappa(\mathbf{x},\mathbf{y}) = 
-\tanh(a \mathbf{x}^\intercal \mathbf{y} + c) 
-\qquad \alpha > 0, \; c \geq 0
+The Sigmoid Kernel is given by:
 ```
-The sigmoid kernel is a not a true kernel, although it has been used in application. 
+    κ(x,y) = tanh(a⋅xᵀy + c)
+```
+
+# Examples
+
+```jldoctest; setup = :(using MLKernels)
+julia> SigmoidKernel()
+SigmoidKernel{Float64}(1.0,1.0)
+
+julia> SigmoidKernel(0.5f0)
+SigmoidKernel{Float32}(0.5,1.0)
+
+julia> SigmoidKernel(0.5f0, 0.5)
+SigmoidKernel{Float64}(0.5,0.5)
+```
 """
 struct SigmoidKernel{T<:AbstractFloat} <: Kernel{T}
-    a::HyperParameter{T}
-    c::HyperParameter{T}
-    SigmoidKernel{T}(a::Real, c::Real) where {T<:AbstractFloat} = new{T}(
-        HyperParameter(convert(T,a), interval(OpenBound(zero(T)),   nothing)),
-        HyperParameter(convert(T,c), interval(ClosedBound(zero(T)), nothing))
-    )
+    a::T
+    c::T
+    function SigmoidKernel{T}(a::Real, c::Real) where {T<:AbstractFloat}
+        @check_args(SigmoidKernel, a, a >  zero(T), "a > 0")
+        @check_args(SigmoidKernel, c, c >= zero(T), "c ≧ 0")
+        return new{T}(a, c)
+    end
 end
-function SigmoidKernel(a::T1 = 1.0, c::T2 = one(T1)) where {T1<:Real,T2<:Real}
-    SigmoidKernel{floattype(T1,T2)}(a,c)
+function SigmoidKernel(a::T₁ = 1.0, c::T₂ = one(T₁)) where {T₁<:Real,T₂<:Real}
+    SigmoidKernel{floattype(T₁,T₂)}(a,c)
 end
-
-@inline sigmoidkernel(z::T, a::T, c::T) where {T<:AbstractFloat} = tanh(a*z + c)
 
 @inline basefunction(::SigmoidKernel) = ScalarProduct()
-@inline function kappa(κ::SigmoidKernel{T}, z::T) where {T}
-    sigmoidkernel(z, getvalue(κ.a), getvalue(κ.c))
-end
+
+@inline kappa(κ::SigmoidKernel{T}, xᵀy::T) where {T} = tanh(κ.a*xᵀy + κ.c)
