@@ -1,32 +1,32 @@
-# Pairwise Function References
+# Base Function References
 
-base_functions = (
+const base_functions = (
     SquaredEuclidean,
     SineSquared,
     ChiSquared,
     ScalarProduct
 )
 
-base_functions_initiate = Dict(
+const base_functions_initiate = Dict(
     SquaredEuclidean => 0,
     SineSquared      => 0,
     ChiSquared       => 0,
     ScalarProduct    => 0
 )
 
-base_functions_aggregate = Dict(
+const base_functions_aggregate = Dict(
     SquaredEuclidean => (s,x,y) -> s + (x-y)^2,
     SineSquared      => (s,x,y) -> s + sin((x-y))^2,
     ChiSquared       => (s,x,y) -> x == y == 0 ? s : s + ((x-y)^2/(x+y)),
     ScalarProduct    => (s,x,y) -> s + x*y
 )
 
-base_functions_return = Dict{DataType,Any}()
+const base_functions_return = Dict{DataType,Any}()
 
 
 # Kernel Function References
 
-kernel_functions = (
+const kernel_functions = (
     ExponentialKernel,
     SquaredExponentialKernel,
     GammaExponentialKernel,
@@ -41,7 +41,7 @@ kernel_functions = (
     SigmoidKernel
 )
 
-kernel_functions_arguments = Dict(
+const kernel_functions_arguments = Dict(
     ExponentialKernel            => ((1.0,),        (2.0,)),
     SquaredExponentialKernel     => ((1.0,),        (2.0,)),
     GammaExponentialKernel       => ((1.0,1.0),     (2.0,0.5)),
@@ -56,7 +56,7 @@ kernel_functions_arguments = Dict(
     SigmoidKernel                => ((1.0,1.0),     (2.0,2.0))
 )
 
-kernel_functions_kappa = Dict(
+const kernel_functions_kappa = Dict(
     ExponentialKernel            => (z,α)     -> exp(-α*sqrt(z)),
     SquaredExponentialKernel     => (z,α)     -> exp(-α*z),
     GammaExponentialKernel       => (z,α,γ)   -> exp(-α*z^γ),
@@ -79,7 +79,7 @@ kernel_functions_kappa = Dict(
 )
 
 
-kernel_functions_base = Dict(
+const kernel_functions_base = Dict(
     PolynomialKernel         => ScalarProduct,
     ExponentiatedKernel      => ScalarProduct,
     PeriodicKernel           => SineSquared,
@@ -87,7 +87,7 @@ kernel_functions_base = Dict(
 )
 
 
-base_functions_properties = Dict(
+const base_functions_properties = Dict(
                        #|stnry |isotrop
     SineSquared      => (true,  false),
     ScalarProduct    => (false, false),

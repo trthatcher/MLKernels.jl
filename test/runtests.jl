@@ -25,7 +25,7 @@ MLK = MLKernels
 include("reference.jl")
 
 include("utils.jl")
-#include("basefunctions.jl")
+include("basefunctions.jl")
 #include("basematrix.jl")
 #
 #include("kernelfunctions.jl")
