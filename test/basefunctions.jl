@@ -47,10 +47,8 @@ function test_base_function(f)
     end
 end
 
-@testset "Testing Base Functions" begin
-    for f in base_functions
-        @testset "Testing $f" begin
-            test_base_function(f)
-        end
+for f in base_functions
+    @testset "Testing $f" begin
+        test_base_function(f)
     end
 end

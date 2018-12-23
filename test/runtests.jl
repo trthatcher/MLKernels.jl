@@ -18,15 +18,23 @@ using SpecialFunctions:
 import LinearAlgebra
 import Statistics
 
-FloatingPointTypes = (Float32, Float64)
-IntegerTypes = (Int32, Int64)
-MLK = MLKernels
+const FloatingPointTypes = (Float32, Float64)
+const IntegerTypes = (Int32, Int64)
+const MLK = MLKernels
 
 include("reference.jl")
 
-include("utils.jl")
-include("basefunctions.jl")
-#include("basematrix.jl")
+@testset "Testing utility functions" begin
+    include("utils.jl")
+end
+
+@testset "Testing BaseFunction types" begin
+    include("basefunctions.jl")
+end
+
+@testset "Testing BaseFunction scalar and matrix evaluation" begin
+    include("basematrix.jl")
+end
 #
 #include("kernelfunctions.jl")
 #include("kernelmatrix.jl")
