@@ -35,7 +35,9 @@ end
 @testset "Testing BaseFunction scalar and matrix evaluation" begin
     include("basematrix.jl")
 end
-#
-#include("kernelfunctions.jl")
+
+@testset "Testing Kernel types" begin
+    include("kernelfunctions.jl")
+end
 #include("kernelmatrix.jl")
 #include("nystrom.jl")

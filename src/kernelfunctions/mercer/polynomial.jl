@@ -27,11 +27,11 @@ struct PolynomialKernel{T<:AbstractFloat,U<:Integer} <: MercerKernel{T}
     function PolynomialKernel{T,U}(
             a::Real,
             c::Real,
-            d::Integer
+            d::Real
         ) where {T<:AbstractFloat,U<:Integer}
         @check_args(PolynomialKernel, a, a > zero(a), "a > 0")
         @check_args(PolynomialKernel, c, c >= zero(c), "c ≧ 0")
-        @check_args(PolynomialKernel, d, d >= one(d) && typeof(d) <: Integer, "d ∈ ℤ⁺")
+        @check_args(PolynomialKernel, d, d >= one(d) && d == trunc(d), "d ∈ ℤ⁺")
         return new{T,U}(a, c, d)
     end
 end
