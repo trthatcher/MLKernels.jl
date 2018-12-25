@@ -3,7 +3,7 @@
 
 The Power Kernel is a negative definite kernel given by:
 ```
-    κ(x,y) = ‖x-y‖²ᵞ   0 < γ ≦ 1
+    κ(x,y) = ‖x-y‖²ᵞ   γ ∈ (0,1]
 ```
 where `γ` is a shape parameter of the Euclidean distance.
 
@@ -20,11 +20,11 @@ PowerKernel{Float32}(0.5)
 struct PowerKernel{T<:AbstractFloat} <: NegativeDefiniteKernel{T}
     γ::T
     function PowerKernel{T}(γ::Real) where {T<:AbstractFloat}
-        @check_args(PowerKernel, γ, one(T) >= γ > zero(T), "1 ⩾ γ > 0")
+        @check_args(PowerKernel, γ, one(T) >= γ > zero(T), "γ ∈ (0,1]")
         new{T}(γ)
     end
 end
-PowerKernel(γ::T = 1.0) where {T<:Real} = PowerKernel{floattype(T)}(γ)
+PowerKernel(γ::T = 1.0) where {T<:Real} = PowerKernel{promote_float(T)}(γ)
 
 @inline basefunction(::PowerKernel) = SquaredEuclidean()
 

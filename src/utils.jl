@@ -12,12 +12,18 @@ end
 
 # Type Rules ===============================================================================
 
-function floattype(Tₖ::DataType...)
+function promote_float(Tₖ::DataType...)
+    if length(Tₖ) == 0
+        return Float64
+    end
     T = promote_type(Tₖ...)
     return T <: AbstractFloat ? T : Float64
 end
 
-function inttype(Tₖ::DataType...)
+function promote_int(Tₖ::DataType...)
+    if length(Tₖ) == 0
+        return Int64
+    end
     T = promote_type(Tₖ...)
     return T <: Integer ? T : Int64
 end

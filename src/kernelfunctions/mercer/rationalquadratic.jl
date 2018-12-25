@@ -44,9 +44,9 @@ struct RationalQuadraticKernel{T<:AbstractFloat} <: AbstractRationalQuadraticKer
 end
 function RationalQuadraticKernel(
         α::T₁=1.0,
-        β::T₂=one(floattype(T₁))
+        β::T₂=T₁(1)
     ) where {T₁<:Real, T₂<:Real}
-    RationalQuadraticKernel{floattype(T₁, T₂)}(α, β)
+    RationalQuadraticKernel{promote_float(T₁, T₂)}(α, β)
 end
 
 @inline function kappa(κ::RationalQuadraticKernel{T}, d²::T) where {T}
@@ -62,7 +62,7 @@ The gamma-rational-quadratic kernel is a generalization of the rational-quadrati
 with an additional shape parameter `γ`:
 
 ```
-    κ(x,y) = (1 + α‖x-y‖²ᵞ)⁻ᵝ   α > 0, β > 0, 0 < γ ≦ 1
+    κ(x,y) = (1 + α‖x-y‖²ᵞ)⁻ᵝ   α > 0, β > 0, γ ∈ (0,1]
 ```
 where ``\alpha`` is a scaling parameter, ``\beta`` is a shape parameter and ``\gamma`` is a
 shape parameter of the Euclidean distance.
@@ -94,16 +94,16 @@ struct GammaRationalQuadraticKernel{T<:AbstractFloat} <: AbstractRationalQuadrat
         ) where {T<:AbstractFloat}
         @check_args(GammaRationalQuadraticKernel, α, α > zero(T), "α > 0")
         @check_args(GammaRationalQuadraticKernel, β, β > zero(T), "β > 0")
-        @check_args(GammaRationalQuadraticKernel, γ, one(T) >= γ > zero(T), "1 ⩾ γ > 0")
+        @check_args(GammaRationalQuadraticKernel, γ, one(T) >= γ > zero(T), "γ ∈ (0,1]")
         return new{T}(α, β, γ)
     end
 end
 function GammaRationalQuadraticKernel(
         α::T₁ = 1.0,
-        β::T₂ = one(floattype(T₁)),
-        γ::T₃ = one(floattype(T₁, T₂))
+        β::T₂ = T₁(1),
+        γ::T₃ = one(promote_float(T₁, T₂))
     ) where {T₁<:Real, T₂<:Real, T₃<:Real}
-    GammaRationalQuadraticKernel{floattype(T₁, T₂, T₃)}(α, β, γ)
+    GammaRationalQuadraticKernel{promote_float(T₁,T₂,T₃)}(α, β, γ)
 end
 
 @inline function kappa(κ::GammaRationalQuadraticKernel{T}, d²::T) where {T}

@@ -28,7 +28,7 @@ struct ExponentiatedKernel{T<:AbstractFloat} <: MercerKernel{T}
         return new{T}(α)
     end
 end
-ExponentiatedKernel(α::T = 1.0) where {T<:Real} = ExponentiatedKernel{floattype(T)}(α)
+ExponentiatedKernel(α::T = 1.0) where {T<:Real} = ExponentiatedKernel{promote_float(T)}(α)
 
 @inline basefunction(::ExponentiatedKernel) = ScalarProduct()
 @inline kappa(κ::ExponentiatedKernel{T}, xᵀy::T) where {T} = exp(κ.α*xᵀy)

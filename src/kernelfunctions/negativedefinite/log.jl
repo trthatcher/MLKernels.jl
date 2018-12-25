@@ -4,7 +4,7 @@
 The Log Kernel is a negative definite kernel given by the formula:
 
 ```
-    κ(x,y) = log(1 + α‖x-y‖²ᵞ)   α > 0, 0 < γ ≦ 1
+    κ(x,y) = log(1 + α‖x-y‖²ᵞ)   α > 0, γ ∈ (0,1]
 ```
 where `α` is a scaling parameter and `γ` is a shape parameter of the Euclidean distance.
 
@@ -26,12 +26,12 @@ struct LogKernel{T<:AbstractFloat} <: NegativeDefiniteKernel{T}
     γ::T
     function LogKernel{T}(α::Real, γ::Real) where {T<:AbstractFloat}
         @check_args(LogKernel, α, α > zero(T), "α > 0")
-        @check_args(LogKernel, γ, one(T) >= γ > zero(T), "1 ⩾ γ > 0")
+        @check_args(LogKernel, γ, one(T) >= γ > zero(T), "γ ∈ (0,1]")
         return new{T}(α, γ)
     end
 end
-function LogKernel(α::T₁=1.0, γ::T₂=one(T₁)) where {T₁<:Real,T₂<:Real}
-    LogKernel{floattype(T₁,T₂)}(α, γ)
+function LogKernel(α::T₁=1.0, γ::T₂=T₁(1)) where {T₁<:Real,T₂<:Real}
+    LogKernel{promote_float(T₁,T₂)}(α, γ)
 end
 
 @inline basefunction(::LogKernel) = SquaredEuclidean()

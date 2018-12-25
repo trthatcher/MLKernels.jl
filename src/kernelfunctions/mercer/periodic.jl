@@ -21,7 +21,7 @@ struct PeriodicKernel{T<:AbstractFloat} <: MercerKernel{T}
         new{T}(α)
     end
 end
-PeriodicKernel(α::T₁ = 1.0) where {T₁<:Real} = PeriodicKernel{floattype(T₁)}(α)
+PeriodicKernel(α::T₁ = 1.0) where {T₁<:Real} = PeriodicKernel{promote_float(T₁)}(α)
 
 @inline basefunction(::PeriodicKernel) = SineSquared()
 

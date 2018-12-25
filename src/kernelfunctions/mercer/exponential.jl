@@ -35,7 +35,7 @@ struct ExponentialKernel{T<:AbstractFloat} <: AbstractExponentialKernel{T}
         return new{T}(α)
     end
 end
-ExponentialKernel(α::T=1.0) where {T<:Real} = ExponentialKernel{floattype(T)}(α)
+ExponentialKernel(α::T=1.0) where {T<:Real} = ExponentialKernel{promote_float(T)}(α)
 
 @inline kappa(κ::ExponentialKernel{T}, d²::T) where {T} = exp(-κ.α*√(d²))
 
@@ -78,7 +78,7 @@ struct SquaredExponentialKernel{T<:AbstractFloat} <: AbstractExponentialKernel{T
     end
 end
 function SquaredExponentialKernel(α::T=1.0) where {T<:Real}
-    return SquaredExponentialKernel{floattype(T)}(α)
+    return SquaredExponentialKernel{promote_float(T)}(α)
 end
 
 @inline kappa(κ::SquaredExponentialKernel{T}, d²::T) where {T} = exp(-κ.α*d²)
@@ -105,7 +105,7 @@ const RadialBasisKernel = SquaredExponentialKernel
 The ``\gamma``-exponential kernel is an isotropic Mercer kernel given by the formula:
 
 ```
-    κ(x,y) = exp(α‖x-y‖²ᵞ)   α > 0, 0 < γ ≦ 1
+    κ(x,y) = exp(α‖x-y‖²ᵞ)   α > 0, γ ∈ (0,1]
 ```
 where `α` is a scaling parameter and `γ` is a shape parameter of the Euclidean distance.
 When `γ = 1` use [`SquaredExponentialKernel`](@ref) and [`SquaredExponentialKernel`](@ref)
@@ -129,12 +129,12 @@ struct GammaExponentialKernel{T<:AbstractFloat} <: AbstractExponentialKernel{T}
     γ::T
     function GammaExponentialKernel{T}(α::Real, γ::Real) where {T<:AbstractFloat}
         @check_args(GammaExponentialKernel, α, α > zero(T), "α > 0")
-        @check_args(GammaExponentialKernel, γ, one(T) >= γ > zero(T), "1 ⩾ γ > 0")
+        @check_args(GammaExponentialKernel, γ, one(T) >= γ > zero(T), "γ ∈ (0,1]")
         return new{T}(α, γ)
     end
 end
-function GammaExponentialKernel(α::T₁=1.0, γ::T₂=one(T₁)) where {T₁<:Real, T₂<:Real}
-    return GammaExponentialKernel{floattype(T₁, T₂)}(α, γ)
+function GammaExponentialKernel(α::T₁=1.0, γ::T₂=T₁(1)) where {T₁<:Real, T₂<:Real}
+    return GammaExponentialKernel{promote_float(T₁,T₂)}(α, γ)
 end
 
 @inline kappa(κ::GammaExponentialKernel{T}, d²::T) where {T} = exp(-κ.α*d²^κ.γ)

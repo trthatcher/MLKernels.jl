@@ -28,8 +28,8 @@ struct SigmoidKernel{T<:AbstractFloat} <: Kernel{T}
         return new{T}(a, c)
     end
 end
-function SigmoidKernel(a::T₁ = 1.0, c::T₂ = one(T₁)) where {T₁<:Real,T₂<:Real}
-    SigmoidKernel{floattype(T₁,T₂)}(a,c)
+function SigmoidKernel(a::T₁ = 1.0, c::T₂ = T₁(1)) where {T₁<:Real,T₂<:Real}
+    SigmoidKernel{promote_float(T₁,T₂)}(a,c)
 end
 
 @inline basefunction(::SigmoidKernel) = ScalarProduct()
