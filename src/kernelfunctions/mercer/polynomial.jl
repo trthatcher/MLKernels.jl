@@ -35,6 +35,9 @@ struct PolynomialKernel{T<:AbstractFloat,U<:Integer} <: MercerKernel{T}
         return new{T,U}(a, c, d)
     end
 end
+function PolynomialKernel{T}(a::Real,c::Real,d::Real) where {T<:AbstractFloat}
+    return PolynomialKernel{T,promote_int()}(a, c, d)
+end
 function PolynomialKernel(
         a::T₁=1.0,
         c::T₂=T₁(1),

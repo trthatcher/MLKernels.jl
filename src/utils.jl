@@ -10,6 +10,34 @@ macro check_args(K, param, cond, desc=string(cond))
     end
 end
 
+# Default Conversions Macro
+
+macro default_kernel_convert(K)
+    θ = fieldnames(K)
+    T = [fieldtype(K, θₖ) for θₖ in θ]
+    conversions = Array{Expr}(undef, length(θ))
+    use_U = false
+    for i in eachindex(conversions)
+        T_U = T[i] == AbstractFloat ? :T : :U
+        use_U = T_U == :U ? true : use_U
+        conversions[i] = :($T_U(κ.$(θ[i])))
+    end
+    conversion_call = Expr(:call, Symbol(K), conversions...)
+    if use_U
+        quote
+            function convert(::Type{$(K){T,U}}, κ::$(K)) where {T,U}
+                return $conversion_call
+            end
+        end
+    else
+        quote
+            function convert(::Type{$(K){T}}, κ::$(K)) where {T}
+                return $conversion_call
+            end
+        end
+    end
+end
+
 # Type Rules ===============================================================================
 
 function promote_float(Tₖ::DataType...)
