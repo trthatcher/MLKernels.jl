@@ -16,6 +16,7 @@ for k in kernel_functions
                 for j = 1:length(alt_args)
                     @test getfield(K,j) == (j <= i ? alt_args[j] : default_args[j])
                 end
+                @test eltype(K) == T
             end
         end
 
@@ -26,16 +27,18 @@ for k in kernel_functions
             @test MLK.isisotropic(K) == MLK.isisotropic(MLK.basefunction(K))
         end
 
-        ## Test Conversions
-        #K = (k)()
-        #for psi in (Kernel, MercerKernel, NegativeDefiniteKernel)
-        #    if k <: psi
-        #        for T1 in FloatingPointTypes
-        #            T2 = T1 == Float64 ? Float32 : T1
-        #            @test eltype(convert(psi{T2},K)) == T2
-        #        end
-        #    end
-        #end
+        @testset "Testing conversions" begin
+            psi = k
+            while psi != Any
+                for T1 in FloatingPointTypes, T2 in FloatingPointTypes
+                    K1 = k{T1}()
+                    K2 = convert(psi{T2}, K1)
+                    @test eltype(K2) == T2
+                    @test isa(K2, k)
+                end
+                psi = supertype(psi)
+            end
+        end
 
         ## Test Display
         #@test eval(Meta.parse(string(K))) == K
