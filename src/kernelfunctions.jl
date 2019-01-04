@@ -51,6 +51,7 @@ isisotropic(κ::Kernel)  = isisotropic(basefunction(κ))
 # Mercer Kernels ===========================================================================
 
 abstract type MercerKernel{T<:AbstractFloat} <: Kernel{T} end
+
 @inline ismercer(::MercerKernel) = true
 
 const mercer_kernels = [
@@ -58,8 +59,7 @@ const mercer_kernels = [
     "exponentiated",
     "rationalquadratic",
     "matern",
-    "polynomial",
-    "periodic"
+    "polynomial"
 ]
 
 for kname in mercer_kernels
@@ -92,46 +92,3 @@ const other_kernels = [
 for kname in other_kernels
     include(joinpath("kernelfunctions", "$(kname).jl"))
 end
-
-#=
-for κ in [
-        ExponentialKernel,
-        SquaredExponentialKernel,
-        GammaExponentialKernel,
-        RationalQuadraticKernel,
-        GammaRationalKernel,
-        MaternKernel,
-        LinearKernel,
-        PolynomialKernel,
-        ExponentiatedKernel,
-        PeriodicKernel,
-        PowerKernel,
-        LogKernel,
-        SigmoidKernel
-    ]
-    κ_sym = nameof(κ)
-    κ_args = [:(getvalue(κ.$(θ))) for θ in fieldnames(κ)]
-
-    @eval begin
-        function ==(κ1::$(κ_sym), κ2::$(κ_sym))
-            mapreduce(θ -> getfield(κ1,θ) == getfield(κ2,θ), &, fieldnames(typeof(κ1)), init = true)
-        end
-    end
-
-    @eval begin
-        function convert(::Type{$(κ_sym){T}}, κ::$(κ_sym)) where {T}
-            $(Expr(:call, :($(κ_sym){T}), κ_args...))
-        end
-    end
-
-    κs = supertype(κ)
-    while κs != Any
-        @eval begin
-            function convert(::Type{$(nameof(κs)){T}}, κ::$(κ_sym)) where {T}
-                convert($(κ_sym){T}, κ)
-            end
-        end
-        κs = supertype(κs)
-    end
-end
-=#

@@ -35,7 +35,6 @@ const kernel_functions = (
     MaternKernel,
     PolynomialKernel,
     ExponentiatedKernel,
-    PeriodicKernel,
     PowerKernel,
     LogKernel,
     SigmoidKernel
@@ -50,7 +49,6 @@ const kernel_functions_arguments = Dict(
     MaternKernel                 => ((1.0,1.0),     (2.0,2.0)),
     PolynomialKernel             => ((1.0,1.0,3),   (2.0,2.0,2)),
     ExponentiatedKernel          => ((1.0,),        (2.0,)),
-    PeriodicKernel               => ((1.0,),        (2.0,)),
     PowerKernel                  => ((1.0,),        (0.5,)),
     LogKernel                    => ((1.0,1.0),     (2.0,0.5)),
     SigmoidKernel                => ((1.0,1.0),     (2.0,2.0))
@@ -72,7 +70,6 @@ const kernel_functions_kappa = Dict(
                                                 end,
     PolynomialKernel             => (z,a,c,d) -> (a*z+c)^d,
     ExponentiatedKernel          => (z,a)     -> exp(a*z),
-    PeriodicKernel               => (z,α)     -> exp(-α*z),
     PowerKernel                  => (z,γ)     -> z^γ,
     LogKernel                    => (z,α,γ)   -> log(α*z^γ+1),
     SigmoidKernel                => (z,a,c)   -> tanh(a*z+c)
@@ -82,7 +79,6 @@ const kernel_functions_kappa = Dict(
 const kernel_functions_base = Dict(
     PolynomialKernel         => ScalarProduct,
     ExponentiatedKernel      => ScalarProduct,
-    PeriodicKernel           => SineSquared,
     SigmoidKernel            => ScalarProduct
 )
 
