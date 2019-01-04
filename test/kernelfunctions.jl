@@ -13,7 +13,7 @@ for k in kernel_functions
 
             for T in FloatingPointTypes, i = 1:n
                 K = (k)([T(a) for a in alt_args[1:i]]...)
-                for j = 1:length(alt_args)
+                for j = 1:n
                     @test getfield(K,j) == (j <= i ? alt_args[j] : default_args[j])
                 end
                 @test eltype(K) == T
@@ -40,24 +40,24 @@ for k in kernel_functions
             end
         end
 
+        @testset "Testing kappa function" begin
+            f = get(kernel_functions_kappa, k, x->error(""))
+            args1, args2 = get(kernel_functions_arguments, k, ((), ()))
+            for i = 0:length(args1)
+                args = [j <= i ? args1[j] : args2[j] for j in eachindex(args1)]
+                for T in FloatingPointTypes
+                    K = k{T}(args...)
+                    for z in [T(0), T(1), T(2)]
+                        v1 = MLK.kappa(K, z)
+                        v2 = (f)(z, args...)
+                        @test isapprox(v1, v2)
+                    end
+                end
+            end
+        end
+
         ## Test Display
         #@test eval(Meta.parse(string(K))) == K
         #@test show(devnull, K) == nothing
     end
 end
-
-#@testset "Testing MLK.kappa" begin
-#    for k in kernel_functions
-#        k_tmp = get(kernel_functions_kappa, k, x->error(""))
-#        for T in FloatingPointTypes
-#            K = convert(Kernel{T}, (k)())
-#            args = T[MLK.getvalue(getfield(K,theta)) for theta in fieldnames(typeof(K))]
-#
-#            for z in (zero(T), one(T), convert(T,2))
-#                v = MLK.kappa(K, z)
-#                v_tmp = (k_tmp)(z, args...)
-#                @test isapprox(v, v_tmp)
-#            end
-#        end
-#    end
-#end
