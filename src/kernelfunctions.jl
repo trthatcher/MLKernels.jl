@@ -12,10 +12,6 @@ function show(io::IO, κ::Kernel)
     print(io, string(κ))
 end
 
-function basefunction(::Kernel)
-    error("No base function specified for kernel")
-end
-
 @inline eltype(::Type{<:Kernel{E}}) where {E} = E
 @inline eltype(κ::Kernel) = eltype(typeof(κ))
 

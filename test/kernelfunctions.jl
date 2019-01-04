@@ -56,8 +56,6 @@ for k in kernel_functions
             end
         end
 
-        ## Test Display
-        #@test eval(Meta.parse(string(K))) == K
-        #@test show(devnull, K) == nothing
+        @test show(devnull, K) == nothing
     end
 end
