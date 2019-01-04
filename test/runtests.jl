@@ -32,12 +32,15 @@ end
     include("basefunctions.jl")
 end
 
-@testset "Testing BaseFunction scalar and matrix evaluation" begin
+@testset "Testing base function evaluation" begin
     include("basematrix.jl")
 end
 
 @testset "Testing Kernel types" begin
     include("kernelfunctions.jl")
 end
-#include("kernelmatrix.jl")
+
+@testset "Testing kernel function evaluation" begin
+    include("kernelmatrix.jl")
+end
 #include("nystrom.jl")
