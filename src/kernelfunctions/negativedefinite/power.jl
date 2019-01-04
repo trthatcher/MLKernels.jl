@@ -29,3 +29,7 @@ PowerKernel(γ::T = 1.0) where {T<:Real} = PowerKernel{promote_float(T)}(γ)
 @inline basefunction(::PowerKernel) = SquaredEuclidean()
 
 @inline kappa(κ::PowerKernel{T}, d²::T) where {T} = d²^κ.γ
+
+function convert(::Type{K}, κ::PowerKernel) where {K>:PowerKernel{T}} where T
+    return PowerKernel{T}(κ.γ)
+end

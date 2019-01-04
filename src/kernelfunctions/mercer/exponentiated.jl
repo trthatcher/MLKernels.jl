@@ -23,12 +23,20 @@ ExponentiatedKernel{Float32}(2.0)
 """
 struct ExponentiatedKernel{T<:AbstractFloat} <: MercerKernel{T}
     α::T
-    function ExponentiatedKernel{T}(α::Real) where {T<:AbstractFloat}
+    function ExponentiatedKernel{T}(α::Real=T(1)) where {T<:AbstractFloat}
         @check_args(ExponentiatedKernel, α, α > zero(T), "α > 0")
         return new{T}(α)
     end
 end
-ExponentiatedKernel(α::T = 1.0) where {T<:Real} = ExponentiatedKernel{promote_float(T)}(α)
+ExponentiatedKernel(α::T=1.0) where {T<:Real} = ExponentiatedKernel{promote_float(T)}(α)
 
 @inline basefunction(::ExponentiatedKernel) = ScalarProduct()
+
 @inline kappa(κ::ExponentiatedKernel{T}, xᵀy::T) where {T} = exp(κ.α*xᵀy)
+
+function convert(
+        ::Type{K},
+        κ::ExponentiatedKernel
+    ) where {K>:ExponentiatedKernel{T}} where T
+    return ExponentiatedKernel{T}(κ.α)
+end

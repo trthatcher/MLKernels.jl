@@ -4,7 +4,7 @@
 The polynomial kernel is a Mercer kernel given by:
 
 ```
-    κ(x,y) = (αxᵀy + c)ᵈ   α > 0, c ≧ 0, d ∈ ℤ⁺
+    κ(x,y) = (a⋅xᵀy + c)ᵈ   α > 0, c ≧ 0, d ∈ ℤ⁺
 ```
 
 # Examples
@@ -20,37 +20,37 @@ julia> PolynomialKernel(2.0f0, 2.0, 2)
 PolynomialKernel{Float64}(2.0,2.0,2)
 ```
 """
-struct PolynomialKernel{T<:AbstractFloat,U<:Integer} <: MercerKernel{T}
+struct PolynomialKernel{T<:AbstractFloat} <: MercerKernel{T}
     a::T
     c::T
-    d::U
-    function PolynomialKernel{T,U}(
-            a::Real,
-            c::Real,
-            d::Real
-        ) where {T<:AbstractFloat,U<:Integer}
-        @check_args(PolynomialKernel, a, a > zero(a), "a > 0")
+    d::T
+    function PolynomialKernel{T}(
+            a::Real=T(1),
+            c::Real=T(1),
+            d::Real=T(3)
+        ) where {T<:AbstractFloat}
+        @check_args(PolynomialKernel, a, a >  zero(a), "a > 0")
         @check_args(PolynomialKernel, c, c >= zero(c), "c ≧ 0")
         @check_args(PolynomialKernel, d, d >= one(d) && d == trunc(d), "d ∈ ℤ₊")
-        return new{T,U}(a, c, d)
+        return new{T}(a, c, d)
     end
 end
-function PolynomialKernel{T}(a::Real,c::Real,d::Real) where {T<:AbstractFloat}
-    return PolynomialKernel{T,promote_int()}(a, c, d)
-end
+
 function PolynomialKernel(
         a::T₁=1.0,
         c::T₂=T₁(1),
-        d::U₁=3
-    ) where {T₁<:Real,T₂<:Real,U₁<:Real}
-    T = promote_float(T₁,T₂)
-    U = promote_int(U₁)
-    return PolynomialKernel{T,U}(a, c, d)
+        d::T₃=convert(promote_float(T₁,T₂), 3)
+    ) where {T₁<:Real,T₂<:Real,T₃<:Real}
+    T = promote_float(T₁,T₂,T₃)
+    return PolynomialKernel{T}(a, c, d)
 end
 
-@inline eltypes(::Type{<:PolynomialKernel{T,U}}) where {T,U} = (T,U)
-
 @inline basefunction(::PolynomialKernel) = ScalarProduct()
+
 @inline function kappa(κ::PolynomialKernel{T}, xᵀy::T) where {T}
     return (κ.a*xᵀy + κ.c)^(κ.d)
+end
+
+function convert(::Type{K}, κ::PolynomialKernel) where {K>:PolynomialKernel{T}} where T
+    return PolynomialKernel{T}(κ.a, κ.c, κ.d)
 end

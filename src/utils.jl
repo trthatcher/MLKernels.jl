@@ -10,33 +10,17 @@ macro check_args(K, param, cond, desc=string(cond))
     end
 end
 
-# Default Conversions Macro
+#macro default_kernel_convert(K)
+#    θ = fieldnames(eval(K))
+#    K_name = esc(K)
+#    conversion_call = Expr(:call, :($K_name{T}), [:(κ.$θₖ) for θₖ in θ]...)
+#    return quote
+#        function test(::Type{K}, κ::$K_name) where {K>:$K_name{T}} where T
+#            return $conversion_call
+#        end
+#    end
+#end
 
-macro default_kernel_convert(K)
-    θ = fieldnames(K)
-    T = [fieldtype(K, θₖ) for θₖ in θ]
-    conversions = Array{Expr}(undef, length(θ))
-    use_U = false
-    for i in eachindex(conversions)
-        T_U = T[i] == AbstractFloat ? :T : :U
-        use_U = T_U == :U ? true : use_U
-        conversions[i] = :($T_U(κ.$(θ[i])))
-    end
-    conversion_call = Expr(:call, Symbol(K), conversions...)
-    if use_U
-        quote
-            function convert(::Type{$(K){T,U}}, κ::$(K)) where {T,U}
-                return $conversion_call
-            end
-        end
-    else
-        quote
-            function convert(::Type{$(K){T}}, κ::$(K)) where {T}
-                return $conversion_call
-            end
-        end
-    end
-end
 
 # Type Rules ===============================================================================
 
@@ -55,6 +39,7 @@ function promote_int(Tₖ::DataType...)
     T = promote_type(Tₖ...)
     return T <: Integer ? T : Int64
 end
+
 
 # Common Functions =========================================================================
 

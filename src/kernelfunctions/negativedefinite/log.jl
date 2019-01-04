@@ -37,3 +37,7 @@ end
 @inline basefunction(::LogKernel) = SquaredEuclidean()
 
 @inline kappa(κ::LogKernel{T}, d²::T) where {T} = log(one(T) + κ.α*d²^(κ.γ))
+
+function convert(::Type{K}, κ::LogKernel) where {K>:LogKernel{T}} where T
+    return LogKernel{T}(κ.α, κ.γ)
+end

@@ -35,3 +35,7 @@ end
 @inline basefunction(::SigmoidKernel) = ScalarProduct()
 
 @inline kappa(κ::SigmoidKernel{T}, xᵀy::T) where {T} = tanh(κ.a*xᵀy + κ.c)
+
+function convert(::Type{K}, κ::SigmoidKernel) where {K>:SigmoidKernel{T}} where T
+    return SigmoidKernel{T}(κ.a, κ.c)
+end

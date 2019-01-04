@@ -30,7 +30,7 @@ ExponentialKernel{Float32}(2.0)
 """
 struct ExponentialKernel{T<:AbstractFloat} <: AbstractExponentialKernel{T}
     α::T
-    function ExponentialKernel{T}(α::Real) where {T<:AbstractFloat}
+    function ExponentialKernel{T}(α::Real=T(1)) where {T<:AbstractFloat}
         @check_args(ExponentialKernel, α, α > zero(T), "α > 0")
         return new{T}(α)
     end
@@ -38,6 +38,10 @@ end
 ExponentialKernel(α::T=1.0) where {T<:Real} = ExponentialKernel{promote_float(T)}(α)
 
 @inline kappa(κ::ExponentialKernel{T}, d²::T) where {T} = exp(-κ.α*√(d²))
+
+function convert(::Type{K}, κ::ExponentialKernel) where {K>:ExponentialKernel{T}} where T
+    return ExponentialKernel{T}(κ.α)
+end
 
 """
     LaplacianKernel([α=1])
@@ -72,7 +76,7 @@ SquaredExponentialKernel{Float32}(2.0)
 """
 struct SquaredExponentialKernel{T<:AbstractFloat} <: AbstractExponentialKernel{T}
     α::T
-    function SquaredExponentialKernel{T}(α::Real) where {T<:AbstractFloat}
+    function SquaredExponentialKernel{T}(α::Real=T(1)) where {T<:AbstractFloat}
         @check_args(SquaredExponentialKernel, α, α > zero(T), "α > 0")
         return new{T}(α)
     end
@@ -82,6 +86,13 @@ function SquaredExponentialKernel(α::T=1.0) where {T<:Real}
 end
 
 @inline kappa(κ::SquaredExponentialKernel{T}, d²::T) where {T} = exp(-κ.α*d²)
+
+function convert(
+        ::Type{K},
+        κ::SquaredExponentialKernel
+    ) where {K>:SquaredExponentialKernel{T}} where T
+    return SquaredExponentialKernel{T}(κ.α)
+end
 
 """
     GaussianKernel([α=1])
@@ -127,7 +138,7 @@ GammaExponentialKernel{Float64}(2.0,0.5)
 struct GammaExponentialKernel{T<:AbstractFloat} <: AbstractExponentialKernel{T}
     α::T
     γ::T
-    function GammaExponentialKernel{T}(α::Real, γ::Real) where {T<:AbstractFloat}
+    function GammaExponentialKernel{T}(α::Real=T(1), γ::Real=T(1)) where {T<:AbstractFloat}
         @check_args(GammaExponentialKernel, α, α > zero(T), "α > 0")
         @check_args(GammaExponentialKernel, γ, one(T) >= γ > zero(T), "γ ∈ (0,1]")
         return new{T}(α, γ)
@@ -138,3 +149,10 @@ function GammaExponentialKernel(α::T₁=1.0, γ::T₂=T₁(1)) where {T₁<:Rea
 end
 
 @inline kappa(κ::GammaExponentialKernel{T}, d²::T) where {T} = exp(-κ.α*d²^κ.γ)
+
+function convert(
+        ::Type{K},
+        κ::GammaExponentialKernel
+    ) where {K>:GammaExponentialKernel{T}} where T
+    return GammaExponentialKernel{T}(κ.α, κ.γ)
+end

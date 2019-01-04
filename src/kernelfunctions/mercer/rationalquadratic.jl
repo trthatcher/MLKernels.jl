@@ -34,8 +34,8 @@ struct RationalQuadraticKernel{T<:AbstractFloat} <: AbstractRationalQuadraticKer
     α::T
     β::T
     function RationalQuadraticKernel{T}(
-            α::Real,
-            β::Real
+            α::Real=T(1),
+            β::Real=T(1)
         ) where {T<:AbstractFloat}
         @check_args(RationalQuadraticKernel, α, α > zero(T), "α > 0")
         @check_args(RationalQuadraticKernel, β, β > zero(T), "β > 0")
@@ -51,6 +51,13 @@ end
 
 @inline function kappa(κ::RationalQuadraticKernel{T}, d²::T) where {T}
     return (one(T) + κ.α*d²)^(-κ.β)
+end
+
+function convert(
+        ::Type{K},
+        κ::RationalQuadraticKernel
+    ) where {K>:RationalQuadraticKernel{T}} where T
+    return RationalQuadraticKernel{T}(κ.α, κ.β)
 end
 
 
@@ -108,4 +115,11 @@ end
 
 @inline function kappa(κ::GammaRationalQuadraticKernel{T}, d²::T) where {T}
     return (one(T) + κ.α*(d²^κ.γ))^(-κ.β)
+end
+
+function convert(
+        ::Type{K},
+        κ::GammaRationalQuadraticKernel
+    ) where {K>:GammaRationalQuadraticKernel{T}} where T
+    return GammaRationalQuadraticKernel{T}(κ.α, κ.β, κ.γ)
 end
