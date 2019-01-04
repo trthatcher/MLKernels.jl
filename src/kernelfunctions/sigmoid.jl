@@ -22,13 +22,13 @@ SigmoidKernel{Float64}(0.5,0.5)
 struct SigmoidKernel{T<:AbstractFloat} <: Kernel{T}
     a::T
     c::T
-    function SigmoidKernel{T}(a::Real, c::Real) where {T<:AbstractFloat}
+    function SigmoidKernel{T}(a::Real=T(1), c::Real=T(1)) where {T<:AbstractFloat}
         @check_args(SigmoidKernel, a, a >  zero(T), "a > 0")
         @check_args(SigmoidKernel, c, c >= zero(T), "c ≧ 0")
         return new{T}(a, c)
     end
 end
-function SigmoidKernel(a::T₁ = 1.0, c::T₂ = T₁(1)) where {T₁<:Real,T₂<:Real}
+function SigmoidKernel(a::T₁=1.0, c::T₂=T₁(1)) where {T₁<:Real,T₂<:Real}
     SigmoidKernel{promote_float(T₁,T₂)}(a,c)
 end
 

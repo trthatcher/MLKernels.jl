@@ -19,12 +19,12 @@ PowerKernel{Float32}(0.5)
 """
 struct PowerKernel{T<:AbstractFloat} <: NegativeDefiniteKernel{T}
     γ::T
-    function PowerKernel{T}(γ::Real) where {T<:AbstractFloat}
+    function PowerKernel{T}(γ::Real=T(1)) where {T<:AbstractFloat}
         @check_args(PowerKernel, γ, one(T) >= γ > zero(T), "γ ∈ (0,1]")
         new{T}(γ)
     end
 end
-PowerKernel(γ::T = 1.0) where {T<:Real} = PowerKernel{promote_float(T)}(γ)
+PowerKernel(γ::T=1.0) where {T<:Real} = PowerKernel{promote_float(T)}(γ)
 
 @inline basefunction(::PowerKernel) = SquaredEuclidean()
 

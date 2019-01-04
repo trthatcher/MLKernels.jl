@@ -95,9 +95,9 @@ struct GammaRationalQuadraticKernel{T<:AbstractFloat} <: AbstractRationalQuadrat
     β::T
     γ::T
     function GammaRationalQuadraticKernel{T}(
-            α::Real,
-            β::Real,
-            γ::Real
+            α::Real=T(1),
+            β::Real=T(1),
+            γ::Real=T(1)
         ) where {T<:AbstractFloat}
         @check_args(GammaRationalQuadraticKernel, α, α > zero(T), "α > 0")
         @check_args(GammaRationalQuadraticKernel, β, β > zero(T), "β > 0")

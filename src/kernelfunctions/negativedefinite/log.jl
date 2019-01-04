@@ -24,7 +24,7 @@ LogKernel{Float64}(0.5,0.5)
 struct LogKernel{T<:AbstractFloat} <: NegativeDefiniteKernel{T}
     α::T
     γ::T
-    function LogKernel{T}(α::Real, γ::Real) where {T<:AbstractFloat}
+    function LogKernel{T}(α::Real=T(1), γ::Real=T(1)) where {T<:AbstractFloat}
         @check_args(LogKernel, α, α > zero(T), "α > 0")
         @check_args(LogKernel, γ, one(T) >= γ > zero(T), "γ ∈ (0,1]")
         return new{T}(α, γ)
