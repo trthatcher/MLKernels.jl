@@ -7,8 +7,6 @@ using MLKernels:
         InnerProduct,
             ScalarProduct,
         PreMetric,
-            ChiSquared,
-            SineSquared,
             Metric,
                 SquaredEuclidean
 
@@ -43,4 +41,7 @@ end
 @testset "Testing kernel function evaluation" begin
     include("kernelmatrix.jl")
 end
-#include("nystrom.jl")
+
+@testset "Testing nystrom" begin
+    include("nystrom.jl")
+end

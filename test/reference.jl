@@ -2,26 +2,26 @@
 
 const base_functions = (
     SquaredEuclidean,
-    SineSquared,
-    ChiSquared,
     ScalarProduct
 )
-
+    
 const base_functions_initiate = Dict(
     SquaredEuclidean => 0,
-    SineSquared      => 0,
-    ChiSquared       => 0,
     ScalarProduct    => 0
 )
 
 const base_functions_aggregate = Dict(
     SquaredEuclidean => (s,x,y) -> s + (x-y)^2,
-    SineSquared      => (s,x,y) -> s + sin((x-y))^2,
-    ChiSquared       => (s,x,y) -> x == y == 0 ? s : s + ((x-y)^2/(x+y)),
     ScalarProduct    => (s,x,y) -> s + x*y
 )
 
 const base_functions_return = Dict{DataType,Any}()
+
+const base_functions_properties = Dict(
+                       #|stnry |isotrop
+    ScalarProduct    => (false, false),
+    SquaredEuclidean => (true,  true)
+)
 
 
 # Kernel Function References
@@ -75,18 +75,8 @@ const kernel_functions_kappa = Dict(
     SigmoidKernel                => (z,a,c)   -> tanh(a*z+c)
 )
 
-
 const kernel_functions_base = Dict(
     PolynomialKernel         => ScalarProduct,
     ExponentiatedKernel      => ScalarProduct,
     SigmoidKernel            => ScalarProduct
 )
-
-
-const base_functions_properties = Dict(
-                       #|stnry |isotrop
-    SineSquared      => (true,  false),
-    ScalarProduct    => (false, false),
-    SquaredEuclidean => (true,  true),
-    ChiSquared       => (false, false)
- )
