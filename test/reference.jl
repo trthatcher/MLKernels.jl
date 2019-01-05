@@ -1,26 +1,42 @@
+# Base Function Test
+
+struct Euclidean <: Metric end
+
+MLK.base_aggregate(::Euclidean, s::T, x::T, y::T) where {T} = s + (x-y)^2
+MLK.base_return(::Euclidean, s::T) where {T} = sqrt(s)
+
+
 # Base Function References
 
 const base_functions = (
     SquaredEuclidean,
-    ScalarProduct
+    ScalarProduct,
+    Euclidean
 )
     
 const base_functions_initiate = Dict(
     SquaredEuclidean => 0,
-    ScalarProduct    => 0
+    ScalarProduct    => 0,
+    Euclidean        => 0
 )
 
 const base_functions_aggregate = Dict(
     SquaredEuclidean => (s,x,y) -> s + (x-y)^2,
-    ScalarProduct    => (s,x,y) -> s + x*y
+    ScalarProduct    => (s,x,y) -> s + x*y,
+    Euclidean        => (s,x,y) -> s + (x-y)^2
 )
 
-const base_functions_return = Dict{DataType,Any}()
+const base_functions_return = Dict(
+    SquaredEuclidean => s -> s,
+    ScalarProduct    => s -> s,
+    Euclidean        => s -> sqrt(s)
+)
 
 const base_functions_properties = Dict(
                        #|stnry |isotrop
     ScalarProduct    => (false, false),
-    SquaredEuclidean => (true,  true)
+    SquaredEuclidean => (true,  true),
+    Euclidean        => (false, false) # just default values test
 )
 
 
