@@ -145,41 +145,6 @@ function basematrix!(
 end
 
 
-function basematrix(
-        σ::Orientation,
-        f::BaseFunction,
-        X::AbstractMatrix{T},
-        symmetrize::Bool = true
-    ) where {T<:AbstractFloat}
-    basematrix!(σ, allocate_basematrix(σ, X), f, X, symmetrize)
-end
-
-function basematrix(
-        f::BaseFunction,
-        X::AbstractMatrix,
-        symmetrize::Bool = true
-    )
-    basematrix(Val(:row), f, X, symmetrize)
-end
-
-function basematrix(
-        σ::Orientation,
-        f::BaseFunction,
-        X::AbstractMatrix{T},
-        Y::AbstractMatrix{T}
-    ) where {T<:AbstractFloat}
-    basematrix!(σ, allocate_basematrix(σ, X, Y), f, X, Y)
-end
-
-function basematrix(
-        f::BaseFunction,
-        X::AbstractMatrix,
-        Y::AbstractMatrix
-    )
-    basematrix(Val(:row), f, X, Y)
-end
-
-
 # ScalarProduct using BLAS/Built-In methods ================================================
 
 @inline function basematrix!(

@@ -3,32 +3,54 @@
 
 The polynomial kernel is a Mercer kernel given by:
 
-```math
-\kappa(\mathbf{x},\mathbf{y}) = 
-(a \mathbf{x}^\intercal \mathbf{y} + c)^d
-\qquad \alpha > 0, \; c \geq 0, \; d \in \mathbb{Z}_{+}
+```
+    κ(x,y) = (a⋅xᵀy + c)ᵈ   α > 0, c ≧ 0, d ∈ ℤ⁺
+```
+
+# Examples
+
+```jldoctest; setup = :(using MLKernels)
+julia> PolynomialKernel(2.0f0)
+PolynomialKernel{Float32}(2.0,1.0,3)
+
+julia> PolynomialKernel(2.0f0, 2.0)
+PolynomialKernel{Float64}(2.0,2.0,3)
+
+julia> PolynomialKernel(2.0f0, 2.0, 2)
+PolynomialKernel{Float64}(2.0,2.0,2)
 ```
 """
-struct PolynomialKernel{T<:AbstractFloat,U<:Integer} <: MercerKernel{T}
-    a::HyperParameter{T}
-    c::HyperParameter{T}
-    d::HyperParameter{U}
-    function PolynomialKernel{T}(a::Real, c::Real, d::U) where {T<:AbstractFloat,U<:Integer}
-        new{T,U}(HyperParameter(convert(T,a), interval(OpenBound(zero(T)), nothing)),
-                 HyperParameter(convert(T,c), interval(ClosedBound(zero(T)), nothing)),
-                 HyperParameter(d, interval(ClosedBound(one(U)), nothing)))
+struct PolynomialKernel{T<:AbstractFloat} <: MercerKernel{T}
+    a::T
+    c::T
+    d::T
+    function PolynomialKernel{T}(
+            a::Real=T(1),
+            c::Real=T(1),
+            d::Real=T(3)
+        ) where {T<:AbstractFloat}
+        @check_args(PolynomialKernel, a, a >  zero(a), "a > 0")
+        @check_args(PolynomialKernel, c, c >= zero(c), "c ≧ 0")
+        @check_args(PolynomialKernel, d, d >= one(d) && d == trunc(d), "d ∈ ℤ₊")
+        return new{T}(a, c, d)
     end
 end
-function PolynomialKernel(a::T1=1.0, c::T2=one(T1), d::Integer=3) where {T1<:Real,T2<:Real}
-    PolynomialKernel{floattype(T1,T2)}(a, c, d)
+
+function PolynomialKernel(
+        a::T₁=1.0,
+        c::T₂=T₁(1),
+        d::T₃=convert(promote_float(T₁,T₂), 3)
+    ) where {T₁<:Real,T₂<:Real,T₃<:Real}
+    T = promote_float(T₁,T₂,T₃)
+    return PolynomialKernel{T}(a, c, d)
 end
 
-@inline eltypes(::Type{<:PolynomialKernel{T,U}}) where {T,U} = (T,U)
-@inline thetafieldnames(κ::PolynomialKernel) = Symbol[:a, :c]
-
-@inline polynomialkernel(z::T, a::T, c::T, d::U) where {T<:AbstractFloat,U<:Integer} = (a*z + c)^d
-
 @inline basefunction(::PolynomialKernel) = ScalarProduct()
-@inline function kappa(κ::PolynomialKernel{T}, z::T) where {T}
-    polynomialkernel(z, getvalue(κ.a), getvalue(κ.c), getvalue(κ.d))
+
+@inline function kappa(κ::PolynomialKernel{T}, xᵀy::T) where {T}
+    return (κ.a*xᵀy + κ.c)^(κ.d)
+end
+
+function convert(::Type{K}, κ::PolynomialKernel) where {K>:PolynomialKernel{T}} where T
+    return PolynomialKernel{T}(κ.a, κ.c, κ.d)
 end

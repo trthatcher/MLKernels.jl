@@ -7,8 +7,6 @@ using MLKernels:
         InnerProduct,
             ScalarProduct,
         PreMetric,
-            ChiSquared,
-            SineSquared,
             Metric,
                 SquaredEuclidean
 
@@ -18,19 +16,32 @@ using SpecialFunctions:
 import LinearAlgebra
 import Statistics
 
-FloatingPointTypes = (Float32, Float64)
-IntegerTypes = (Int32, Int64)
-MLK = MLKernels
-HP = MLKernels.HyperParameters
+const FloatingPointTypes = (Float32, Float64)
+const IntegerTypes = (Int32, Int64)
+const MLK = MLKernels
 
 include("reference.jl")
 
-include("HyperParameters/hyperparameter.jl")
+@testset "Testing utility functions" begin
+    include("utils.jl")
+end
 
-include("utils.jl")
-include("basefunctions.jl")
-include("basematrix.jl")
+@testset "Testing BaseFunction types" begin
+    include("basefunctions.jl")
+end
 
-include("kernelfunctions.jl")
-include("kernelmatrix.jl")
-include("nystrom.jl")
+@testset "Testing base function evaluation" begin
+    include("basematrix.jl")
+end
+
+@testset "Testing Kernel types" begin
+    include("kernelfunctions.jl")
+end
+
+@testset "Testing kernel function evaluation" begin
+    include("kernelmatrix.jl")
+end
+
+@testset "Testing nystrom" begin
+    include("nystrom.jl")
+end

@@ -117,12 +117,21 @@ end
         P_tst_nn = Array{T}(undef, n, n)
         P_tst_nm = Array{T}(undef, n, m)
 
-        for layout in (Val(:row), Val(:col))
-            X = layout == Val(:row) ? permutedims(hcat(X_set...)) : hcat(X_set...)
-            Y = layout == Val(:row) ? permutedims(hcat(Y_set...)) : hcat(Y_set...)
+        for f in base_functions
+            F = (f)()
 
-            for f in base_functions
-                F = (f)()
+            #X = permutedims(hcat(X_set...))
+            #Y = permutedims(hcat(Y_set...))
+            #
+            #P = [MLK.base_evaluate(F,x,y) for x in X_set, y in X_set]
+            #@test isapprox(P, MLK.basematrix(F, X, true))
+            #
+            #P = [MLK.base_evaluate(F,x,y) for x in X_set, y in Y_set]
+            #@test isapprox(P, MLK.basematrix(F, X, Y))
+
+            for layout in (Val(:row), Val(:col))
+                X = layout == Val(:row) ? permutedims(hcat(X_set...)) : hcat(X_set...)
+                Y = layout == Val(:row) ? permutedims(hcat(Y_set...)) : hcat(Y_set...)
 
                 P = [MLK.base_evaluate(F,x,y) for x in X_set, y in X_set]
                 @test isapprox(P, MLK.basematrix!(layout, P_tst_nn, F, X, true))

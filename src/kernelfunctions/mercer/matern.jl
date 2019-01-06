@@ -1,38 +1,44 @@
 @doc raw"""
-    MaternKernel([ν=1 [,θ=1]])
+    MaternKernel([ν=1 [, θ=1]])
 
-The Matern kernel is a Mercer kernel given by:
+The Matern kernel is a Mercer kernel with parameters `ν > 0` and `ρ > 0`. See the published
+documentation for the full definition of the function.
 
-```math
-\kappa(\mathbf{x},\mathbf{y}) =
-\frac{1}{2^{\nu-1}\Gamma(\nu)}
-\left(\frac{\sqrt{2\nu}||\mathbf{x}-\mathbf{y}||}{\theta}\right)^{\nu}
-K_{\nu}\left(\frac{\sqrt{2\nu}||\mathbf{x}-\mathbf{y}||}{\theta}\right)
+# Examples
+
+```jldoctest; setup = :(using MLKernels)
+julia> MaternKernel()
+MaternKernel{Float64}(1.0,1.0)
+
+julia> MaternKernel(2.0f0)
+MaternKernel{Float32}(2.0,1.0)
+
+julia> MaternKernel(2.0f0, 2.0)
+MaternKernel{Float64}(2.0,2.0)
 ```
-
-where ``\Gamma`` is the gamma function, ``K_{\nu}`` is the modified Bessel function of the
-second kind, ``\nu > 0`` and ``\theta > 0``.
 """
 struct MaternKernel{T<:AbstractFloat} <: MercerKernel{T}
-    nu::HyperParameter{T}
-    rho::HyperParameter{T}
-    MaternKernel{T}(ν::Real, ρ::Real) where {T<:AbstractFloat}  = new{T}(
-        HyperParameter(convert(T,ν), interval(OpenBound(zero(T)), nothing)),
-        HyperParameter(convert(T,ρ), interval(OpenBound(zero(T)), nothing))
-    )
+    ν::T
+    ρ::T
+    function MaternKernel{T}(ν::Real=T(1), ρ::Real=T(1)) where {T<:AbstractFloat}
+        @check_args(MaternKernel, ν, ν > zero(T), "ν > 0")
+        @check_args(MaternKernel, ρ, ρ > zero(T), "ρ > 0")
+        return new{T}(ν, ρ)
+    end
 end
-function MaternKernel(ν::T1=1.0, ρ::T2=one(T1)) where {T1<:Real,T2<:Real}
-    MaternKernel{floattype(T1,T2)}(ν,ρ)
-end
-
-@inline function maternkernel(d²::T, ν::T, ρ::T) where {T<:AbstractFloat}
-    d = √(d²)
-    d = d < eps(T) ? eps(T) : d  # If d is zero, besselk will return NaN
-    tmp = √(2ν)d/ρ
-    (2^(1 - ν))*(tmp^ν)*besselk(ν, tmp)/gamma(ν)
+function MaternKernel(ν::T₁=1.0, ρ::T₂=T₁(1)) where {T₁<:Real,T₂<:Real}
+    MaternKernel{promote_float(T₁,T₂)}(ν,ρ)
 end
 
 @inline basefunction(::MaternKernel) = SquaredEuclidean()
-@inline function kappa(κ::MaternKernel{T}, z::T) where {T}
-    maternkernel(z, getvalue(κ.nu), getvalue(κ.rho))
+
+@inline function kappa(κ::MaternKernel{T}, d²::T) where {T}
+    d = √(d²)
+    d = d < eps(T) ? eps(T) : d  # If d is zero, besselk will return NaN
+    tmp = √(2κ.ν)*d/κ.ρ
+    return (convert(T, 2)^(one(T) - κ.ν))*(tmp^κ.ν)*besselk(κ.ν, tmp)/gamma(κ.ν)
+end
+
+function convert(::Type{K}, κ::MaternKernel) where {K>:MaternKernel{T}} where T
+    return MaternKernel{T}(κ.ν, κ.ρ)
 end

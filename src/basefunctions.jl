@@ -23,15 +23,6 @@ end
 
 abstract type PreMetric <: BaseFunction end
 
-const pre_metrics = [
-    "chisquared",
-    "sinesquared"
-]
-
-for fname in pre_metrics
-    include(joinpath("basefunctions", "$(fname).jl"))
-end
-
 
 # Metrics ==================================================================================
 

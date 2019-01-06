@@ -8,46 +8,31 @@ import Base: convert, eltype, print, show, string, ==, *, /, +, -, ^, exp, tanh
 
 export
 
-    # Hyper Parameters
-    Bound,
-        OpenBound,
-        ClosedBound,
-        NullBound,
-
-    Interval,
-    interval,
-
-    HyperParameter,
-    getvalue,
-    setvalue!,
-    checkvalue,
-    gettheta,
-    settheta!,
-    checktheta,
-
     # Memory
     Orientation,
 
     # Kernel Functions
     Kernel,
-    MercerKernel,
-    ExponentialKernel,
-    LaplacianKernel,
-    SquaredExponentialKernel,
-    GaussianKernel,
-    RadialBasisKernel,
-    GammaExponentialKernel,
-    RationalQuadraticKernel,
-    GammaRationalKernel,
-    MaternKernel,
-    LinearKernel,
-    PolynomialKernel,
-    ExponentiatedKernel,
-    PeriodicKernel,
-    NegativeDefiniteKernel,
-    PowerKernel,
-    LogKernel,
-    SigmoidKernel,
+        MercerKernel,
+            AbstractExponentialKernel,
+                ExponentialKernel,
+                LaplacianKernel,
+                SquaredExponentialKernel,
+                GaussianKernel,
+                RadialBasisKernel,
+                GammaExponentialKernel,
+            AbstractRationalQuadraticKernel,
+                RationalQuadraticKernel,
+                GammaRationalQuadraticKernel,
+            MaternKernel,
+            LinearKernel,
+            PolynomialKernel,
+            ExponentiatedKernel,
+            PeriodicKernel,
+        NegativeDefiniteKernel,
+            PowerKernel,
+            LogKernel,
+        SigmoidKernel,
 
     # Kernel Function Properties
     ismercer,
@@ -70,28 +55,6 @@ export
 using SpecialFunctions: besselk, gamma
 import LinearAlgebra
 import Statistics
-
-include("HyperParameters.jl")
-using MLKernels.HyperParameters:
-    Bound,
-        OpenBound,
-        ClosedBound,
-        NullBound,
-
-    Interval,
-    interval,
-
-    HyperParameter,
-    getvalue,
-    setvalue!,
-    checkvalue,
-    gettheta,
-    checktheta,
-    settheta!,
-    lowerboundtheta,
-    upperboundtheta
-
-import MLKernels.HyperParameters: gettheta, checktheta, settheta!
 
 @doc raw"""
     Orientation

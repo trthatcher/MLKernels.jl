@@ -2,6 +2,16 @@ n = 3
 m = 2
 p = 5
 
+@testset "Testing $(MLK.promote_float)" begin
+    @test MLK.promote_float() == Float64
+    @test MLK.promote_float(Float16) == Float16
+    @test MLK.promote_float(Float16, Float32) == Float32
+    @test MLK.promote_float(Float16, Float32, Float64) == Float64
+    @test MLK.promote_float(BigFloat, Float64, Float32, Float16) == BigFloat
+    @test MLK.promote_float(Int64) == Float64
+    @test MLK.promote_float(Int64, Float32) == Float32
+end
+
 @testset "Testing $(MLK.dotvectors!)" begin
     for T in FloatingPointTypes
         Set_X = [rand(T, p) for i = 1:n]

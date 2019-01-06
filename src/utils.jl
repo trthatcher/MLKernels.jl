@@ -1,3 +1,40 @@
+# Check Arguments Macro ====================================================================
+
+macro check_args(K, param, cond, desc=string(cond))
+    quote
+        if !($(esc(cond)))
+            throw(ArgumentError(string(
+                $(string(K)), ": ", $(string(param)), " = ", $(esc(param)), " does not ",
+                "satisfy the constraint ", $(string(desc)), ".")))
+        end
+    end
+end
+
+#macro default_kernel_convert(K)
+#    θ = fieldnames(eval(K))
+#    K_name = esc(K)
+#    conversion_call = Expr(:call, :($K_name{T}), [:(κ.$θₖ) for θₖ in θ]...)
+#    return quote
+#        function test(::Type{K}, κ::$K_name) where {K>:$K_name{T}} where T
+#            return $conversion_call
+#        end
+#    end
+#end
+
+
+# Type Rules ===============================================================================
+
+function promote_float(Tₖ::DataType...)
+    if length(Tₖ) == 0
+        return Float64
+    end
+    T = promote_type(Tₖ...)
+    return T <: AbstractFloat ? T : Float64
+end
+
+
+# Common Functions =========================================================================
+
 for orientation in (:row, :col)
 
     row_oriented = orientation == :row

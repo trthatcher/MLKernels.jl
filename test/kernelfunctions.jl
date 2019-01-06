@@ -1,92 +1,67 @@
-#= Test Constructors =#
+function test_kernel_function(k)
+    default_args, alt_args = get(kernel_functions_arguments, k, ((), ()))
 
-for k in kernel_functions
-    @testset "Testing $k" begin
-        def_args, alt_args = get(kernel_functions_arguments, k, ((), ()))
+    local n = length(default_args)
+    K = (k)()
 
-        # Test Constructors
-        for T in FloatingPointTypes
-            for i = 1:length(alt_args)
-                K = (k)([typeof(θ) <: AbstractFloat ? convert(T,θ) : θ for θ in alt_args[1:i]]...)
-                for j = 1:length(alt_args)
-                    @test MLK.getvalue(getfield(K,j)) == (j <= i ? alt_args[j] : def_args[j])
-                end
-            end
+    @testset "Testing constructors" begin
+        for j = 1:n
+            @test getfield(K,j) == default_args[j]
         end
+        @test eltype(K) == Float64
 
-        # Test Conversions
-        K = (k)()
-        for psi in (Kernel, MercerKernel, NegativeDefiniteKernel)
-            if k <: psi
-                for T1 in FloatingPointTypes
-                    T2 = T1 == Float64 ? Float32 : T1
-                    @test eltype(convert(psi{T2},K)) == T2
-                end
+        for T in FloatingPointTypes, i = 1:n
+            K = (k)([T(a) for a in alt_args[1:i]]...)
+            for j = 1:n
+                @test getfield(K,j) == (j <= i ? alt_args[j] : default_args[j])
             end
+            @test eltype(K) == T
         end
+    end
 
-        # Test Properties
-        @test MLK.ismercer(K) == (typeof(K) <: MLK.MercerKernel ? true : false)
-        @test MLK.isnegdef(K) == (typeof(K) <: MLK.NegativeDefiniteKernel ? true : false)
+    @testset "Testing properties" begin
+        @test MLK.ismercer(K) == isa(K, MLK.MercerKernel)
+        @test MLK.isnegdef(K) == isa(K, MLK.NegativeDefiniteKernel)
         @test MLK.isstationary(K) == MLK.isstationary(MLK.basefunction(K))
         @test MLK.isisotropic(K) == MLK.isisotropic(MLK.basefunction(K))
+    end
 
-        # Test Display
-        @test eval(Meta.parse(string(K))) == K
+    @testset "Testing conversions" begin
+        psi = k
+        while psi != Any
+            for T1 in FloatingPointTypes, T2 in FloatingPointTypes
+                K1 = k{T1}()
+                K2 = convert(psi{T2}, K1)
+                @test eltype(K2) == T2
+                @test isa(K2, k)
+            end
+            psi = supertype(psi)
+        end
+    end
+
+    @testset "Testing kappa function" begin
+        f = get(kernel_functions_kappa, k, x->error(""))
+        args1, args2 = get(kernel_functions_arguments, k, ((), ()))
+        for i = 0:length(args1)
+            args = [j <= i ? args1[j] : args2[j] for j in eachindex(args1)]
+            for T in FloatingPointTypes
+                K = k{T}(args...)
+                for z in [T(0), T(1), T(2)]
+                    v1 = MLK.kappa(K, z)
+                    v2 = (f)(z, args...)
+                    @test isapprox(v1, v2)
+                end
+            end
+        end
+    end
+
+    @testset "Testing show function" begin
         @test show(devnull, K) == nothing
     end
 end
 
-@testset "Testing MLK.kappa" begin
-    for k in kernel_functions
-        k_tmp = get(kernel_functions_kappa, k, x->error(""))
-        for T in FloatingPointTypes
-            K = convert(Kernel{T}, (k)())
-            args = T[MLK.getvalue(getfield(K,theta)) for theta in fieldnames(typeof(K))]
-
-            for z in (zero(T), one(T), convert(T,2))
-                v = MLK.kappa(K, z)
-                v_tmp = (k_tmp)(z, args...)
-                @test isapprox(v, v_tmp)
-            end
-        end
-    end
-end
-
-@testset "Testing MLK.gettheta" begin
-    for k in kernel_functions
-        K = (k)()
-        K_theta = MLK.gettheta(K)
-        @test K_theta == [MLK.gettheta(getfield(K,field)) for field in MLK.thetafieldnames(K)]
-        @test MLK.checktheta(K, K_theta) == true
-    end
-end
-
-@testset "Testing MLK.settheta!" begin
-    for T in FloatingPointTypes
-        alpha1 = one(T)
-        alpha2 = convert(T,0.6)
-        gamma1 = one(T)
-        gamma2 = convert(T,0.4)
-        K = MLK.GammaExponentialKernel(alpha1,gamma1)
-        MLK.settheta!(K, [log(alpha2); log(gamma2)])
-        @test getvalue(K.alpha) == alpha2
-        @test getvalue(K.gamma) == gamma2
-
-        @test_throws DimensionMismatch MLK.settheta!(K, [one(T)])
-        @test_throws DimensionMismatch MLK.settheta!(K, [one(T); one(T); one(T)])
-    end
-end
-
-
-@testset "Testing MLK.checktheta" begin
-    for T in FloatingPointTypes
-        K = MLK.GammaExponentialKernel(one(T),one(T))
-
-        @test MLK.checktheta(K, [log(one(T)); log(one(T))]) == true
-        @test MLK.checktheta(K, [log(one(T)); log(convert(T,2))]) == false
-
-        @test_throws DimensionMismatch MLK.checktheta(K, [one(T)])
-        @test_throws DimensionMismatch MLK.checktheta(K, [one(T); one(T); one(T)])
+for k in kernel_functions
+    @testset "Testing $k" begin
+        test_kernel_function(k)
     end
 end

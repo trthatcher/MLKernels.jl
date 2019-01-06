@@ -1,67 +1,26 @@
-import Base: @deprecate, depwarn
+# Removal of LinearKernel
+Base.@deprecate LinearKernel(a::Real=1, c::Real=1) PolynomialKernel(a, c, 1)
 
-abstract type MemoryLayout end
+# Renaming of GammaRational to GammaRationalQuadratic
+Base.@deprecate GammaRationalKernel GammaRationalQuadraticKernel
 
-struct ColumnMajor <: MemoryLayout
-    function ColumnMajor()
-        depwarn("Use `Val(:col)` instead of `ColumnMajor()`", :ColumnMajor)
-        new()
+# Removal of PeriodicKernel
+struct SineSquared <: PreMetric end
+@inline base_aggregate(::SineSquared, s::T, x::T, y::T) where {T} = s + sin(x-y)^2
+@inline isstationary(::SineSquared) = true
+
+struct PeriodicKernel{T<:AbstractFloat} <: MercerKernel{T}
+    α::T
+    function PeriodicKernel{T}(α::Real) where {T<:AbstractFloat}
+        Base.depwarn("PeriodicKernel will be removed in the next major release", :PeriodicKernel)
+        @check_args(PeriodicKernel, α, α > zero(α), "α > 0")
+        new{T}(α)
     end
 end
+PeriodicKernel(α::T₁ = 1.0) where {T₁<:Real} = PeriodicKernel{promote_float(T₁)}(α)
 
-struct RowMajor <: MemoryLayout
-    function RowMajor()
-        depwarn("Use `Val(:row)` instead of `RowMajor()`", :RowMajor)
-        new()
-    end
-end
+@inline basefunction(::PeriodicKernel) = SineSquared()
 
-@deprecate RowMajor Val{:row}
-@deprecate ColumnMajor Val{:col}
-
-layout_map(orient) = typeof(orient) <: RowMajor ? Val(:row) : Val(:col)
-
-col_warn = "Use `Val(:col)` instead of `ColumnMajor()`"
-row_warn = "Use `Val(:row)` instead of `RowMajor()`"
-
-function kernelmatrix!(
-        σ::MemoryLayout,
-        P::Matrix,
-        κ::Kernel,
-        X::AbstractMatrix,
-        symmetrize::Bool = true
-    )
-    orientation = layout_map(σ)
-    kernelmatrix!(orientation, P, κ, X, symmetrize)
-end
-
-function kernelmatrix!(
-        σ::MemoryLayout,
-        P::Matrix,
-        κ::Kernel,
-        X::AbstractMatrix,
-        Y::AbstractMatrix
-    )
-    orientation = layout_map(σ)
-    kernelmatrix!(orientation, P, κ, X, Y)
-end
-
-function kernelmatrix(
-        σ::MemoryLayout,
-        κ::Kernel,
-        X::AbstractMatrix,
-        symmetrize::Bool = true
-    )
-    orientation = layout_map(σ)
-    kernelmatrix(orientation, κ, X, symmetrize)
-end
-
-function kernelmatrix(
-        σ::MemoryLayout,
-        κ::Kernel,
-        X::AbstractMatrix,
-        Y::AbstractMatrix
-    )
-    orientation = layout_map(σ)
-    kernelmatrix(orientation, κ, X, Y)
+@inline function kappa(κ::PeriodicKernel{T}, z::T) where {T}
+    return exp(-κ.α*z)
 end
