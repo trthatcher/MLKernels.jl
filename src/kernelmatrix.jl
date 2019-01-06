@@ -37,37 +37,37 @@ function symmetric_kappamatrix!(
 end
 
 """
-    kernelmatrix!(P::Matrix, σ::Orientation, κ::Kernel, X::Matrix, symmetrize::Bool)
+    kernelmatrix!(σ::Orientation, K::Matrix, κ::Kernel, X::Matrix, symmetrize::Bool)
 
 In-place version of `kernelmatrix` where pre-allocated matrix `K` will be overwritten
 with the kernel matrix.
 """
 function kernelmatrix!(
         σ::Orientation,
-        P::Matrix{T},
+        K::Matrix{T},
         κ::Kernel{T},
         X::AbstractMatrix{T},
         symmetrize::Bool
     ) where {T<:AbstractFloat}
-    basematrix!(σ, P, basefunction(κ), X, false)
-    symmetric_kappamatrix!(κ, P, symmetrize)
+    basematrix!(σ, K, basefunction(κ), X, false)
+    symmetric_kappamatrix!(κ, K, symmetrize)
 end
 
 """
-    kernelmatrix!(K::Matrix, σ::Orientation, κ::Kernel, X::Matrix, Y::Matrix)
+    kernelmatrix!(σ::Orientation, K::Matrix, κ::Kernel, X::Matrix, Y::Matrix)
 
 In-place version of `kernelmatrix` where pre-allocated matrix `K` will be overwritten with
 the kernel matrix.
 """
 function kernelmatrix!(
         σ::Orientation,
-        P::Matrix{T},
+        K::Matrix{T},
         κ::Kernel{T},
         X::AbstractMatrix{T},
         Y::AbstractMatrix{T}
     ) where {T<:AbstractFloat}
-    basematrix!(σ, P, basefunction(κ), X, Y)
-    kappamatrix!(κ, P)
+    basematrix!(σ, K, basefunction(κ), X, Y)
+    kappamatrix!(κ, K)
 end
 
 function kernelmatrix(
@@ -76,7 +76,8 @@ function kernelmatrix(
         X::AbstractMatrix{T},
         symmetrize::Bool = true
     ) where {T<:AbstractFloat}
-    symmetric_kappamatrix!(κ, basematrix(σ, basefunction(κ), X, false), symmetrize)
+    K = allocate_basematrix(σ, X)
+    symmetric_kappamatrix!(κ, basematrix!(σ, K, basefunction(κ), X, false), symmetrize)
 end
 
 function kernelmatrix(
@@ -85,7 +86,8 @@ function kernelmatrix(
         X::AbstractMatrix{T},
         Y::AbstractMatrix{T}
     ) where {T<:AbstractFloat}
-    kappamatrix!(κ, basematrix(σ, basefunction(κ), X, Y))
+    K = allocate_basematrix(σ, X, Y)
+    kappamatrix!(κ, basematrix!(σ, K, basefunction(κ), X, Y))
 end
 
 

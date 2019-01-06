@@ -76,4 +76,6 @@ include("kernelfunctions.jl")
 include("kernelmatrix.jl")
 include("nystrom.jl")
 
+include("deprecated.jl")
+
 end # MLKernels
