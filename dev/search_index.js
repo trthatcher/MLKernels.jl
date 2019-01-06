@@ -133,7 +133,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Interface",
     "title": "MLKernels.kernelmatrix!",
     "category": "method",
-    "text": "kernelmatrix!(P::Matrix, σ::Orientation, κ::Kernel, X::Matrix, symmetrize::Bool)\n\nIn-place version of kernelmatrix where pre-allocated matrix K will be overwritten with the kernel matrix.\n\n\n\n\n\n"
+    "text": "kernelmatrix!(σ::Orientation, K::Matrix, κ::Kernel, X::Matrix, symmetrize::Bool)\n\nIn-place version of kernelmatrix where pre-allocated matrix K will be overwritten with the kernel matrix.\n\n\n\n\n\n"
 },
 
 {
@@ -149,7 +149,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Interface",
     "title": "MLKernels.kernelmatrix!",
     "category": "method",
-    "text": "kernelmatrix!(K::Matrix, σ::Orientation, κ::Kernel, X::Matrix, Y::Matrix)\n\nIn-place version of kernelmatrix where pre-allocated matrix K will be overwritten with the kernel matrix.\n\n\n\n\n\n"
+    "text": "kernelmatrix!(σ::Orientation, K::Matrix, κ::Kernel, X::Matrix, Y::Matrix)\n\nIn-place version of kernelmatrix where pre-allocated matrix K will be overwritten with the kernel matrix.\n\n\n\n\n\n"
 },
 
 {
@@ -213,7 +213,15 @@ var documenterSearchIndex = {"docs": [
     "page": "Kernels",
     "title": "Kernels",
     "category": "section",
-    "text": ""
+    "text": "Kernel Mercer Negative Definite Stationary Isotropic\nExponential Kernel ✓  ✓ ✓\nRational Quadratic Kernel ✓  ✓ ✓\nExponentiated Kernel ✓   "
+},
+
+{
+    "location": "kernels/#Exponential-Kernel-1",
+    "page": "Kernels",
+    "title": "Exponential Kernel",
+    "category": "section",
+    "text": "Exponential KernelThe exponential kernel (see ExponentialKernel) is an isotropic Mercer kernel of the form:kappa(mathbfxmathbfy)\n= expleft(-alpha mathbfx - mathbfyright)\nqquad alpha  0where alpha is a positive scaling parameter of the Euclidean distance. This kernel may also be referred to as the Laplacian kernel (see LaplacianKernel).Squared-Exponential KernelA similar form of the exponential kernel squares the Euclidean distance:kappa(mathbfxmathbfy)\n= expleft(-alpha mathbfx - mathbfy^2right)\nqquad alpha  0In this case, the kernel is often referred to as the squared exponential kernel (see SquaredExponentialKernel) or the Gaussian kernel (see GaussianKernel).gamma-Exponential KernelBoth the exponential and the squared exponential kernels are specific cases of the more general gamma-exponential kernel:kappa(mathbfxmathbfy)\n= expleft(-alpha mathbfx - mathbfy^2gammaright)\nqquad alpha  0  0  gamma leq 1where gamma is an additional shape parameter of the Euclidean distance."
 },
 
 {
@@ -221,7 +229,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Kernels",
     "title": "MLKernels.ExponentialKernel",
     "category": "type",
-    "text": "ExponentialKernel([α=1])\n\nThe exponential kernel is given by the formula:\n\nkappa(mathbfxmathbfy) = expleft(-alpha mathbfx - mathbfyright) \nqquad alpha  0\n\nwhere alpha is a scaling parameter of the Euclidean distance. The exponential kernel,  also known as the Laplacian kernel, is an isotropic Mercer kernel. The constructor is  aliased by LaplacianKernel, so both names may be used:\n\n\n\n\n\n"
+    "text": "ExponentialKernel([α=1])\n\nThe exponential kernel is an isotropic Mercer kernel given by the formula:\n\n    κ(x,y) = exp(α‖x-y‖)   α > 0\n\nwhere α is a positive scaling parameter. See also SquaredExponentialKernel for a related form of the kernel or GammaExponentialKernel for a generalization.\n\nExamples\n\njulia> ExponentialKernel()\nExponentialKernel{Float64}(1.0)\n\njulia> ExponentialKernel(2.0f0)\nExponentialKernel{Float32}(2.0)\n\n\n\n\n\n"
 },
 
 {
@@ -229,7 +237,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Kernels",
     "title": "MLKernels.SquaredExponentialKernel",
     "category": "type",
-    "text": "SquaredExponentialKernel([α=1])\n\nThe squared exponential kernel, or alternatively the Gaussian kernel, is identical to the  exponential kernel except that the Euclidean distance is squared:\n\nkappa(mathbfxmathbfy) = expleft(-alpha mathbfx - mathbfy^2right) \nqquad alpha  0\n\nwhere alpha is a scaling parameter of the squared Euclidean distance. Just like the exponential kernel, the squared exponential kernel is an isotropic Mercer kernel. The squared exponential kernel is more commonly known as the radial basis kernel within machine learning communities.\n\n\n\n\n\n"
+    "text": "SquaredExponentialKernel([α=1])\n\nThe squared exponential kernel is an isotropic Mercer kernel given by the formula:\n\n    κ(x,y) = exp(α‖x-y‖²)   α > 0\n\nwhere α is a positive scaling parameter. See also ExponentialKernel for a related form of the kernel or GammaExponentialKernel for a generalization.\n\nExamples\n\njulia> SquaredExponentialKernel()\nSquaredExponentialKernel{Float64}(1.0)\n\njulia> SquaredExponentialKernel(2.0f0)\nSquaredExponentialKernel{Float32}(2.0)\n\n\n\n\n\n"
 },
 
 {
@@ -237,7 +245,47 @@ var documenterSearchIndex = {"docs": [
     "page": "Kernels",
     "title": "MLKernels.GammaExponentialKernel",
     "category": "type",
-    "text": "GammaExponentialKernel([α=1 [,γ=1]])\n\nThe gamma exponential kernel is a generalization of the exponential and squared exponential  kernels:\n\nkappa(mathbfxmathbfy) = expleft(-alpha mathbfx - mathbfy^gamma \nright) qquad alpha  0  0  gamma leq 1\n\nwhere alpha is a scaling parameter and gamma is a shape parameter.\n\n\n\n\n\n"
+    "text": "GammaExponentialKernel([α=1 [,γ=1]])\n\nThe gamma-exponential kernel is an isotropic Mercer kernel given by the formula:\n\n    κ(x,y) = exp(α‖x-y‖²ᵞ)   α > 0, γ ∈ (0,1]\n\nwhere α is a scaling parameter and γ is a shape parameter of the Euclidean distance. When γ = 1 use SquaredExponentialKernel and SquaredExponentialKernel when γ = 0.5 since these are more efficient implementations.\n\nExamples\n\njulia> GammaExponentialKernel()\nGammaExponentialKernel{Float64}(1.0,1.0)\n\njulia> GammaExponentialKernel(2.0f0)\nGammaExponentialKernel{Float32}(2.0,1.0)\n\njulia> GammaExponentialKernel(2.0, 0.5)\nGammaExponentialKernel{Float64}(2.0,0.5)\n\n\n\n\n\n"
+},
+
+{
+    "location": "kernels/#MLKernels.LaplacianKernel",
+    "page": "Kernels",
+    "title": "MLKernels.LaplacianKernel",
+    "category": "type",
+    "text": "LaplacianKernel([α=1])\n\nAlias for ExponentialKernel.\n\n\n\n\n\n"
+},
+
+{
+    "location": "kernels/#MLKernels.GaussianKernel",
+    "page": "Kernels",
+    "title": "MLKernels.GaussianKernel",
+    "category": "type",
+    "text": "GaussianKernel([α=1])\n\nAlias of SquaredExponentialKernel.\n\n\n\n\n\n"
+},
+
+{
+    "location": "kernels/#MLKernels.RadialBasisKernel",
+    "page": "Kernels",
+    "title": "MLKernels.RadialBasisKernel",
+    "category": "type",
+    "text": "RadialBasisKernel([α=1])\n\nAlias of SquaredExponentialKernel.\n\n\n\n\n\n"
+},
+
+{
+    "location": "kernels/#Interface-1",
+    "page": "Kernels",
+    "title": "Interface",
+    "category": "section",
+    "text": "ExponentialKernel\nSquaredExponentialKernel\nGammaExponentialKernel\nLaplacianKernel\nGaussianKernel\nRadialBasisKernel"
+},
+
+{
+    "location": "kernels/#Rational-Quadratic-Kernel-1",
+    "page": "Kernels",
+    "title": "Rational-Quadratic Kernel",
+    "category": "section",
+    "text": "Rational-Quadratic KernelThe rational-quadratic kernel (see RationalQuadraticKernel) is an isotropic Mercer kernel given by the formula:kappa(mathbfxmathbfy)\n= left(1 +alpha mathbfx - mathbfy^2right)^-beta\nqquad alpha  0  beta  0where alpha is a positive scaling parameter and beta is a shape parameter of the Euclidean distance.gamma-Rational-Quadratic KernelThe rational-quadratic kernel is a special case with gamma = 1 of the more general gamma-rational-quadratic kernel (see GammaRationalQuadraticKernel):kappa(mathbfxmathbfy)\n= left(1 +alpha mathbfx - mathbfy^2gammaright)^-beta\nqquad alpha  0  beta  0  0  gamma leq 1where alpha is a positive scaling parameter, beta is a positive shape parameter and gamma is a shape parameter of the Euclidean distance."
 },
 
 {
@@ -245,39 +293,31 @@ var documenterSearchIndex = {"docs": [
     "page": "Kernels",
     "title": "MLKernels.RationalQuadraticKernel",
     "category": "type",
-    "text": "RationalQuadraticKernel([α=1 [,β=1]])\n\nThe rational-quadratic kernel is given by:\n\nkappa(mathbfxmathbfy) \n= left(1 +alpha mathbfxmathbfy^2right)^-beta \nqquad alpha  0  beta  0\n\nwhere alpha is a scaling parameter and beta is a shape parameter. This kernel can  be seen as an infinite sum of Gaussian kernels. If one sets alpha = alpha_0  beta,  then taking the limit beta rightarrow infty results in the Gaussian kernel with  scaling parameter alpha_0.\n\n\n\n\n\n"
+    "text": "RationalQuadraticKernel([α [,β]])\n\nThe rational quadratic kernel is an isotropic Mercer kernel given by the formula:\n\n    κ(x,y) = (1 + α‖x-y‖²)⁻ᵝ   α > 0, β > 0\n\nwhere α is a scaling parameter and β is a shape parameter. The rational quadratic kernel is a special of the more general gamma-rational-quadratic kernel (see GammaRationalQuadraticKernel) with γ = 1.\n\nExamples\n\njulia> RationalQuadraticKernel()\nRationalQuadraticKernel{Float64}(1.0,1.0)\n\njulia> RationalQuadraticKernel(2.0f0)\nRationalQuadraticKernel{Float32}(2.0,1.0)\n\njulia> RationalQuadraticKernel(2.0f0, 2.0)\nRationalQuadraticKernel{Float64}(2.0,2.0)\n\n\n\n\n\n"
 },
 
 {
-    "location": "kernels/#MLKernels.GammaRationalKernel",
+    "location": "kernels/#MLKernels.GammaRationalQuadraticKernel",
     "page": "Kernels",
-    "title": "MLKernels.GammaRationalKernel",
+    "title": "MLKernels.GammaRationalQuadraticKernel",
     "category": "type",
-    "text": "GammaRationalKernel([α [,β [,γ]]])\n\nThe gamma-rational kernel is a generalization of the rational-quadratic kernel with an  additional shape parameter:\n\nkappa(mathbfxmathbfy)\n= left(1 +alpha mathbfxmathbfy^gammaright)^-beta \nqquad alpha  0  beta  0  0  gamma leq 1\n\nwhere alpha is a scaling parameter and beta and gamma are shape parameters.\n\n\n\n\n\n"
+    "text": "GammaRationalKernel([α [,β [,γ]]])\n\nThe gamma-rational-quadratic kernel is a generalization of the rational-quadratic kernel with an additional shape parameter γ:\n\n    κ(x,y) = (1 + α‖x-y‖²ᵞ)⁻ᵝ   α > 0, β > 0, γ ∈ (0,1]\n\nwhere alpha is a scaling parameter, beta is a shape parameter and gamma is a shape parameter of the Euclidean distance.\n\nExamples\n\njulia> GammaRationalQuadraticKernel()\nGammaRationalQuadraticKernel{Float64}(1.0,1.0,1.0)\n\njulia> GammaRationalQuadraticKernel(2.0f0)\nGammaRationalQuadraticKernel{Float32}(2.0,1.0,1.0)\n\njulia> GammaRationalQuadraticKernel(2.0f0, 2.0f0)\nGammaRationalQuadraticKernel{Float32}(2.0,2.0,1.0)\n\njulia> GammaRationalQuadraticKernel(2.0f0, 2.0f0, 0.5f0)\nGammaRationalQuadraticKernel{Float32}(2.0,2.0,0.5)\n\n\n\n\n\n"
 },
 
 {
-    "location": "kernels/#MLKernels.MaternKernel",
+    "location": "kernels/#Interface-2",
     "page": "Kernels",
-    "title": "MLKernels.MaternKernel",
-    "category": "type",
-    "text": "MaternKernel([ν=1 [,θ=1]])\n\nThe Matern kernel is a Mercer kernel given by:\n\nkappa(mathbfxmathbfy) =\nfrac12^nu-1Gamma(nu)\nleft(fracsqrt2numathbfx-mathbfythetaright)^nu\nK_nuleft(fracsqrt2numathbfx-mathbfythetaright)\n\nwhere Gamma is the gamma function, K_nu is the modified Bessel function of the second kind, nu  0 and theta  0.\n\n\n\n\n\n"
+    "title": "Interface",
+    "category": "section",
+    "text": "RationalQuadraticKernel\nGammaRationalQuadraticKernel"
 },
 
 {
-    "location": "kernels/#MLKernels.LinearKernel",
+    "location": "kernels/#Exponentiated-Kernel-1",
     "page": "Kernels",
-    "title": "MLKernels.LinearKernel",
-    "category": "type",
-    "text": "LinearKernel([a=1 [,c=1]])\n\nThe linear kernel is a Mercer kernel given by:\n\nkappa(mathbfxmathbfy) = \na mathbfx^intercal mathbfy + c qquad alpha  0  c geq 0\n\n\n\n\n\n"
-},
-
-{
-    "location": "kernels/#MLKernels.PolynomialKernel",
-    "page": "Kernels",
-    "title": "MLKernels.PolynomialKernel",
-    "category": "type",
-    "text": "PolynomialKernel([a=1 [,c=1 [,d=3]]])\n\nThe polynomial kernel is a Mercer kernel given by:\n\nkappa(mathbfxmathbfy) = \n(a mathbfx^intercal mathbfy + c)^d\nqquad alpha  0  c geq 0  d in mathbbZ_+\n\n\n\n\n\n"
+    "title": "Exponentiated Kernel",
+    "category": "section",
+    "text": "The exponentiated kernel (see ExponentiatedKernel) is a Mercer kernel given by:kappa(mathbfxmathbfy) = expleft(a mathbfx^intercal mathbfy right)\nqquad a  0where alpha is a positive shape parameter."
 },
 
 {
@@ -285,23 +325,87 @@ var documenterSearchIndex = {"docs": [
     "page": "Kernels",
     "title": "MLKernels.ExponentiatedKernel",
     "category": "type",
-    "text": "ExponentiatedKernel([a=1])\n\nThe exponentiated kernel is a Mercer kernel given by:\n\nkappa(mathbfxmathbfy) = expleft(a mathbfx^intercal mathbfy right) \nqquad a  0\n\n\n\n\n\n"
+    "text": "ExponentiatedKernel([α=1])\n\nThe exponentiated kernel is a Mercer kernel given by:\n\n    κ(x,y) = exp(α⋅xᵀy)   α > 0\n\nwhere α is a positive scaling parameter.\n\nExamples\n\njulia> ExponentiatedKernel()\nExponentiatedKernel{Float64}(1.0)\n\njulia> ExponentiatedKernel(2)\nExponentiatedKernel{Float64}(2.0)\n\njulia> ExponentiatedKernel(2.0f0)\nExponentiatedKernel{Float32}(2.0)\n\n\n\n\n\n"
 },
 
 {
-    "location": "kernels/#MLKernels.PeriodicKernel",
+    "location": "kernels/#Interface-3",
     "page": "Kernels",
-    "title": "MLKernels.PeriodicKernel",
-    "category": "type",
-    "text": "PeriodicKernel([α=1 [,p=π]])\n\nThe periodic kernel is given by:\n\nkappa(mathbfxmathbfy) =\nexpleft(-alpha sum_i=1^n sin(p(x_i - y_i))^2right)\nqquad p 0  alpha  0\n\nwhere mathbfx and mathbfy are n dimensional vectors. The parameters p  and alpha are scaling parameters for the periodicity and the magnitude, respectively.  This kernel is useful when data has periodicity to it.\n\n\n\n\n\n"
-},
-
-{
-    "location": "kernels/#Mercer-Kernels-1",
-    "page": "Kernels",
-    "title": "Mercer Kernels",
+    "title": "Interface",
     "category": "section",
-    "text": "ExponentialKernel\nSquaredExponentialKernel\nGammaExponentialKernel\nRationalQuadraticKernel\nGammaRationalKernel\nMaternKernel\nLinearKernel\nPolynomialKernel\nExponentiatedKernel\nPeriodicKernel"
+    "text": "ExponentiatedKernel"
+},
+
+{
+    "location": "kernels/#Matern-Kernel-1",
+    "page": "Kernels",
+    "title": "Matern Kernel",
+    "category": "section",
+    "text": "The Matern kernel is a Mercer kernel given by:kappa(mathbfxmathbfy) =\nfrac12^nu-1Gamma(nu)\nleft(fracsqrt2numathbfx-mathbfythetaright)^nu\nK_nuleft(fracsqrt2numathbfx-mathbfythetaright)where nu and rho are positive shape parameters."
+},
+
+{
+    "location": "kernels/#MLKernels.MaternKernel",
+    "page": "Kernels",
+    "title": "MLKernels.MaternKernel",
+    "category": "type",
+    "text": "MaternKernel([ν=1 [, θ=1]])\n\nThe Matern kernel is a Mercer kernel with parameters ν > 0 and ρ > 0. See the published documentation for the full definition of the function.\n\nExamples\n\njulia> MaternKernel()\nMaternKernel{Float64}(1.0,1.0)\n\njulia> MaternKernel(2.0f0)\nMaternKernel{Float32}(2.0,1.0)\n\njulia> MaternKernel(2.0f0, 2.0)\nMaternKernel{Float64}(2.0,2.0)\n\n\n\n\n\n"
+},
+
+{
+    "location": "kernels/#Interface-4",
+    "page": "Kernels",
+    "title": "Interface",
+    "category": "section",
+    "text": "MaternKernel"
+},
+
+{
+    "location": "kernels/#Polynomial-Kernel-1",
+    "page": "Kernels",
+    "title": "Polynomial Kernel",
+    "category": "section",
+    "text": "The polynomial kernel is a Mercer kernel given by:kappa(mathbfxmathbfy) =\n(a mathbfx^intercal mathbfy + c)^d\nqquad alpha  0  c geq 0  d in mathbbZ_+where a is a positive scale parameter, c is a non-negative shape parameter and d is a shape parameter that determines the degree of the resulting polynomial."
+},
+
+{
+    "location": "kernels/#MLKernels.PolynomialKernel",
+    "page": "Kernels",
+    "title": "MLKernels.PolynomialKernel",
+    "category": "type",
+    "text": "PolynomialKernel([a=1 [,c=1 [,d=3]]])\n\nThe polynomial kernel is a Mercer kernel given by:\n\n    κ(x,y) = (a⋅xᵀy + c)ᵈ   α > 0, c ≧ 0, d ∈ ℤ⁺\n\nExamples\n\njulia> PolynomialKernel(2.0f0)\nPolynomialKernel{Float32}(2.0,1.0,3)\n\njulia> PolynomialKernel(2.0f0, 2.0)\nPolynomialKernel{Float64}(2.0,2.0,3)\n\njulia> PolynomialKernel(2.0f0, 2.0, 2)\nPolynomialKernel{Float64}(2.0,2.0,2)\n\n\n\n\n\n"
+},
+
+{
+    "location": "kernels/#Interface-5",
+    "page": "Kernels",
+    "title": "Interface",
+    "category": "section",
+    "text": "PolynomialKernel"
+},
+
+{
+    "location": "kernels/#Periodic-Kernel-1",
+    "page": "Kernels",
+    "title": "Periodic Kernel",
+    "category": "section",
+    "text": "The periodic kernel is given by:kappa(mathbfxmathbfy) =\nexpleft(-alpha sum_i=1^n sin(x_i - y_i)^2right)\nqquad alpha  0where a is a positive scale parameter."
+},
+
+{
+    "location": "kernels/#Interface-6",
+    "page": "Kernels",
+    "title": "Interface",
+    "category": "section",
+    "text": "PeriodicKernel"
+},
+
+{
+    "location": "kernels/#Power-Kernel-1",
+    "page": "Kernels",
+    "title": "Power Kernel",
+    "category": "section",
+    "text": "The power kernel is given by:kappa(mathbfxmathbfy) =\nmathbfx - mathbfy ^2gamma\nqquad gamma in (01where gamma is a shape parameter of the Euclidean distance."
 },
 
 {
@@ -309,7 +413,23 @@ var documenterSearchIndex = {"docs": [
     "page": "Kernels",
     "title": "MLKernels.PowerKernel",
     "category": "type",
-    "text": "PowerKernel([γ=1])\n\nThe Power Kernel is a negative definite kernel given by:\n\nkappa(mathbfxmathbfy) = \nmathbfx - mathbfy ^2gamma\nqquad gamma in (01\n\n\n\n\n\n"
+    "text": "PowerKernel([γ=1])\n\nThe Power Kernel is a negative definite kernel given by:\n\n    κ(x,y) = ‖x-y‖²ᵞ   γ ∈ (0,1]\n\nwhere γ is a shape parameter of the Euclidean distance.\n\nExamples\n\njulia> PowerKernel()\nPowerKernel{Float64}(1.0)\n\njulia> PowerKernel(0.5f0)\nPowerKernel{Float32}(0.5)\n\n\n\n\n\n"
+},
+
+{
+    "location": "kernels/#Interface-7",
+    "page": "Kernels",
+    "title": "Interface",
+    "category": "section",
+    "text": "PowerKernel"
+},
+
+{
+    "location": "kernels/#Log-Kernel-1",
+    "page": "Kernels",
+    "title": "Log Kernel",
+    "category": "section",
+    "text": "The log kernel is a negative definite kernel given by:kappa(mathbfxmathbfy) =\nlog left(1 + alphamathbfx - mathbfy ^2gammaright)\nqquad alpha  0  gamma in (01where alpha is a positive scaling parameter and gamma is a shape parameter."
 },
 
 {
@@ -317,15 +437,15 @@ var documenterSearchIndex = {"docs": [
     "page": "Kernels",
     "title": "MLKernels.LogKernel",
     "category": "type",
-    "text": "LogKernel([α [,γ]])\n\nThe Log Kernel is a negative definite kernel given by:\n\nkappa(mathbfxmathbfy) = \nlog left(1 + alphamathbfx - mathbfy ^2gammaright)\nqquad alpha  0  gamma in (01\n\n\n\n\n\n"
+    "text": "LogKernel([α [,γ]])\n\nThe Log Kernel is a negative definite kernel given by the formula:\n\n    κ(x,y) = log(1 + α‖x-y‖²ᵞ)   α > 0, γ ∈ (0,1]\n\nwhere α is a scaling parameter and γ is a shape parameter of the Euclidean distance.\n\nExamples\n\njulia> LogKernel()\nLogKernel{Float64}(1.0,1.0)\n\njulia> LogKernel(0.5f0)\nLogKernel{Float32}(0.5,1.0)\n\njulia> LogKernel(0.5, 0.5)\nLogKernel{Float64}(0.5,0.5)\n\n\n\n\n\n"
 },
 
 {
-    "location": "kernels/#Negative-Definite-Kernels-1",
+    "location": "kernels/#Interface-8",
     "page": "Kernels",
-    "title": "Negative Definite Kernels",
+    "title": "Interface",
     "category": "section",
-    "text": "PowerKernel\nLogKernel"
+    "text": "LogKernel"
 },
 
 {
@@ -333,15 +453,15 @@ var documenterSearchIndex = {"docs": [
     "page": "Kernels",
     "title": "MLKernels.SigmoidKernel",
     "category": "type",
-    "text": "SigmoidKernel([a=1 [,c=1]])\n\nThe Sigmoid Kernel is given by\n\nkappa(mathbfxmathbfy) = \ntanh(a mathbfx^intercal mathbfy + c) \nqquad alpha  0  c geq 0\n\nThe sigmoid kernel is a not a true kernel, although it has been used in application. \n\n\n\n\n\n"
+    "text": "SigmoidKernel([a=1 [,c=1]])\n\nThe Sigmoid Kernel is given by:\n\n    κ(x,y) = tanh(a⋅xᵀy + c)\n\nExamples\n\njulia> SigmoidKernel()\nSigmoidKernel{Float64}(1.0,1.0)\n\njulia> SigmoidKernel(0.5f0)\nSigmoidKernel{Float32}(0.5,1.0)\n\njulia> SigmoidKernel(0.5f0, 0.5)\nSigmoidKernel{Float64}(0.5,0.5)\n\n\n\n\n\n"
 },
 
 {
-    "location": "kernels/#Other-Kernels-1",
+    "location": "kernels/#Sigmoid-Kernel-1",
     "page": "Kernels",
-    "title": "Other Kernels",
+    "title": "Sigmoid Kernel",
     "category": "section",
-    "text": "SigmoidKernel"
+    "text": "The Sigmoid Kernel is given by:kappa(mathbfxmathbfy) =\ntanh(a mathbfx^intercal mathbfy + c)\nqquad alpha  0  c geq 0The sigmoid kernel is a not a true kernel, although it has been used in application.SigmoidKernel"
 },
 
 {
