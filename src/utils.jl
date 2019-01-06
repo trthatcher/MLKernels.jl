@@ -32,14 +32,6 @@ function promote_float(Tₖ::DataType...)
     return T <: AbstractFloat ? T : Float64
 end
 
-function promote_int(Tₖ::DataType...)
-    if length(Tₖ) == 0
-        return Int64
-    end
-    T = promote_type(Tₖ...)
-    return T <: Integer ? T : Int64
-end
-
 
 # Common Functions =========================================================================
 
