@@ -12,7 +12,7 @@ abstract type AbstractExponentialKernel{T<:AbstractFloat} <: MercerKernel{T} end
 The exponential kernel is an isotropic Mercer kernel given by the formula:
 
 ```
-    κ(x,y) = exp(α‖x-y‖)   α > 0
+    κ(x,y) = exp(-α‖x-y‖)   α > 0
 ```
 
 where `α` is a positive scaling parameter. See also [`SquaredExponentialKernel`](@ref) for
@@ -58,7 +58,7 @@ const LaplacianKernel = ExponentialKernel
 The squared exponential kernel is an isotropic Mercer kernel given by the formula:
 
 ```
-    κ(x,y) = exp(α‖x-y‖²)   α > 0
+    κ(x,y) = exp(-α‖x-y‖²)   α > 0
 ```
 
 where `α` is a positive scaling parameter. See also [`ExponentialKernel`](@ref) for a
@@ -116,7 +116,7 @@ const RadialBasisKernel = SquaredExponentialKernel
 The ``\gamma``-exponential kernel is an isotropic Mercer kernel given by the formula:
 
 ```
-    κ(x,y) = exp(α‖x-y‖²ᵞ)   α > 0, γ ∈ (0,1]
+    κ(x,y) = exp(-α‖x-y‖²ᵞ)   α > 0, γ ∈ (0,1]
 ```
 where `α` is a scaling parameter and `γ` is a shape parameter of the Euclidean distance.
 When `γ = 1` use [`SquaredExponentialKernel`](@ref) and [`SquaredExponentialKernel`](@ref)
