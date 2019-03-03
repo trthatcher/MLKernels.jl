@@ -229,7 +229,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Kernels",
     "title": "MLKernels.ExponentialKernel",
     "category": "type",
-    "text": "ExponentialKernel([α=1])\n\nThe exponential kernel is an isotropic Mercer kernel given by the formula:\n\n    κ(x,y) = exp(α‖x-y‖)   α > 0\n\nwhere α is a positive scaling parameter. See also SquaredExponentialKernel for a related form of the kernel or GammaExponentialKernel for a generalization.\n\nExamples\n\njulia> ExponentialKernel()\nExponentialKernel{Float64}(1.0)\n\njulia> ExponentialKernel(2.0f0)\nExponentialKernel{Float32}(2.0)\n\n\n\n\n\n"
+    "text": "ExponentialKernel([α=1])\n\nThe exponential kernel is an isotropic Mercer kernel given by the formula:\n\n    κ(x,y) = exp(-α‖x-y‖)   α > 0\n\nwhere α is a positive scaling parameter. See also SquaredExponentialKernel for a related form of the kernel or GammaExponentialKernel for a generalization.\n\nExamples\n\njulia> ExponentialKernel()\nExponentialKernel{Float64}(1.0)\n\njulia> ExponentialKernel(2.0f0)\nExponentialKernel{Float32}(2.0)\n\n\n\n\n\n"
 },
 
 {
@@ -237,7 +237,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Kernels",
     "title": "MLKernels.SquaredExponentialKernel",
     "category": "type",
-    "text": "SquaredExponentialKernel([α=1])\n\nThe squared exponential kernel is an isotropic Mercer kernel given by the formula:\n\n    κ(x,y) = exp(α‖x-y‖²)   α > 0\n\nwhere α is a positive scaling parameter. See also ExponentialKernel for a related form of the kernel or GammaExponentialKernel for a generalization.\n\nExamples\n\njulia> SquaredExponentialKernel()\nSquaredExponentialKernel{Float64}(1.0)\n\njulia> SquaredExponentialKernel(2.0f0)\nSquaredExponentialKernel{Float32}(2.0)\n\n\n\n\n\n"
+    "text": "SquaredExponentialKernel([α=1])\n\nThe squared exponential kernel is an isotropic Mercer kernel given by the formula:\n\n    κ(x,y) = exp(-α‖x-y‖²)   α > 0\n\nwhere α is a positive scaling parameter. See also ExponentialKernel for a related form of the kernel or GammaExponentialKernel for a generalization.\n\nExamples\n\njulia> SquaredExponentialKernel()\nSquaredExponentialKernel{Float64}(1.0)\n\njulia> SquaredExponentialKernel(2.0f0)\nSquaredExponentialKernel{Float32}(2.0)\n\n\n\n\n\n"
 },
 
 {
@@ -245,7 +245,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Kernels",
     "title": "MLKernels.GammaExponentialKernel",
     "category": "type",
-    "text": "GammaExponentialKernel([α=1 [,γ=1]])\n\nThe gamma-exponential kernel is an isotropic Mercer kernel given by the formula:\n\n    κ(x,y) = exp(α‖x-y‖²ᵞ)   α > 0, γ ∈ (0,1]\n\nwhere α is a scaling parameter and γ is a shape parameter of the Euclidean distance. When γ = 1 use SquaredExponentialKernel and SquaredExponentialKernel when γ = 0.5 since these are more efficient implementations.\n\nExamples\n\njulia> GammaExponentialKernel()\nGammaExponentialKernel{Float64}(1.0,1.0)\n\njulia> GammaExponentialKernel(2.0f0)\nGammaExponentialKernel{Float32}(2.0,1.0)\n\njulia> GammaExponentialKernel(2.0, 0.5)\nGammaExponentialKernel{Float64}(2.0,0.5)\n\n\n\n\n\n"
+    "text": "GammaExponentialKernel([α=1 [,γ=1]])\n\nThe gamma-exponential kernel is an isotropic Mercer kernel given by the formula:\n\n    κ(x,y) = exp(-α‖x-y‖²ᵞ)   α > 0, γ ∈ (0,1]\n\nwhere α is a scaling parameter and γ is a shape parameter of the Euclidean distance. When γ = 1 use SquaredExponentialKernel and SquaredExponentialKernel when γ = 0.5 since these are more efficient implementations.\n\nExamples\n\njulia> GammaExponentialKernel()\nGammaExponentialKernel{Float64}(1.0,1.0)\n\njulia> GammaExponentialKernel(2.0f0)\nGammaExponentialKernel{Float32}(2.0,1.0)\n\njulia> GammaExponentialKernel(2.0, 0.5)\nGammaExponentialKernel{Float64}(2.0,0.5)\n\n\n\n\n\n"
 },
 
 {
