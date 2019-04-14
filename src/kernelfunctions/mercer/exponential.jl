@@ -102,7 +102,7 @@ Alias of [`SquaredExponentialKernel`](@ref).
 const GaussianKernel = SquaredExponentialKernel
 
 """
-    RadialBasisKernel([α=1])
+    RadialBasisKernel([σ=1])
 
 Create a [`SquaredExponentialKernel`](@ref) using the following
 convention for [Radial Basis Function Kernel](https://en.wikipedia.org/wiki/Radial_basis_function_kernel).
