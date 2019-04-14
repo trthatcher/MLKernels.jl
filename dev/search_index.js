@@ -268,8 +268,8 @@ var documenterSearchIndex = {"docs": [
     "location": "kernels/#MLKernels.RadialBasisKernel",
     "page": "Kernels",
     "title": "MLKernels.RadialBasisKernel",
-    "category": "type",
-    "text": "RadialBasisKernel([α=1])\n\nAlias of SquaredExponentialKernel.\n\n\n\n\n\n"
+    "category": "function",
+    "text": "RadialBasisKernel([σ=1])\n\nCreate a SquaredExponentialKernel using the following convention for Radial Basis Function Kernel.\n\nκ(x,y) = exp(-‖x-y‖²/σ²)\n\n\n\n\n\n"
 },
 
 {
