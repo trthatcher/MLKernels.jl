@@ -1,4 +1,8 @@
-# Machine Learning Kernels
+**NOTE:** This package has been deprecated. Please use the go-forward package located here:
+
+> https://github.com/theogf/KernelFunctions.jl
+
+# Machine Learning Kernels (DEPRECATED)
 
 _**MLKernels.jl** is a Julia package that provides a collection of common machine learning
 kernels and a set of methods to efficiently compute kernel matrices._
